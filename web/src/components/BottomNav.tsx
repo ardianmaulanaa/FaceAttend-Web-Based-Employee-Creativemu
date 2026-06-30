@@ -22,6 +22,7 @@ const employeeMenus = [
   { href: "/attendance", label: "Attend", icon: ScanFace },
   { href: "/history", label: "History", icon: History },
   { href: "/profile", label: "Profile", icon: UserRound },
+  { href: "/login", label: "Logout", icon: LogOut },
 ];
 
 const adminMenus = [
@@ -39,13 +40,7 @@ export default function BottomNav({ variant = "employee" }: BottomNavProps) {
   return (
     <nav className="fixed bottom-0 left-0 z-50 w-full px-4 pb-4 md:hidden">
       <div className="mx-auto max-w-[430px] rounded-[2rem] border border-white/70 bg-white/90 p-2 shadow-2xl shadow-slate-300/70 backdrop-blur-2xl">
-        <div
-          className={
-            variant === "admin"
-              ? "grid grid-cols-5 gap-1"
-              : "grid grid-cols-4 gap-2"
-          }
-        >
+        <div className="grid grid-cols-5 gap-1">
           {menus.map((menu) => {
             const active = pathname === menu.href;
             const Icon = menu.icon;
