@@ -1,0 +1,151 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f6f8ff;
+  --foreground: #0f172a;
+  --primary: #123c8c;
+  --primary-dark: #0b2358;
+  --accent: #ff8a00;
+  --muted: #64748b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(255, 138, 0, 0.18), transparent 28%),
+    radial-gradient(circle at top right, rgba(18, 60, 140, 0.2), transparent 32%),
+    linear-gradient(180deg, #f6f8ff 0%, #eef3ff 100%);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+::selection {
+  background: #123c8c;
+  color: white;
+}
+
+@keyframes floatText {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+@keyframes gradientMove {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Animasi khusus heading Smart Attendance */
+.animated-title {
+  animation: floatText 3.5s ease-in-out infinite;
+}
+
+.gradient-title {
+  background: linear-gradient(
+    90deg,
+    #0f172a,
+    #123c8c,
+    #ff8a00,
+    #0f172a
+  );
+  background-size: 300% 300%;
+  animation: gradientMove 5s ease infinite;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@keyframes typingTitle {
+  0% {
+    width: 0;
+  }
+
+  45% {
+    width: 16ch;
+  }
+
+  70% {
+    width: 16ch;
+  }
+
+  100% {
+    width: 0;
+  }
+}
+
+@keyframes blinkCursor {
+  0%,
+  100% {
+    border-color: transparent;
+  }
+
+  50% {
+    border-color: #ff8a00;
+  }
+}
+
+@keyframes gradientMove {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.typewriter-title {
+  display: inline-block;
+  width: 0;
+  max-width: max-content;
+  overflow: hidden;
+  white-space: nowrap;
+  border-right: 4px solid #ff8a00;
+
+  background: linear-gradient(
+    90deg,
+    #0f172a,
+    #123c8c,
+    #ff8a00,
+    #0f172a
+  );
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+
+  animation:
+    typingTitle 5s steps(16, end) infinite,
+    blinkCursor 0.8s step-end infinite,
+    gradientMove 5s ease infinite;
+}
