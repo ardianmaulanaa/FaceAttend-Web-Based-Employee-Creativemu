@@ -1,8 +1,64 @@
+"use client";
+
+import { FormEvent, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import MobileShell from "@/components/MobileShell";
 
+const ADMIN_DEMO_EMAIL = "admin@creativemu.com";
+const ADMIN_DEMO_PASSWORD = "admin123456";
+
 export default function LoginPage() {
+  const router = useRouter();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  async function loginUser(loginEmail: string, loginPassword: string) {
+    if (!loginEmail || !loginPassword) {
+      alert("Email dan password wajib diisi.");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: loginEmail,
+          password: loginPassword,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        alert(result.message || "Login gagal.");
+        return;
+      }
+
+      router.push(result.redirectTo);
+    } catch {
+      alert("Terjadi kesalahan saat login.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await loginUser(email, password);
+  }
+
+  async function handleAdminDemoLogin() {
+    await loginUser(ADMIN_DEMO_EMAIL, ADMIN_DEMO_PASSWORD);
+  }
+
   return (
     <MobileShell variant="auth" withBottomPadding={false}>
       <section className="relative min-h-screen w-full overflow-hidden bg-[#f6f8ff]">
@@ -11,7 +67,6 @@ export default function LoginPage() {
         <div className="relative z-10 grid min-h-screen w-full grid-cols-1 lg:grid-cols-2">
           {/* LEFT CONTENT */}
           <div className="relative flex flex-col px-6 py-7 md:px-12 lg:justify-between lg:px-20 lg:py-14">
-            {/* Background logo desktop */}
             <Image
               src="/images/creativemu-logo/creativemu.png"
               alt="Creativemu Background Logo"
@@ -21,7 +76,6 @@ export default function LoginPage() {
               priority
             />
 
-            {/* Background logo mobile */}
             <Image
               src="/images/creativemu-logo/creativemu.png"
               alt="Creativemu Background Logo"
@@ -60,13 +114,13 @@ export default function LoginPage() {
                 </p>
 
                 <h2 className="mt-4 text-4xl font-black leading-[1.05] tracking-tight md:mt-5 md:text-6xl">
-                    <span className="typewriter-title">Smart Attendance</span>
+                  <span className="typewriter-title">Smart Attendance</span>
                 </h2>
 
                 <p className="mt-5 max-w-xl text-sm leading-7 text-slate-600 md:mt-6 md:text-base md:leading-8">
                   Sistem absensi digital untuk karyawan Creativemu dengan
-                  verifikasi wajah, riwayat kehadiran, dan pengelolaan data
-                  absensi yang lebih cepat dan terintegrasi.
+                  formulir absensi, upload bukti, riwayat kehadiran, dan
+                  pengelolaan data absensi yang lebih cepat dan terintegrasi.
                 </p>
               </div>
             </div>
@@ -78,7 +132,10 @@ export default function LoginPage() {
 
           {/* RIGHT FORM */}
           <div className="flex items-start justify-center px-6 pb-8 pt-2 md:px-12 md:pb-12 lg:items-center lg:bg-white/35 lg:px-20 lg:py-14 lg:backdrop-blur-xl">
-            <div className="w-full max-w-md rounded-[2rem] border border-white/70 bg-white/90 p-5 shadow-2xl shadow-slate-300/60 backdrop-blur-2xl md:p-8">
+            <form
+              onSubmit={handleSubmit}
+              className="w-full max-w-md rounded-[2rem] border border-white/70 bg-white/90 p-5 shadow-2xl shadow-slate-300/60 backdrop-blur-2xl md:p-8"
+            >
               <div className="mb-7 md:mb-8">
                 <h3 className="text-3xl font-black tracking-tight text-slate-950">
                   Sign In
@@ -88,11 +145,11 @@ export default function LoginPage() {
                 </p>
               </div>
 
-              <label className="text-sm font-black text-slate-700">
-                Email
-              </label>
+              <label className="text-sm font-black text-slate-700">Email</label>
               <input
                 type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
                 placeholder="employee@company.com"
                 className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-semibold outline-none transition focus:border-[#123c8c] focus:bg-white"
               />
@@ -102,24 +159,29 @@ export default function LoginPage() {
               </label>
               <input
                 type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
                 placeholder="••••••••"
                 className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-semibold outline-none transition focus:border-[#123c8c] focus:bg-white"
               />
 
-              <Link
-                href="/home"
-                className="mt-6 block rounded-2xl bg-[#123c8c] px-5 py-4 text-center text-sm font-black text-white shadow-xl shadow-blue-900/25 transition active:scale-[0.98]"
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="mt-6 block w-full rounded-2xl bg-[#123c8c] px-5 py-4 text-center text-sm font-black text-white shadow-xl shadow-blue-900/25 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Sign In
-              </Link>
+                {isLoading ? "Signing In..." : "Sign In"}
+              </button>
 
-              <Link
-                href="/admin/dashboard"
-                className="mt-3 block rounded-2xl bg-[#fff4e6] px-5 py-4 text-center text-sm font-black text-[#ff8a00] transition active:scale-[0.98]"
+              <button
+                type="button"
+                onClick={handleAdminDemoLogin}
+                disabled={isLoading}
+                className="mt-3 block w-full rounded-2xl bg-[#fff4e6] px-5 py-4 text-center text-sm font-black text-[#ff8a00] transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Masuk sebagai Admin Demo
-              </Link>
-            </div>
+              </button>
+            </form>
           </div>
 
           <div className="px-6 pb-6 text-xs font-semibold text-slate-400 lg:hidden">

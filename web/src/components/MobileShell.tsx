@@ -17,7 +17,12 @@ export default function MobileShell({
 
   return (
     <main className={shellClass[variant]}>
-      <div className={withBottomPadding ? "pb-28 md:pb-8" : ""}>
+      <div
+        className={[
+          withBottomPadding ? "pb-28 md:pb-8" : "",
+          variant === "admin" ? "md:pl-64" : "",
+        ].join(" ")}
+      >
         {children}
       </div>
     </main>

@@ -1,0 +1,172 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model User {
+  id              String   @id @default(uuid()) @db.Char(36)
+  employee_code   String?  @unique @db.VarChar(30)
+
+  name            String   @db.VarChar(100)
+  email           String   @unique @db.VarChar(100)
+  password_hash   String   @db.VarChar(255)
+
+  role            String   @default("employee") @db.VarChar(20)
+  phone           String?  @db.VarChar(20)
+  status          String   @default("active") @db.VarChar(20)
+
+  profile_photo   String?  @db.VarChar(255)
+
+  department_id   String?  @db.Char(36)
+  position_id     String?  @db.Char(36)
+  shift_id        String?  @db.Char(36)
+
+  department      Department? @relation(fields: [department_id], references: [id], onDelete: SetNull)
+  position        Position?   @relation(fields: [position_id], references: [id], onDelete: SetNull)
+  shift           Shift?      @relation(fields: [shift_id], references: [id], onDelete: SetNull)
+
+  created_at      DateTime @default(now())
+  updated_at      DateTime @default(now()) @updatedAt
+
+  attendances     Attendance[]
+
+  @@map("users")
+}
+
+model Department {
+  id                  String   @id @default(uuid()) @db.Char(36)
+  name                String   @unique @db.VarChar(100)
+
+  shift_id            String?  @db.Char(36)
+  shift               Shift?   @relation(fields: [shift_id], references: [id], onDelete: SetNull)
+
+  salary_calculation  String   @default("monthly") @db.VarChar(30)
+  status              String   @default("active") @db.VarChar(20)
+
+  users               User[]
+
+  created_at          DateTime @default(now())
+  updated_at          DateTime @default(now()) @updatedAt
+}
+
+model Position {
+  id          String   @id @default(uuid()) @db.Char(36)
+  name        String   @unique @db.VarChar(100)
+  status      String   @default("active") @db.VarChar(20)
+
+  users       User[]
+
+  created_at  DateTime @default(now())
+  updated_at  DateTime @default(now()) @updatedAt
+}
+
+model Shift {
+  id                 String   @id @default(uuid()) @db.Char(36)
+  name               String   @unique @db.VarChar(100)
+
+  tolerance_minutes  Int      @default(0)
+  status             String   @default("active") @db.VarChar(20)
+
+  users              User[]
+  departments        Department[]
+  work_schedules     WorkSchedule[]
+
+  created_at         DateTime @default(now())
+  updated_at         DateTime @default(now()) @updatedAt
+}
+
+model WorkSchedule {
+  id              String    @id @default(uuid()) @db.Char(36)
+
+  shift_id        String    @db.Char(36)
+  shift           Shift     @relation(fields: [shift_id], references: [id], onDelete: Cascade)
+
+  day_of_week     DayOfWeek
+  is_work_day     Boolean   @default(true)
+
+  check_in_time   String?   @db.VarChar(5)
+  check_out_time  String?   @db.VarChar(5)
+
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @default(now()) @updatedAt
+
+  @@unique([shift_id, day_of_week])
+}
+
+model Attendance {
+  id                    String   @id @default(uuid()) @db.Char(36)
+
+  user_id               String   @db.Char(36)
+  user                  User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  attendance_date       DateTime @db.Date
+
+  scheduled_check_in    DateTime?
+  scheduled_check_out   DateTime?
+
+  check_in_time         DateTime?
+  check_out_time        DateTime?
+
+  check_in_photo        Bytes?
+  check_out_photo       Bytes?
+
+  check_in_photo_mime   String?  @db.VarChar(50)
+  check_out_photo_mime  String?  @db.VarChar(50)
+
+  check_in_latitude     Float?
+  check_in_longitude    Float?
+
+  check_out_latitude    Float?
+  check_out_longitude   Float?
+
+  late_minutes          Int      @default(0)
+  early_leave_minutes   Int      @default(0)
+  work_minutes          Int      @default(0)
+
+  status                AttendanceStatus @default(PENDING)
+  check_in_status       CheckInStatus?
+  check_out_status      CheckOutStatus?
+
+  note                  String?  @db.VarChar(255)
+
+  created_at            DateTime @default(now())
+  updated_at            DateTime @default(now()) @updatedAt
+
+  @@unique([user_id, attendance_date])
+  @@index([attendance_date])
+  @@index([status])
+  @@index([check_in_status])
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum AttendanceStatus {
+  PENDING
+  PRESENT
+  LATE
+  ABSENT
+  PERMISSION
+  SICK
+}
+
+enum CheckInStatus {
+  ON_TIME
+  LATE
+}
+
+enum CheckOutStatus {
+  NORMAL
+  EARLY
+}

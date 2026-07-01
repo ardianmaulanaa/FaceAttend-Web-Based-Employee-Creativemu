@@ -4,12 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Home,
-  ScanFace,
-  History,
+  ClipboardList,
   UserRound,
   LayoutDashboard,
+  Layers3,
   UsersRound,
-  ClipboardList,
+  Wallet,
+  Megaphone,
   LogOut,
 } from "lucide-react";
 
@@ -19,16 +20,16 @@ type BottomNavProps = {
 
 const employeeMenus = [
   { href: "/home", label: "Home", icon: Home },
-  { href: "/attendance", label: "Attend", icon: ScanFace },
-  { href: "/history", label: "History", icon: History },
+  { href: "/attendance", label: "Attend", icon: ClipboardList },
+  { href: "/salary", label: "Salary", icon: Wallet },
   { href: "/profile", label: "Profile", icon: UserRound },
-  { href: "/login", label: "Logout", icon: LogOut },
+  { href: "/announcements", label: "Info", icon: Megaphone },
 ];
 
 const adminMenus = [
   { href: "/admin/dashboard", label: "Dash", icon: LayoutDashboard },
   { href: "/admin/employees", label: "Staff", icon: UsersRound },
-  { href: "/admin/register-face", label: "Face", icon: ScanFace },
+  { href: "/admin/master-data", label: "Master", icon: Layers3 },
   { href: "/admin/reports", label: "Reports", icon: ClipboardList },
   { href: "/login", label: "Logout", icon: LogOut },
 ];

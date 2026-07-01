@@ -1,0 +1,10 @@
+TEMPLATE SURAT CUTI
+
+Nama:
+Divisi:
+Tanggal Cuti:
+Alasan Cuti:
+
+Saya mengajukan cuti sesuai ketentuan perusahaan.
+
+Tanda Tangan,

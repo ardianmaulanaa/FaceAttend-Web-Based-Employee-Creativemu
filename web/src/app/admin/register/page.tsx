@@ -1,10 +1,4 @@
-import {
-  Camera,
-  CheckCircle2,
-  ScanFace,
-  ShieldCheck,
-  UserRound,
-} from "lucide-react";
+import { ClipboardList, ImagePlus, ShieldCheck, UserRound } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import MobileShell from "@/components/MobileShell";
@@ -13,8 +7,8 @@ export default function RegisterFacePage() {
   return (
     <MobileShell variant="admin">
       <AppHeader
-        title="Register Face"
-        subtitle="Daftarkan wajah karyawan Creativemu"
+        title="Attendance Form Setup"
+        subtitle="Panduan lampiran bukti absensi karyawan"
         variant="admin"
       />
 
@@ -25,23 +19,23 @@ export default function RegisterFacePage() {
             <div className="bg-[#123c8c] p-6 text-white md:p-8">
               <div className="flex items-center gap-4">
                 <div className="flex h-13 w-13 items-center justify-center rounded-2xl bg-white/15">
-                  <ScanFace size={28} strokeWidth={2.6} />
+                  <ClipboardList size={28} strokeWidth={2.6} />
                 </div>
 
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-100">
-                    Face Registration
+                    Attendance Evidence
                   </p>
 
                   <h2 className="mt-1 text-3xl font-black tracking-tight md:text-4xl">
-                    Employee Face Setup
+                    Employee Submission Setup
                   </h2>
                 </div>
               </div>
 
               <p className="mt-5 max-w-xl text-sm leading-7 text-blue-100">
-                Daftarkan wajah karyawan agar sistem dapat mengenali identitas
-                saat proses check-in dan check-out.
+                Sistem tidak lagi memakai scan wajah. Karyawan akan mengirim
+                formulir absensi dengan bukti foto dan catatan tertulis.
               </p>
             </div>
 
@@ -62,11 +56,11 @@ export default function RegisterFacePage() {
                 <Camera className="text-[#123c8c]" size={24} />
 
                 <h3 className="mt-3 text-sm font-black text-slate-950">
-                  Ambil Foto
+                  Lampiran Bukti
                 </h3>
 
                 <p className="mt-1 text-xs leading-5 text-slate-500">
-                  Pastikan wajah terlihat jelas di kamera.
+                  Karyawan memilih foto bukti seperti upload Google Form.
                 </p>
               </div>
 
@@ -78,7 +72,8 @@ export default function RegisterFacePage() {
                 </h3>
 
                 <p className="mt-1 text-xs leading-5 text-slate-500">
-                  Face embedding akan disimpan ke database.
+                  Yang dicatat ke data absensi adalah keterangan tertulis dan
+                  nama file bukti.
                 </p>
               </div>
             </div>

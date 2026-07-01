@@ -1,0 +1,11 @@
+TEMPLATE SURAT SAKIT
+
+Nama:
+Divisi:
+Tanggal:
+Diagnosa/Keterangan:
+
+Dokter/Puskesmas:
+Nomor Kontak:
+
+Tanda Tangan & Stempel
