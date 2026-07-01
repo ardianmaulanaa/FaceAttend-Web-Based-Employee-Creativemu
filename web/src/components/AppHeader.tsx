@@ -21,7 +21,6 @@ const employeeNav = [
 const adminNav = [
   { href: "/admin/dashboard", label: "Dashboard" },
   { href: "/admin/employees", label: "Employees" },
-  { href: "/admin/register-face", label: "Register Face" },
   { href: "/admin/reports", label: "Reports" },
 ];
 

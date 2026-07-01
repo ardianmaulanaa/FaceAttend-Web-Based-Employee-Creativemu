@@ -1,6 +1,7 @@
 import {
   CalendarCheck,
   Clock3,
+  CreditCard,
   LayoutDashboard,
   UserCheck,
   UsersRound,
@@ -33,6 +34,12 @@ const stats = [
     value: "3",
     description: "Belum hadir",
     icon: CalendarCheck,
+  },
+  {
+    label: "Payout Patch",
+    value: "Aktif",
+    description: "No rek, label, bulan, CVC, dan poin",
+    icon: CreditCard,
   },
 ];
 

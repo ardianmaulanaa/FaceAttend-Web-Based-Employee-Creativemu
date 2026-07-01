@@ -94,42 +94,42 @@ export default function AdminEmployeesPage() {
   }
 
   useEffect(() => {
-  let isMounted = true;
+    let isMounted = true;
 
-  async function fetchEmployees() {
-    try {
-      const response = await fetch("/api/employees", {
-        method: "GET",
-        cache: "no-store",
-      });
+    async function fetchEmployees() {
+      try {
+        const response = await fetch("/api/employees", {
+          method: "GET",
+          cache: "no-store",
+        });
 
-      const result = await response.json();
+        const result = await response.json();
 
-      if (!response.ok) {
-        alert(result.message || "Gagal mengambil data karyawan.");
-        return;
-      }
+        if (!response.ok) {
+          alert(result.message || "Gagal mengambil data karyawan.");
+          return;
+        }
 
-      if (isMounted) {
-        setEmployees(result.data || []);
-      }
-    } catch {
-      if (isMounted) {
-        alert("Terjadi kesalahan saat mengambil data karyawan.");
-      }
-    } finally {
-      if (isMounted) {
-        setIsLoading(false);
+        if (isMounted) {
+          setEmployees(result.data || []);
+        }
+      } catch {
+        if (isMounted) {
+          alert("Terjadi kesalahan saat mengambil data karyawan.");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     }
-  }
 
-  void fetchEmployees();
+    void fetchEmployees();
 
-  return () => {
-    isMounted = false;
-  };
-}, []);
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const filteredEmployees = useMemo(() => {
     return employees.filter((employee) => {
@@ -146,11 +146,11 @@ export default function AdminEmployeesPage() {
   }, [employees, keyword]);
 
   const activeEmployees = employees.filter(
-    (employee) => employee.status === "active"
+    (employee) => employee.status === "active",
   ).length;
 
   const inactiveEmployees = employees.filter(
-    (employee) => employee.status === "inactive"
+    (employee) => employee.status === "inactive",
   ).length;
 
   function openRegisterModal() {
@@ -444,8 +444,9 @@ export default function AdminEmployeesPage() {
                 </h2>
 
                 <p className="mt-1 text-sm leading-6 text-slate-500">
-                  Untuk sekarang hanya membuat akun karyawan. Register wajah
-                  akan ditambahkan nanti.
+                  Form ini membuat akun karyawan. Password akan tersimpan dalam
+                  bentuk hash dan absensi dilakukan lewat formulir, bukan scan
+                  wajah.
                 </p>
               </div>
 

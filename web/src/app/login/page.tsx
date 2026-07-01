@@ -119,8 +119,8 @@ export default function LoginPage() {
 
                 <p className="mt-5 max-w-xl text-sm leading-7 text-slate-600 md:mt-6 md:text-base md:leading-8">
                   Sistem absensi digital untuk karyawan Creativemu dengan
-                  verifikasi wajah, riwayat kehadiran, dan pengelolaan data
-                  absensi yang lebih cepat dan terintegrasi.
+                  formulir absensi, upload bukti, riwayat kehadiran, dan
+                  pengelolaan data absensi yang lebih cepat dan terintegrasi.
                 </p>
               </div>
             </div>
@@ -145,9 +145,7 @@ export default function LoginPage() {
                 </p>
               </div>
 
-              <label className="text-sm font-black text-slate-700">
-                Email
-              </label>
+              <label className="text-sm font-black text-slate-700">Email</label>
               <input
                 type="email"
                 value={email}
