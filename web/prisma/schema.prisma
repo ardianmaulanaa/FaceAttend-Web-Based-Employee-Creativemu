@@ -25,5 +25,35 @@ model User {
   must_change_password Boolean  @default(true)
   created_at           DateTime @default(now())
 
+  attendances Attendance[]
+
   @@map("users")
+}
+
+model Attendance {
+  id            String   @id @default(cuid())
+
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  checkInTime   DateTime?
+  checkOutTime  DateTime?
+
+  checkInPhoto  String?
+  checkOutPhoto String?
+
+  status        AttendanceStatus @default(CHECKED_IN)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+enum Role {
+  ADMIN
+  EMPLOYEE
+}
+
+enum AttendanceStatus {
+  CHECKED_IN
+  CHECKED_OUT
 }
