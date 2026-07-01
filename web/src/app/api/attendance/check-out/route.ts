@@ -1,122 +1,244 @@
 import { NextRequest, NextResponse } from "next/server";
-import { mkdir, writeFile } from "fs/promises";
-import path from "path";
-import { randomUUID } from "crypto";
 import { jwtVerify } from "jose";
+import { Buffer } from "node:buffer";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
+
+type ParsedAttendanceBody = {
+  photoBuffer: Buffer | null;
+  photoMime: string;
+  latitude: number | null;
+  longitude: number | null;
+};
 
 async function getUserIdFromRequest(req: NextRequest) {
   const token = req.cookies.get("faceattend_token")?.value;
 
   if (!token) {
-    return null;
+    throw new Error("Token login tidak ditemukan.");
+  }
+
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET belum ada di file .env");
   }
 
   const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-
   const { payload } = await jwtVerify(token, secret);
 
-  return (
-    (payload.id as string) ||
-    (payload.userId as string) ||
-    (payload.sub as string) ||
-    null
+  const userId =
+    (payload.id as string | undefined) ||
+    (payload.userId as string | undefined) ||
+    (payload.sub as string | undefined);
+
+  if (!userId) {
+    throw new Error("User ID tidak ditemukan di token.");
+  }
+
+  return userId;
+}
+
+function getTodayDateOnly() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+function toNumber(value: unknown) {
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : null;
+}
+
+function dataUrlToBuffer(dataUrl: string) {
+  const match = dataUrl.match(/^data:(.+);base64,(.+)$/);
+
+  if (!match) {
+    return {
+      buffer: Buffer.from(dataUrl, "base64"),
+      mime: "image/jpeg",
+    };
+  }
+
+  return {
+    buffer: Buffer.from(match[2], "base64"),
+    mime: match[1],
+  };
+}
+
+async function fileToBuffer(file: File) {
+  const arrayBuffer = await file.arrayBuffer();
+
+  return {
+    buffer: Buffer.from(arrayBuffer),
+    mime: file.type || "image/jpeg",
+  };
+}
+
+async function parseAttendanceBody(
+  req: NextRequest
+): Promise<ParsedAttendanceBody> {
+  const contentType = req.headers.get("content-type") || "";
+
+  if (contentType.includes("multipart/form-data")) {
+    const formData = await req.formData();
+
+    const photo =
+      formData.get("photo") ||
+      formData.get("photoDataUrl") ||
+      formData.get("checkOutPhoto") ||
+      formData.get("image");
+
+    const latitude = toNumber(
+      formData.get("latitude") || formData.get("checkOutLatitude")
+    );
+
+    const longitude = toNumber(
+      formData.get("longitude") || formData.get("checkOutLongitude")
+    );
+
+    if (photo instanceof File) {
+      const result = await fileToBuffer(photo);
+
+      return {
+        photoBuffer: result.buffer,
+        photoMime: result.mime,
+        latitude,
+        longitude,
+      };
+    }
+
+    if (typeof photo === "string") {
+      const result = dataUrlToBuffer(photo);
+
+      return {
+        photoBuffer: result.buffer,
+        photoMime: result.mime,
+        latitude,
+        longitude,
+      };
+    }
+
+    return {
+      photoBuffer: null,
+      photoMime: "image/jpeg",
+      latitude,
+      longitude,
+    };
+  }
+
+  const body = await req.json();
+
+  const photoDataUrl =
+    typeof body.photo === "string"
+      ? body.photo
+      : typeof body.photoDataUrl === "string"
+        ? body.photoDataUrl
+        : typeof body.checkOutPhoto === "string"
+          ? body.checkOutPhoto
+          : typeof body.image === "string"
+            ? body.image
+            : null;
+
+  const latitude = toNumber(
+    body.latitude ?? body.checkOutLatitude ?? body.location?.latitude
   );
+
+  const longitude = toNumber(
+    body.longitude ?? body.checkOutLongitude ?? body.location?.longitude
+  );
+
+  if (!photoDataUrl) {
+    return {
+      photoBuffer: null,
+      photoMime: "image/jpeg",
+      latitude,
+      longitude,
+    };
+  }
+
+  const result = dataUrlToBuffer(photoDataUrl);
+
+  return {
+    photoBuffer: result.buffer,
+    photoMime: result.mime,
+    latitude,
+    longitude,
+  };
 }
 
 export async function POST(req: NextRequest) {
   try {
     const userId = await getUserIdFromRequest(req);
 
-    if (!userId) {
+    const { photoBuffer, photoMime, latitude, longitude } =
+      await parseAttendanceBody(req);
+
+    if (!photoBuffer) {
       return NextResponse.json(
-        { message: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
-    const formData = await req.formData();
-
-    const photo = formData.get("photo") as File | null;
-    const latitude = formData.get("latitude") as string | null;
-    const longitude = formData.get("longitude") as string | null;
-
-    if (!photo) {
-      return NextResponse.json(
-        { message: "Foto check-out wajib diunggah" },
+        { error: "Foto check-out wajib dikirim." },
         { status: 400 }
       );
     }
 
-    if (!latitude || !longitude) {
+    if (latitude === null || longitude === null) {
       return NextResponse.json(
-        { message: "Lokasi GPS wajib diaktifkan" },
+        { error: "Lokasi GPS check-out wajib dikirim." },
         { status: 400 }
       );
     }
 
-    const activeAttendance = await prisma.attendance.findFirst({
+    const now = new Date();
+    const today = getTodayDateOnly();
+
+    const attendance = await prisma.attendance.findFirst({
       where: {
-        userId,
-        status: "CHECKED_IN",
-        checkOutTime: null,
-      },
-      orderBy: {
-        checkInTime: "desc",
+        user_id: userId,
+        attendance_date: today,
       },
     });
 
-    if (!activeAttendance) {
+    if (!attendance || !attendance.check_in_time) {
       return NextResponse.json(
-        { message: "Kamu belum check-in atau sudah check-out" },
+        { error: "Kamu belum melakukan check-in hari ini." },
         { status: 400 }
       );
     }
 
-    const bytes = await photo.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    if (attendance.check_out_time) {
+      return NextResponse.json(
+        { error: "Kamu sudah melakukan check-out hari ini." },
+        { status: 400 }
+      );
+    }
 
-    const uploadDir = path.join(
-      process.cwd(),
-      "public",
-      "uploads",
-      "attendance"
+    const workMinutes = Math.max(
+      0,
+      Math.floor((now.getTime() - attendance.check_in_time.getTime()) / 60000)
     );
 
-    await mkdir(uploadDir, { recursive: true });
-
-    const ext = photo.name.split(".").pop() || "jpg";
-    const filename = `checkout-${userId}-${randomUUID()}.${ext}`;
-    const filepath = path.join(uploadDir, filename);
-
-    await writeFile(filepath, buffer);
-
-    const photoPath = `/uploads/attendance/${filename}`;
-
-    const attendance = await prisma.attendance.update({
+    const updatedAttendance = await prisma.attendance.update({
       where: {
-        id: activeAttendance.id,
+        id: attendance.id,
       },
       data: {
-        checkOutTime: new Date(),
-        checkOutPhoto: photoPath,
-        checkOutLatitude: Number(latitude),
-        checkOutLongitude: Number(longitude),
-        status: "CHECKED_OUT",
+        check_out_time: now,
+        check_out_photo: photoBuffer,
+        check_out_photo_mime: photoMime,
+        check_out_latitude: latitude,
+        check_out_longitude: longitude,
+        work_minutes: workMinutes,
       },
     });
 
     return NextResponse.json({
-      message: "Check-out berhasil",
-      attendance,
-    });
+  success: true,
+  message: "Check-out berhasil.",
+  attendanceId: updatedAttendance.id,
+});
   } catch (error) {
-    console.error("CHECK_OUT_ERROR", error);
+    console.error("CHECK_OUT_ERROR:", error);
 
     return NextResponse.json(
-      { message: "Terjadi kesalahan saat check-out" },
+      { error: "Gagal melakukan check-out." },
       { status: 500 }
     );
   }

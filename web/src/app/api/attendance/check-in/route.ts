@@ -1,17 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { mkdir, writeFile } from "fs/promises";
-import path from "path";
-import { randomUUID } from "crypto";
 import { jwtVerify } from "jose";
+import { Buffer } from "node:buffer";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
+
+type ParsedAttendanceBody = {
+  photoBuffer: Buffer | null;
+  photoMime: string;
+  latitude: number | null;
+  longitude: number | null;
+};
 
 async function getUserIdFromRequest(req: NextRequest) {
   const token = req.cookies.get("faceattend_token")?.value;
 
   if (!token) {
-    throw new Error("Token login tidak ditemukan. Silakan login ulang.");
+    throw new Error("Token login tidak ditemukan.");
   }
 
   if (!process.env.JWT_SECRET) {
@@ -27,109 +32,215 @@ async function getUserIdFromRequest(req: NextRequest) {
     (payload.sub as string | undefined);
 
   if (!userId) {
-    throw new Error("User ID tidak ditemukan di token login.");
+    throw new Error("User ID tidak ditemukan di token.");
   }
 
   return userId;
+}
+
+function getTodayDateOnly() {
+  const now = new Date();
+
+  return new Date(
+    Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())
+  );
+}
+
+function toNumber(value: unknown) {
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : null;
+}
+
+function dataUrlToBuffer(dataUrl: string) {
+  const match = dataUrl.match(/^data:(.+);base64,(.+)$/);
+
+  if (!match) {
+    return {
+      buffer: Buffer.from(dataUrl, "base64"),
+      mime: "image/jpeg",
+    };
+  }
+
+  return {
+    buffer: Buffer.from(match[2], "base64"),
+    mime: match[1],
+  };
+}
+
+async function fileToBuffer(file: File) {
+  const arrayBuffer = await file.arrayBuffer();
+
+  return {
+    buffer: Buffer.from(arrayBuffer),
+    mime: file.type || "image/jpeg",
+  };
+}
+
+async function parseAttendanceBody(
+  req: NextRequest
+): Promise<ParsedAttendanceBody> {
+  const contentType = req.headers.get("content-type") || "";
+
+  if (contentType.includes("multipart/form-data")) {
+    const formData = await req.formData();
+
+    const photo =
+      formData.get("photo") ||
+      formData.get("photoDataUrl") ||
+      formData.get("checkInPhoto") ||
+      formData.get("image");
+
+    const latitude = toNumber(
+      formData.get("latitude") || formData.get("checkInLatitude")
+    );
+
+    const longitude = toNumber(
+      formData.get("longitude") || formData.get("checkInLongitude")
+    );
+
+    if (photo instanceof File) {
+      const result = await fileToBuffer(photo);
+
+      return {
+        photoBuffer: result.buffer,
+        photoMime: result.mime,
+        latitude,
+        longitude,
+      };
+    }
+
+    if (typeof photo === "string") {
+      const result = dataUrlToBuffer(photo);
+
+      return {
+        photoBuffer: result.buffer,
+        photoMime: result.mime,
+        latitude,
+        longitude,
+      };
+    }
+
+    return {
+      photoBuffer: null,
+      photoMime: "image/jpeg",
+      latitude,
+      longitude,
+    };
+  }
+
+  const body = await req.json();
+
+  const photoDataUrl =
+    typeof body.photo === "string"
+      ? body.photo
+      : typeof body.photoDataUrl === "string"
+        ? body.photoDataUrl
+        : typeof body.checkInPhoto === "string"
+          ? body.checkInPhoto
+          : typeof body.image === "string"
+            ? body.image
+            : null;
+
+  const latitude = toNumber(
+    body.latitude ?? body.checkInLatitude ?? body.location?.latitude
+  );
+
+  const longitude = toNumber(
+    body.longitude ?? body.checkInLongitude ?? body.location?.longitude
+  );
+
+  if (!photoDataUrl) {
+    return {
+      photoBuffer: null,
+      photoMime: "image/jpeg",
+      latitude,
+      longitude,
+    };
+  }
+
+  const result = dataUrlToBuffer(photoDataUrl);
+
+  return {
+    photoBuffer: result.buffer,
+    photoMime: result.mime,
+    latitude,
+    longitude,
+  };
 }
 
 export async function POST(req: NextRequest) {
   try {
     const userId = await getUserIdFromRequest(req);
 
-    const user = await prisma.user.findUnique({
+    const { photoBuffer, photoMime, latitude, longitude } =
+      await parseAttendanceBody(req);
+
+    if (!photoBuffer) {
+      return NextResponse.json(
+        { error: "Foto check-in wajib dikirim." },
+        { status: 400 }
+      );
+    }
+
+    if (latitude === null || longitude === null) {
+      return NextResponse.json(
+        { error: "Lokasi GPS check-in wajib dikirim." },
+        { status: 400 }
+      );
+    }
+
+    const now = new Date();
+    const today = getTodayDateOnly();
+
+    const existingAttendance = await prisma.attendance.findFirst({
       where: {
-        id: userId,
+        user_id: userId,
+        attendance_date: today,
       },
     });
 
-    if (!user) {
+    if (existingAttendance?.check_in_time) {
       return NextResponse.json(
-        { message: "User tidak ditemukan. Silakan login ulang." },
-        { status: 401 }
-      );
-    }
-
-    const formData = await req.formData();
-
-    const photo = formData.get("photo") as File | null;
-    const latitude = formData.get("latitude") as string | null;
-    const longitude = formData.get("longitude") as string | null;
-
-    if (!photo) {
-      return NextResponse.json(
-        { message: "Foto check-in wajib ada." },
+        { error: "Kamu sudah melakukan check-in hari ini." },
         { status: 400 }
       );
     }
 
-    if (!latitude || !longitude) {
-      return NextResponse.json(
-        { message: "Lokasi GPS wajib diaktifkan." },
-        { status: 400 }
-      );
-    }
-
-    const activeAttendance = await prisma.attendance.findFirst({
-      where: {
-        userId,
-        status: "CHECKED_IN",
-        checkOutTime: null,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    if (activeAttendance) {
-      return NextResponse.json(
-        { message: "Kamu sudah check-in dan belum check-out." },
-        { status: 400 }
-      );
-    }
-
-    const bytes = await photo.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    const uploadDir = path.join(
-      process.cwd(),
-      "public",
-      "uploads",
-      "attendance"
-    );
-
-    await mkdir(uploadDir, { recursive: true });
-
-    const filename = `checkin-${userId}-${randomUUID()}.jpg`;
-    const filepath = path.join(uploadDir, filename);
-
-    await writeFile(filepath, buffer);
-
-    const photoPath = `/uploads/attendance/${filename}`;
-
-    const attendance = await prisma.attendance.create({
-      data: {
-        userId,
-        checkInTime: new Date(),
-        checkInPhoto: photoPath,
-        checkInLatitude: Number(latitude),
-        checkInLongitude: Number(longitude),
-        status: "CHECKED_IN",
-      },
-    });
+    const attendance = existingAttendance
+      ? await prisma.attendance.update({
+          where: {
+            id: existingAttendance.id,
+          },
+          data: {
+            check_in_time: now,
+            check_in_photo: photoBuffer,
+            check_in_photo_mime: photoMime,
+            check_in_latitude: latitude,
+            check_in_longitude: longitude,
+          },
+        })
+      : await prisma.attendance.create({
+          data: {
+            user_id: userId,
+            attendance_date: today,
+            check_in_time: now,
+            check_in_photo: photoBuffer,
+            check_in_photo_mime: photoMime,
+            check_in_latitude: latitude,
+            check_in_longitude: longitude,
+          },
+        });
 
     return NextResponse.json({
-      message: "Check-in berhasil.",
-      attendance,
-    });
+  success: true,
+  message: "Check-in berhasil.",
+  attendanceId: attendance.id,
+});
   } catch (error) {
     console.error("CHECK_IN_ERROR:", error);
 
     return NextResponse.json(
-      {
-        message: "Terjadi kesalahan saat check-in.",
-        error: error instanceof Error ? error.message : String(error),
-      },
+      { error: "Gagal melakukan check-in." },
       { status: 500 }
     );
   }
