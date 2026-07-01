@@ -8,138 +8,219 @@ datasource db {
 }
 
 model User {
-  id              String   @id @default(uuid()) @db.Char(36)
-  employee_code   String?  @unique @db.VarChar(30)
+  id            String  @id @default(uuid()) @db.Char(36)
+  employee_code String? @unique @db.VarChar(30)
 
-  name            String   @db.VarChar(100)
-  email           String   @unique @db.VarChar(100)
-  password_hash   String   @db.VarChar(255)
+  name          String @db.VarChar(100)
+  email         String @unique @db.VarChar(100)
+  password_hash String @db.VarChar(255)
 
-  role            String   @default("employee") @db.VarChar(20)
-  phone           String?  @db.VarChar(20)
-  status          String   @default("active") @db.VarChar(20)
+  role   String  @default("employee") @db.VarChar(20)
+  phone  String? @db.VarChar(20)
+  status String  @default("active") @db.VarChar(20)
 
-  profile_photo   String?  @db.VarChar(255)
+  profile_photo String? @db.VarChar(255)
 
-  department_id   String?  @db.Char(36)
-  position_id     String?  @db.Char(36)
-  shift_id        String?  @db.Char(36)
+  department_id String? @db.Char(36)
+  position_id   String? @db.Char(36)
+  shift_id      String? @db.Char(36)
 
-  department      Department? @relation(fields: [department_id], references: [id], onDelete: SetNull)
-  position        Position?   @relation(fields: [position_id], references: [id], onDelete: SetNull)
-  shift           Shift?      @relation(fields: [shift_id], references: [id], onDelete: SetNull)
+  // Kantor utama / kantor asal karyawan
+  registered_office_id String? @db.Char(36)
 
-  created_at      DateTime @default(now())
-  updated_at      DateTime @default(now()) @updatedAt
+  department        Department?     @relation(fields: [department_id], references: [id], onDelete: SetNull)
+  position          Position?       @relation(fields: [position_id], references: [id], onDelete: SetNull)
+  shift             Shift?          @relation(fields: [shift_id], references: [id], onDelete: SetNull)
+  registered_office OfficeLocation? @relation("EmployeeRegisteredOffice", fields: [registered_office_id], references: [id], onDelete: SetNull)
 
-  attendances     Attendance[]
+  attendances   Attendance[]
+  announcements Announcement[] @relation("AnnouncementAuthor")
+
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
 
   @@map("users")
 }
 
+model OfficeLocation {
+  id String @id @default(uuid()) @db.Char(36)
+
+  name    String  @unique @db.VarChar(100)
+  address String? @db.VarChar(255)
+
+  latitude      Float
+  longitude     Float
+  radius_meters Int   @default(100)
+
+  status String @default("active") @db.VarChar(20)
+
+  users User[] @relation("EmployeeRegisteredOffice")
+
+  registered_attendances Attendance[] @relation("RegisteredOfficeAttendance")
+  check_in_attendances   Attendance[] @relation("CheckInOfficeAttendance")
+  check_out_attendances  Attendance[] @relation("CheckOutOfficeAttendance")
+
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
+}
+
 model Department {
-  id                  String   @id @default(uuid()) @db.Char(36)
-  name                String   @unique @db.VarChar(100)
+  id   String @id @default(uuid()) @db.Char(36)
+  name String @unique @db.VarChar(100)
 
-  shift_id            String?  @db.Char(36)
-  shift               Shift?   @relation(fields: [shift_id], references: [id], onDelete: SetNull)
+  shift_id String? @db.Char(36)
+  shift    Shift?  @relation(fields: [shift_id], references: [id], onDelete: SetNull)
 
-  salary_calculation  String   @default("monthly") @db.VarChar(30)
-  status              String   @default("active") @db.VarChar(20)
+  // monthly, daily, hourly
+  salary_calculation String @default("monthly") @db.VarChar(30)
 
-  users               User[]
+  // active, inactive
+  status String @default("active") @db.VarChar(20)
 
-  created_at          DateTime @default(now())
-  updated_at          DateTime @default(now()) @updatedAt
+  users User[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
 }
 
 model Position {
-  id          String   @id @default(uuid()) @db.Char(36)
-  name        String   @unique @db.VarChar(100)
-  status      String   @default("active") @db.VarChar(20)
+  id String @id @default(uuid()) @db.Char(36)
 
-  users       User[]
+  name String @unique @db.VarChar(100)
 
-  created_at  DateTime @default(now())
-  updated_at  DateTime @default(now()) @updatedAt
+  // active, inactive
+  status String @default("active") @db.VarChar(20)
+
+  users User[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
 }
 
 model Shift {
-  id                 String   @id @default(uuid()) @db.Char(36)
-  name               String   @unique @db.VarChar(100)
+  id String @id @default(uuid()) @db.Char(36)
 
-  tolerance_minutes  Int      @default(0)
-  status             String   @default("active") @db.VarChar(20)
+  name String @unique @db.VarChar(100)
 
-  users              User[]
-  departments        Department[]
-  work_schedules     WorkSchedule[]
+  // Toleransi telat dalam menit
+  tolerance_minutes Int @default(0)
 
-  created_at         DateTime @default(now())
-  updated_at         DateTime @default(now()) @updatedAt
+  // active, inactive
+  status String @default("active") @db.VarChar(20)
+
+  users          User[]
+  departments    Department[]
+  work_schedules WorkSchedule[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
 }
 
 model WorkSchedule {
-  id              String    @id @default(uuid()) @db.Char(36)
+  id String @id @default(uuid()) @db.Char(36)
 
-  shift_id        String    @db.Char(36)
-  shift           Shift     @relation(fields: [shift_id], references: [id], onDelete: Cascade)
+  shift_id String @db.Char(36)
+  shift    Shift  @relation(fields: [shift_id], references: [id], onDelete: Cascade)
 
-  day_of_week     DayOfWeek
-  is_work_day     Boolean   @default(true)
+  day_of_week DayOfWeek
+  is_work_day Boolean   @default(true)
 
-  check_in_time   String?   @db.VarChar(5)
-  check_out_time  String?   @db.VarChar(5)
+  check_in_time  String? @db.VarChar(5)
+  check_out_time String? @db.VarChar(5)
 
-  created_at      DateTime  @default(now())
-  updated_at      DateTime  @default(now()) @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
 
   @@unique([shift_id, day_of_week])
 }
 
 model Attendance {
-  id                    String   @id @default(uuid()) @db.Char(36)
+  id String @id @default(uuid()) @db.Char(36)
 
-  user_id               String   @db.Char(36)
-  user                  User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_id String @db.Char(36)
+  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-  attendance_date       DateTime @db.Date
+  attendance_date DateTime @db.Date
 
-  scheduled_check_in    DateTime?
-  scheduled_check_out   DateTime?
+  scheduled_check_in  DateTime?
+  scheduled_check_out DateTime?
 
-  check_in_time         DateTime?
-  check_out_time        DateTime?
+  check_in_time  DateTime?
+  check_out_time DateTime?
 
-  check_in_photo        Bytes?
-  check_out_photo       Bytes?
+  check_in_photo  Bytes?
+  check_out_photo Bytes?
 
-  check_in_photo_mime   String?  @db.VarChar(50)
-  check_out_photo_mime  String?  @db.VarChar(50)
+  check_in_photo_mime  String? @db.VarChar(50)
+  check_out_photo_mime String? @db.VarChar(50)
 
-  check_in_latitude     Float?
-  check_in_longitude    Float?
+  // Kantor asal karyawan saat absensi dibuat
+  registered_office_id String?         @db.Char(36)
+  registered_office    OfficeLocation? @relation("RegisteredOfficeAttendance", fields: [registered_office_id], references: [id], onDelete: SetNull)
 
-  check_out_latitude    Float?
-  check_out_longitude   Float?
+  // Kantor aktual saat check-in
+  check_in_office_id String?         @db.Char(36)
+  check_in_office    OfficeLocation? @relation("CheckInOfficeAttendance", fields: [check_in_office_id], references: [id], onDelete: SetNull)
 
-  late_minutes          Int      @default(0)
-  early_leave_minutes   Int      @default(0)
-  work_minutes          Int      @default(0)
+  check_in_latitude      Float?
+  check_in_longitude     Float?
+  check_in_accuracy      Float?
+  check_in_distance      Float?
+  check_in_within_radius Boolean @default(false)
 
-  status                AttendanceStatus @default(PENDING)
-  check_in_status       CheckInStatus?
-  check_out_status      CheckOutStatus?
+  // Kantor aktual saat check-out
+  check_out_office_id String?         @db.Char(36)
+  check_out_office    OfficeLocation? @relation("CheckOutOfficeAttendance", fields: [check_out_office_id], references: [id], onDelete: SetNull)
 
-  note                  String?  @db.VarChar(255)
+  check_out_latitude      Float?
+  check_out_longitude     Float?
+  check_out_accuracy      Float?
+  check_out_distance      Float?
+  check_out_within_radius Boolean @default(false)
 
-  created_at            DateTime @default(now())
-  updated_at            DateTime @default(now()) @updatedAt
+  late_minutes        Int @default(0)
+  early_leave_minutes Int @default(0)
+  work_minutes        Int @default(0)
+
+  status           AttendanceStatus @default(PENDING)
+  check_in_status  CheckInStatus?
+  check_out_status CheckOutStatus?
+
+  note String? @db.VarChar(255)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
 
   @@unique([user_id, attendance_date])
   @@index([attendance_date])
   @@index([status])
   @@index([check_in_status])
+  @@index([registered_office_id])
+  @@index([check_in_office_id])
+  @@index([check_out_office_id])
+}
+
+model Announcement {
+  id String @id @default(uuid()) @db.Char(36)
+
+  title   String @db.VarChar(150)
+  content String @db.Text
+
+  // all, employee, admin
+  target String @default("all") @db.VarChar(20)
+
+  // published, draft, archived
+  status String @default("published") @db.VarChar(20)
+
+  author_id String? @db.Char(36)
+  author    User?   @relation("AnnouncementAuthor", fields: [author_id], references: [id], onDelete: SetNull)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
+
+  @@index([target])
+  @@index([status])
+  @@index([created_at])
 }
 
 enum DayOfWeek {

@@ -33,7 +33,7 @@ export default function ReportsPage() {
   return (
     <MobileShell variant="admin">
       <AppHeader
-        title="Reports"
+        title="Monitor Perusahaan"
         subtitle="Laporan absensi seluruh karyawan Creativemu"
         variant="admin"
       />

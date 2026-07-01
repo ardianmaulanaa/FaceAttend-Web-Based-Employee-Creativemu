@@ -3,6 +3,7 @@ import { jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 async function getUserIdFromRequest(req: NextRequest) {
   const token = req.cookies.get("faceattend_token")?.value;
@@ -40,81 +41,58 @@ export async function GET(req: NextRequest) {
       },
       select: {
         id: true,
-        employee_code: true,
-        name: true,
-        email: true,
         role: true,
-        phone: true,
-        status: true,
-        profile_photo: true,
-
-        department: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-
-        position: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-
-        shift: {
-          select: {
-            id: true,
-            name: true,
-            tolerance_minutes: true,
-            work_schedules: {
-              select: {
-                day_of_week: true,
-                is_work_day: true,
-                check_in_time: true,
-                check_out_time: true,
-              },
-              orderBy: {
-                day_of_week: "asc",
-              },
-            },
-          },
-        },
-
-        registered_office: {
-          select: {
-            id: true,
-            name: true,
-            address: true,
-            latitude: true,
-            longitude: true,
-            radius_meters: true,
-          },
-        },
       },
     });
 
     if (!user) {
       return NextResponse.json(
-        {
-          error: "User tidak ditemukan.",
-        },
+        { error: "User tidak ditemukan." },
         { status: 404 }
       );
     }
 
+    const targets =
+      user.role === "admin" ? ["all", "admin"] : ["all", "employee"];
+
+    const announcements = await prisma.announcement.findMany({
+      where: {
+        status: "published",
+        target: {
+          in: targets,
+        },
+      },
+      orderBy: {
+        created_at: "desc",
+      },
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        target: true,
+        status: true,
+        created_at: true,
+        updated_at: true,
+        author: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
     return NextResponse.json({
       success: true,
-      user,
+      announcements,
     });
   } catch (error) {
-    console.error("ME_ERROR:", error);
+    console.error("GET_ANNOUNCEMENTS_ERROR:", error);
 
     return NextResponse.json(
-      {
-        error: "Gagal mengambil data user.",
-      },
-      { status: 401 }
+      { error: "Gagal mengambil pengumuman." },
+      { status: 500 }
     );
   }
 }

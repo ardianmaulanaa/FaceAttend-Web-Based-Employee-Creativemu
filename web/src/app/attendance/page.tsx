@@ -27,6 +27,10 @@ export default function AttendancePage() {
   const [loading, setLoading] = useState(false);
   const [lastPhotoUrl, setLastPhotoUrl] = useState<string | null>(null);
 
+  const [lastLatitude, setLastLatitude] = useState<number | null>(null);
+  const [lastLongitude, setLastLongitude] = useState<number | null>(null);
+  const [lastAccuracy, setLastAccuracy] = useState<number | null>(null);
+
   const [statusTitle, setStatusTitle] = useState("Waiting for Camera");
   const [statusText, setStatusText] = useState(
     "Aktifkan kamera dan izinkan lokasi GPS sebelum melakukan absensi."
@@ -37,7 +41,12 @@ export default function AttendancePage() {
 
     return () => {
       releaseCamera(false, false);
+
+      if (lastPhotoUrl) {
+        URL.revokeObjectURL(lastPhotoUrl);
+      }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function releaseCamera(updateStatus = true, updateState = true) {
@@ -117,7 +126,7 @@ export default function AttendancePage() {
   function getCurrentLocation(): Promise<GeolocationPosition> {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
-        reject(new Error("Browser tidak mendukung GPS"));
+        reject(new Error("Browser tidak mendukung GPS."));
         return;
       }
 
@@ -135,12 +144,12 @@ export default function AttendancePage() {
       const canvas = canvasRef.current;
 
       if (!video || !canvas || !streamRef.current) {
-        reject(new Error("Kamera belum siap"));
+        reject(new Error("Kamera belum siap."));
         return;
       }
 
       if (!video.videoWidth || !video.videoHeight) {
-        reject(new Error("Kamera belum memuat gambar"));
+        reject(new Error("Kamera belum memuat gambar."));
         return;
       }
 
@@ -150,7 +159,7 @@ export default function AttendancePage() {
       const context = canvas.getContext("2d");
 
       if (!context) {
-        reject(new Error("Canvas tidak tersedia"));
+        reject(new Error("Canvas tidak tersedia."));
         return;
       }
 
@@ -159,7 +168,7 @@ export default function AttendancePage() {
       canvas.toBlob(
         (blob) => {
           if (!blob) {
-            reject(new Error("Gagal mengambil foto"));
+            reject(new Error("Gagal mengambil foto."));
             return;
           }
 
@@ -195,10 +204,31 @@ export default function AttendancePage() {
       const photo = await capturePhoto();
       const position = await getCurrentLocation();
 
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
+      const accuracy = position.coords.accuracy;
+
+      setLastLatitude(latitude);
+      setLastLongitude(longitude);
+      setLastAccuracy(accuracy);
+
       const formData = new FormData();
       formData.append("photo", photo);
-      formData.append("latitude", String(position.coords.latitude));
-      formData.append("longitude", String(position.coords.longitude));
+      formData.append("latitude", String(latitude));
+      formData.append("longitude", String(longitude));
+      formData.append("accuracy", String(accuracy));
+
+      if (action === "check-in") {
+        formData.append("checkInLatitude", String(latitude));
+        formData.append("checkInLongitude", String(longitude));
+        formData.append("checkInAccuracy", String(accuracy));
+      }
+
+      if (action === "check-out") {
+        formData.append("checkOutLatitude", String(latitude));
+        formData.append("checkOutLongitude", String(longitude));
+        formData.append("checkOutAccuracy", String(accuracy));
+      }
 
       const response = await fetch(`/api/attendance/${action}`, {
         method: "POST",
@@ -214,8 +244,21 @@ export default function AttendancePage() {
         return;
       }
 
+      const officeName = data.office?.name;
+      const distance = data.office?.distance;
+      const radius = data.office?.radius;
+
       setStatusTitle("Attendance Success");
-      setStatusText(data.message || "Absensi berhasil.");
+      setStatusText(
+        officeName
+          ? `${data.message} Lokasi valid di ${officeName}. Jarak ${distance} meter dari kantor, radius ${radius} meter. Akurasi GPS ±${Math.round(
+              accuracy
+            )} meter.`
+          : `${data.message || "Absensi berhasil."} Akurasi GPS ±${Math.round(
+              accuracy
+            )} meter.`
+      );
+
       alert(data.message || "Absensi berhasil.");
     } catch (error) {
       console.error("ATTENDANCE_ERROR", error);
@@ -371,8 +414,9 @@ export default function AttendancePage() {
               </div>
 
               <p className="relative mt-5 text-sm leading-7 text-blue-100">
-                Sistem akan menyimpan foto, waktu, dan koordinat GPS sebagai
-                bukti check-in atau check-out karyawan.
+                Sistem akan menyimpan foto, waktu, koordinat GPS, akurasi GPS,
+                dan radius kantor sebagai bukti check-in atau check-out
+                karyawan.
               </p>
             </div>
           </div>
@@ -438,9 +482,23 @@ export default function AttendancePage() {
                 <p className="mt-3 text-sm font-black text-slate-950">
                   GPS Location
                 </p>
-                <p className="mt-1 text-sm text-slate-500">
-                  Diminta saat absen
-                </p>
+
+                {lastLatitude && lastLongitude ? (
+                  <div className="mt-1 space-y-1 text-sm text-slate-500">
+                    <p>Lat: {lastLatitude.toFixed(6)}</p>
+                    <p>Lng: {lastLongitude.toFixed(6)}</p>
+                    <p>
+                      Accuracy:{" "}
+                      {lastAccuracy !== null
+                        ? `±${Math.round(lastAccuracy)} meter`
+                        : "-"}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="mt-1 text-sm text-slate-500">
+                    Diminta saat absen
+                  </p>
+                )}
               </div>
             </div>
           </div>
