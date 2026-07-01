@@ -6,6 +6,7 @@ import {
   addDemoEmployee,
   isDatabaseUnavailable,
   listDemoUsers,
+  removeDemoEmployee,
   updateDemoEmployee,
 } from "@/lib/demoStore";
 
@@ -621,6 +622,86 @@ export async function PUT(req: Request) {
 
     return NextResponse.json(
       { success: false, message: "Gagal memperbarui karyawan" },
+      { status: 500 },
+    );
+  }
+}
+
+export async function DELETE(req: Request) {
+  const body = await req.json().catch(() => ({}));
+  const id = String(body.id || "").trim();
+
+  if (!id) {
+    return NextResponse.json(
+      { success: false, message: "ID karyawan wajib diisi" },
+      { status: 400 },
+    );
+  }
+
+  if (useDemoDataByDefault) {
+    const removed = removeDemoEmployee(id);
+
+    if (!removed) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Karyawan tidak ditemukan atau tidak dapat dihapus",
+        },
+        { status: 404 },
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "Karyawan berhasil dihapus (demo mode)",
+    });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id },
+      select: { id: true, role: true },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, message: "Karyawan tidak ditemukan" },
+        { status: 404 },
+      );
+    }
+
+    if (user.role === "admin") {
+      return NextResponse.json(
+        { success: false, message: "Akun admin tidak dapat dihapus" },
+        { status: 400 },
+      );
+    }
+
+    try {
+      await prisma.$executeRaw`DELETE FROM payroll_methods WHERE user_id = ${id}`;
+    } catch (extraError) {
+      if (!isSchemaMigrationMissing(extraError)) {
+        throw extraError;
+      }
+    }
+
+    try {
+      await prisma.$executeRaw`DELETE FROM attendances WHERE user_id = ${id}`;
+    } catch {
+      // Older schemas may not have attendance relation or table yet.
+    }
+
+    await prisma.user.delete({ where: { id } });
+
+    return NextResponse.json({
+      success: true,
+      message: "Karyawan berhasil dihapus",
+    });
+  } catch (error) {
+    console.error(error);
+
+    return NextResponse.json(
+      { success: false, message: "Gagal menghapus karyawan" },
       { status: 500 },
     );
   }

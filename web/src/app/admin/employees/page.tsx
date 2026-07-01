@@ -120,6 +120,9 @@ export default function AdminEmployeesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [deletingEmployeeId, setDeletingEmployeeId] = useState<string | null>(
+    null,
+  );
   const [editingEmployeeId, setEditingEmployeeId] = useState<string | null>(
     null,
   );
@@ -416,6 +419,40 @@ export default function AdminEmployeesPage() {
     setEditingEmployeeId(null);
     setCameraError("");
     setForm(initialForm);
+  }
+
+  async function handleDeleteEmployee(employee: Employee) {
+    const shouldDelete = window.confirm(
+      `Hapus karyawan ${employee.name}? Aksi ini tidak bisa dibatalkan.`,
+    );
+
+    if (!shouldDelete) return;
+
+    try {
+      setDeletingEmployeeId(employee.id);
+
+      const response = await fetch("/api/employees", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: employee.id }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        alert(result.message || "Gagal menghapus karyawan.");
+        return;
+      }
+
+      alert("Karyawan berhasil dihapus.");
+      await loadEmployees();
+    } catch {
+      alert("Terjadi kesalahan saat menghapus karyawan.");
+    } finally {
+      setDeletingEmployeeId(null);
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -774,6 +811,18 @@ export default function AdminEmployeesPage() {
                       >
                         <Pencil size={12} />
                         Edit
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteEmployee(employee)}
+                        disabled={deletingEmployeeId === employee.id}
+                        className="mt-2 inline-flex items-center gap-1 rounded-lg border border-rose-100 bg-rose-50 px-2.5 py-1 text-[11px] font-black text-rose-700 disabled:opacity-50"
+                      >
+                        <Trash2 size={12} />
+                        {deletingEmployeeId === employee.id
+                          ? "Deleting..."
+                          : "Hapus"}
                       </button>
                     </div>
                   </div>

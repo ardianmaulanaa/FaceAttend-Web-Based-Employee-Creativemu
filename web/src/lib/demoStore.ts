@@ -296,6 +296,25 @@ export function updateDemoEmployee(
   return user;
 }
 
+export function removeDemoEmployee(userId: string) {
+  const targetIndex = demoUsers.findIndex((item) => item.id === userId);
+  if (targetIndex < 0) return false;
+
+  if (demoUsers[targetIndex].role === "admin") {
+    return false;
+  }
+
+  demoUsers.splice(targetIndex, 1);
+
+  for (const key of attendanceStore.keys()) {
+    if (key.startsWith(`${userId}-`)) {
+      attendanceStore.delete(key);
+    }
+  }
+
+  return true;
+}
+
 export function getDemoAttendanceForToday(employeeId: string) {
   const key = `${employeeId}-${getDateKey(new Date())}`;
   return attendanceStore.get(key);
