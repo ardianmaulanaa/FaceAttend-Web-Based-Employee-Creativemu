@@ -36,15 +36,27 @@ interface GeoPosition {
   longitude: number;
 }
 
+export interface PaymentCard {
+  id: string;
+  bankName: string;
+  cardHolderName: string;
+  accountNumber: string;
+  expiryMonth: string;
+  expiryYear: string;
+  cvc: string;
+}
+
 export interface PaymentProfile {
   accountHolderName: string;
   contactEmail: string;
   phoneNumber: string;
+  bankName: string;
   payoutLabel: string;
   accountNumber: string;
   expiryMonth: string;
   expiryYear: string;
   cvc: string;
+  cards: PaymentCard[];
 }
 
 export interface AppUser {
@@ -73,6 +85,12 @@ export interface AttendanceRecord {
   date: string;
   checkIn: string | null;
   checkOut: string | null;
+  checkInPhotoUrl?: string;
+  checkOutPhotoUrl?: string;
+  checkInLatitude?: number;
+  checkInLongitude?: number;
+  checkOutLatitude?: number;
+  checkOutLongitude?: number;
   status: AttendanceStatus;
   lateMinutes: number;
   notes: string;
@@ -223,11 +241,13 @@ const emptyPaymentProfile = (): PaymentProfile => ({
   accountHolderName: "",
   contactEmail: "",
   phoneNumber: "",
+  bankName: "",
   payoutLabel: "",
   accountNumber: "",
   expiryMonth: "",
   expiryYear: "",
   cvc: "",
+  cards: [],
 });
 
 const CATEGORY_RULES: Record<
@@ -265,6 +285,20 @@ const CATEGORY_RULES: Record<
     minimumLatePenalty: 6,
     creativityRewardPoints: 14,
   },
+};
+
+const DEPARTMENT_REWARD_MULTIPLIER: Record<string, number> = {
+  it: 1.2,
+  finance: 1.1,
+  marketing: 1.05,
+  operations: 1,
+  hr: 1,
+};
+
+const getDepartmentRewardPoint = (department: string, basePoint: number) => {
+  const multiplier =
+    DEPARTMENT_REWARD_MULTIPLIER[department.trim().toLowerCase()] ?? 1;
+  return Math.max(1, Math.round(basePoint * multiplier));
 };
 
 const buildInitialState = (): AppState => ({
@@ -328,11 +362,23 @@ const buildInitialState = (): AppState => ({
         accountHolderName: "Muhammad Ardian Maulana",
         contactEmail: "employee@company.com",
         phoneNumber: "081234567890",
+        bankName: "BCA",
         payoutLabel: "BCA Payroll",
-        accountNumber: "1234567890",
+        accountNumber: "1234567890123456",
         expiryMonth: "12",
         expiryYear: "2028",
         cvc: "321",
+        cards: [
+          {
+            id: "CARD-EMP001-1",
+            bankName: "BCA",
+            cardHolderName: "Muhammad Ardian Maulana",
+            accountNumber: "1234567890123456",
+            expiryMonth: "12",
+            expiryYear: "2028",
+            cvc: "321",
+          },
+        ],
       },
     },
     {
@@ -406,6 +452,12 @@ const buildInitialState = (): AppState => ({
       date: "2026-06-30",
       checkIn: "08:02",
       checkOut: "17:04",
+      checkInPhotoUrl: "",
+      checkOutPhotoUrl: "",
+      checkInLatitude: -6.9004,
+      checkInLongitude: 107.6207,
+      checkOutLatitude: -6.9001,
+      checkOutLongitude: 107.6202,
       status: "Present",
       lateMinutes: 2,
       notes: "Masuk tepat waktu setelah verifikasi wajah",
@@ -486,6 +538,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
           paymentProfile: {
             ...emptyPaymentProfile(),
             ...employee.paymentProfile,
+            cards: Array.isArray(employee.paymentProfile?.cards)
+              ? employee.paymentProfile.cards
+              : [],
           },
         });
         setState({
@@ -515,6 +570,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
           paymentProfile: {
             ...emptyPaymentProfile(),
             ...parsedAuth.paymentProfile,
+            cards: Array.isArray(parsedAuth.paymentProfile?.cards)
+              ? parsedAuth.paymentProfile.cards
+              : [],
           },
         });
       }
@@ -732,11 +790,32 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         ...prev,
         attendance: prev.attendance.map((record) => {
           if (record.id !== existing.id) return record;
+
+          const checkInUpdate =
+            type === "check-in"
+              ? {
+                  checkInPhotoUrl: imageDataUrl ?? record.checkInPhotoUrl,
+                  checkInLatitude: geo?.latitude ?? record.checkInLatitude,
+                  checkInLongitude: geo?.longitude ?? record.checkInLongitude,
+                }
+              : {};
+
+          const checkOutUpdate =
+            type === "check-out"
+              ? {
+                  checkOutPhotoUrl: imageDataUrl ?? record.checkOutPhotoUrl,
+                  checkOutLatitude: geo?.latitude ?? record.checkOutLatitude,
+                  checkOutLongitude: geo?.longitude ?? record.checkOutLongitude,
+                }
+              : {};
+
           nextRecord = {
             ...record,
             [type === "check-in" ? "checkIn" : "checkOut"]: now,
             status: type === "check-out" ? record.status : status,
             lateMinutes: type === "check-in" ? lateMinutes : record.lateMinutes,
+            ...checkInUpdate,
+            ...checkOutUpdate,
             notes: attendanceNoteWithGps,
           };
           return {
@@ -765,6 +844,12 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         date: today,
         checkIn: type === "check-in" ? now : null,
         checkOut: type === "check-out" ? now : null,
+        checkInPhotoUrl: type === "check-in" ? imageDataUrl : undefined,
+        checkOutPhotoUrl: type === "check-out" ? imageDataUrl : undefined,
+        checkInLatitude: type === "check-in" ? geo?.latitude : undefined,
+        checkInLongitude: type === "check-in" ? geo?.longitude : undefined,
+        checkOutLatitude: type === "check-out" ? geo?.latitude : undefined,
+        checkOutLongitude: type === "check-out" ? geo?.longitude : undefined,
         status: type === "check-in" && lateMinutes > 0 ? "Late" : "Present",
         lateMinutes: type === "check-in" ? lateMinutes : 0,
         notes: attendanceNoteWithGps,
@@ -790,10 +875,15 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     }
 
     if (type === "check-in" && lateMinutes === 0) {
+      const adjustedPoint = getDepartmentRewardPoint(
+        authUser.department,
+        employeeRules.onTimeRewardPoints,
+      );
+
       addReward(
         authUser.id,
         `Absensi Tepat Waktu • ${employeeRules.label}`,
-        employeeRules.onTimeRewardPoints,
+        adjustedPoint,
         `Reward absensi otomatis untuk kategori ${authUser.employeeCategory}`,
       );
     }
@@ -923,8 +1013,10 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       };
     }
 
-    const rewardPoints =
-      CATEGORY_RULES[authUser.employeeCategory].creativityRewardPoints;
+    const rewardPoints = getDepartmentRewardPoint(
+      authUser.department,
+      CATEGORY_RULES[authUser.employeeCategory].creativityRewardPoints,
+    );
     const createdAt = new Date().toISOString();
     const entry: CreativityEntry = {
       id: `CRT-${Date.now()}`,
@@ -1206,13 +1298,37 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       !payload.accountHolderName.trim() ||
       !payload.contactEmail.trim() ||
       !payload.phoneNumber.trim() ||
+      !payload.bankName.trim() ||
       !payload.payoutLabel.trim() ||
       !payload.accountNumber.trim()
     ) {
       return {
         success: false,
         message:
-          "Nama, email, no hp, label rekening, dan no rekening wajib diisi.",
+          "Nama, email, no hp, bank asal, label rekening, dan no rekening wajib diisi.",
+      };
+    }
+
+    const isValidPrimaryAccount = /^\d{16}$/.test(payload.accountNumber.trim());
+    if (!isValidPrimaryAccount) {
+      return {
+        success: false,
+        message: "No rekening utama harus tepat 16 digit angka.",
+      };
+    }
+
+    const hasInvalidCard = (payload.cards || []).some(
+      (card) =>
+        !card.bankName.trim() ||
+        !card.cardHolderName.trim() ||
+        !/^\d{16}$/.test(card.accountNumber.trim()),
+    );
+
+    if (hasInvalidCard) {
+      return {
+        success: false,
+        message:
+          "Semua kartu tambahan wajib punya bank asal, atas nama, dan no rekening 16 digit.",
       };
     }
 
@@ -1220,11 +1336,21 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       accountHolderName: payload.accountHolderName.trim(),
       contactEmail: payload.contactEmail.trim(),
       phoneNumber: payload.phoneNumber.trim(),
+      bankName: payload.bankName.trim(),
       payoutLabel: payload.payoutLabel.trim(),
       accountNumber: payload.accountNumber.trim(),
       expiryMonth: payload.expiryMonth.trim(),
       expiryYear: payload.expiryYear.trim(),
       cvc: payload.cvc.trim(),
+      cards: (payload.cards || []).map((card) => ({
+        id: card.id,
+        bankName: card.bankName.trim(),
+        cardHolderName: card.cardHolderName.trim(),
+        accountNumber: card.accountNumber.trim(),
+        expiryMonth: card.expiryMonth.trim(),
+        expiryYear: card.expiryYear.trim(),
+        cvc: card.cvc.trim(),
+      })),
     };
 
     setState((prev) => ({
@@ -1284,6 +1410,10 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     }
 
     const createdAt = new Date().toISOString();
+    const adjustedAmount = getDepartmentRewardPoint(
+      authUser.department,
+      payload.amount,
+    );
 
     setState((prev) => ({
       ...prev,
@@ -1292,7 +1422,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
           id: `RWD-${Date.now()}`,
           employeeId: authUser.id,
           title: payload.title,
-          amount: payload.amount,
+          amount: adjustedAmount,
           message: payload.message,
           createdAt,
         },
@@ -1302,7 +1432,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         employee.id === authUser.id
           ? {
               ...employee,
-              rewardPoints: employee.rewardPoints + payload.amount,
+              rewardPoints: employee.rewardPoints + adjustedAmount,
             }
           : employee,
       ),
@@ -1311,7 +1441,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
           id: `NOT-${Date.now()}`,
           employeeId: authUser.id,
           title: `Claim Reward • ${payload.title}`,
-          message: `${payload.message} (+${payload.amount} poin)`,
+          message: `${payload.message} (+${adjustedAmount} poin)`,
           createdAt,
           read: false,
         },
@@ -1321,7 +1451,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
     return {
       success: true,
-      message: `${payload.title} berhasil di-claim dan mendapat +${payload.amount} poin.`,
+      message: `${payload.title} berhasil di-claim dan mendapat +${adjustedAmount} poin (bidang ${authUser.department}).`,
     };
   };
 

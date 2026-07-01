@@ -86,6 +86,18 @@ export default function HomePage() {
     payoutProfile?.payoutLabel,
   );
 
+  const rewardTargetByCategory = {
+    tetap: 250,
+    freelance: 200,
+    pengajar: 220,
+  } as const;
+
+  const rewardTarget = rewardTargetByCategory[authUser.employeeCategory] ?? 250;
+  const rewardProgressPercent = Math.min(
+    100,
+    Math.round((authUser.rewardPoints / rewardTarget) * 100),
+  );
+
   const todayStats = [
     {
       label: "Check-in",
@@ -273,6 +285,9 @@ export default function HomePage() {
                   ? `Bulan ${payoutProfile.expiryMonth}`
                   : "Bulan belum diisi"}
               </p>
+              <p className="mt-1 text-xs font-semibold text-slate-500">
+                Bank: {payoutProfile?.bankName || "Belum diisi"}
+              </p>
             </div>
 
             <div className="rounded-2xl border border-amber-100 bg-amber-50/40 p-4">
@@ -286,6 +301,28 @@ export default function HomePage() {
                 {authUser.rewardPoints} poin •{" "}
                 {payoutReady ? "Siap" : "Belum lengkap"}
               </p>
+
+              <div className="mt-3">
+                <div className="mb-1 flex items-center justify-between text-[11px] font-bold text-amber-700">
+                  <span>Progress Poin</span>
+                  <span>{rewardProgressPercent}%</span>
+                </div>
+
+                <div className="h-2 w-full rounded-full bg-amber-100">
+                  <div
+                    className="h-2 rounded-full bg-amber-600 transition-all"
+                    style={{ width: `${rewardProgressPercent}%` }}
+                  />
+                </div>
+
+                <p className="mt-1 text-[11px] font-semibold text-slate-500">
+                  Target bidang {authUser.department}: {rewardTarget} poin
+                </p>
+
+                <p className="mt-1 text-[11px] font-semibold text-slate-500">
+                  Kartu tambahan: {payoutProfile?.cards?.length || 0}
+                </p>
+              </div>
             </div>
           </div>
         </div>

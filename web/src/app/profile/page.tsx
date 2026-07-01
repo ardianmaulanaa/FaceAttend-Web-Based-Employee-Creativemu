@@ -7,7 +7,9 @@ import {
   CalendarDays,
   CreditCard,
   Gift,
+  Landmark,
   Mail,
+  Plus,
   Phone,
   ShieldCheck,
   Sparkles,
@@ -24,11 +26,30 @@ export default function ProfilePage() {
   const { authUser, updatePaymentProfile, claimEmployeeReward } = useAppData();
   const [saveMessage, setSaveMessage] = useState("");
   const [claimMessage, setClaimMessage] = useState("");
+  const [cardMessage, setCardMessage] = useState("");
   const [form, setForm] = useState({
     accountHolderName: "",
     contactEmail: "",
     phoneNumber: "",
+    bankName: "",
     payoutLabel: "",
+    accountNumber: "",
+    expiryMonth: "",
+    expiryYear: "",
+    cvc: "",
+    cards: [] as Array<{
+      id: string;
+      bankName: string;
+      cardHolderName: string;
+      accountNumber: string;
+      expiryMonth: string;
+      expiryYear: string;
+      cvc: string;
+    }>,
+  });
+  const [cardForm, setCardForm] = useState({
+    bankName: "",
+    cardHolderName: "",
     accountNumber: "",
     expiryMonth: "",
     expiryYear: "",
@@ -46,11 +67,13 @@ export default function ProfilePage() {
         authUser.paymentProfile?.accountHolderName || authUser.name,
       contactEmail: authUser.paymentProfile?.contactEmail || authUser.email,
       phoneNumber: authUser.paymentProfile?.phoneNumber || "",
+      bankName: authUser.paymentProfile?.bankName || "",
       payoutLabel: authUser.paymentProfile?.payoutLabel || "",
       accountNumber: authUser.paymentProfile?.accountNumber || "",
       expiryMonth: authUser.paymentProfile?.expiryMonth || "",
       expiryYear: authUser.paymentProfile?.expiryYear || "",
       cvc: authUser.paymentProfile?.cvc || "",
+      cards: authUser.paymentProfile?.cards || [],
     });
   }, [authUser, router]);
 
@@ -80,8 +103,51 @@ export default function ProfilePage() {
   ];
 
   const handleSave = () => {
+    if (!/^\d{16}$/.test(form.accountNumber.trim())) {
+      setSaveMessage("No rekening utama harus 16 digit angka.");
+      return;
+    }
+
     const result = updatePaymentProfile(form);
     setSaveMessage(result.message);
+  };
+
+  const handleAddCard = () => {
+    if (
+      !cardForm.bankName.trim() ||
+      !cardForm.cardHolderName.trim() ||
+      !/^\d{16}$/.test(cardForm.accountNumber.trim())
+    ) {
+      setCardMessage(
+        "Isi bank asal, atas nama kartu, dan no rekening 16 digit untuk tambah kartu.",
+      );
+      return;
+    }
+
+    const newCard = {
+      id: `CARD-${Date.now()}`,
+      bankName: cardForm.bankName.trim(),
+      cardHolderName: cardForm.cardHolderName.trim(),
+      accountNumber: cardForm.accountNumber.trim(),
+      expiryMonth: cardForm.expiryMonth.trim(),
+      expiryYear: cardForm.expiryYear.trim(),
+      cvc: cardForm.cvc.trim(),
+    };
+
+    setForm((prev) => ({
+      ...prev,
+      cards: [newCard, ...prev.cards],
+    }));
+
+    setCardForm({
+      bankName: "",
+      cardHolderName: "",
+      accountNumber: "",
+      expiryMonth: "",
+      expiryYear: "",
+      cvc: "",
+    });
+    setCardMessage("Kartu baru berhasil ditambahkan ke daftar.");
   };
 
   const handleClaim = (reward: (typeof claimableRewards)[number]) => {
@@ -297,6 +363,30 @@ export default function ProfilePage() {
                   className="w-full rounded-2xl border border-amber-100 bg-amber-50/40 px-4 py-3 text-sm font-semibold text-slate-700 outline-none ring-amber-400 focus:ring-2"
                 />
               </div>
+
+              <div>
+                <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-amber-700">
+                  Bank Asal
+                </label>
+                <div className="relative">
+                  <Landmark
+                    size={18}
+                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-amber-700"
+                  />
+                  <input
+                    value={form.bankName}
+                    onChange={(event) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        bankName: event.target.value,
+                      }))
+                    }
+                    placeholder="Contoh: BCA, Mandiri, BNI"
+                    className="w-full rounded-2xl border border-amber-100 bg-amber-50/40 py-3 pl-11 pr-4 text-sm font-semibold text-slate-700 outline-none ring-amber-400 focus:ring-2"
+                  />
+                </div>
+              </div>
+
               <div className="md:col-span-2">
                 <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-amber-700">
                   No Rek
@@ -306,12 +396,17 @@ export default function ProfilePage() {
                   onChange={(event) =>
                     setForm((prev) => ({
                       ...prev,
-                      accountNumber: event.target.value,
+                      accountNumber: event.target.value
+                        .replace(/\D/g, "")
+                        .slice(0, 16),
                     }))
                   }
                   placeholder="No rekening / no kartu"
                   className="w-full rounded-2xl border border-amber-100 bg-amber-50/40 px-4 py-3 text-sm font-semibold text-slate-700 outline-none ring-amber-400 focus:ring-2"
                 />
+                <p className="mt-1 text-xs font-semibold text-slate-500">
+                  Format wajib 16 digit angka.
+                </p>
               </div>
               <div>
                 <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-amber-700">
@@ -370,6 +465,125 @@ export default function ProfilePage() {
               {saveMessage ||
                 "Data ini dipakai sebagai label rekening reward untuk bank lain atau kartu lain yang ingin digunakan karyawan."}
             </p>
+
+            <div className="mt-5 rounded-2xl border border-amber-100 bg-amber-50/30 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-black text-amber-700">
+                  Tambah Kartu Baru
+                </p>
+                <button
+                  type="button"
+                  onClick={handleAddCard}
+                  className="inline-flex items-center gap-2 rounded-xl bg-amber-600 px-3 py-2 text-xs font-black text-white"
+                >
+                  <Plus size={14} />
+                  Tambah Kartu
+                </button>
+              </div>
+
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                <input
+                  value={cardForm.bankName}
+                  onChange={(event) =>
+                    setCardForm((prev) => ({
+                      ...prev,
+                      bankName: event.target.value,
+                    }))
+                  }
+                  placeholder="Bank asal"
+                  className="rounded-2xl border border-amber-100 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none"
+                />
+
+                <input
+                  value={cardForm.cardHolderName}
+                  onChange={(event) =>
+                    setCardForm((prev) => ({
+                      ...prev,
+                      cardHolderName: event.target.value,
+                    }))
+                  }
+                  placeholder="Atas nama kartu"
+                  className="rounded-2xl border border-amber-100 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none"
+                />
+
+                <input
+                  value={cardForm.accountNumber}
+                  onChange={(event) =>
+                    setCardForm((prev) => ({
+                      ...prev,
+                      accountNumber: event.target.value
+                        .replace(/\D/g, "")
+                        .slice(0, 16),
+                    }))
+                  }
+                  placeholder="No rekening 16 digit"
+                  className="rounded-2xl border border-amber-100 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none"
+                />
+
+                <input
+                  value={cardForm.expiryMonth}
+                  onChange={(event) =>
+                    setCardForm((prev) => ({
+                      ...prev,
+                      expiryMonth: event.target.value,
+                    }))
+                  }
+                  placeholder="Bulan"
+                  className="rounded-2xl border border-amber-100 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none"
+                />
+
+                <input
+                  value={cardForm.expiryYear}
+                  onChange={(event) =>
+                    setCardForm((prev) => ({
+                      ...prev,
+                      expiryYear: event.target.value,
+                    }))
+                  }
+                  placeholder="Tahun"
+                  className="rounded-2xl border border-amber-100 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none"
+                />
+
+                <input
+                  value={cardForm.cvc}
+                  onChange={(event) =>
+                    setCardForm((prev) => ({
+                      ...prev,
+                      cvc: event.target.value,
+                    }))
+                  }
+                  placeholder="CVC"
+                  className="rounded-2xl border border-amber-100 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none"
+                />
+              </div>
+
+              <p className="mt-3 text-xs font-semibold text-slate-500">
+                {cardMessage ||
+                  "Kartu tambahan akan disimpan bersama data rekening utama."}
+              </p>
+
+              <div className="mt-3 space-y-2">
+                {form.cards.length === 0 && (
+                  <p className="text-xs font-semibold text-slate-500">
+                    Belum ada kartu tambahan.
+                  </p>
+                )}
+
+                {form.cards.map((card) => (
+                  <div
+                    key={card.id}
+                    className="rounded-xl border border-amber-100 bg-white px-3 py-2"
+                  >
+                    <p className="text-xs font-black text-slate-800">
+                      {card.bankName} • {card.cardHolderName}
+                    </p>
+                    <p className="text-xs font-semibold text-slate-500">
+                      {card.accountNumber}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div className="rounded-3xl border border-emerald-100 bg-emerald-50/60 p-5 shadow-lg shadow-emerald-100/50 md:p-6">

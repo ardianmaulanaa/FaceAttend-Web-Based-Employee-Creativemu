@@ -1,10 +1,20 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import {
+  ChangeEvent,
+  FormEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  Camera,
+  CameraOff,
   CheckCircle2,
   Clock3,
   FileImage,
+  RefreshCw,
   Send,
   ShieldCheck,
 } from "lucide-react";
@@ -13,49 +23,464 @@ import BottomNav from "@/components/BottomNav";
 import MobileShell from "@/components/MobileShell";
 import { useAppData } from "@/context/AppDataContext";
 
+type SessionUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  department: string | null;
+  city_id: string | null;
+  village_id: string | null;
+};
+
+type AttendanceDraft = {
+  attendanceType: "check-in" | "check-out";
+  evidenceName: string;
+  evidenceDataUrl?: string;
+  notes: string;
+  gps: {
+    latitude: number;
+    longitude: number;
+  } | null;
+};
+
+function getDraftStorageKey(userId: string) {
+  return `attendance-draft-${userId}`;
+}
+
 export default function AttendancePage() {
   const { authUser, markAttendance } = useAppData();
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const cameraStreamRef = useRef<MediaStream | null>(null);
+
   const [attendanceType, setAttendanceType] = useState<
     "check-in" | "check-out"
   >("check-in");
   const [evidenceName, setEvidenceName] = useState("");
+  const [evidenceDataUrl, setEvidenceDataUrl] = useState<string | undefined>();
+  const [gps, setGps] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  const [gpsStatus, setGpsStatus] = useState("GPS belum diambil.");
+  const [cameraPermissionGranted, setCameraPermissionGranted] = useState(false);
+  const [cameraOn, setCameraOn] = useState(false);
+  const [cameraFacingMode, setCameraFacingMode] = useState<
+    "user" | "environment"
+  >("user");
+  const [cameraStatus, setCameraStatus] = useState("Kamera belum diaktifkan.");
   const [notes, setNotes] = useState("");
   const [message, setMessage] = useState("Form absensi siap dikirim.");
+  const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
+  const [isLoadingSession, setIsLoadingSession] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasLoadedDraft, setHasLoadedDraft] = useState(false);
+
+  const effectiveUser = useMemo(() => {
+    if (sessionUser) {
+      return {
+        id: sessionUser.id,
+        name: sessionUser.name,
+        email: sessionUser.email,
+        department: sessionUser.department || "-",
+        cityId: sessionUser.city_id || "",
+        villageId: sessionUser.village_id || "",
+      };
+    }
+
+    if (authUser) {
+      return {
+        id: authUser.id,
+        name: authUser.name,
+        email: authUser.email,
+        department: authUser.department,
+        cityId: authUser.cityId,
+        villageId: authUser.villageId,
+      };
+    }
+
+    return null;
+  }, [sessionUser, authUser]);
 
   const submissionSummary = useMemo(() => {
-    if (!authUser) return "Belum login";
-    return `${authUser.name} • ${authUser.email} • ${authUser.department}`;
-  }, [authUser]);
+    if (!effectiveUser) return "Belum login";
+    return `${effectiveUser.name} • ${effectiveUser.email} • ${effectiveUser.department}`;
+  }, [effectiveUser]);
 
-  if (!authUser) return null;
+  const stopCamera = () => {
+    if (cameraStreamRef.current) {
+      cameraStreamRef.current.getTracks().forEach((track) => track.stop());
+      cameraStreamRef.current = null;
+    }
+
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+
+    setCameraOn(false);
+    setCameraStatus("Kamera dimatikan.");
+  };
+
+  const startCameraByMode = async (
+    targetFacingMode: "user" | "environment" = cameraFacingMode,
+  ) => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraStatus("Browser tidak mendukung akses kamera.");
+      return;
+    }
+
+    if (cameraStreamRef.current) {
+      cameraStreamRef.current.getTracks().forEach((track) => track.stop());
+      cameraStreamRef.current = null;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: targetFacingMode } },
+        audio: false,
+      });
+
+      cameraStreamRef.current = stream;
+      setCameraPermissionGranted(true);
+      setCameraOn(true);
+      setCameraFacingMode(targetFacingMode);
+      setCameraStatus(
+        `Kamera aktif (${targetFacingMode === "user" ? "depan" : "belakang"}). Ambil foto untuk bukti absensi.`,
+      );
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch {
+      setCameraPermissionGranted(false);
+      setCameraStatus("Izin kamera ditolak. Mohon izinkan kamera.");
+    }
+  };
+
+  const startCamera = async () => {
+    await startCameraByMode(cameraFacingMode);
+  };
+
+  const requestCameraPermission = async () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraStatus("Browser tidak mendukung akses kamera.");
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: cameraFacingMode } },
+        audio: false,
+      });
+
+      setCameraPermissionGranted(true);
+      setCameraStatus("Izin kamera berhasil diberikan.");
+      stream.getTracks().forEach((track) => track.stop());
+    } catch {
+      setCameraPermissionGranted(false);
+      setCameraStatus(
+        "Izin kamera gagal. Buka permission browser lalu izinkan.",
+      );
+    }
+  };
+
+  const captureFromCamera = () => {
+    if (!videoRef.current || !canvasRef.current || !cameraOn) {
+      setMessage("Nyalakan kamera dulu sebelum ambil foto.");
+      return;
+    }
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const context = canvas.getContext("2d");
+
+    if (!context) {
+      setMessage("Gagal memproses foto dari kamera.");
+      return;
+    }
+
+    const width = video.videoWidth || 640;
+    const height = video.videoHeight || 480;
+
+    canvas.width = width;
+    canvas.height = height;
+    context.drawImage(video, 0, 0, width, height);
+
+    const capturedDataUrl = canvas.toDataURL("image/jpeg", 0.9);
+    const fileName = `kamera-${attendanceType}-${Date.now()}.jpg`;
+
+    setEvidenceDataUrl(capturedDataUrl);
+    setEvidenceName(fileName);
+    setMessage("Foto dari kamera berhasil diambil.");
+  };
+
+  const handleSwitchCamera = async () => {
+    const nextFacingMode = cameraFacingMode === "user" ? "environment" : "user";
+
+    if (!cameraOn) {
+      setCameraFacingMode(nextFacingMode);
+      setCameraStatus(
+        `Mode kamera diubah ke ${nextFacingMode === "user" ? "depan" : "belakang"}. Nyalakan kamera untuk mulai.`,
+      );
+      return;
+    }
+
+    await startCameraByMode(nextFacingMode);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (cameraStreamRef.current) {
+        cameraStreamRef.current.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadSessionUser() {
+      try {
+        const response = await fetch("/api/auth/me", {
+          method: "GET",
+          cache: "no-store",
+        });
+        const result = await response.json();
+
+        if (!active) return;
+
+        if (response.ok && result.user) {
+          setSessionUser(result.user as SessionUser);
+        } else {
+          setSessionUser(null);
+        }
+      } catch {
+        if (active) {
+          setSessionUser(null);
+        }
+      } finally {
+        if (active) {
+          setIsLoadingSession(false);
+        }
+      }
+    }
+
+    void loadSessionUser();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!effectiveUser || hasLoadedDraft) return;
+
+    try {
+      const rawDraft = window.localStorage.getItem(
+        getDraftStorageKey(effectiveUser.id),
+      );
+
+      if (!rawDraft) {
+        setHasLoadedDraft(true);
+        return;
+      }
+
+      const draft = JSON.parse(rawDraft) as AttendanceDraft;
+
+      setAttendanceType(draft.attendanceType || "check-in");
+      setEvidenceName(draft.evidenceName || "");
+      setEvidenceDataUrl(draft.evidenceDataUrl);
+      setNotes(draft.notes || "");
+      setGps(draft.gps ?? null);
+
+      if (draft.gps) {
+        setGpsStatus(
+          `GPS dipulihkan dari draft (${draft.gps.latitude}, ${draft.gps.longitude})`,
+        );
+      }
+
+      if (draft.evidenceDataUrl) {
+        setMessage("Draft terakhir dipulihkan otomatis.");
+      }
+    } catch {
+      // Ignore invalid local draft payload.
+    } finally {
+      setHasLoadedDraft(true);
+    }
+  }, [effectiveUser, hasLoadedDraft]);
+
+  useEffect(() => {
+    if (!effectiveUser || !hasLoadedDraft) return;
+
+    const draft: AttendanceDraft = {
+      attendanceType,
+      evidenceName,
+      evidenceDataUrl,
+      notes,
+      gps,
+    };
+
+    window.localStorage.setItem(
+      getDraftStorageKey(effectiveUser.id),
+      JSON.stringify(draft),
+    );
+  }, [
+    effectiveUser,
+    hasLoadedDraft,
+    attendanceType,
+    evidenceName,
+    evidenceDataUrl,
+    notes,
+    gps,
+  ]);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     setEvidenceName(file?.name ?? "");
+
+    if (!file) {
+      setEvidenceDataUrl(undefined);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result === "string") {
+        setEvidenceDataUrl(result);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleGetGps = () => {
+    if (!navigator.geolocation) {
+      setGpsStatus("Browser tidak mendukung geolocation.");
+      return;
+    }
+
+    setGpsStatus("Mengambil GPS...");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const latitude = Number(position.coords.latitude.toFixed(6));
+        const longitude = Number(position.coords.longitude.toFixed(6));
+        setGps({ latitude, longitude });
+        setGpsStatus(`GPS tersimpan (${latitude}, ${longitude})`);
+      },
+      () => {
+        setGpsStatus("Gagal mengambil GPS. Mohon izinkan lokasi.");
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 12000,
+      },
+    );
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const result = markAttendance(attendanceType, {
-      location: {
-        cityId: authUser.cityId,
-        villageId: authUser.villageId,
-      },
-      imageDataUrl: evidenceName
-        ? `evidence:${evidenceName};note:${notes}`
-        : undefined,
-    });
+    if (!effectiveUser) {
+      setMessage("Silakan login ulang lalu kirim absensi.");
+      return;
+    }
 
-    setMessage(result.message);
+    if (!evidenceDataUrl) {
+      setMessage("Upload/ambil foto wajib sebelum submit absensi.");
+      return;
+    }
+
+    if (!gps) {
+      setMessage("Ambil GPS lokasi terlebih dahulu.");
+      return;
+    }
+
+    if (!effectiveUser.cityId || !effectiveUser.villageId) {
+      setMessage("Lokasi kerja user belum lengkap. Hubungi admin.");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      const endpoint =
+        attendanceType === "check-in"
+          ? "/api/attendance/check-in"
+          : "/api/attendance/check-out";
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          imageDataUrl: evidenceDataUrl,
+          latitude: gps.latitude,
+          longitude: gps.longitude,
+          notes,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setMessage(result.message || "Gagal menyimpan absensi.");
+        return;
+      }
+
+      if (authUser?.id === effectiveUser.id) {
+        markAttendance(attendanceType, {
+          location: {
+            cityId: effectiveUser.cityId,
+            villageId: effectiveUser.villageId,
+          },
+          geo: gps,
+          imageDataUrl: evidenceDataUrl,
+        });
+      }
+
+      window.localStorage.removeItem(getDraftStorageKey(effectiveUser.id));
+      setEvidenceName("");
+      setEvidenceDataUrl(undefined);
+      setNotes("");
+      setGps(null);
+      setGpsStatus("GPS belum diambil.");
+
+      setMessage(result.message || "Absensi berhasil disimpan.");
+    } catch {
+      setMessage("Terjadi kesalahan saat mengirim absensi.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  if (isLoadingSession) {
+    return (
+      <MobileShell variant="employee">
+        <AppHeader
+          title="Attendance Form"
+          subtitle="Formulir absensi dengan bukti foto dan catatan"
+          rightLabel="..."
+        />
+        <section className="mx-auto max-w-7xl px-5 py-6 md:px-10 lg:px-16">
+          <div className="rounded-2xl border border-blue-100 bg-white p-6 text-sm font-semibold text-slate-600">
+            Memuat data user...
+          </div>
+        </section>
+        <BottomNav />
+      </MobileShell>
+    );
+  }
+
+  if (!effectiveUser) return null;
 
   return (
     <MobileShell variant="employee">
       <AppHeader
         title="Attendance Form"
         subtitle="Formulir absensi dengan bukti foto dan catatan"
-        rightLabel={authUser.id}
+        rightLabel={effectiveUser.id}
       />
 
       <section className="mx-auto grid max-w-7xl gap-6 px-5 py-6 md:px-10 lg:grid-cols-[0.95fr_1.05fr] lg:px-16">
@@ -149,9 +574,114 @@ export default function AttendancePage() {
                 <input
                   type="file"
                   accept="image/*"
+                  capture="user"
                   onChange={handleFileChange}
                   className="w-full rounded-2xl border border-blue-100 bg-white px-4 py-3 text-sm font-bold text-slate-700 outline-none"
                 />
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-blue-100 bg-[#f6f8ff] p-4">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-[11px] font-black text-[#123c8c]">
+                <span>Mode Kamera:</span>
+                <span>
+                  {cameraFacingMode === "user" ? "Depan" : "Belakang"}
+                </span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    void requestCameraPermission();
+                  }}
+                  className="rounded-xl bg-slate-700 px-4 py-2 text-xs font-black text-white"
+                >
+                  Izin Buka Kamera
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    void startCamera();
+                  }}
+                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-black text-white"
+                >
+                  <Camera size={14} />
+                  ON Camera
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    stopCamera();
+                  }}
+                  className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2 text-xs font-black text-white"
+                >
+                  <CameraOff size={14} />
+                  OFF Camera
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    void handleSwitchCamera();
+                  }}
+                  className="inline-flex items-center gap-2 rounded-xl bg-amber-600 px-4 py-2 text-xs font-black text-white"
+                >
+                  <RefreshCw size={14} />
+                  {cameraFacingMode === "user"
+                    ? "Switch ke Belakang"
+                    : "Switch ke Depan"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    captureFromCamera();
+                  }}
+                  className="rounded-xl bg-[#123c8c] px-4 py-2 text-xs font-black text-white"
+                >
+                  Take Photo
+                </button>
+              </div>
+
+              <p className="mt-3 text-xs font-semibold text-slate-600">
+                {cameraStatus}
+              </p>
+
+              <div className="mt-3 overflow-hidden rounded-2xl border border-blue-100 bg-black/80">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="h-52 w-full object-cover"
+                />
+              </div>
+
+              {!cameraPermissionGranted && (
+                <p className="mt-2 text-xs font-semibold text-rose-600">
+                  Izin kamera belum aktif. Tekan tombol &quot;Izin Buka
+                  Kamera&quot;.
+                </p>
+              )}
+
+              <canvas ref={canvasRef} className="hidden" />
+            </div>
+
+            <div className="rounded-2xl border border-blue-100 bg-[#f6f8ff] p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm font-semibold text-slate-600">
+                  {gpsStatus}
+                </p>
+                <button
+                  type="button"
+                  onClick={handleGetGps}
+                  className="rounded-xl bg-[#123c8c] px-4 py-2 text-xs font-black text-white"
+                >
+                  Ambil GPS Lokasi
+                </button>
               </div>
             </div>
 
@@ -169,9 +699,10 @@ export default function AttendancePage() {
 
             <button
               type="submit"
-              className="w-full rounded-2xl bg-[#123c8c] px-5 py-4 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition active:scale-[0.98]"
+              disabled={isSubmitting}
+              className="w-full rounded-2xl bg-[#123c8c] px-5 py-4 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Kirim Form Absensi
+              {isSubmitting ? "Menyimpan..." : "Kirim Form Absensi"}
             </button>
           </form>
 

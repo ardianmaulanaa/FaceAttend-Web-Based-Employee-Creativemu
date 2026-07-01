@@ -7,6 +7,7 @@ import {
   Building2,
   KeyRound,
   Mail,
+  Phone,
   Plus,
   Search,
   ShieldCheck,
@@ -36,6 +37,8 @@ type EmployeeForm = {
   email: string;
   department: string;
   position: string;
+  phone: string;
+  role: "admin" | "employee";
   temporaryPassword: string;
   status: "active" | "inactive";
 };
@@ -45,6 +48,8 @@ const initialForm: EmployeeForm = {
   email: "",
   department: "",
   position: "",
+  phone: "",
+  role: "employee",
   temporaryPassword: "",
   status: "active",
 };
@@ -138,6 +143,8 @@ export default function AdminEmployeesPage() {
         ${employee.email}
         ${employee.department || ""}
         ${employee.position || ""}
+        ${employee.phone || ""}
+        ${employee.role}
         ${employee.status}
       `.toLowerCase();
 
@@ -196,6 +203,8 @@ export default function AdminEmployeesPage() {
           temporaryPassword: form.temporaryPassword,
           department: form.department,
           position: form.position,
+          phone: form.phone,
+          role: form.role,
           status: form.status,
         }),
       });
@@ -348,9 +357,11 @@ export default function AdminEmployeesPage() {
           </div>
 
           <div className="mt-5 overflow-hidden rounded-3xl border border-blue-100">
-            <div className="hidden grid-cols-[1fr_1.2fr_1fr_1fr_0.7fr] bg-[#f6f8ff] px-5 py-4 text-xs font-black uppercase tracking-[0.16em] text-[#123c8c] md:grid">
+            <div className="hidden grid-cols-[1fr_1.2fr_0.9fr_0.9fr_1fr_0.9fr_0.9fr] bg-[#f6f8ff] px-5 py-4 text-xs font-black uppercase tracking-[0.16em] text-[#123c8c] md:grid">
               <p>Employee</p>
               <p>Email</p>
+              <p>Phone</p>
+              <p>Role</p>
               <p>Department</p>
               <p>Position</p>
               <p>Status</p>
@@ -369,7 +380,7 @@ export default function AdminEmployeesPage() {
                 filteredEmployees.map((employee) => (
                   <div
                     key={employee.id}
-                    className="grid gap-4 px-5 py-5 transition hover:bg-[#f8fbff] md:grid-cols-[1fr_1.2fr_1fr_1fr_0.7fr] md:items-center"
+                    className="grid gap-4 px-5 py-5 transition hover:bg-[#f8fbff] md:grid-cols-[1fr_1.2fr_0.9fr_0.9fr_1fr_0.9fr_0.9fr] md:items-center"
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#eaf1ff] text-sm font-black text-[#123c8c]">
@@ -390,6 +401,14 @@ export default function AdminEmployeesPage() {
 
                     <p className="text-sm font-semibold text-slate-600">
                       {employee.email}
+                    </p>
+
+                    <p className="text-sm font-semibold text-slate-600">
+                      {employee.phone || "-"}
+                    </p>
+
+                    <p className="text-sm font-semibold text-slate-600">
+                      {employee.role}
                     </p>
 
                     <p className="text-sm font-semibold text-slate-600">
@@ -552,9 +571,32 @@ export default function AdminEmployeesPage() {
                     />
                   </div>
                 </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-black text-slate-700">
+                    Phone
+                  </label>
+                  <div className="relative">
+                    <Phone
+                      size={18}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+                    <input
+                      value={form.phone}
+                      onChange={(event) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          phone: event.target.value,
+                        }))
+                      }
+                      placeholder="08xxxxxxxxxx"
+                      className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white"
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-3">
                 <div>
                   <label className="mb-2 block text-sm font-black text-slate-700">
                     Temporary Password
@@ -577,6 +619,25 @@ export default function AdminEmployeesPage() {
                       className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-black text-slate-700">
+                    Role
+                  </label>
+                  <select
+                    value={form.role}
+                    onChange={(event) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        role: event.target.value as "admin" | "employee",
+                      }))
+                    }
+                    className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white"
+                  >
+                    <option value="employee">Employee</option>
+                    <option value="admin">Admin</option>
+                  </select>
                 </div>
 
                 <div>

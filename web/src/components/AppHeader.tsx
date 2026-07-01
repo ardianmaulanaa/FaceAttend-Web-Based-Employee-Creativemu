@@ -14,6 +14,7 @@ type AppHeaderProps = {
 const employeeNav = [
   { href: "/home", label: "Home" },
   { href: "/attendance", label: "Attendance" },
+  { href: "/salary", label: "Salary" },
   { href: "/history", label: "History" },
   { href: "/profile", label: "Profile" },
 ];
@@ -21,6 +22,7 @@ const employeeNav = [
 const adminNav = [
   { href: "/admin/dashboard", label: "Dashboard" },
   { href: "/admin/employees", label: "Employees" },
+  { href: "/admin/salary", label: "Salary" },
   { href: "/admin/reports", label: "Reports" },
 ];
 

@@ -37,6 +37,30 @@ model User {
   cvc                  String?  @db.VarChar(10)
   must_change_password Boolean  @default(true)
   created_at           DateTime @default(now())
+  attendances          Attendance[]
 
   @@map("users")
+}
+
+model Attendance {
+  id                  String    @id @default(uuid()) @db.Char(36)
+  employee_id         String    @db.Char(36)
+  attendance_date     DateTime  @db.Date
+  check_in_time       DateTime? @db.DateTime(3)
+  check_out_time      DateTime? @db.DateTime(3)
+  check_in_photo_url  String?   @db.LongText
+  check_out_photo_url String?   @db.LongText
+  check_in_latitude   Decimal?  @db.Decimal(10, 6)
+  check_in_longitude  Decimal?  @db.Decimal(10, 6)
+  check_out_latitude  Decimal?  @db.Decimal(10, 6)
+  check_out_longitude Decimal?  @db.Decimal(10, 6)
+  notes               String?   @db.VarChar(255)
+  created_at          DateTime  @default(now()) @db.DateTime(3)
+  updated_at          DateTime  @updatedAt @db.DateTime(3)
+
+  employee User @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+
+  @@unique([employee_id, attendance_date])
+  @@index([attendance_date])
+  @@map("attendances")
 }

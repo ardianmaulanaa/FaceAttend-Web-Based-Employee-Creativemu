@@ -5,10 +5,10 @@ import { usePathname } from "next/navigation";
 import {
   Home,
   ClipboardList,
-  History,
   UserRound,
   LayoutDashboard,
   UsersRound,
+  Wallet,
   LogOut,
 } from "lucide-react";
 
@@ -19,7 +19,7 @@ type BottomNavProps = {
 const employeeMenus = [
   { href: "/home", label: "Home", icon: Home },
   { href: "/attendance", label: "Attend", icon: ClipboardList },
-  { href: "/history", label: "History", icon: History },
+  { href: "/salary", label: "Salary", icon: Wallet },
   { href: "/profile", label: "Profile", icon: UserRound },
   { href: "/login", label: "Logout", icon: LogOut },
 ];
@@ -27,6 +27,7 @@ const employeeMenus = [
 const adminMenus = [
   { href: "/admin/dashboard", label: "Dash", icon: LayoutDashboard },
   { href: "/admin/employees", label: "Staff", icon: UsersRound },
+  { href: "/admin/salary", label: "Salary", icon: Wallet },
   { href: "/admin/reports", label: "Reports", icon: ClipboardList },
   { href: "/login", label: "Logout", icon: LogOut },
 ];

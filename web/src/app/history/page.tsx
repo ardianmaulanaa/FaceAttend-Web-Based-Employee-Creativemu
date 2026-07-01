@@ -1,36 +1,26 @@
-import { CalendarDays, Clock3 } from "lucide-react";
+"use client";
+
+import { CalendarDays, Clock3, MapPin } from "lucide-react";
+import { useMemo } from "react";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import MobileShell from "@/components/MobileShell";
-
-const histories = [
-  {
-    date: "Senin, 29 Juni 2026",
-    checkIn: "08:02",
-    checkOut: "17:04",
-    status: "Present",
-  },
-  {
-    date: "Jumat, 26 Juni 2026",
-    checkIn: "08:21",
-    checkOut: "17:10",
-    status: "Late",
-  },
-  {
-    date: "Kamis, 25 Juni 2026",
-    checkIn: "07:58",
-    checkOut: "17:00",
-    status: "Present",
-  },
-];
+import { useAppData } from "@/context/AppDataContext";
 
 export default function HistoryPage() {
+  const { authUser, state } = useAppData();
+
+  const histories = useMemo(() => {
+    if (!authUser) return [];
+    return state.attendance.filter((item) => item.employeeId === authUser.id);
+  }, [authUser, state.attendance]);
+
   return (
     <MobileShell variant="employee">
       <AppHeader
         title="History"
         subtitle="Riwayat absensi karyawan"
-        rightLabel="EMP001"
+        rightLabel={authUser?.id || "EMP"}
       />
 
       <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 md:px-10 lg:px-16">
@@ -52,14 +42,14 @@ export default function HistoryPage() {
 
           <p className="mt-5 max-w-2xl text-sm leading-7 text-blue-100">
             Pantau riwayat check-in dan check-out yang sudah tercatat pada
-            sistem absensi.
+            sistem absensi, termasuk bukti foto dan GPS.
           </p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {histories.map((item) => (
             <div
-              key={item.date}
+              key={item.id}
               className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl"
             >
               <div className="flex items-start justify-between gap-4">
@@ -88,11 +78,9 @@ export default function HistoryPage() {
                 <div className="flex items-center gap-3 rounded-2xl bg-[#f6f8ff] p-4">
                   <Clock3 size={21} className="text-[#123c8c]" />
                   <div>
-                    <p className="text-xs font-bold text-slate-500">
-                      Check-in
-                    </p>
+                    <p className="text-xs font-bold text-slate-500">Check-in</p>
                     <p className="text-sm font-black text-slate-950">
-                      {item.checkIn}
+                      {item.checkIn || "-"}
                     </p>
                   </div>
                 </div>
@@ -104,13 +92,75 @@ export default function HistoryPage() {
                       Check-out
                     </p>
                     <p className="text-sm font-black text-slate-950">
-                      {item.checkOut}
+                      {item.checkOut || "-"}
                     </p>
                   </div>
                 </div>
+
+                <div className="rounded-2xl bg-[#f6f8ff] p-4">
+                  <div className="mb-2 flex items-center gap-2 text-[#123c8c]">
+                    <MapPin size={18} />
+                    <p className="text-xs font-black uppercase tracking-[0.18em]">
+                      GPS
+                    </p>
+                  </div>
+
+                  <p className="text-xs font-semibold text-slate-600">
+                    Check-in: {item.checkInLatitude ?? "-"},{" "}
+                    {item.checkInLongitude ?? "-"}
+                  </p>
+                  <p className="mt-1 text-xs font-semibold text-slate-600">
+                    Check-out: {item.checkOutLatitude ?? "-"},{" "}
+                    {item.checkOutLongitude ?? "-"}
+                  </p>
+                </div>
+
+                {(item.checkInPhotoUrl || item.checkOutPhotoUrl) && (
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="rounded-2xl bg-[#f6f8ff] p-3">
+                      <p className="mb-2 text-xs font-bold text-slate-500">
+                        Foto Check-in
+                      </p>
+                      {item.checkInPhotoUrl ? (
+                        <img
+                          src={item.checkInPhotoUrl}
+                          alt="Foto check-in"
+                          className="h-28 w-full rounded-xl object-cover"
+                        />
+                      ) : (
+                        <p className="text-xs font-semibold text-slate-500">
+                          Belum ada foto
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="rounded-2xl bg-[#f6f8ff] p-3">
+                      <p className="mb-2 text-xs font-bold text-slate-500">
+                        Foto Check-out
+                      </p>
+                      {item.checkOutPhotoUrl ? (
+                        <img
+                          src={item.checkOutPhotoUrl}
+                          alt="Foto check-out"
+                          className="h-28 w-full rounded-xl object-cover"
+                        />
+                      ) : (
+                        <p className="text-xs font-semibold text-slate-500">
+                          Belum ada foto
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ))}
+
+          {histories.length === 0 && (
+            <div className="rounded-3xl border border-white/70 bg-white/90 p-6 text-sm font-semibold text-slate-500 shadow-xl shadow-slate-300/30 backdrop-blur-xl">
+              Belum ada riwayat absensi.
+            </div>
+          )}
         </div>
       </section>
 
