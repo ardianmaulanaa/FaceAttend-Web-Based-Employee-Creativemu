@@ -1,8 +1,9 @@
 PENGUMUMAN JADWAL JULI 2026
 
-1. Presensi onsite wajib check-in/check-out dalam radius lokasi utama.
+1. Presensi WFA/onsite wajib check-in/check-out dalam radius lokasi utama Creativemu.
 2. Mode WFH tersedia untuk pekerjaan remote dengan bukti foto.
-3. Pengajuan cuti/sakit wajib lampirkan surat.
+3. Pengajuan cuti/sakit wajib lampirkan surat melalui menu Attendance.
+4. Template surat cuti dan surat sakit tersedia di menu Pengumuman.
 
 HRD Creativemu
 01 Juli 2026

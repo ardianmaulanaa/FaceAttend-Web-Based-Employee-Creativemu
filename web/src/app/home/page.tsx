@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
   CalendarCheck,
@@ -9,6 +9,8 @@ import {
   CreditCard,
   FileImage,
   History,
+  MapPin,
+  Megaphone,
   ShieldCheck,
   UserRound,
 } from "lucide-react";
@@ -17,6 +19,13 @@ import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import MobileShell from "@/components/MobileShell";
 import { useAppData } from "@/context/AppDataContext";
+
+type SessionUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: "admin" | "employee";
+};
 
 const todayStats = [
   {
@@ -59,27 +68,132 @@ const quickActions = [
     description: "Lihat informasi akun dan status registrasi wajah.",
     icon: UserRound,
   },
+  {
+    href: "/attendance?mode=cuti",
+    title: "Surat Cuti / Sakit",
+    description: "Ajukan cuti/sakit dengan lampiran surat langsung dari form.",
+    icon: FileImage,
+  },
+  {
+    href: "/announcements",
+    title: "Pengumuman",
+    description: "Baca info lokasi WFA/WFH, kebijakan, dan template surat.",
+    icon: Megaphone,
+  },
 ];
+
+const workModeLabel: Record<string, string> = {
+  onsite: "WFA / Onsite",
+  wfh: "WFH",
+  cuti: "Cuti / Sakit",
+};
 
 export default function HomePage() {
   const router = useRouter();
   const { authUser, state } = useAppData();
+  const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
+  const [isLoadingSession, setIsLoadingSession] = useState(true);
 
   useEffect(() => {
-    if (!authUser) {
+    let active = true;
+
+    async function loadSessionUser() {
+      try {
+        const response = await fetch("/api/auth/me", {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        const result = await response.json();
+
+        if (!active) return;
+
+        if (response.ok && result.user && result.user.role === "employee") {
+          setSessionUser(result.user as SessionUser);
+        } else {
+          setSessionUser(null);
+        }
+      } catch {
+        if (active) {
+          setSessionUser(null);
+        }
+      } finally {
+        if (active) {
+          setIsLoadingSession(false);
+        }
+      }
+    }
+
+    void loadSessionUser();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const effectiveUser = useMemo(() => {
+    if (authUser?.role === "employee") {
+      return authUser;
+    }
+
+    if (!sessionUser) {
+      return null;
+    }
+
+    const localEmployee = state.employees.find(
+      (employee) =>
+        employee.role === "employee" &&
+        employee.email.toLowerCase() === sessionUser.email.toLowerCase(),
+    );
+
+    return localEmployee || null;
+  }, [authUser, sessionUser, state.employees]);
+
+  useEffect(() => {
+    if (!isLoadingSession && !effectiveUser) {
       router.replace("/login");
     }
-  }, [authUser, router]);
+  }, [effectiveUser, isLoadingSession, router]);
 
-  if (!authUser) return null;
+  if (isLoadingSession) {
+    return (
+      <MobileShell variant="employee">
+        <AppHeader
+          title="Good Morning"
+          subtitle="Memuat data user..."
+          rightLabel="..."
+        />
+        <section className="mx-auto max-w-7xl px-5 py-6 md:px-10 lg:px-16">
+          <div className="rounded-2xl border border-blue-100 bg-white p-6 text-sm font-semibold text-slate-600">
+            Memuat data user...
+          </div>
+        </section>
+        <BottomNav />
+      </MobileShell>
+    );
+  }
+
+  if (!effectiveUser) return null;
 
   const todayAttendance = state.attendance.find(
     (record) =>
-      record.employeeId === authUser.id &&
+      record.employeeId === effectiveUser.id &&
       record.date === new Date().toISOString().slice(0, 10),
   );
 
-  const payoutProfile = authUser.paymentProfile;
+  const payoutProfile = effectiveUser.paymentProfile;
+  const assignedCity = state.cities.find(
+    (city) => city.id === effectiveUser.cityId,
+  );
+  const assignedVillage = state.villages.find(
+    (village) => village.id === effectiveUser.villageId,
+  );
+  const todayMode = todayAttendance?.workMode || "onsite";
+  const todayLocationLabel =
+    todayAttendance?.workLocationName ||
+    (assignedVillage && assignedCity
+      ? `${assignedVillage.name}, ${assignedCity.name}`
+      : "Lokasi belum diset");
   const payoutReady = Boolean(
     payoutProfile?.accountHolderName &&
     payoutProfile?.accountNumber &&
@@ -92,10 +206,11 @@ export default function HomePage() {
     pengajar: 220,
   } as const;
 
-  const rewardTarget = rewardTargetByCategory[authUser.employeeCategory] ?? 250;
+  const rewardTarget =
+    rewardTargetByCategory[effectiveUser.employeeCategory] ?? 250;
   const rewardProgressPercent = Math.min(
     100,
-    Math.round((authUser.rewardPoints / rewardTarget) * 100),
+    Math.round((effectiveUser.rewardPoints / rewardTarget) * 100),
   );
 
   const todayStats = [
@@ -132,8 +247,8 @@ export default function HomePage() {
     <MobileShell variant="employee">
       <AppHeader
         title="Good Morning"
-        subtitle={authUser.name}
-        rightLabel={authUser.id}
+        subtitle={effectiveUser.name}
+        rightLabel={effectiveUser.id}
       />
 
       <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 md:px-10 lg:px-16">
@@ -222,6 +337,23 @@ export default function HomePage() {
                   </div>
                 );
               })}
+
+              <div className="rounded-2xl border border-blue-100 bg-[#f6f8ff] p-4">
+                <div className="mb-2 flex items-center gap-2 text-[#123c8c]">
+                  <MapPin size={18} strokeWidth={2.4} />
+                  <p className="text-xs font-black uppercase tracking-[0.18em]">
+                    Lokasi & Mode
+                  </p>
+                </div>
+
+                <p className="text-sm font-black text-slate-950">
+                  {todayLocationLabel}
+                </p>
+
+                <p className="mt-1 text-xs font-semibold text-slate-500">
+                  Mode hari ini: {workModeLabel[todayMode] || "WFA / Onsite"}
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -266,7 +398,7 @@ export default function HomePage() {
                 Email / No HP
               </p>
               <p className="mt-2 text-sm font-black text-slate-950">
-                {payoutProfile?.contactEmail || authUser.email}
+                {payoutProfile?.contactEmail || effectiveUser.email}
               </p>
               <p className="mt-1 text-xs font-semibold text-slate-500">
                 {payoutProfile?.phoneNumber || "No HP belum diisi"}
@@ -298,7 +430,7 @@ export default function HomePage() {
                 {payoutProfile?.accountNumber || "No rek belum diisi"}
               </p>
               <p className="mt-1 text-xs font-semibold text-slate-500">
-                {authUser.rewardPoints} poin •{" "}
+                {effectiveUser.rewardPoints} poin •{" "}
                 {payoutReady ? "Siap" : "Belum lengkap"}
               </p>
 
@@ -316,7 +448,7 @@ export default function HomePage() {
                 </div>
 
                 <p className="mt-1 text-[11px] font-semibold text-slate-500">
-                  Target bidang {authUser.department}: {rewardTarget} poin
+                  Target bidang {effectiveUser.department}: {rewardTarget} poin
                 </p>
 
                 <p className="mt-1 text-[11px] font-semibold text-slate-500">
@@ -344,7 +476,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
+          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             {quickActions.map((menu) => {
               const Icon = menu.icon;
 

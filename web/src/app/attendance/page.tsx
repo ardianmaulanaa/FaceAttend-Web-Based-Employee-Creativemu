@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Camera,
   CameraOff,
@@ -54,6 +55,7 @@ function getDraftStorageKey(userId: string) {
 
 export default function AttendancePage() {
   const { authUser, markAttendance } = useAppData();
+  const searchParams = useSearchParams();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const cameraStreamRef = useRef<MediaStream | null>(null);
@@ -86,6 +88,7 @@ export default function AttendancePage() {
   const [isLoadingSession, setIsLoadingSession] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasLoadedDraft, setHasLoadedDraft] = useState(false);
+  const [hasAppliedQueryPreset, setHasAppliedQueryPreset] = useState(false);
 
   const effectiveUser = useMemo(() => {
     if (sessionUser) {
@@ -325,6 +328,30 @@ export default function AttendancePage() {
   }, [effectiveUser, hasLoadedDraft]);
 
   useEffect(() => {
+    if (!hasLoadedDraft || hasAppliedQueryPreset) return;
+
+    const mode = searchParams.get("mode");
+    const leave = searchParams.get("leave");
+
+    if (mode === "cuti" || mode === "wfh" || mode === "onsite") {
+      setWorkMode(mode);
+      if (mode === "cuti") {
+        setAttendanceType("check-in");
+      }
+    }
+
+    if (leave === "cuti" || leave === "sakit") {
+      setLeaveType(leave);
+    }
+
+    if (mode || leave) {
+      setMessage("Preset form diterapkan dari tautan.");
+    }
+
+    setHasAppliedQueryPreset(true);
+  }, [hasLoadedDraft, hasAppliedQueryPreset, searchParams]);
+
+  useEffect(() => {
     if (!effectiveUser || !hasLoadedDraft) return;
 
     const draft: AttendanceDraft = {
@@ -491,7 +518,7 @@ export default function AttendancePage() {
             cityId: effectiveUser.cityId,
             villageId: effectiveUser.villageId,
           },
-          geo: gps,
+          geo: undefined,
           imageDataUrl: evidenceDataUrl,
           workMode,
           leaveType,
@@ -621,7 +648,9 @@ export default function AttendancePage() {
                   }
                   className="w-full rounded-2xl border border-blue-100 bg-white px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c]"
                 >
-                  <option value="onsite">Onsite (Radius Lokasi Utama)</option>
+                  <option value="onsite">
+                    WFA / Onsite (Radius Lokasi Utama)
+                  </option>
                   <option value="wfh">WFH</option>
                   <option value="cuti">Cuti / Sakit</option>
                 </select>
@@ -789,7 +818,7 @@ export default function AttendancePage() {
                 <p className="text-sm font-semibold text-slate-600">
                   {workMode === "onsite"
                     ? gpsStatus
-                    : "Mode ini tidak mewajibkan radius lokasi utama."}
+                    : "Mode WFH/Cuti tidak mewajibkan radius lokasi utama."}
                 </p>
                 <button
                   type="button"

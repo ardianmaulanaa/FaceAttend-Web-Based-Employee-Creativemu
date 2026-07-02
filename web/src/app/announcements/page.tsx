@@ -8,9 +8,9 @@ import MobileShell from "@/components/MobileShell";
 const announcements = [
   {
     id: "ann-001",
-    title: "Pengumuman Presensi Juli 2026",
+    title: "Pengumuman Lokasi Presensi Juli 2026",
     summary:
-      "Aturan terbaru untuk mode onsite, WFH, serta pengajuan cuti/sakit.",
+      "Aturan terbaru lokasi WFA/onsite, WFH, serta pengajuan cuti/sakit.",
     fileUrl: "/announcements/pengumuman-jadwal-juli-2026.txt",
     fileName: "pengumuman-jadwal-juli-2026.txt",
     publishedAt: "01 Juli 2026",
@@ -61,7 +61,8 @@ export default function AnnouncementsPage() {
 
           <p className="mt-5 max-w-2xl text-sm leading-7 text-blue-100">
             Semua dokumen dapat dibaca langsung dari browser atau diunduh untuk
-            kebutuhan administrasi.
+            kebutuhan administrasi. Gunakan menu ini untuk cek aturan lokasi,
+            mode WFA/WFH, dan format surat cuti/sakit.
           </p>
         </div>
 
@@ -80,6 +81,29 @@ export default function AnnouncementsPage() {
               <p className="mt-2 text-sm leading-6 text-slate-500">
                 {item.summary}
               </p>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                {item.id === "ann-001" && (
+                  <>
+                    <span className="rounded-full bg-[#eaf1ff] px-3 py-1 text-[11px] font-black text-[#123c8c]">
+                      Lokasi WFA/Onsite
+                    </span>
+                    <span className="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-black text-amber-700">
+                      WFH
+                    </span>
+                  </>
+                )}
+                {item.id === "ann-002" && (
+                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-black text-emerald-700">
+                    Surat Cuti
+                  </span>
+                )}
+                {item.id === "ann-003" && (
+                  <span className="rounded-full bg-rose-50 px-3 py-1 text-[11px] font-black text-rose-700">
+                    Surat Sakit
+                  </span>
+                )}
+              </div>
 
               <div className="mt-5 flex gap-2">
                 <a

@@ -1,12 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Pencil, Save, Trash2, X } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import MobileShell from "@/components/MobileShell";
 
-type MasterTab = "shift" | "divisi" | "jabatan";
+type MasterTab =
+  | "shift"
+  | "jam-kerja"
+  | "divisi"
+  | "jabatan"
+  | "lokasi-kunjungan"
+  | "lokasi-presensi"
+  | "istilah";
 type CategoryType = "magang" | "karyawan";
 type DayKey =
   | "monday"
@@ -64,6 +72,40 @@ type PositionItem = {
   name: string;
   active: boolean;
 };
+
+type VisitLocationItem = {
+  id: string;
+  name: string;
+  city: string;
+  pic: string;
+  active: boolean;
+};
+
+type AttendanceLocationItem = {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  radiusMeters: number;
+  active: boolean;
+};
+
+type GlossaryItem = {
+  id: string;
+  term: string;
+  description: string;
+  active: boolean;
+};
+
+const masterTabs: Array<[MasterTab, string]> = [
+  ["shift", "Shift"],
+  ["jam-kerja", "Jam Kerja"],
+  ["divisi", "Divisi"],
+  ["jabatan", "Jabatan"],
+  ["lokasi-kunjungan", "Lokasi Kunjungan"],
+  ["lokasi-presensi", "Lokasi Presensi"],
+  ["istilah", "Daftar Istilah"],
+];
 
 const dayOptions: Array<{ key: DayKey; label: string }> = [
   { key: "monday", label: "Senin" },
@@ -204,7 +246,65 @@ const initialPositions: PositionItem[] = [
   { id: "pos-4", name: "Web Developer", active: true },
 ];
 
+const initialVisitLocations: VisitLocationItem[] = [
+  {
+    id: "visit-1",
+    name: "PT Cipta Aksara",
+    city: "Bandung",
+    pic: "Ari Nugraha",
+    active: true,
+  },
+  {
+    id: "visit-2",
+    name: "SMK Bina Karya",
+    city: "Surabaya",
+    pic: "Sari Wulandari",
+    active: true,
+  },
+];
+
+const initialAttendanceLocations: AttendanceLocationItem[] = [
+  {
+    id: "presence-1",
+    name: "Creativemu HQ",
+    latitude: -6.9004,
+    longitude: 107.6207,
+    radiusMeters: 350,
+    active: true,
+  },
+  {
+    id: "presence-2",
+    name: "Creativemu Branch",
+    latitude: -7.3095,
+    longitude: 112.7378,
+    radiusMeters: 350,
+    active: true,
+  },
+];
+
+const initialGlossary: GlossaryItem[] = [
+  {
+    id: "term-1",
+    term: "WFA",
+    description: "Work From Anywhere (onsite terdaftar atau lokasi visit).",
+    active: true,
+  },
+  {
+    id: "term-2",
+    term: "WFH",
+    description: "Work From Home dengan bukti foto dan catatan kerja.",
+    active: true,
+  },
+  {
+    id: "term-3",
+    term: "Override",
+    description: "Pengajuan pengecualian absensi yang diproses admin.",
+    active: true,
+  },
+];
+
 export default function AdminMasterDataPage() {
+  const searchParams = useSearchParams();
   const [tab, setTab] = useState<MasterTab>("shift");
 
   const [shiftList, setShiftList] = useState<ShiftItem[]>(initialShifts);
@@ -212,6 +312,14 @@ export default function AdminMasterDataPage() {
     useState<DivisionItem[]>(initialDivisions);
   const [positionList, setPositionList] =
     useState<PositionItem[]>(initialPositions);
+  const [visitLocationList, setVisitLocationList] = useState<
+    VisitLocationItem[]
+  >(initialVisitLocations);
+  const [attendanceLocationList, setAttendanceLocationList] = useState<
+    AttendanceLocationItem[]
+  >(initialAttendanceLocations);
+  const [glossaryList, setGlossaryList] =
+    useState<GlossaryItem[]>(initialGlossary);
 
   const [newShiftName, setNewShiftName] = useState("");
   const [newShiftTolerance, setNewShiftTolerance] = useState("10");
@@ -222,6 +330,16 @@ export default function AdminMasterDataPage() {
   );
 
   const [newPositionName, setNewPositionName] = useState("");
+  const [newVisitLocationName, setNewVisitLocationName] = useState("");
+  const [newVisitLocationCity, setNewVisitLocationCity] = useState("");
+  const [newVisitLocationPic, setNewVisitLocationPic] = useState("");
+  const [newAttendanceLocationName, setNewAttendanceLocationName] =
+    useState("");
+  const [newAttendanceLatitude, setNewAttendanceLatitude] = useState("");
+  const [newAttendanceLongitude, setNewAttendanceLongitude] = useState("");
+  const [newAttendanceRadius, setNewAttendanceRadius] = useState("350");
+  const [newTerm, setNewTerm] = useState("");
+  const [newTermDescription, setNewTermDescription] = useState("");
 
   const [editingShiftId, setEditingShiftId] = useState<string | null>(null);
   const [editingShiftName, setEditingShiftName] = useState("");
@@ -247,9 +365,22 @@ export default function AdminMasterDataPage() {
 
   const tabTitle = useMemo(() => {
     if (tab === "shift") return "Master Shift";
+    if (tab === "jam-kerja") return "Master Jam Kerja";
     if (tab === "divisi") return "Master Divisi";
-    return "Master Jabatan";
+    if (tab === "jabatan") return "Master Jabatan";
+    if (tab === "lokasi-kunjungan") return "Master Lokasi Kunjungan";
+    if (tab === "lokasi-presensi") return "Master Lokasi Presensi";
+    return "Daftar Istilah Operasional";
   }, [tab]);
+
+  useEffect(() => {
+    const queryTab = searchParams.get("tab") as MasterTab | null;
+    if (!queryTab) return;
+
+    if (masterTabs.some(([value]) => value === queryTab)) {
+      setTab(queryTab);
+    }
+  }, [searchParams]);
 
   const isInstructorShiftSelected = selectedShift?.kind === "instruktur";
   const selectedGeneralCategory: CategoryType = selectedShift?.name
@@ -705,6 +836,135 @@ export default function AdminMasterDataPage() {
     setPositionList((prev) => prev.filter((item) => item.id !== id));
   }
 
+  function handleAddVisitLocation() {
+    const name = newVisitLocationName.trim();
+    const city = newVisitLocationCity.trim();
+    const pic = newVisitLocationPic.trim();
+
+    if (!name || !city || !pic) {
+      alert("Nama lokasi, kota, dan PIC wajib diisi.");
+      return;
+    }
+
+    setVisitLocationList((prev) => [
+      ...prev,
+      {
+        id: `visit-${Date.now()}`,
+        name,
+        city,
+        pic,
+        active: true,
+      },
+    ]);
+
+    setNewVisitLocationName("");
+    setNewVisitLocationCity("");
+    setNewVisitLocationPic("");
+  }
+
+  function toggleVisitLocationStatus(id: string) {
+    setVisitLocationList((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              active: !item.active,
+            }
+          : item,
+      ),
+    );
+  }
+
+  function removeVisitLocation(id: string) {
+    setVisitLocationList((prev) => prev.filter((item) => item.id !== id));
+  }
+
+  function handleAddAttendanceLocation() {
+    const name = newAttendanceLocationName.trim();
+    const latitude = Number(newAttendanceLatitude);
+    const longitude = Number(newAttendanceLongitude);
+    const radiusMeters = Number(newAttendanceRadius);
+
+    if (!name || Number.isNaN(latitude) || Number.isNaN(longitude)) {
+      alert("Nama lokasi, latitude, dan longitude wajib valid.");
+      return;
+    }
+
+    setAttendanceLocationList((prev) => [
+      ...prev,
+      {
+        id: `presence-${Date.now()}`,
+        name,
+        latitude,
+        longitude,
+        radiusMeters: Number.isNaN(radiusMeters) ? 350 : radiusMeters,
+        active: true,
+      },
+    ]);
+
+    setNewAttendanceLocationName("");
+    setNewAttendanceLatitude("");
+    setNewAttendanceLongitude("");
+    setNewAttendanceRadius("350");
+  }
+
+  function toggleAttendanceLocationStatus(id: string) {
+    setAttendanceLocationList((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              active: !item.active,
+            }
+          : item,
+      ),
+    );
+  }
+
+  function removeAttendanceLocation(id: string) {
+    setAttendanceLocationList((prev) => prev.filter((item) => item.id !== id));
+  }
+
+  function handleAddGlossary() {
+    const term = newTerm.trim();
+    const description = newTermDescription.trim();
+
+    if (!term || !description) {
+      alert("Istilah dan deskripsi wajib diisi.");
+      return;
+    }
+
+    setGlossaryList((prev) => [
+      ...prev,
+      {
+        id: `term-${Date.now()}`,
+        term,
+        description,
+        active: true,
+      },
+    ]);
+
+    setNewTerm("");
+    setNewTermDescription("");
+  }
+
+  function toggleGlossaryStatus(id: string) {
+    setGlossaryList((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              active: !item.active,
+            }
+          : item,
+      ),
+    );
+  }
+
+  function removeGlossary(id: string) {
+    setGlossaryList((prev) => prev.filter((item) => item.id !== id));
+  }
+
   function getShiftName(shiftId: string) {
     return shiftList.find((item) => item.id === shiftId)?.name || "-";
   }
@@ -732,13 +992,7 @@ export default function AdminMasterDataPage() {
         </div>
 
         <div className="flex flex-wrap gap-3">
-          {(
-            [
-              ["shift", "Shift"],
-              ["divisi", "Divisi"],
-              ["jabatan", "Jabatan"],
-            ] as Array<[MasterTab, string]>
-          ).map(([value, label]) => (
+          {masterTabs.map(([value, label]) => (
             <button
               key={value}
               type="button"
@@ -1130,6 +1384,59 @@ export default function AdminMasterDataPage() {
             </div>
           )}
 
+          {tab === "jam-kerja" && (
+            <div className="mt-4 space-y-4">
+              <div className="rounded-2xl border border-blue-100 bg-[#f6f8ff] p-4">
+                <p className="text-sm font-black text-[#123c8c]">
+                  Kebijakan Jam Kerja Umum
+                </p>
+                <p className="mt-2 text-sm font-semibold text-slate-600">
+                  Jam inti default 08:00 - 17:00, toleransi mengikuti Shift.
+                  Shift instruktur mendukung multi sesi kelas per hari.
+                </p>
+              </div>
+
+              <div className="overflow-hidden rounded-2xl border border-blue-100">
+                <div className="grid grid-cols-[1fr_0.6fr_0.8fr_0.6fr] bg-[#eaf1ff] px-4 py-3 text-xs font-black uppercase tracking-wide text-[#123c8c]">
+                  <p>Shift</p>
+                  <p>Tipe</p>
+                  <p>Default Jam</p>
+                  <p>Toleransi</p>
+                </div>
+                <div className="divide-y divide-blue-100 bg-white">
+                  {shiftList.map((item) => {
+                    const category: CategoryType = item.name
+                      .toLowerCase()
+                      .includes("magang")
+                      ? "magang"
+                      : "karyawan";
+                    const mondaySchedule = item.schedules[category].monday;
+
+                    return (
+                      <div
+                        key={`jam-${item.id}`}
+                        className="grid grid-cols-[1fr_0.6fr_0.8fr_0.6fr] items-center px-4 py-3 text-sm"
+                      >
+                        <p className="font-black text-slate-900">{item.name}</p>
+                        <p className="font-semibold text-slate-600">
+                          {item.kind}
+                        </p>
+                        <p className="font-semibold text-slate-600">
+                          {item.kind === "instruktur"
+                            ? "Multi sesi"
+                            : `${mondaySchedule.checkIn || "-"} - ${mondaySchedule.checkOut || "-"}`}
+                        </p>
+                        <p className="font-semibold text-slate-600">
+                          {item.tolerance} menit
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
           {tab === "divisi" && (
             <div className="mt-4 space-y-4">
               <div className="grid gap-3 rounded-2xl border border-blue-100 bg-[#f6f8ff] p-3 md:grid-cols-[1fr_0.7fr_auto]">
@@ -1369,6 +1676,249 @@ export default function AdminMasterDataPage() {
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
+          )}
+
+          {tab === "lokasi-kunjungan" && (
+            <div className="mt-4 space-y-4">
+              <div className="grid gap-3 rounded-2xl border border-blue-100 bg-[#f6f8ff] p-3 md:grid-cols-[1fr_0.8fr_0.8fr_auto]">
+                <input
+                  value={newVisitLocationName}
+                  onChange={(event) =>
+                    setNewVisitLocationName(event.target.value)
+                  }
+                  placeholder="Nama lokasi kunjungan"
+                  className="rounded-xl border border-blue-100 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none"
+                />
+                <input
+                  value={newVisitLocationCity}
+                  onChange={(event) =>
+                    setNewVisitLocationCity(event.target.value)
+                  }
+                  placeholder="Kota"
+                  className="rounded-xl border border-blue-100 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none"
+                />
+                <input
+                  value={newVisitLocationPic}
+                  onChange={(event) =>
+                    setNewVisitLocationPic(event.target.value)
+                  }
+                  placeholder="PIC"
+                  className="rounded-xl border border-blue-100 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddVisitLocation}
+                  className="rounded-xl bg-[#123c8c] px-4 py-2 text-sm font-black text-white"
+                >
+                  Tambah
+                </button>
+              </div>
+
+              <div className="overflow-hidden rounded-2xl border border-blue-100">
+                <div className="grid grid-cols-[1.2fr_0.7fr_0.8fr_0.6fr_0.7fr] bg-[#eaf1ff] px-4 py-3 text-xs font-black uppercase tracking-wide text-[#123c8c]">
+                  <p>Lokasi</p>
+                  <p>Kota</p>
+                  <p>PIC</p>
+                  <p>Status</p>
+                  <p>Aksi</p>
+                </div>
+                <div className="divide-y divide-blue-100 bg-white">
+                  {visitLocationList.map((item) => (
+                    <div
+                      key={item.id}
+                      className="grid grid-cols-[1.2fr_0.7fr_0.8fr_0.6fr_0.7fr] items-center px-4 py-3 text-sm"
+                    >
+                      <p className="font-black text-slate-900">{item.name}</p>
+                      <p className="font-semibold text-slate-600">
+                        {item.city}
+                      </p>
+                      <p className="font-semibold text-slate-600">{item.pic}</p>
+                      <button
+                        type="button"
+                        onClick={() => toggleVisitLocationStatus(item.id)}
+                        className={`w-fit rounded-full px-3 py-1 text-xs font-black ${
+                          item.active
+                            ? "bg-emerald-50 text-emerald-700"
+                            : "bg-slate-100 text-slate-500"
+                        }`}
+                      >
+                        {item.active ? "Aktif" : "Nonaktif"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeVisitLocation(item.id)}
+                        className="inline-flex w-fit items-center gap-1 rounded-lg border border-rose-100 bg-rose-50 px-2.5 py-1 text-xs font-black text-rose-700"
+                      >
+                        <Trash2 size={12} />
+                        Hapus
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {tab === "lokasi-presensi" && (
+            <div className="mt-4 space-y-4">
+              <div className="grid gap-3 rounded-2xl border border-blue-100 bg-[#f6f8ff] p-3 md:grid-cols-[1fr_0.6fr_0.6fr_0.5fr_auto]">
+                <input
+                  value={newAttendanceLocationName}
+                  onChange={(event) =>
+                    setNewAttendanceLocationName(event.target.value)
+                  }
+                  placeholder="Nama titik presensi"
+                  className="rounded-xl border border-blue-100 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none"
+                />
+                <input
+                  value={newAttendanceLatitude}
+                  onChange={(event) =>
+                    setNewAttendanceLatitude(event.target.value)
+                  }
+                  placeholder="Latitude"
+                  className="rounded-xl border border-blue-100 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none"
+                />
+                <input
+                  value={newAttendanceLongitude}
+                  onChange={(event) =>
+                    setNewAttendanceLongitude(event.target.value)
+                  }
+                  placeholder="Longitude"
+                  className="rounded-xl border border-blue-100 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none"
+                />
+                <input
+                  value={newAttendanceRadius}
+                  onChange={(event) =>
+                    setNewAttendanceRadius(event.target.value)
+                  }
+                  placeholder="Radius"
+                  className="rounded-xl border border-blue-100 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddAttendanceLocation}
+                  className="rounded-xl bg-[#123c8c] px-4 py-2 text-sm font-black text-white"
+                >
+                  Tambah
+                </button>
+              </div>
+
+              <div className="overflow-hidden rounded-2xl border border-blue-100">
+                <div className="grid grid-cols-[1fr_0.7fr_0.7fr_0.6fr_0.6fr_0.7fr] bg-[#eaf1ff] px-4 py-3 text-xs font-black uppercase tracking-wide text-[#123c8c]">
+                  <p>Lokasi</p>
+                  <p>Latitude</p>
+                  <p>Longitude</p>
+                  <p>Radius</p>
+                  <p>Status</p>
+                  <p>Aksi</p>
+                </div>
+                <div className="divide-y divide-blue-100 bg-white">
+                  {attendanceLocationList.map((item) => (
+                    <div
+                      key={item.id}
+                      className="grid grid-cols-[1fr_0.7fr_0.7fr_0.6fr_0.6fr_0.7fr] items-center px-4 py-3 text-sm"
+                    >
+                      <p className="font-black text-slate-900">{item.name}</p>
+                      <p className="font-semibold text-slate-600">
+                        {item.latitude}
+                      </p>
+                      <p className="font-semibold text-slate-600">
+                        {item.longitude}
+                      </p>
+                      <p className="font-semibold text-slate-600">
+                        {item.radiusMeters}m
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => toggleAttendanceLocationStatus(item.id)}
+                        className={`w-fit rounded-full px-3 py-1 text-xs font-black ${
+                          item.active
+                            ? "bg-emerald-50 text-emerald-700"
+                            : "bg-slate-100 text-slate-500"
+                        }`}
+                      >
+                        {item.active ? "Aktif" : "Nonaktif"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeAttendanceLocation(item.id)}
+                        className="inline-flex w-fit items-center gap-1 rounded-lg border border-rose-100 bg-rose-50 px-2.5 py-1 text-xs font-black text-rose-700"
+                      >
+                        <Trash2 size={12} />
+                        Hapus
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {tab === "istilah" && (
+            <div className="mt-4 space-y-4">
+              <div className="grid gap-3 rounded-2xl border border-blue-100 bg-[#f6f8ff] p-3 md:grid-cols-[0.7fr_1.4fr_auto]">
+                <input
+                  value={newTerm}
+                  onChange={(event) => setNewTerm(event.target.value)}
+                  placeholder="Istilah"
+                  className="rounded-xl border border-blue-100 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none"
+                />
+                <input
+                  value={newTermDescription}
+                  onChange={(event) =>
+                    setNewTermDescription(event.target.value)
+                  }
+                  placeholder="Deskripsi"
+                  className="rounded-xl border border-blue-100 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddGlossary}
+                  className="rounded-xl bg-[#123c8c] px-4 py-2 text-sm font-black text-white"
+                >
+                  Tambah
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                {glossaryList.map((item) => (
+                  <div
+                    key={item.id}
+                    className="rounded-2xl border border-blue-100 bg-white px-4 py-3"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-black text-slate-900">
+                        {item.term}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => toggleGlossaryStatus(item.id)}
+                          className={`rounded-full px-3 py-1 text-xs font-black ${
+                            item.active
+                              ? "bg-emerald-50 text-emerald-700"
+                              : "bg-slate-100 text-slate-500"
+                          }`}
+                        >
+                          {item.active ? "Aktif" : "Nonaktif"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeGlossary(item.id)}
+                          className="inline-flex items-center gap-1 rounded-lg border border-rose-100 bg-rose-50 px-2.5 py-1 text-xs font-black text-rose-700"
+                        >
+                          <Trash2 size={12} />
+                          Hapus
+                        </button>
+                      </div>
+                    </div>
+                    <p className="mt-1 text-sm font-semibold text-slate-600">
+                      {item.description}
+                    </p>
+                  </div>
+                ))}
               </div>
             </div>
           )}

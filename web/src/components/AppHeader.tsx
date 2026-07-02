@@ -3,12 +3,19 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
+  Boxes,
   Bell,
+  Briefcase,
   ChevronDown,
   ChevronRight,
+  ClipboardList,
+  FileText,
+  Layers3,
   LogOut,
+  Megaphone,
+  Monitor,
   Search,
   UserCircle2,
   UserCog,
@@ -30,11 +37,67 @@ const employeeNav = [
   { href: "/profile", label: "Profile" },
 ];
 
-const adminNav = [
-  { href: "/admin/dashboard", label: "Dashboard" },
-  { href: "/admin/employees", label: "Employees" },
-  { href: "/admin/master-data", label: "Master Data" },
-  { href: "/admin/reports", label: "Reports" },
+const adminMainNav = [
+  {
+    href: "/admin/dashboard",
+    label: "Dashboard",
+    icon: Monitor,
+  },
+  {
+    href: "/admin/company-monitor",
+    label: "Monitor Perusahaan",
+    icon: ClipboardList,
+  },
+  {
+    href: "/admin/announcements",
+    label: "Pengumuman",
+    icon: Megaphone,
+  },
+  {
+    href: "/admin/master-data",
+    label: "Master Data",
+    icon: Layers3,
+  },
+  {
+    href: "/admin/inventory",
+    label: "Inventaris",
+    icon: Boxes,
+  },
+  {
+    href: "/admin/employee-requests",
+    label: "Pengajuan Karyawan",
+    icon: Briefcase,
+  },
+];
+
+const adminMasterDataSubNav = [
+  { href: "/admin/master-data?tab=shift", label: "Shift", tab: "shift" },
+  {
+    href: "/admin/master-data?tab=jam-kerja",
+    label: "Jam Kerja",
+    tab: "jam-kerja",
+  },
+  { href: "/admin/master-data?tab=divisi", label: "Divisi", tab: "divisi" },
+  {
+    href: "/admin/master-data?tab=jabatan",
+    label: "Jabatan",
+    tab: "jabatan",
+  },
+  {
+    href: "/admin/master-data?tab=lokasi-kunjungan",
+    label: "Lokasi Kunjungan",
+    tab: "lokasi-kunjungan",
+  },
+  {
+    href: "/admin/master-data?tab=lokasi-presensi",
+    label: "Lokasi Presensi",
+    tab: "lokasi-presensi",
+  },
+  {
+    href: "/admin/master-data?tab=istilah",
+    label: "Daftar Istilah",
+    tab: "istilah",
+  },
 ];
 
 type AdminSessionUser = {
@@ -60,8 +123,10 @@ export default function AppHeader({
   variant = "employee",
 }: AppHeaderProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
-  const menus = variant === "admin" ? adminNav : employeeNav;
+  const menus = variant === "admin" ? adminMainNav : employeeNav;
+  const activeMasterTab = searchParams.get("tab") || "shift";
 
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isBellMenuOpen, setIsBellMenuOpen] = useState(false);
@@ -74,7 +139,12 @@ export default function AppHeader({
   const bellMenuRef = useRef<HTMLDivElement | null>(null);
 
   const activeAdminMenu = useMemo(() => {
-    return adminNav.find((menu) => pathname.startsWith(menu.href));
+    const masterDataActive = pathname.startsWith("/admin/master-data");
+    if (masterDataActive) {
+      return { label: "Master Data" };
+    }
+
+    return adminMainNav.find((menu) => pathname.startsWith(menu.href));
   }, [pathname]);
 
   useEffect(() => {
@@ -187,22 +257,55 @@ export default function AppHeader({
             </div>
 
             <nav className="mt-6 space-y-2">
-              {adminNav.map((menu) => {
-                const active = pathname === menu.href;
+              {adminMainNav.map((menu) => {
+                const Icon = menu.icon;
+                const isMasterData = menu.href === "/admin/master-data";
+                const active = isMasterData
+                  ? pathname.startsWith("/admin/master-data")
+                  : pathname.startsWith(menu.href);
 
                 return (
-                  <Link
-                    key={menu.href}
-                    href={menu.href}
-                    className={`flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-black transition-all duration-200 ${
-                      active
-                        ? "bg-[#123c8c] text-white"
-                        : "text-slate-500 hover:bg-[#f2f6ff] hover:text-[#123c8c]"
-                    }`}
-                  >
-                    <span>{menu.label}</span>
-                    <ChevronRight size={16} />
-                  </Link>
+                  <div key={menu.href} className="space-y-1">
+                    <Link
+                      href={menu.href}
+                      className={`flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-black transition-all duration-200 ${
+                        active
+                          ? "bg-[#123c8c] text-white"
+                          : "text-slate-500 hover:bg-[#f2f6ff] hover:text-[#123c8c]"
+                      }`}
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        <Icon size={15} />
+                        {menu.label}
+                      </span>
+                      <ChevronRight size={16} />
+                    </Link>
+
+                    {isMasterData && (
+                      <div className="space-y-1 pl-5">
+                        {adminMasterDataSubNav.map((subMenu) => {
+                          const subActive =
+                            pathname.startsWith("/admin/master-data") &&
+                            activeMasterTab === subMenu.tab;
+
+                          return (
+                            <Link
+                              key={subMenu.href}
+                              href={subMenu.href}
+                              className={`flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition ${
+                                subActive
+                                  ? "bg-[#eaf1ff] text-[#123c8c]"
+                                  : "text-slate-500 hover:bg-[#f6f8ff]"
+                              }`}
+                            >
+                              <FileText size={12} />
+                              {subMenu.label}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </nav>
