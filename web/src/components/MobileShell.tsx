@@ -23,7 +23,6 @@ export default function MobileShell({
 
   return (
     <main className={shellClass[variant]}>
-<<<<<<< HEAD
       <div
         className={[
           withBottomPadding ? "pb-28 md:pb-8" : "",
@@ -32,9 +31,6 @@ export default function MobileShell({
       >
         {children}
       </div>
-=======
-      <div className={paddingClass}>{children}</div>
->>>>>>> 8cad75293f1c832e003d778cff628420e55012a6
     </main>
   );
 }
