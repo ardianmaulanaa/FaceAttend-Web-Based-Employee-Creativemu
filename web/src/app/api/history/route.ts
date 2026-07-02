@@ -51,14 +51,20 @@ function getAttendanceStatus(
   return "PENDING";
 }
 
+function toIsoString(date: Date | null) {
+  return date ? date.toISOString() : null;
+}
+
 export async function GET(req: NextRequest) {
   try {
     const userId = await getUserIdFromRequest(req);
 
     const { searchParams } = new URL(req.url);
 
-    const month = Number(searchParams.get("month"));
-    const year = Number(searchParams.get("year"));
+    const now = new Date();
+
+    const month = Number(searchParams.get("month") || now.getMonth() + 1);
+    const year = Number(searchParams.get("year") || now.getFullYear());
 
     if (!month || !year || month < 1 || month > 12) {
       return NextResponse.json(
@@ -67,8 +73,8 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 1);
+    const startDate = new Date(Date.UTC(year, month - 1, 1));
+    const endDate = new Date(Date.UTC(year, month, 1));
 
     const attendances = await prisma.attendance.findMany({
       where: {
@@ -97,11 +103,53 @@ export async function GET(req: NextRequest) {
         check_in_photo_mime: true,
         check_out_photo_mime: true,
 
+        registered_office_id: true,
+        registered_office: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+            latitude: true,
+            longitude: true,
+            radius_meters: true,
+          },
+        },
+
+        check_in_office_id: true,
+        check_in_office: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+            latitude: true,
+            longitude: true,
+            radius_meters: true,
+          },
+        },
+
         check_in_latitude: true,
         check_in_longitude: true,
+        check_in_accuracy: true,
+        check_in_distance: true,
+        check_in_within_radius: true,
+
+        check_out_office_id: true,
+        check_out_office: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+            latitude: true,
+            longitude: true,
+            radius_meters: true,
+          },
+        },
 
         check_out_latitude: true,
         check_out_longitude: true,
+        check_out_accuracy: true,
+        check_out_distance: true,
+        check_out_within_radius: true,
 
         late_minutes: true,
         early_leave_minutes: true,
@@ -120,11 +168,11 @@ export async function GET(req: NextRequest) {
 
       attendanceDate: attendance.attendance_date.toISOString(),
 
-      scheduledCheckIn: attendance.scheduled_check_in?.toISOString() ?? null,
-      scheduledCheckOut: attendance.scheduled_check_out?.toISOString() ?? null,
+      scheduledCheckIn: toIsoString(attendance.scheduled_check_in),
+      scheduledCheckOut: toIsoString(attendance.scheduled_check_out),
 
-      checkInTime: attendance.check_in_time?.toISOString() ?? null,
-      checkOutTime: attendance.check_out_time?.toISOString() ?? null,
+      checkInTime: toIsoString(attendance.check_in_time),
+      checkOutTime: toIsoString(attendance.check_out_time),
 
       checkInPhoto: photoToDataUrl(
         attendance.check_in_photo,
@@ -135,11 +183,54 @@ export async function GET(req: NextRequest) {
         attendance.check_out_photo_mime
       ),
 
-      checkInLatitude: attendance.check_in_latitude,
-      checkInLongitude: attendance.check_in_longitude,
+      registeredOffice: attendance.registered_office
+        ? {
+            id: attendance.registered_office.id,
+            name: attendance.registered_office.name,
+            address: attendance.registered_office.address,
+            latitude: attendance.registered_office.latitude,
+            longitude: attendance.registered_office.longitude,
+            radiusMeters: attendance.registered_office.radius_meters,
+          }
+        : null,
 
-      checkOutLatitude: attendance.check_out_latitude,
-      checkOutLongitude: attendance.check_out_longitude,
+      checkInOffice: attendance.check_in_office
+        ? {
+            id: attendance.check_in_office.id,
+            name: attendance.check_in_office.name,
+            address: attendance.check_in_office.address,
+            latitude: attendance.check_in_office.latitude,
+            longitude: attendance.check_in_office.longitude,
+            radiusMeters: attendance.check_in_office.radius_meters,
+          }
+        : null,
+
+      checkInGps: {
+        latitude: attendance.check_in_latitude,
+        longitude: attendance.check_in_longitude,
+        accuracy: attendance.check_in_accuracy,
+        distance: attendance.check_in_distance,
+        withinRadius: attendance.check_in_within_radius,
+      },
+
+      checkOutOffice: attendance.check_out_office
+        ? {
+            id: attendance.check_out_office.id,
+            name: attendance.check_out_office.name,
+            address: attendance.check_out_office.address,
+            latitude: attendance.check_out_office.latitude,
+            longitude: attendance.check_out_office.longitude,
+            radiusMeters: attendance.check_out_office.radius_meters,
+          }
+        : null,
+
+      checkOutGps: {
+        latitude: attendance.check_out_latitude,
+        longitude: attendance.check_out_longitude,
+        accuracy: attendance.check_out_accuracy,
+        distance: attendance.check_out_distance,
+        withinRadius: attendance.check_out_within_radius,
+      },
 
       lateMinutes: attendance.late_minutes,
       earlyLeaveMinutes: attendance.early_leave_minutes,
@@ -157,6 +248,9 @@ export async function GET(req: NextRequest) {
     }));
 
     return NextResponse.json({
+      success: true,
+      month,
+      year,
       attendances: result,
     });
   } catch (error) {

@@ -90,6 +90,7 @@ export default function AttendancePage() {
   const [hasLoadedDraft, setHasLoadedDraft] = useState(false);
   const [hasAppliedQueryPreset, setHasAppliedQueryPreset] = useState(false);
 
+<<<<<<< HEAD
   const effectiveUser = useMemo(() => {
     if (sessionUser) {
       return {
@@ -101,6 +102,16 @@ export default function AttendancePage() {
         villageId: sessionUser.village_id || "",
       };
     }
+=======
+  const [lastLatitude, setLastLatitude] = useState<number | null>(null);
+  const [lastLongitude, setLastLongitude] = useState<number | null>(null);
+  const [lastAccuracy, setLastAccuracy] = useState<number | null>(null);
+
+  const [statusTitle, setStatusTitle] = useState("Waiting for Camera");
+  const [statusText, setStatusText] = useState(
+    "Aktifkan kamera dan izinkan lokasi GPS sebelum melakukan absensi."
+  );
+>>>>>>> 8cad75293f1c832e003d778cff628420e55012a6
 
     if (authUser) {
       return {
@@ -113,8 +124,20 @@ export default function AttendancePage() {
       };
     }
 
+<<<<<<< HEAD
     return null;
   }, [sessionUser, authUser]);
+=======
+    return () => {
+      releaseCamera(false, false);
+
+      if (lastPhotoUrl) {
+        URL.revokeObjectURL(lastPhotoUrl);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+>>>>>>> 8cad75293f1c832e003d778cff628420e55012a6
 
   const submissionSummary = useMemo(() => {
     if (!effectiveUser) return "Belum login";
@@ -181,10 +204,126 @@ export default function AttendancePage() {
       return;
     }
 
+<<<<<<< HEAD
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: cameraFacingMode } },
         audio: false,
+=======
+    await startCamera();
+  }
+
+  function getCurrentLocation(): Promise<GeolocationPosition> {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error("Browser tidak mendukung GPS."));
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0,
+      });
+    });
+  }
+
+  function capturePhoto(): Promise<File> {
+    return new Promise((resolve, reject) => {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+
+      if (!video || !canvas || !streamRef.current) {
+        reject(new Error("Kamera belum siap."));
+        return;
+      }
+
+      if (!video.videoWidth || !video.videoHeight) {
+        reject(new Error("Kamera belum memuat gambar."));
+        return;
+      }
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      const context = canvas.getContext("2d");
+
+      if (!context) {
+        reject(new Error("Canvas tidak tersedia."));
+        return;
+      }
+
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error("Gagal mengambil foto."));
+            return;
+          }
+
+          if (lastPhotoUrl) {
+            URL.revokeObjectURL(lastPhotoUrl);
+          }
+
+          const previewUrl = URL.createObjectURL(blob);
+          setLastPhotoUrl(previewUrl);
+
+          const file = new File([blob], `attendance-${Date.now()}.jpg`, {
+            type: "image/jpeg",
+          });
+
+          resolve(file);
+        },
+        "image/jpeg",
+        0.9
+      );
+    });
+  }
+
+  async function handleAttendance(action: AttendanceAction) {
+    try {
+      setLoading(true);
+      setStatusTitle("Processing");
+      setStatusText("Mengambil foto dan lokasi GPS...");
+
+      if (!streamRef.current) {
+        await startCamera();
+      }
+
+      const photo = await capturePhoto();
+      const position = await getCurrentLocation();
+
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
+      const accuracy = position.coords.accuracy;
+
+      setLastLatitude(latitude);
+      setLastLongitude(longitude);
+      setLastAccuracy(accuracy);
+
+      const formData = new FormData();
+      formData.append("photo", photo);
+      formData.append("latitude", String(latitude));
+      formData.append("longitude", String(longitude));
+      formData.append("accuracy", String(accuracy));
+
+      if (action === "check-in") {
+        formData.append("checkInLatitude", String(latitude));
+        formData.append("checkInLongitude", String(longitude));
+        formData.append("checkInAccuracy", String(accuracy));
+      }
+
+      if (action === "check-out") {
+        formData.append("checkOutLatitude", String(latitude));
+        formData.append("checkOutLongitude", String(longitude));
+        formData.append("checkOutAccuracy", String(accuracy));
+      }
+
+      const response = await fetch(`/api/attendance/${action}`, {
+        method: "POST",
+        body: formData,
+>>>>>>> 8cad75293f1c832e003d778cff628420e55012a6
       });
 
       setCameraPermissionGranted(true);
@@ -512,6 +651,7 @@ export default function AttendancePage() {
         return;
       }
 
+<<<<<<< HEAD
       if (authUser?.id === effectiveUser.id) {
         markAttendance(attendanceType, {
           location: {
@@ -525,6 +665,26 @@ export default function AttendancePage() {
           leaveLetterDataUrl,
         });
       }
+=======
+      const officeName = data.office?.name;
+      const distance = data.office?.distance;
+      const radius = data.office?.radius;
+
+      setStatusTitle("Attendance Success");
+      setStatusText(
+        officeName
+          ? `${data.message} Lokasi valid di ${officeName}. Jarak ${distance} meter dari kantor, radius ${radius} meter. Akurasi GPS ±${Math.round(
+              accuracy
+            )} meter.`
+          : `${data.message || "Absensi berhasil."} Akurasi GPS ±${Math.round(
+              accuracy
+            )} meter.`
+      );
+
+      alert(data.message || "Absensi berhasil.");
+    } catch (error) {
+      console.error("ATTENDANCE_ERROR", error);
+>>>>>>> 8cad75293f1c832e003d778cff628420e55012a6
 
       window.localStorage.removeItem(getDraftStorageKey(effectiveUser.id));
       setEvidenceName("");
@@ -612,6 +772,7 @@ export default function AttendancePage() {
                 <Send size={26} strokeWidth={2.6} />
               </div>
 
+<<<<<<< HEAD
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-100">
                   Attendance Submission
@@ -620,6 +781,13 @@ export default function AttendancePage() {
                   Ready to Submit
                 </h2>
               </div>
+=======
+              <p className="relative mt-5 text-sm leading-7 text-blue-100">
+                Sistem akan menyimpan foto, waktu, koordinat GPS, akurasi GPS,
+                dan radius kantor sebagai bukti check-in atau check-out
+                karyawan.
+              </p>
+>>>>>>> 8cad75293f1c832e003d778cff628420e55012a6
             </div>
 
             <p className="mt-5 text-sm leading-7 text-blue-100">
@@ -885,9 +1053,29 @@ export default function AttendancePage() {
                 <p className="mt-3 text-sm font-black text-slate-950">
                   Bukti Absensi
                 </p>
+<<<<<<< HEAD
                 <p className="mt-1 text-sm text-slate-500">
                   Foto + catatan teks
                 </p>
+=======
+
+                {lastLatitude && lastLongitude ? (
+                  <div className="mt-1 space-y-1 text-sm text-slate-500">
+                    <p>Lat: {lastLatitude.toFixed(6)}</p>
+                    <p>Lng: {lastLongitude.toFixed(6)}</p>
+                    <p>
+                      Accuracy:{" "}
+                      {lastAccuracy !== null
+                        ? `±${Math.round(lastAccuracy)} meter`
+                        : "-"}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="mt-1 text-sm text-slate-500">
+                    Diminta saat absen
+                  </p>
+                )}
+>>>>>>> 8cad75293f1c832e003d778cff628420e55012a6
               </div>
             </div>
           </div>

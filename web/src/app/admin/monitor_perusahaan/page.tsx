@@ -383,8 +383,13 @@ export default function ReportsPage() {
   return (
     <MobileShell variant="admin">
       <AppHeader
+<<<<<<< HEAD:web/src/app/admin/reports/page.tsx
         title="Reports"
         subtitle="Laporan absensi karyawan dengan filter lengkap"
+=======
+        title="Monitor Perusahaan"
+        subtitle="Laporan absensi seluruh karyawan Creativemu"
+>>>>>>> 8cad75293f1c832e003d778cff628420e55012a6:web/src/app/admin/monitor_perusahaan/page.tsx
         variant="admin"
       />
 

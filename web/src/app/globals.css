@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
 
 :root {
   --background: #f6f8ff;
@@ -15,6 +16,7 @@
 
 html {
   min-height: 100%;
+<<<<<<< HEAD
   background:
     radial-gradient(
       circle at top left,
@@ -45,7 +47,25 @@ body {
       rgba(18, 60, 140, 0.2),
       transparent 32%
     ),
+=======
+  scroll-behavior: smooth;
+  background: #eef3ff;
+  overscroll-behavior: none;
+}
+
+body {
+  min-height: 100dvh;
+  margin: 0;
+  overflow-x: hidden;
+  overscroll-behavior: none;
+  background-color: #eef3ff;
+  background-image:
+    radial-gradient(circle at top left, rgba(255, 138, 0, 0.18), transparent 28%),
+    radial-gradient(circle at top right, rgba(18, 60, 140, 0.2), transparent 32%),
+>>>>>>> 8cad75293f1c832e003d778cff628420e55012a6
     linear-gradient(180deg, #f6f8ff 0%, #eef3ff 100%);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
   overscroll-behavior-y: none;
@@ -66,9 +86,11 @@ input {
   0% {
     transform: translateY(0px);
   }
+
   50% {
     transform: translateY(-8px);
   }
+
   100% {
     transform: translateY(0px);
   }
@@ -78,14 +100,17 @@ input {
   0% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
+
   100% {
     background-position: 0% 50%;
   }
 }
 
+<<<<<<< HEAD
 /* Animasi khusus heading Smart Attendance */
 .animated-title {
   animation: floatText 3.5s ease-in-out infinite;
@@ -100,6 +125,8 @@ input {
   color: transparent;
 }
 
+=======
+>>>>>>> 8cad75293f1c832e003d778cff628420e55012a6
 @keyframes typingTitle {
   0% {
     width: 0;
@@ -129,18 +156,24 @@ input {
   }
 }
 
-@keyframes gradientMove {
-  0% {
-    background-position: 0% 50%;
-  }
+/* Animasi khusus heading Smart Attendance */
+.animated-title {
+  animation: floatText 3.5s ease-in-out infinite;
+}
 
-  50% {
-    background-position: 100% 50%;
-  }
-
-  100% {
-    background-position: 0% 50%;
-  }
+.gradient-title {
+  background: linear-gradient(
+    90deg,
+    #0f172a,
+    #123c8c,
+    #ff8a00,
+    #0f172a
+  );
+  background-size: 300% 300%;
+  animation: gradientMove 5s ease infinite;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .typewriter-title {

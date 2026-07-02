@@ -114,7 +114,7 @@ export default function LoginPage() {
                 </p>
 
                 <h2 className="mt-4 text-4xl font-black leading-[1.05] tracking-tight md:mt-5 md:text-6xl">
-                  <span className="typewriter-title">Smart Attendance</span>
+                  <span className="typewriter-title">Creativemu Presence</span>
                 </h2>
 
                 <p className="mt-5 max-w-xl text-sm leading-7 text-slate-600 md:mt-6 md:text-base md:leading-8">

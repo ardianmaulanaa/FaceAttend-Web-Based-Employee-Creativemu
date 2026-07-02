@@ -1,6 +1,7 @@
-import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
+<<<<<<< HEAD
 import { verifyToken } from "@/lib/auth";
 import {
   findDemoUserById,
@@ -26,9 +27,40 @@ async function resolveSessionUserId() {
   const payload = await verifyToken(token);
   return { ok: true as const, userId: payload.id };
 }
+=======
+>>>>>>> 8cad75293f1c832e003d778cff628420e55012a6
 
-export async function GET() {
+export const runtime = "nodejs";
+
+async function getUserIdFromRequest(req: NextRequest) {
+  const token = req.cookies.get("faceattend_token")?.value;
+
+  if (!token) {
+    throw new Error("Token login tidak ditemukan.");
+  }
+
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET belum ada di file .env");
+  }
+
+  const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+  const { payload } = await jwtVerify(token, secret);
+
+  const userId =
+    (payload.id as string | undefined) ||
+    (payload.userId as string | undefined) ||
+    (payload.sub as string | undefined);
+
+  if (!userId) {
+    throw new Error("User ID tidak ditemukan di token.");
+  }
+
+  return userId;
+}
+
+export async function GET(req: NextRequest) {
   try {
+<<<<<<< HEAD
     const session = await resolveSessionUserId();
     if (!session.ok) {
       return NextResponse.json(
@@ -65,24 +97,88 @@ export async function GET() {
     const user = await prisma.user.findUnique({
       where: {
         id: session.userId,
+=======
+    const userId = await getUserIdFromRequest(req);
+
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+>>>>>>> 8cad75293f1c832e003d778cff628420e55012a6
       },
       select: {
         id: true,
+        employee_code: true,
         name: true,
         email: true,
         role: true,
+<<<<<<< HEAD
         department: true,
         phone: true,
         city_id: true,
         village_id: true,
+=======
+        phone: true,
+>>>>>>> 8cad75293f1c832e003d778cff628420e55012a6
         status: true,
+        profile_photo: true,
+
+        department: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+
+        position: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+
+        shift: {
+          select: {
+            id: true,
+            name: true,
+            tolerance_minutes: true,
+            work_schedules: {
+              select: {
+                day_of_week: true,
+                is_work_day: true,
+                check_in_time: true,
+                check_out_time: true,
+              },
+              orderBy: {
+                day_of_week: "asc",
+              },
+            },
+          },
+        },
+
+        registered_office: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+            latitude: true,
+            longitude: true,
+            radius_meters: true,
+          },
+        },
       },
     });
 
     if (!user) {
       return NextResponse.json(
+<<<<<<< HEAD
         { success: false, message: "User tidak ditemukan" },
         { status: 404 },
+=======
+        {
+          error: "User tidak ditemukan.",
+        },
+        { status: 404 }
+>>>>>>> 8cad75293f1c832e003d778cff628420e55012a6
       );
     }
 
@@ -113,6 +209,7 @@ export async function GET() {
       },
     });
   } catch (error) {
+<<<<<<< HEAD
     if (isDatabaseUnavailable(error)) {
       try {
         const cookieStore = await cookies();
@@ -154,6 +251,15 @@ export async function GET() {
     return NextResponse.json(
       { success: false, message: "Session tidak valid" },
       { status: 401 },
+=======
+    console.error("ME_ERROR:", error);
+
+    return NextResponse.json(
+      {
+        error: "Gagal mengambil data user.",
+      },
+      { status: 401 }
+>>>>>>> 8cad75293f1c832e003d778cff628420e55012a6
     );
   }
 }

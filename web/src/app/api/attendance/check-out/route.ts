@@ -6,6 +6,7 @@ import { isDatabaseUnavailable, saveDemoCheckOut } from "@/lib/demoStore";
 
 type WorkMode = "onsite" | "wfh";
 
+<<<<<<< HEAD
 const MAIN_LOCATIONS = [
   {
     name: "Creativemu HQ",
@@ -20,11 +21,36 @@ const MAIN_LOCATIONS = [
     allowedRadiusMeters: 350,
   },
 ];
+=======
+const MAX_GPS_ACCURACY_METERS = 100;
+
+type ParsedAttendanceBody = {
+  photoBuffer: Buffer | null;
+  photoMime: string;
+  latitude: number | null;
+  longitude: number | null;
+  accuracy: number | null;
+};
+
+type GeoPoint = {
+  lat: number;
+  lng: number;
+};
+
+type OfficeGeofence = {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  radius_meters: number;
+};
+>>>>>>> 8cad75293f1c832e003d778cff628420e55012a6
 
 function toRadians(value: number) {
   return (value * Math.PI) / 180;
 }
 
+<<<<<<< HEAD
 function distanceMeters(
   pointA: { latitude: number; longitude: number },
   pointB: { latitude: number; longitude: number },
@@ -51,6 +77,23 @@ function resolveMainLocation(latitude: number, longitude: number) {
       { latitude: location.latitude, longitude: location.longitude },
     ),
   })).sort((a, b) => a.distance - b.distance)[0];
+=======
+function getTodayDateOnly() {
+  const now = new Date();
+
+  return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+}
+
+function toNumber(value: unknown) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const numberValue = Number(value);
+
+  return Number.isFinite(numberValue) ? numberValue : null;
+}
+>>>>>>> 8cad75293f1c832e003d778cff628420e55012a6
 
   if (!nearest || nearest.distance > nearest.allowedRadiusMeters) {
     return null;
@@ -66,6 +109,7 @@ function buildAttendanceNote(payload: {
 }) {
   const tags = [`mode=${payload.workMode}`];
 
+<<<<<<< HEAD
   if (payload.locationName) {
     tags.push(`location=${payload.locationName}`);
   }
@@ -75,6 +119,161 @@ function buildAttendanceNote(payload: {
   }
 
   return tags.join(" | ").slice(0, 255);
+=======
+  return {
+    buffer: Buffer.from(arrayBuffer),
+    mime: file.type || "image/jpeg",
+  };
+}
+
+function getDistanceInMeters(from: GeoPoint, to: GeoPoint) {
+  const earthRadius = 6371000;
+
+  const lat1 = (from.lat * Math.PI) / 180;
+  const lat2 = (to.lat * Math.PI) / 180;
+
+  const deltaLat = ((to.lat - from.lat) * Math.PI) / 180;
+  const deltaLng = ((to.lng - from.lng) * Math.PI) / 180;
+
+  const a =
+    Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+    Math.cos(lat1) *
+      Math.cos(lat2) *
+      Math.sin(deltaLng / 2) *
+      Math.sin(deltaLng / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return earthRadius * c;
+}
+
+function findNearestValidOffice(
+  userLocation: GeoPoint,
+  offices: OfficeGeofence[]
+) {
+  const validOffices = offices
+    .map((office) => {
+      const distance = getDistanceInMeters(userLocation, {
+        lat: office.latitude,
+        lng: office.longitude,
+      });
+
+      return {
+        office,
+        distance,
+        isWithinRadius: distance <= office.radius_meters,
+      };
+    })
+    .filter((item) => item.isWithinRadius)
+    .sort((a, b) => a.distance - b.distance);
+
+  return validOffices[0] ?? null;
+}
+
+async function parseAttendanceBody(
+  req: NextRequest
+): Promise<ParsedAttendanceBody> {
+  const contentType = req.headers.get("content-type") || "";
+
+  if (contentType.includes("multipart/form-data")) {
+    const formData = await req.formData();
+
+    const photo =
+      formData.get("photo") ||
+      formData.get("photoDataUrl") ||
+      formData.get("checkOutPhoto") ||
+      formData.get("image");
+
+    const latitude = toNumber(
+      formData.get("latitude") ?? formData.get("checkOutLatitude")
+    );
+
+    const longitude = toNumber(
+      formData.get("longitude") ?? formData.get("checkOutLongitude")
+    );
+
+    const accuracy = toNumber(
+      formData.get("accuracy") ?? formData.get("checkOutAccuracy")
+    );
+
+    if (photo instanceof File) {
+      const result = await fileToBuffer(photo);
+
+      return {
+        photoBuffer: result.buffer,
+        photoMime: result.mime,
+        latitude,
+        longitude,
+        accuracy,
+      };
+    }
+
+    if (typeof photo === "string") {
+      const result = dataUrlToBuffer(photo);
+
+      return {
+        photoBuffer: result.buffer,
+        photoMime: result.mime,
+        latitude,
+        longitude,
+        accuracy,
+      };
+    }
+
+    return {
+      photoBuffer: null,
+      photoMime: "image/jpeg",
+      latitude,
+      longitude,
+      accuracy,
+    };
+  }
+
+  const body = await req.json();
+
+  const photoDataUrl =
+    typeof body.photo === "string"
+      ? body.photo
+      : typeof body.photoDataUrl === "string"
+        ? body.photoDataUrl
+        : typeof body.checkOutPhoto === "string"
+          ? body.checkOutPhoto
+          : typeof body.image === "string"
+            ? body.image
+            : null;
+
+  const latitude = toNumber(
+    body.latitude ?? body.checkOutLatitude ?? body.location?.latitude
+  );
+
+  const longitude = toNumber(
+    body.longitude ?? body.checkOutLongitude ?? body.location?.longitude
+  );
+
+  const accuracy = toNumber(
+    body.accuracy ?? body.checkOutAccuracy ?? body.location?.accuracy
+  );
+
+  if (!photoDataUrl) {
+    return {
+      photoBuffer: null,
+      photoMime: "image/jpeg",
+      latitude,
+      longitude,
+      accuracy,
+    };
+  }
+
+  const result = dataUrlToBuffer(photoDataUrl);
+
+  return {
+    photoBuffer: result.buffer,
+    photoMime: result.mime,
+    latitude,
+    longitude,
+    accuracy,
+  };
+>>>>>>> 8cad75293f1c832e003d778cff628420e55012a6
 }
 
 export async function POST(req: Request) {
@@ -82,7 +281,14 @@ export async function POST(req: Request) {
     const cookieStore = await cookies();
     const token = cookieStore.get("faceattend_token")?.value;
 
+<<<<<<< HEAD
     if (!token) {
+=======
+    const { photoBuffer, photoMime, latitude, longitude, accuracy } =
+      await parseAttendanceBody(req);
+
+    if (!photoBuffer) {
+>>>>>>> 8cad75293f1c832e003d778cff628420e55012a6
       return NextResponse.json(
         { success: false, message: "Belum login" },
         { status: 401 },
@@ -98,6 +304,7 @@ export async function POST(req: Request) {
       );
     }
 
+<<<<<<< HEAD
     const {
       imageDataUrl,
       latitude,
@@ -113,6 +320,84 @@ export async function POST(req: Request) {
     } = await req.json();
     const effectiveMode: WorkMode = workMode === "wfh" ? "wfh" : "onsite";
     let matchedLocationName: string | null = null;
+=======
+    if (accuracy === null) {
+      return NextResponse.json(
+        { error: "Akurasi GPS check-out wajib dikirim." },
+        { status: 400 }
+      );
+    }
+
+    if (accuracy > MAX_GPS_ACCURACY_METERS) {
+      return NextResponse.json(
+        {
+          error: `Akurasi GPS terlalu rendah. Maksimal ±${MAX_GPS_ACCURACY_METERS} meter.`,
+          accuracy,
+        },
+        { status: 400 }
+      );
+    }
+
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+      select: {
+        id: true,
+        registered_office_id: true,
+      },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Data user tidak ditemukan." },
+        { status: 404 }
+      );
+    }
+
+    const offices = await prisma.officeLocation.findMany({
+      where: {
+        status: "active",
+      },
+      select: {
+        id: true,
+        name: true,
+        latitude: true,
+        longitude: true,
+        radius_meters: true,
+      },
+    });
+
+    if (offices.length === 0) {
+      return NextResponse.json(
+        { error: "Belum ada data kantor aktif untuk validasi GPS." },
+        { status: 400 }
+      );
+    }
+
+    const matchedOffice = findNearestValidOffice(
+      {
+        lat: latitude,
+        lng: longitude,
+      },
+      offices
+    );
+
+    if (!matchedOffice) {
+      return NextResponse.json(
+        {
+          error: "Lokasi kamu berada di luar radius semua kantor aktif.",
+          latitude,
+          longitude,
+          accuracy,
+        },
+        { status: 400 }
+      );
+    }
+
+    const now = new Date();
+    const today = getTodayDateOnly();
+>>>>>>> 8cad75293f1c832e003d778cff628420e55012a6
 
     if (!imageDataUrl) {
       return NextResponse.json(
@@ -196,6 +481,7 @@ export async function POST(req: Request) {
         },
       },
       data: {
+<<<<<<< HEAD
         check_out_time: new Date(),
         check_out_photo_url: imageDataUrl,
         check_out_latitude: effectiveMode === "onsite" ? latitude : null,
@@ -205,11 +491,29 @@ export async function POST(req: Request) {
           locationName: matchedLocationName || undefined,
           notes,
         }),
+=======
+        check_out_time: now,
+        check_out_photo: photoBuffer,
+        check_out_photo_mime: photoMime,
+
+        check_out_latitude: latitude,
+        check_out_longitude: longitude,
+        check_out_accuracy: accuracy,
+        check_out_distance: matchedOffice.distance,
+        check_out_within_radius: true,
+        check_out_office_id: matchedOffice.office.id,
+
+        registered_office_id:
+          attendance.registered_office_id ?? user.registered_office_id,
+
+        work_minutes: workMinutes,
+>>>>>>> 8cad75293f1c832e003d778cff628420e55012a6
       },
     });
 
     return NextResponse.json({
       success: true,
+<<<<<<< HEAD
       message: "Check-out berhasil disimpan",
       data: {
         id: attendance.id,
@@ -218,6 +522,22 @@ export async function POST(req: Request) {
         checkOutLatitude: attendance.check_out_latitude,
         checkOutLongitude: attendance.check_out_longitude,
       },
+=======
+      message: "Check-out berhasil.",
+      attendanceId: updatedAttendance.id,
+      office: {
+        id: matchedOffice.office.id,
+        name: matchedOffice.office.name,
+        distance: Math.round(matchedOffice.distance),
+        radius: matchedOffice.office.radius_meters,
+      },
+      gps: {
+        latitude,
+        longitude,
+        accuracy: Math.round(accuracy),
+      },
+      workMinutes,
+>>>>>>> 8cad75293f1c832e003d778cff628420e55012a6
     });
   } catch (error) {
     console.error(error);
