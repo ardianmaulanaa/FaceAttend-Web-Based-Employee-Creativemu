@@ -53,42 +53,22 @@ function getDraftStorageKey(userId: string) {
   return `attendance-draft-${userId}`;
 }
 
+function isCameraAbortError(error: unknown) {
+  return error instanceof Error && error.name === "AbortError";
+}
+
 export default function AttendancePage() {
   const { authUser, markAttendance } = useAppData();
   const searchParams = useSearchParams();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const cameraStreamRef = useRef<MediaStream | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const startingRef = useRef(false);
 
-  const [attendanceType, setAttendanceType] = useState<
-    "check-in" | "check-out"
-  >("check-in");
-  const [workMode, setWorkMode] = useState<"onsite" | "wfh" | "cuti">("onsite");
-  const [leaveType, setLeaveType] = useState<"cuti" | "sakit">("cuti");
-  const [leaveLetterName, setLeaveLetterName] = useState("");
-  const [leaveLetterDataUrl, setLeaveLetterDataUrl] = useState<
-    string | undefined
-  >();
-  const [evidenceName, setEvidenceName] = useState("");
-  const [evidenceDataUrl, setEvidenceDataUrl] = useState<string | undefined>();
-  const [gps, setGps] = useState<{
-    latitude: number;
-    longitude: number;
-  } | null>(null);
-  const [gpsStatus, setGpsStatus] = useState("GPS belum diambil.");
-  const [cameraPermissionGranted, setCameraPermissionGranted] = useState(false);
-  const [cameraOn, setCameraOn] = useState(false);
-  const [cameraFacingMode, setCameraFacingMode] = useState<
-    "user" | "environment"
-  >("user");
-  const [cameraStatus, setCameraStatus] = useState("Kamera belum diaktifkan.");
-  const [notes, setNotes] = useState("");
-  const [message, setMessage] = useState("Form absensi siap dikirim.");
-  const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
-  const [isLoadingSession, setIsLoadingSession] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hasLoadedDraft, setHasLoadedDraft] = useState(false);
-  const [hasAppliedQueryPreset, setHasAppliedQueryPreset] = useState(false);
+  const [cameraReady, setCameraReady] = useState(false);
+  const [cameraStarting, setCameraStarting] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [lastPhotoUrl, setLastPhotoUrl] = useState<string | null>(null);
 
   const effectiveUser = useMemo(() => {
     if (sessionUser) {
@@ -113,34 +93,40 @@ export default function AttendancePage() {
       };
     }
 
-    return null;
-  }, [sessionUser, authUser]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      startCamera();
+    }, 500);
 
-  const submissionSummary = useMemo(() => {
-    if (!effectiveUser) return "Belum login";
-    return `${effectiveUser.name} • ${effectiveUser.email} • ${effectiveUser.department}`;
-  }, [effectiveUser]);
+    return () => {
+      window.clearTimeout(timer);
+      releaseCamera(false, false);
 
-  const stopCamera = () => {
-    if (cameraStreamRef.current) {
-      cameraStreamRef.current.getTracks().forEach((track) => track.stop());
-      cameraStreamRef.current = null;
+      if (lastPhotoUrl) {
+        URL.revokeObjectURL(lastPhotoUrl);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function releaseCamera(updateStatus = true, updateState = true) {
+    startingRef.current = false;
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => {
+        track.stop();
+      });
+
+      streamRef.current = null;
     }
 
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
 
-    setCameraOn(false);
-    setCameraStatus("Kamera dimatikan.");
-  };
-
-  const startCameraByMode = async (
-    targetFacingMode: "user" | "environment" = cameraFacingMode,
-  ) => {
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setCameraStatus("Browser tidak mendukung akses kamera.");
-      return;
+    if (updateState) {
+      setCameraReady(false);
+      setCameraStarting(false);
     }
 
     if (cameraStreamRef.current) {
@@ -148,7 +134,78 @@ export default function AttendancePage() {
       cameraStreamRef.current = null;
     }
 
+  function waitForCameraFrame(video: HTMLVideoElement): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const isReady = () => {
+        return (
+          video.readyState >= 2 &&
+          video.videoWidth > 0 &&
+          video.videoHeight > 0
+        );
+      };
+
+      if (isReady()) {
+        resolve();
+        return;
+      }
+
+      let intervalId: ReturnType<typeof setInterval> | null = null;
+
+      const cleanup = () => {
+        video.removeEventListener("loadedmetadata", checkReady);
+        video.removeEventListener("canplay", checkReady);
+        video.removeEventListener("playing", checkReady);
+
+        if (intervalId) {
+          clearInterval(intervalId);
+        }
+
+        clearTimeout(timeoutId);
+      };
+
+      const checkReady = () => {
+        if (isReady()) {
+          cleanup();
+          resolve();
+        }
+      };
+
+      const timeoutId = setTimeout(() => {
+        cleanup();
+        reject(
+          new Error(
+            "Kamera belum memuat gambar. Tunggu sebentar lalu coba lagi."
+          )
+        );
+      }, 7000);
+
+      video.addEventListener("loadedmetadata", checkReady);
+      video.addEventListener("canplay", checkReady);
+      video.addEventListener("playing", checkReady);
+
+      intervalId = setInterval(checkReady, 150);
+    });
+  }
+
+  async function startCamera() {
+    if (startingRef.current) return;
+
     try {
+      startingRef.current = true;
+      setCameraReady(false);
+      setCameraStarting(true);
+      setStatusTitle("Starting Camera");
+      setStatusText("Mengaktifkan kamera...");
+
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error("Browser tidak mendukung kamera.");
+      }
+
+      if (streamRef.current) {
+        releaseCamera(false, true);
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: targetFacingMode } },
         audio: false,
@@ -162,12 +219,43 @@ export default function AttendancePage() {
         `Kamera aktif (${targetFacingMode === "user" ? "depan" : "belakang"}). Ambil foto untuk bukti absensi.`,
       );
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
+      const video = videoRef.current;
+
+      if (!video) {
+        throw new Error("Element video tidak ditemukan.");
       }
-    } catch {
-      setCameraPermissionGranted(false);
-      setCameraStatus("Izin kamera ditolak. Mohon izinkan kamera.");
+
+      video.srcObject = stream;
+      video.muted = true;
+      video.playsInline = true;
+
+      await video.play();
+      await waitForCameraFrame(video);
+
+      setCameraReady(true);
+      setCameraStarting(false);
+      setStatusTitle("Camera Ready");
+      setStatusText(
+        "Kamera sudah aktif. Kamu bisa melakukan check-in atau check-out."
+      );
+    } catch (error) {
+      if (isCameraAbortError(error)) {
+        setCameraStarting(false);
+        startingRef.current = false;
+        return;
+      }
+
+      console.error("CAMERA_ERROR", error);
+
+      releaseCamera(false, true);
+      setStatusTitle("Camera Permission Needed");
+      setStatusText(
+        error instanceof Error
+          ? error.message
+          : "Aktifkan izin kamera di browser terlebih dahulu."
+      );
+    } finally {
+      startingRef.current = false;
     }
   };
 
@@ -181,10 +269,122 @@ export default function AttendancePage() {
       return;
     }
 
+    await startCamera();
+  }
+
+  function getCurrentLocation(): Promise<GeolocationPosition> {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error("Browser tidak mendukung GPS."));
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0,
+      });
+    });
+  }
+
+  async function capturePhoto(): Promise<File> {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+
+    if (!video || !canvas || !streamRef.current) {
+      throw new Error("Kamera belum siap.");
+    }
+
+    await waitForCameraFrame(video);
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    const context = canvas.getContext("2d");
+
+    if (!context) {
+      throw new Error("Canvas tidak tersedia.");
+    }
+
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error("Gagal mengambil foto."));
+            return;
+          }
+
+          if (lastPhotoUrl) {
+            URL.revokeObjectURL(lastPhotoUrl);
+          }
+
+          const previewUrl = URL.createObjectURL(blob);
+          setLastPhotoUrl(previewUrl);
+
+          const file = new File([blob], `attendance-${Date.now()}.jpg`, {
+            type: "image/jpeg",
+          });
+
+          resolve(file);
+        },
+        "image/jpeg",
+        0.9
+      );
+    });
+  }
+
+  async function handleAttendance(action: AttendanceAction) {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: cameraFacingMode } },
-        audio: false,
+      setLoading(true);
+      setStatusTitle("Processing");
+      setStatusText("Menyiapkan kamera, mengambil foto, dan lokasi GPS...");
+
+      if (!streamRef.current || !cameraReady) {
+        await startCamera();
+      }
+
+      const video = videoRef.current;
+
+      if (!video) {
+        throw new Error("Kamera belum siap.");
+      }
+
+      await waitForCameraFrame(video);
+
+      const photo = await capturePhoto();
+      const position = await getCurrentLocation();
+
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
+      const accuracy = position.coords.accuracy;
+
+      setLastLatitude(latitude);
+      setLastLongitude(longitude);
+      setLastAccuracy(accuracy);
+
+      const formData = new FormData();
+      formData.append("photo", photo);
+      formData.append("latitude", String(latitude));
+      formData.append("longitude", String(longitude));
+      formData.append("accuracy", String(accuracy));
+
+      if (action === "check-in") {
+        formData.append("checkInLatitude", String(latitude));
+        formData.append("checkInLongitude", String(longitude));
+        formData.append("checkInAccuracy", String(accuracy));
+      }
+
+      if (action === "check-out") {
+        formData.append("checkOutLatitude", String(latitude));
+        formData.append("checkOutLongitude", String(longitude));
+        formData.append("checkOutAccuracy", String(accuracy));
+      }
+
+      const response = await fetch(`/api/attendance/${action}`, {
+        method: "POST",
+        body: formData,
       });
 
       setCameraPermissionGranted(true);
@@ -535,9 +735,18 @@ export default function AttendancePage() {
       setGps(null);
       setGpsStatus("GPS belum diambil.");
 
-      setMessage(result.message || "Absensi berhasil disimpan.");
-    } catch {
-      setMessage("Terjadi kesalahan saat mengirim absensi.");
+      alert(data.message || "Absensi berhasil.");
+    } catch (error) {
+      console.error("ATTENDANCE_ERROR", error);
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Gagal melakukan absensi. Pastikan kamera dan lokasi GPS diizinkan.";
+
+      setStatusTitle("Attendance Failed");
+      setStatusText(message);
+      alert(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -583,26 +792,138 @@ export default function AttendancePage() {
               </h2>
             </div>
 
-            <span className="rounded-full bg-[#eaf1ff] px-4 py-2 text-xs font-black text-[#123c8c]">
-              Form Ready
+            <span
+              className={`rounded-full px-4 py-2 text-xs font-black ${
+                cameraReady
+                  ? "bg-emerald-50 text-emerald-700"
+                  : cameraStarting
+                    ? "bg-amber-50 text-amber-700"
+                    : "bg-slate-100 text-slate-500"
+              }`}
+            >
+              {cameraReady
+                ? "Camera Active"
+                : cameraStarting
+                  ? "Starting..."
+                  : "Camera Off"}
             </span>
           </div>
 
-          <div className="rounded-3xl border border-blue-100 bg-[#f6f8ff] p-6">
-            <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-[#eaf1ff] text-[#123c8c]">
-              <FileImage size={34} strokeWidth={2.6} />
-            </div>
-            <p className="mt-4 text-sm font-black text-slate-950">
-              Google Form Style
-            </p>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              Kirim bukti foto seperti form upload. Yang dicatat ke data absensi
-              adalah nama file dan keterangan tertulis, bukan pemindaian wajah.
-            </p>
-            <div className="mt-4 rounded-2xl border border-blue-100 bg-white p-4 text-sm font-semibold text-slate-600">
-              {evidenceName || "Belum ada file dipilih"}
+          <div className="relative overflow-hidden rounded-[1.7rem] bg-slate-950 shadow-inner">
+            <div className="aspect-[4/3]">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                onLoadedMetadata={() => {
+                  const video = videoRef.current;
+
+                  if (
+                    video &&
+                    video.readyState >= 2 &&
+                    video.videoWidth > 0 &&
+                    video.videoHeight > 0
+                  ) {
+                    setCameraReady(true);
+                    setCameraStarting(false);
+                  }
+                }}
+                onCanPlay={() => {
+                  const video = videoRef.current;
+
+                  if (
+                    video &&
+                    video.readyState >= 2 &&
+                    video.videoWidth > 0 &&
+                    video.videoHeight > 0
+                  ) {
+                    setCameraReady(true);
+                    setCameraStarting(false);
+                  }
+                }}
+                className={`h-full w-full object-cover transition ${
+                  cameraReady ? "opacity-100" : "opacity-0"
+                }`}
+              />
+
+              <div className="pointer-events-none absolute inset-6 rounded-[1.4rem] border border-white/15" />
+
+              <div className="pointer-events-none absolute left-7 top-7 h-12 w-12 rounded-tl-3xl border-l-4 border-t-4 border-blue-300" />
+              <div className="pointer-events-none absolute right-7 top-7 h-12 w-12 rounded-tr-3xl border-r-4 border-t-4 border-blue-300" />
+              <div className="pointer-events-none absolute bottom-7 left-7 h-12 w-12 rounded-bl-3xl border-b-4 border-l-4 border-blue-300" />
+              <div className="pointer-events-none absolute bottom-7 right-7 h-12 w-12 rounded-br-3xl border-b-4 border-r-4 border-blue-300" />
+
+              {!cameraReady && (
+                <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-white">
+                  <div>
+                    <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-white/10 backdrop-blur-xl">
+                      {cameraStarting ? (
+                        <Loader2 size={42} className="animate-spin" />
+                      ) : (
+                        <Camera size={42} />
+                      )}
+                    </div>
+
+                    <p className="mt-5 text-sm font-black text-white">
+                      {cameraStarting ? "Starting Camera" : "Camera Preview"}
+                    </p>
+
+                    <p className="mt-1 text-xs font-semibold leading-5 text-slate-400">
+                      {cameraStarting
+                        ? "Mohon tunggu sampai kamera memuat gambar."
+                        : "Kamera sedang mati. Klik tombol aktifkan kamera."}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
+
+          <canvas ref={canvasRef} className="hidden" />
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <button
+              onClick={toggleCamera}
+              type="button"
+              disabled={loading || cameraStarting}
+              className="rounded-2xl border border-blue-200 bg-[#f8fbff] px-5 py-4 text-sm font-black text-[#123c8c] shadow-lg shadow-slate-200/60 transition hover:bg-[#eef5ff] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <span className="flex items-center justify-center gap-2">
+                <Power size={18} />
+                {cameraReady ? "Matikan Kamera" : "Aktifkan Kamera"}
+              </span>
+            </button>
+
+            <button
+              onClick={startCamera}
+              type="button"
+              disabled={loading || cameraStarting}
+              className="rounded-2xl bg-[#123c8c] px-5 py-4 text-sm font-black text-white shadow-lg shadow-blue-900/25 transition hover:bg-[#0f3274] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <span className="flex items-center justify-center gap-2">
+                <RotateCcw size={18} />
+                Restart Camera
+              </span>
+            </button>
+          </div>
+
+          {lastPhotoUrl && (
+            <div className="mt-5 rounded-3xl border border-blue-100 bg-[#f6f8ff] p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <ImageUp size={18} className="text-[#123c8c]" />
+                <p className="text-sm font-black text-slate-950">
+                  Foto Terakhir
+                </p>
+              </div>
+
+              <img
+                src={lastPhotoUrl}
+                alt="Last attendance capture"
+                className="h-36 w-36 rounded-2xl object-cover shadow-md"
+              />
+            </div>
+          )}
         </div>
 
         <div className="space-y-6">
@@ -628,225 +949,24 @@ export default function AttendancePage() {
             </p>
           </div>
 
-          <form
-            onSubmit={handleSubmit}
-            className="space-y-4 rounded-3xl border border-white/70 bg-white/90 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-6"
-          >
-            <div className="rounded-2xl border border-blue-100 bg-[#f6f8ff] p-4 text-sm font-semibold text-slate-600">
-              {submissionSummary}
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-xs font-black uppercase tracking-[0.18em] text-[#123c8c]">
-                  Mode Kerja
-                </label>
-                <select
-                  value={workMode}
-                  onChange={(event) =>
-                    setWorkMode(event.target.value as "onsite" | "wfh" | "cuti")
-                  }
-                  className="w-full rounded-2xl border border-blue-100 bg-white px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c]"
-                >
-                  <option value="onsite">
-                    WFA / Onsite (Radius Lokasi Utama)
-                  </option>
-                  <option value="wfh">WFH</option>
-                  <option value="cuti">Cuti / Sakit</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-xs font-black uppercase tracking-[0.18em] text-[#123c8c]">
-                  Jenis Absensi
-                </label>
-                <select
-                  value={attendanceType}
-                  onChange={(event) =>
-                    setAttendanceType(
-                      event.target.value as "check-in" | "check-out",
-                    )
-                  }
-                  disabled={workMode === "cuti"}
-                  className="w-full rounded-2xl border border-blue-100 bg-white px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c]"
-                >
-                  <option value="check-in">Check-in</option>
-                  <option value="check-out">Check-out</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-xs font-black uppercase tracking-[0.18em] text-[#123c8c]">
-                  Upload Bukti Foto {workMode === "cuti" ? "(Opsional)" : ""}
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="user"
-                  onChange={handleFileChange}
-                  className="w-full rounded-2xl border border-blue-100 bg-white px-4 py-3 text-sm font-bold text-slate-700 outline-none"
-                />
-              </div>
-
-              {workMode === "cuti" && (
-                <>
-                  <div>
-                    <label className="mb-2 block text-xs font-black uppercase tracking-[0.18em] text-[#123c8c]">
-                      Jenis Surat
-                    </label>
-                    <select
-                      value={leaveType}
-                      onChange={(event) =>
-                        setLeaveType(event.target.value as "cuti" | "sakit")
-                      }
-                      className="w-full rounded-2xl border border-blue-100 bg-white px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c]"
-                    >
-                      <option value="cuti">Surat Cuti</option>
-                      <option value="sakit">Surat Sakit</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-xs font-black uppercase tracking-[0.18em] text-[#123c8c]">
-                      Upload Surat (Wajib)
-                    </label>
-                    <input
-                      type="file"
-                      accept="image/*,.pdf"
-                      onChange={handleLeaveFileChange}
-                      className="w-full rounded-2xl border border-blue-100 bg-white px-4 py-3 text-sm font-bold text-slate-700 outline-none"
-                    />
-                    <p className="mt-2 text-xs font-semibold text-slate-500">
-                      {leaveLetterName || "Belum ada surat dipilih"}
-                    </p>
-                  </div>
-                </>
-              )}
-            </div>
-
-            <div className="rounded-2xl border border-blue-100 bg-[#f6f8ff] p-4">
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-[11px] font-black text-[#123c8c]">
-                <span>Mode Kamera:</span>
-                <span>
-                  {cameraFacingMode === "user" ? "Depan" : "Belakang"}
-                </span>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    void requestCameraPermission();
-                  }}
-                  className="rounded-xl bg-slate-700 px-4 py-2 text-xs font-black text-white"
-                >
-                  Izin Buka Kamera
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    void startCamera();
-                  }}
-                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-black text-white"
-                >
-                  <Camera size={14} />
-                  ON Camera
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    stopCamera();
-                  }}
-                  className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2 text-xs font-black text-white"
-                >
-                  <CameraOff size={14} />
-                  OFF Camera
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    void handleSwitchCamera();
-                  }}
-                  className="inline-flex items-center gap-2 rounded-xl bg-amber-600 px-4 py-2 text-xs font-black text-white"
-                >
-                  <RefreshCw size={14} />
-                  {cameraFacingMode === "user"
-                    ? "Switch ke Belakang"
-                    : "Switch ke Depan"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    captureFromCamera();
-                  }}
-                  className="rounded-xl bg-[#123c8c] px-4 py-2 text-xs font-black text-white"
-                >
-                  Take Photo
-                </button>
-              </div>
-
-              <p className="mt-3 text-xs font-semibold text-slate-600">
-                {cameraStatus}
-              </p>
-
-              <div className="mt-3 overflow-hidden rounded-2xl border border-blue-100 bg-black/80">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="h-52 w-full object-cover"
-                />
-              </div>
-
-              {!cameraPermissionGranted && (
-                <p className="mt-2 text-xs font-semibold text-rose-600">
-                  Izin kamera belum aktif. Tekan tombol &quot;Izin Buka
-                  Kamera&quot;.
-                </p>
-              )}
-
-              <canvas ref={canvasRef} className="hidden" />
-            </div>
-
-            <div className="rounded-2xl border border-blue-100 bg-[#f6f8ff] p-4">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm font-semibold text-slate-600">
-                  {workMode === "onsite"
-                    ? gpsStatus
-                    : "Mode WFH/Cuti tidak mewajibkan radius lokasi utama."}
-                </p>
-                <button
-                  type="button"
-                  onClick={handleGetGps}
-                  disabled={workMode !== "onsite"}
-                  className="rounded-xl bg-[#123c8c] px-4 py-2 text-xs font-black text-white"
-                >
-                  Ambil GPS Lokasi
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-xs font-black uppercase tracking-[0.18em] text-[#123c8c]">
-                Catatan Tertulis
-              </label>
-              <textarea
-                value={notes}
-                onChange={(event) => setNotes(event.target.value)}
-                placeholder="Contoh: hadir onsite, lampiran foto meja kerja, atau bukti lokasi kerja"
-                className="min-h-28 w-full rounded-2xl border border-blue-100 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-[#123c8c]"
-              />
-            </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <button
+              disabled={loading || cameraStarting}
+              onClick={() => handleAttendance("check-in")}
+              className="rounded-2xl bg-[#123c8c] px-5 py-4 text-sm font-black text-white shadow-lg shadow-blue-900/25 transition hover:bg-[#0f3274] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <span className="flex items-center justify-center gap-2">
+                {loading ? (
+                  <Loader2 size={18} className="animate-spin" />
+                ) : null}
+                {loading ? "Processing..." : "Check-in"}
+              </span>
+            </button>
 
             <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full rounded-2xl bg-[#123c8c] px-5 py-4 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={loading || cameraStarting}
+              onClick={() => handleAttendance("check-out")}
+              className="rounded-2xl border border-blue-200 bg-[#f8fbff] px-5 py-4 text-sm font-black text-[#123c8c] shadow-lg shadow-slate-200/60 transition hover:bg-[#eef5ff] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting ? "Menyimpan..." : "Kirim Form Absensi"}
             </button>

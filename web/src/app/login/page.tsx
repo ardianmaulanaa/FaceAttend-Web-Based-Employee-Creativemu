@@ -46,8 +46,10 @@ export default function LoginPage() {
         return;
       }
 
-      router.push(result.redirectTo);
-    } catch {
+      router.push(result.redirectTo || "/home");
+      router.refresh();
+    } catch (error) {
+      console.error(error);
       alert("Terjadi kesalahan saat login.");
     } finally {
       setIsLoading(false);
@@ -139,6 +141,7 @@ export default function LoginPage() {
           {/* RIGHT FORM */}
           <div className="flex items-start justify-center px-6 pb-8 pt-2 md:px-12 md:pb-12 lg:items-center lg:bg-white/35 lg:px-20 lg:py-14 lg:backdrop-blur-xl">
             <form
+              suppressHydrationWarning
               onSubmit={handleSubmit}
               className="w-full max-w-md rounded-[2rem] border border-white/70 bg-white/90 p-5 shadow-2xl shadow-slate-300/60 backdrop-blur-2xl md:p-8"
             >
@@ -153,10 +156,12 @@ export default function LoginPage() {
 
               <label className="text-sm font-black text-slate-700">Email</label>
               <input
+                suppressHydrationWarning
                 type="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="employee@company.com"
+                autoComplete="email"
                 className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-semibold outline-none transition focus:border-[#123c8c] focus:bg-white"
               />
 
@@ -164,10 +169,12 @@ export default function LoginPage() {
                 Password
               </label>
               <input
+                suppressHydrationWarning
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 placeholder="••••••••"
+                autoComplete="current-password"
                 className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-semibold outline-none transition focus:border-[#123c8c] focus:bg-white"
               />
 

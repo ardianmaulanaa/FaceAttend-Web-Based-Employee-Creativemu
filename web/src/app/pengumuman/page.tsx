@@ -7,8 +7,6 @@ import {
   Megaphone,
   RefreshCw,
   Search,
-  ShieldCheck,
-  UserRound,
 } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
@@ -30,6 +28,8 @@ type Announcement = {
 };
 
 function formatDate(dateString: string) {
+  if (!dateString) return "-";
+
   return new Intl.DateTimeFormat("id-ID", {
     day: "2-digit",
     month: "long",
@@ -57,8 +57,7 @@ export default function EmployeeAnnouncementPage() {
       setLoading(true);
       setErrorMessage("");
 
-      const response = await fetch("/api/announcements", {
-        method: "GET",
+      const response = await fetch("/api/announcements?audience=employee", {
         cache: "no-store",
       });
 
@@ -68,13 +67,14 @@ export default function EmployeeAnnouncementPage() {
         throw new Error(data.error || data.message || "Gagal mengambil data.");
       }
 
-      setAnnouncements(data.announcements || []);
+      setAnnouncements(data.announcements || data.data || []);
     } catch (error) {
       console.error("ANNOUNCEMENTS_ERROR:", error);
+
       setErrorMessage(
         error instanceof Error
           ? error.message
-          : "Gagal mengambil pengumuman."
+          : "Gagal mengambil data pengumuman."
       );
     } finally {
       setLoading(false);
@@ -98,14 +98,6 @@ export default function EmployeeAnnouncementPage() {
       );
     });
   }, [announcements, searchKeyword]);
-
-  const employeeAnnouncements = announcements.filter(
-    (announcement) => announcement.target === "employee"
-  ).length;
-
-  const allAnnouncements = announcements.filter(
-    (announcement) => announcement.target === "all"
-  ).length;
 
   return (
     <MobileShell variant="employee">
@@ -137,7 +129,7 @@ export default function EmployeeAnnouncementPage() {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-1">
           <div className="rounded-3xl border border-blue-100 bg-white p-5 shadow-lg shadow-slate-200/50">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-[#123c8c]">
@@ -148,38 +140,6 @@ export default function EmployeeAnnouncementPage() {
                 <p className="text-sm font-bold text-slate-500">Total Info</p>
                 <p className="text-2xl font-black text-slate-950">
                   {announcements.length}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-emerald-100 bg-white p-5 shadow-lg shadow-slate-200/50">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
-                <UserRound size={22} />
-              </div>
-
-              <div>
-                <p className="text-sm font-bold text-slate-500">Karyawan</p>
-                <p className="text-2xl font-black text-slate-950">
-                  {employeeAnnouncements}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-indigo-100 bg-white p-5 shadow-lg shadow-slate-200/50">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-700">
-                <ShieldCheck size={22} />
-              </div>
-
-              <div>
-                <p className="text-sm font-bold text-slate-500">
-                  Semua Pengguna
-                </p>
-                <p className="text-2xl font-black text-slate-950">
-                  {allAnnouncements}
                 </p>
               </div>
             </div>

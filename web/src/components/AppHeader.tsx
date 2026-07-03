@@ -94,6 +94,11 @@ const adminMainNav: Array<{
     icon: Boxes,
     roles: ["owner"],
   },
+  {
+    href: "/admin/cuti",
+    label: "Laporan Cuti",
+    icon: CalendarDays,
+  },
 ];
 
 const adminMasterDataSubNav = [
@@ -148,6 +153,7 @@ export default function AppHeader({
   subtitle,
   variant = "employee",
 }: AppHeaderProps) {
+  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();

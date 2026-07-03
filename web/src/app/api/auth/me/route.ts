@@ -87,6 +87,14 @@ export async function GET(req: NextRequest) {
         phone: true,
         status: true,
         profile_photo: true,
+
+        unit: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+
         department: {
           select: {
             id: true,
@@ -122,7 +130,9 @@ export async function GET(req: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        { success: false, message: "User tidak ditemukan" },
+        {
+          message: "User tidak ditemukan.",
+        },
         { status: 404 },
       );
     }
@@ -148,22 +158,18 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json({
-      success: true,
-      user: {
-        ...user,
-        profile_photo_url,
-      },
+      user,
     });
   } catch (error) {
-    if (isDatabaseUnavailable(error)) {
-      return NextResponse.json(
-        { success: false, message: "Database tidak tersedia" },
-        { status: 503 },
-      );
-    }
+    console.error("GET /api/auth/me error:", error);
 
     return NextResponse.json(
-      { success: false, message: "Session tidak valid" },
+      {
+        message:
+          error instanceof Error
+            ? error.message
+            : "Gagal mengambil data user.",
+      },
       { status: 401 },
     );
   }

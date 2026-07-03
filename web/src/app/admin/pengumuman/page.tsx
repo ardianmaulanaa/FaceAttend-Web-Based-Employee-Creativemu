@@ -15,57 +15,33 @@ import BottomNav from "@/components/BottomNav";
 import MobileShell from "@/components/MobileShell";
 
 type AnnouncementStatus = "draft" | "published" | "archived";
-type AnnouncementTarget = "all" | "employee" | "admin";
 
 type Announcement = {
   id: string;
   title: string;
-  message: string;
-  target: AnnouncementTarget;
+  content: string;
+  target: string;
   status: AnnouncementStatus;
-  createdAt: string;
+  created_at: string;
+  updated_at: string;
+  author: {
+    id: string;
+    name: string;
+    email: string;
+  } | null;
 };
 
 type AnnouncementForm = {
   title: string;
-  message: string;
-  target: AnnouncementTarget;
+  content: string;
   status: AnnouncementStatus;
 };
 
-const defaultAnnouncements: Announcement[] = [
-  {
-    id: "announcement-1",
-    title: "Pengingat Absensi Harian",
-    message:
-      "Seluruh karyawan diharapkan melakukan check-in dan check-out sesuai jam kerja yang berlaku.",
-    target: "employee",
-    status: "published",
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "announcement-2",
-    title: "Update Data Karyawan",
-    message:
-      "Admin diminta memastikan data karyawan, divisi, jabatan, dan shift sudah sesuai.",
-    target: "admin",
-    status: "draft",
-    createdAt: new Date().toISOString(),
-  },
-];
-
 const initialForm: AnnouncementForm = {
   title: "",
-  message: "",
-  target: "all",
+  content: "",
   status: "published",
 };
-
-function formatTarget(target: AnnouncementTarget) {
-  if (target === "employee") return "Karyawan";
-  if (target === "admin") return "Admin";
-  return "Semua Pengguna";
-}
 
 function formatStatus(status: AnnouncementStatus) {
   if (status === "published") return "Published";
@@ -74,6 +50,8 @@ function formatStatus(status: AnnouncementStatus) {
 }
 
 function formatDate(value: string) {
+  if (!value) return "-";
+
   return new Intl.DateTimeFormat("id-ID", {
     day: "2-digit",
     month: "long",
@@ -84,15 +62,15 @@ function formatDate(value: string) {
 }
 
 export default function AdminAnnouncementsPage() {
-  const [announcements, setAnnouncements] =
-    useState<Announcement[]>(defaultAnnouncements);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<"all" | AnnouncementStatus>(
-    "all",
+    "all"
   );
-  const [filterTarget, setFilterTarget] = useState<"all" | AnnouncementTarget>(
-    "all",
-  );
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAnnouncementId, setEditingAnnouncementId] = useState<
@@ -100,43 +78,59 @@ export default function AdminAnnouncementsPage() {
   >(null);
   const [form, setForm] = useState<AnnouncementForm>(initialForm);
 
-  useEffect(() => {
-    const savedAnnouncements = localStorage.getItem(
-      "faceattend_announcements",
-    );
+  async function readJsonResponse(response: Response) {
+    const text = await response.text();
 
-    if (savedAnnouncements) {
-      try {
-        const parsedAnnouncements = JSON.parse(
-          savedAnnouncements,
-        ) as Announcement[];
-
-        setAnnouncements(
-          parsedAnnouncements.length > 0
-            ? parsedAnnouncements
-            : defaultAnnouncements,
-        );
-      } catch {
-        setAnnouncements(defaultAnnouncements);
-      }
+    try {
+      return text ? JSON.parse(text) : {};
+    } catch {
+      throw new Error("Response API bukan JSON.");
     }
-  }, []);
+  }
+
+  async function loadAnnouncements() {
+    try {
+      setIsLoading(true);
+      setErrorMessage("");
+
+      const response = await fetch("/api/announcements?audience=admin", {
+        cache: "no-store",
+      });
+
+      const data = await readJsonResponse(response);
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || data.message || "Gagal mengambil pengumuman."
+        );
+      }
+
+      setAnnouncements(data.announcements || data.data || []);
+    } catch (error) {
+      console.error("ADMIN_ANNOUNCEMENTS_ERROR:", error);
+
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Gagal mengambil data pengumuman."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   useEffect(() => {
-    localStorage.setItem(
-      "faceattend_announcements",
-      JSON.stringify(announcements),
-    );
-  }, [announcements]);
+    loadAnnouncements();
+  }, []);
 
   const filteredAnnouncements = useMemo(() => {
     return announcements.filter((announcement) => {
-      const keyword = search.toLowerCase();
+      const keyword = search.toLowerCase().trim();
 
       if (
-        search &&
+        keyword &&
         !announcement.title.toLowerCase().includes(keyword) &&
-        !announcement.message.toLowerCase().includes(keyword)
+        !announcement.content.toLowerCase().includes(keyword)
       ) {
         return false;
       }
@@ -145,30 +139,25 @@ export default function AdminAnnouncementsPage() {
         return false;
       }
 
-      if (filterTarget !== "all" && announcement.target !== filterTarget) {
-        return false;
-      }
-
       return true;
     });
-  }, [announcements, filterStatus, filterTarget, search]);
+  }, [announcements, filterStatus, search]);
 
   const publishedCount = announcements.filter(
-    (item) => item.status === "published",
+    (item) => item.status === "published"
   ).length;
 
   const draftCount = announcements.filter(
-    (item) => item.status === "draft",
+    (item) => item.status === "draft"
   ).length;
 
   const archivedCount = announcements.filter(
-    (item) => item.status === "archived",
+    (item) => item.status === "archived"
   ).length;
 
   function resetFilter() {
     setSearch("");
     setFilterStatus("all");
-    setFilterTarget("all");
   }
 
   function openAddModal() {
@@ -181,8 +170,7 @@ export default function AdminAnnouncementsPage() {
     setEditingAnnouncementId(announcement.id);
     setForm({
       title: announcement.title,
-      message: announcement.message,
-      target: announcement.target,
+      content: announcement.content,
       status: announcement.status,
     });
     setIsModalOpen(true);
@@ -194,76 +182,126 @@ export default function AdminAnnouncementsPage() {
     setIsModalOpen(false);
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const title = form.title.trim();
-    const message = form.message.trim();
+    const content = form.content.trim();
 
-    if (!title || !message) {
+    if (!title || !content) {
       alert("Judul dan isi pengumuman wajib diisi.");
       return;
     }
 
-    if (editingAnnouncementId) {
-      setAnnouncements((prev) =>
-        prev.map((announcement) =>
-          announcement.id === editingAnnouncementId
-            ? {
-                ...announcement,
-                title,
-                message,
-                target: form.target,
-                status: form.status,
-              }
-            : announcement,
-        ),
-      );
-    } else {
-      setAnnouncements((prev) => [
-        {
-          id: `announcement-${Date.now()}`,
-          title,
-          message,
-          target: form.target,
-          status: form.status,
-          createdAt: new Date().toISOString(),
-        },
-        ...prev,
-      ]);
-    }
+    try {
+      setIsSubmitting(true);
 
-    closeModal();
+      const response = await fetch("/api/announcements", {
+        method: editingAnnouncementId ? "PATCH" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: editingAnnouncementId,
+          title,
+          content,
+          target: "all",
+          status: form.status,
+        }),
+      });
+
+      const data = await readJsonResponse(response);
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || data.message || "Gagal menyimpan pengumuman."
+        );
+      }
+
+      await loadAnnouncements();
+      closeModal();
+    } catch (error) {
+      console.error("SAVE_ANNOUNCEMENT_ERROR:", error);
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Gagal menyimpan pengumuman."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
-  function deleteAnnouncement(id: string) {
+  async function deleteAnnouncement(id: string) {
     const confirmed = confirm("Yakin ingin menghapus pengumuman ini?");
 
     if (!confirmed) return;
 
-    setAnnouncements((prev) =>
-      prev.filter((announcement) => announcement.id !== id),
-    );
+    try {
+      const response = await fetch(`/api/announcements?id=${id}`, {
+        method: "DELETE",
+      });
+
+      const data = await readJsonResponse(response);
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || data.message || "Gagal menghapus pengumuman."
+        );
+      }
+
+      await loadAnnouncements();
+    } catch (error) {
+      console.error("DELETE_ANNOUNCEMENT_ERROR:", error);
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Gagal menghapus pengumuman."
+      );
+    }
   }
 
-  function updateStatus(id: string, status: AnnouncementStatus) {
-    setAnnouncements((prev) =>
-      prev.map((announcement) =>
-        announcement.id === id
-          ? {
-              ...announcement,
-              status,
-            }
-          : announcement,
-      ),
-    );
+  async function updateStatus(id: string, status: AnnouncementStatus) {
+    try {
+      const response = await fetch("/api/announcements", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id,
+          target: "all",
+          status,
+        }),
+      });
+
+      const data = await readJsonResponse(response);
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || data.message || "Gagal mengubah status pengumuman."
+        );
+      }
+
+      await loadAnnouncements();
+    } catch (error) {
+      console.error("UPDATE_STATUS_ANNOUNCEMENT_ERROR:", error);
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Gagal mengubah status pengumuman."
+      );
+    }
   }
 
   return (
     <MobileShell variant="admin">
       <AppHeader
         title="Pengumuman"
-        subtitle="Kelola pemberitahuan untuk admin dan karyawan"
+        subtitle="Kelola pemberitahuan untuk semua pengguna"
         variant="admin"
       />
 
@@ -284,8 +322,8 @@ export default function AdminAnnouncementsPage() {
               </h1>
 
               <p className="mt-3 max-w-2xl text-sm leading-7 text-blue-100">
-                Buat dan kelola pemberitahuan untuk seluruh pengguna, karyawan,
-                atau admin internal.
+                Buat dan kelola pemberitahuan untuk seluruh pengguna
+                FaceAttend.
               </p>
             </div>
 
@@ -330,11 +368,11 @@ export default function AdminAnnouncementsPage() {
                 Daftar Pengumuman
               </h2>
               <p className="mt-1 text-sm text-slate-500">
-                Filter berdasarkan judul, target, dan status pengumuman.
+                Filter berdasarkan judul dan status pengumuman.
               </p>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-[1.2fr_0.8fr_0.8fr_auto]">
+            <div className="grid gap-3 md:grid-cols-[1.5fr_0.8fr_auto]">
               <div className="relative">
                 <Search
                   size={18}
@@ -350,25 +388,10 @@ export default function AdminAnnouncementsPage() {
               </div>
 
               <select
-                value={filterTarget}
-                onChange={(event) =>
-                  setFilterTarget(
-                    event.target.value as "all" | AnnouncementTarget,
-                  )
-                }
-                className="rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
-              >
-                <option value="all">Semua Target</option>
-                <option value="all">Semua Pengguna</option>
-                <option value="employee">Karyawan</option>
-                <option value="admin">Admin</option>
-              </select>
-
-              <select
                 value={filterStatus}
                 onChange={(event) =>
                   setFilterStatus(
-                    event.target.value as "all" | AnnouncementStatus,
+                    event.target.value as "all" | AnnouncementStatus
                   )
                 }
                 className="rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
@@ -390,17 +413,29 @@ export default function AdminAnnouncementsPage() {
             </div>
           </div>
 
+          {errorMessage ? (
+            <div className="mt-5 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-bold text-red-700">
+              {errorMessage}
+            </div>
+          ) : null}
+
           <div className="mt-6 overflow-hidden rounded-2xl border border-blue-100">
-            <div className="hidden grid-cols-[1.4fr_1.8fr_0.7fr_0.7fr_1fr] bg-[#f6f8ff] px-5 py-4 text-xs font-black uppercase tracking-[0.16em] text-[#123c8c] md:grid">
+            <div className="hidden grid-cols-[1.4fr_2fr_0.8fr_1fr] bg-[#f6f8ff] px-5 py-4 text-xs font-black uppercase tracking-[0.16em] text-[#123c8c] md:grid">
               <p>Judul</p>
               <p>Isi Pengumuman</p>
-              <p>Target</p>
               <p>Status</p>
               <p className="text-center">Aksi</p>
             </div>
 
             <div className="divide-y divide-blue-50 bg-white">
-              {filteredAnnouncements.length === 0 ? (
+              {isLoading ? (
+                <div className="px-5 py-10 text-center">
+                  <RefreshCw className="mx-auto h-8 w-8 animate-spin text-[#123c8c]" />
+                  <p className="mt-3 font-black text-slate-700">
+                    Mengambil data pengumuman...
+                  </p>
+                </div>
+              ) : filteredAnnouncements.length === 0 ? (
                 <div className="px-5 py-10 text-center">
                   <p className="font-black text-slate-700">
                     Pengumuman tidak ditemukan.
@@ -413,24 +448,20 @@ export default function AdminAnnouncementsPage() {
                 filteredAnnouncements.map((announcement) => (
                   <div
                     key={announcement.id}
-                    className="grid gap-4 px-5 py-5 text-sm transition hover:bg-[#f8fbff] md:grid-cols-[1.4fr_1.8fr_0.7fr_0.7fr_1fr] md:items-center"
+                    className="grid gap-4 px-5 py-5 text-sm transition hover:bg-[#f8fbff] md:grid-cols-[1.4fr_2fr_0.8fr_1fr] md:items-center"
                   >
                     <div>
                       <p className="font-black text-slate-950">
                         {announcement.title}
                       </p>
                       <p className="mt-1 text-xs font-semibold text-slate-400">
-                        {formatDate(announcement.createdAt)}
+                        {formatDate(announcement.created_at)}
                       </p>
                     </div>
 
                     <p className="line-clamp-2 font-semibold leading-6 text-slate-600">
-                      {announcement.message}
+                      {announcement.content}
                     </p>
-
-                    <span className="w-fit rounded-full bg-[#eaf1ff] px-3 py-1 text-xs font-black text-[#123c8c]">
-                      {formatTarget(announcement.target)}
-                    </span>
 
                     <span
                       className={`w-fit rounded-full px-3 py-1 text-xs font-black ${
@@ -513,7 +544,7 @@ export default function AdminAnnouncementsPage() {
                 </h2>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Buat pemberitahuan untuk admin, karyawan, atau semua pengguna.
+                  Pengumuman otomatis ditujukan untuk semua pengguna.
                 </p>
               </div>
 
@@ -551,11 +582,11 @@ export default function AdminAnnouncementsPage() {
                 </label>
 
                 <textarea
-                  value={form.message}
+                  value={form.content}
                   onChange={(event) =>
                     setForm((prev) => ({
                       ...prev,
-                      message: event.target.value,
+                      content: event.target.value,
                     }))
                   }
                   rows={6}
@@ -564,48 +595,25 @@ export default function AdminAnnouncementsPage() {
                 />
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="mb-2 block text-sm font-black text-slate-700">
-                    Target Pengumuman
-                  </label>
+              <div>
+                <label className="mb-2 block text-sm font-black text-slate-700">
+                  Status
+                </label>
 
-                  <select
-                    value={form.target}
-                    onChange={(event) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        target: event.target.value as AnnouncementTarget,
-                      }))
-                    }
-                    className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
-                  >
-                    <option value="all">Semua Pengguna</option>
-                    <option value="employee">Karyawan</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-black text-slate-700">
-                    Status
-                  </label>
-
-                  <select
-                    value={form.status}
-                    onChange={(event) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        status: event.target.value as AnnouncementStatus,
-                      }))
-                    }
-                    className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
-                  >
-                    <option value="published">Published</option>
-                    <option value="draft">Draft</option>
-                    <option value="archived">Archived</option>
-                  </select>
-                </div>
+                <select
+                  value={form.status}
+                  onChange={(event) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      status: event.target.value as AnnouncementStatus,
+                    }))
+                  }
+                  className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                >
+                  <option value="published">Published</option>
+                  <option value="draft">Draft</option>
+                  <option value="archived">Archived</option>
+                </select>
               </div>
 
               <div className="flex flex-col-reverse gap-3 pt-2 md:flex-row md:justify-end">
@@ -619,11 +627,14 @@ export default function AdminAnnouncementsPage() {
 
                 <button
                   type="submit"
-                  className="rounded-2xl bg-[#123c8c] px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#0f3274] active:scale-[0.98]"
+                  disabled={isSubmitting}
+                  className="rounded-2xl bg-[#123c8c] px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#0f3274] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {editingAnnouncementId
-                    ? "Update Pengumuman"
-                    : "Simpan Pengumuman"}
+                  {isSubmitting
+                    ? "Menyimpan..."
+                    : editingAnnouncementId
+                      ? "Update Pengumuman"
+                      : "Simpan Pengumuman"}
                 </button>
               </div>
             </form>

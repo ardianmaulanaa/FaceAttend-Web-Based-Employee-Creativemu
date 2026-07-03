@@ -1,0 +1,452 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import {
+  CalendarDays,
+  CheckCircle2,
+  Clock3,
+  FileText,
+  Loader2,
+  Search,
+  ShieldCheck,
+  XCircle,
+} from "lucide-react";
+import AppHeader from "@/components/AppHeader";
+import BottomNav from "@/components/BottomNav";
+import MobileShell from "@/components/MobileShell";
+import StatCard from "@/components/StatCard";
+
+type LeaveRequest = {
+  id: string;
+  leaveType: string;
+  leaveTypeLabel: string;
+  startDate: string;
+  endDate: string;
+  totalDays: number;
+  reason: string;
+  status: string;
+  statusLabel: string;
+  adminNote: string | null;
+  createdAt: string;
+  employee: {
+    id: string;
+    employeeCode: string | null;
+    name: string;
+    email: string;
+    department: string | null;
+    position: string | null;
+  };
+};
+
+type LeaveStats = {
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+};
+
+async function readJsonResponse(response: Response) {
+  const text = await response.text();
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    console.error("API_ADMIN_LEAVE_BUKAN_JSON:", text);
+
+    return {
+      success: false,
+      error: "API admin leave requests mengembalikan HTML/error page.",
+    };
+  }
+}
+
+function getStatusStyle(status: string) {
+  if (status === "approved") {
+    return "bg-emerald-50 text-emerald-700 ring-emerald-100";
+  }
+
+  if (status === "rejected") {
+    return "bg-red-50 text-red-700 ring-red-100";
+  }
+
+  return "bg-orange-50 text-orange-700 ring-orange-100";
+}
+
+function getStatusIcon(status: string) {
+  if (status === "approved") return CheckCircle2;
+  if (status === "rejected") return XCircle;
+
+  return Clock3;
+}
+
+export default function AdminLeaveRequestsPage() {
+  const [requests, setRequests] = useState<LeaveRequest[]>([]);
+  const [stats, setStats] = useState<LeaveStats>({
+    total: 0,
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+  });
+
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [selectedRequestId, setSelectedRequestId] = useState("");
+  const [adminNote, setAdminNote] = useState("");
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  async function getLeaveRequests() {
+    try {
+      setIsLoading(true);
+      setErrorMessage("");
+
+      const response = await fetch(
+        `/api/admin/leave-requests?status=${statusFilter}`,
+        {
+          method: "GET",
+          cache: "no-store",
+        }
+      );
+
+      const data = await readJsonResponse(response);
+
+      if (!response.ok || !data.success) {
+        setRequests([]);
+        setStats({
+          total: 0,
+          pending: 0,
+          approved: 0,
+          rejected: 0,
+        });
+        setErrorMessage(data.error || "Gagal mengambil laporan cuti.");
+        return;
+      }
+
+      setRequests(data.requests || []);
+      setStats(
+        data.stats || {
+          total: 0,
+          pending: 0,
+          approved: 0,
+          rejected: 0,
+        }
+      );
+    } catch (error) {
+      console.error("GET_ADMIN_LEAVE_REQUESTS_ERROR:", error);
+      setRequests([]);
+      setErrorMessage("Gagal mengambil laporan cuti.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function updateRequestStatus(id: string, status: "approved" | "rejected") {
+    const confirmMessage =
+      status === "approved"
+        ? "Setujui pengajuan cuti ini?"
+        : "Tolak pengajuan cuti ini?";
+
+    const confirmed = window.confirm(confirmMessage);
+
+    if (!confirmed) return;
+
+    try {
+      setIsUpdating(true);
+
+      const response = await fetch("/api/admin/leave-requests", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id,
+          status,
+          adminNote,
+        }),
+      });
+
+      const data = await readJsonResponse(response);
+
+      if (!response.ok || !data.success) {
+        alert(data.error || "Gagal memperbarui status pengajuan.");
+        return;
+      }
+
+      alert(data.message || "Status pengajuan berhasil diperbarui.");
+
+      setSelectedRequestId("");
+      setAdminNote("");
+
+      await getLeaveRequests();
+    } catch (error) {
+      console.error("UPDATE_ADMIN_LEAVE_REQUEST_ERROR:", error);
+      alert("Gagal memperbarui status pengajuan.");
+    } finally {
+      setIsUpdating(false);
+    }
+  }
+
+  useEffect(() => {
+    getLeaveRequests();
+  }, [statusFilter]);
+
+  const filteredRequests = useMemo(() => {
+    const keyword = searchKeyword.toLowerCase().trim();
+
+    if (!keyword) return requests;
+
+    return requests.filter((item) => {
+      const values = [
+        item.employee.name,
+        item.employee.email,
+        item.employee.employeeCode || "",
+        item.employee.department || "",
+        item.employee.position || "",
+        item.leaveTypeLabel,
+        item.statusLabel,
+      ];
+
+      return values.some((value) => value.toLowerCase().includes(keyword));
+    });
+  }, [requests, searchKeyword]);
+
+  return (
+    <MobileShell variant="admin">
+      <AppHeader
+        title="Laporan Cuti"
+        subtitle="Kelola dan pantau pengajuan cuti karyawan"
+        rightLabel="Admin"
+        variant="admin"
+      />
+
+      <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 md:px-10 lg:px-16">
+        <div className="grid gap-4 md:grid-cols-4">
+          <StatCard
+            label="Total"
+            value={String(stats.total)}
+            description="Semua pengajuan"
+            tone="blue"
+            icon={FileText}
+          />
+
+          <StatCard
+            label="Menunggu"
+            value={String(stats.pending)}
+            description="Belum diproses"
+            tone="orange"
+            icon={Clock3}
+          />
+
+          <StatCard
+            label="Disetujui"
+            value={String(stats.approved)}
+            description="Pengajuan diterima"
+            tone="green"
+            icon={CheckCircle2}
+          />
+
+          <StatCard
+            label="Ditolak"
+            value={String(stats.rejected)}
+            description="Pengajuan ditolak"
+            tone="red"
+            icon={XCircle}
+          />
+        </div>
+
+        <div className="rounded-[2rem] border border-blue-100 bg-white p-5 shadow-xl shadow-slate-200/60">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
+                <CalendarDays size={24} strokeWidth={2.6} />
+              </div>
+
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-[#123c8c]">
+                  Leave Request Report
+                </p>
+
+                <h2 className="mt-1 text-2xl font-black text-slate-950">
+                  Daftar Pengajuan Cuti
+                </h2>
+              </div>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-[220px_1fr] lg:w-[560px]">
+              <select
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
+                className="h-13 rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+              >
+                <option value="all">Semua Status</option>
+                <option value="pending">Menunggu</option>
+                <option value="approved">Disetujui</option>
+                <option value="rejected">Ditolak</option>
+              </select>
+
+              <div className="flex items-center gap-2 rounded-2xl border border-blue-100 bg-[#f8fbff] px-4">
+                <Search size={18} className="text-slate-400" />
+                <input
+                  value={searchKeyword}
+                  onChange={(event) => setSearchKeyword(event.target.value)}
+                  placeholder="Cari karyawan..."
+                  className="h-13 w-full bg-transparent py-3 text-sm font-bold text-slate-700 outline-none placeholder:text-slate-400"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {errorMessage ? (
+          <div className="rounded-[2rem] border border-red-100 bg-red-50 p-5 text-sm font-black text-red-700 shadow-lg shadow-slate-200/60">
+            {errorMessage}
+          </div>
+        ) : null}
+
+        {isLoading ? (
+          <div className="rounded-[2rem] border border-blue-100 bg-white p-6 text-sm font-black text-slate-500 shadow-lg shadow-slate-200/60">
+            Memuat laporan pengajuan cuti...
+          </div>
+        ) : filteredRequests.length === 0 ? (
+          <div className="rounded-[2rem] border border-blue-100 bg-white p-6 text-sm font-black text-slate-500 shadow-lg shadow-slate-200/60">
+            Belum ada pengajuan cuti yang sesuai.
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredRequests.map((item) => {
+              const StatusIcon = getStatusIcon(item.status);
+              const isSelected = selectedRequestId === item.id;
+
+              return (
+                <div
+                  key={item.id}
+                  className="rounded-[2rem] border border-blue-100 bg-white p-5 shadow-xl shadow-slate-200/60"
+                >
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-xs font-black uppercase tracking-[0.2em] text-[#123c8c]">
+                          {item.leaveTypeLabel}
+                        </p>
+
+                        <div
+                          className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-black ring-1 ${getStatusStyle(
+                            item.status
+                          )}`}
+                        >
+                          <StatusIcon size={15} strokeWidth={2.6} />
+                          {item.statusLabel}
+                        </div>
+                      </div>
+
+                      <h3 className="mt-3 text-2xl font-black text-slate-950">
+                        {item.employee.name}
+                      </h3>
+
+                      <p className="mt-1 text-sm font-bold text-slate-500">
+                        {[
+                          item.employee.employeeCode,
+                          item.employee.department,
+                          item.employee.position,
+                        ]
+                          .filter(Boolean)
+                          .join(" • ")}
+                      </p>
+
+                      <p className="mt-1 text-sm font-semibold text-slate-400">
+                        {item.employee.email}
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl bg-[#f8fbff] px-4 py-3 text-sm font-black text-[#123c8c]">
+                      {item.startDate} - {item.endDate}
+                      <span className="ml-2 text-slate-500">
+                        ({item.totalDays} hari)
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 rounded-2xl bg-[#f8fbff] p-4">
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
+                      Alasan
+                    </p>
+
+                    <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">
+                      {item.reason}
+                    </p>
+                  </div>
+
+                  {item.adminNote ? (
+                    <div className="mt-3 rounded-2xl bg-blue-50 p-4">
+                      <p className="text-xs font-black uppercase tracking-[0.18em] text-[#123c8c]">
+                        Catatan Admin
+                      </p>
+
+                      <p className="mt-2 text-sm font-semibold leading-6 text-[#123c8c]">
+                        {item.adminNote}
+                      </p>
+                    </div>
+                  ) : null}
+
+                  {item.status === "pending" ? (
+                    <div className="mt-4 space-y-3">
+                      {isSelected ? (
+                        <textarea
+                          value={adminNote}
+                          onChange={(event) => setAdminNote(event.target.value)}
+                          placeholder="Tambahkan catatan admin, opsional."
+                          className="min-h-28 w-full resize-none rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm font-semibold leading-6 text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                        />
+                      ) : null}
+
+                      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-end">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedRequestId(item.id);
+                            setAdminNote("");
+                          }}
+                          className="rounded-2xl border border-blue-100 bg-white px-5 py-3 text-sm font-black text-[#123c8c] shadow-sm transition active:scale-[0.98]"
+                        >
+                          Catatan
+                        </button>
+
+                        <button
+                          type="button"
+                          disabled={isUpdating}
+                          onClick={() =>
+                            updateRequestStatus(item.id, "rejected")
+                          }
+                          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-red-50 px-5 py-3 text-sm font-black text-red-700 ring-1 ring-red-100 transition active:scale-[0.98] disabled:opacity-60"
+                        >
+                          <XCircle size={18} strokeWidth={2.6} />
+                          Tolak
+                        </button>
+
+                        <button
+                          type="button"
+                          disabled={isUpdating}
+                          onClick={() =>
+                            updateRequestStatus(item.id, "approved")
+                          }
+                          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-50 px-5 py-3 text-sm font-black text-emerald-700 ring-1 ring-emerald-100 transition active:scale-[0.98] disabled:opacity-60"
+                        >
+                          <ShieldCheck size={18} strokeWidth={2.6} />
+                          Setujui
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <BottomNav variant="admin" />
+    </MobileShell>
+  );
+}

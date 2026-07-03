@@ -85,9 +85,7 @@ export async function POST(req: Request) {
       role: user.role,
     });
 
-    const redirectTo = canViewAdminPanel(user.role)
-      ? "/admin/dashboard"
-      : "/home";
+    const redirectTo = user.role === "admin" ? "/admin/dashboard" : "/home";
 
     const response = NextResponse.json({
       success: true,
@@ -105,7 +103,7 @@ export async function POST(req: Request) {
     response.cookies.set("faceattend_token", token, {
       httpOnly: true,
       sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
+      secure: false,
       path: "/",
       maxAge: 60 * 60 * 24 * 7,
     });

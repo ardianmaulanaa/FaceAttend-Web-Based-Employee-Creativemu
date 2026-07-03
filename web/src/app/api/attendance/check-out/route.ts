@@ -335,7 +335,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json(
-      { success: false, message: "Terjadi kesalahan saat check-out" },
+      { error: "Gagal melakukan check-out." },
       { status: 500 },
     );
   }

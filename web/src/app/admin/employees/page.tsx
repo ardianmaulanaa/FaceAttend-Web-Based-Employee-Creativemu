@@ -12,12 +12,13 @@ import {
   BadgeCheck,
   BriefcaseBusiness,
   Building2,
+  Clock3,
+  Edit,
+  KeyRound,
   Camera,
   CameraOff,
   CreditCard,
   Mail,
-  Pencil,
-  Phone,
   Plus,
   RefreshCw,
   Search,
@@ -30,18 +31,13 @@ import {
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import MobileShell from "@/components/MobileShell";
-import {
-  canDeleteAdminData,
-  canEditAdminData,
-  getAdminRoleLabel,
-} from "@/lib/adminAccess";
 
 type Employee = {
   id: string;
+  employee_code: string | null;
   name: string;
   email: string;
-  role: "owner" | "admin" | "cs" | "employee";
-  employee_category?: "magang" | "tetap";
+  role: "admin" | "employee";
   department: string | null;
   position: string | null;
   phone: string | null;
@@ -66,10 +62,7 @@ type EmployeeForm = {
   email: string;
   department: string;
   position: string;
-  phone: string;
-  role: "owner" | "admin" | "cs" | "employee";
-  employeeCategory: "magang" | "tetap";
-  payrollStatus: "paid" | "unpaid";
+  temporaryPassword: string;
   status: "active" | "inactive";
   profilePhotoUrl: string;
   payrollMethods: PayrollMethodForm[];
@@ -91,10 +84,7 @@ const initialForm: EmployeeForm = {
   email: "",
   department: "",
   position: "",
-  phone: "",
-  role: "employee",
-  employeeCategory: "tetap",
-  payrollStatus: "unpaid",
+  temporaryPassword: "",
   status: "active",
   profilePhotoUrl: "",
   payrollMethods: [createEmptyPayrollMethod()],
@@ -114,26 +104,15 @@ function formatStatus(status: "active" | "inactive") {
   return status === "active" ? "Active" : "Inactive";
 }
 
-function formatEmployeeCategory(value?: "magang" | "tetap") {
-  return value === "magang" ? "Magang" : "Karyawan Tetap";
-}
-
-function formatPayrollStatus(value?: "paid" | "unpaid") {
-  return value === "paid" ? "Sudah Digaji" : "Belum Digaji";
-}
-
 export default function AdminEmployeesPage() {
   const [sessionRole, setSessionRole] = useState<string>("admin");
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [keyword, setKeyword] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [deletingEmployeeId, setDeletingEmployeeId] = useState<string | null>(
-    null,
-  );
-  const [editingEmployeeId, setEditingEmployeeId] = useState<string | null>(
-    null,
-  );
   const [form, setForm] = useState<EmployeeForm>(initialForm);
 
   const [filterCategory, setFilterCategory] = useState<
@@ -158,12 +137,14 @@ export default function AdminEmployeesPage() {
 
   async function loadEmployees() {
     try {
+      setIsLoading(true);
+
       const response = await fetch("/api/employees", {
         method: "GET",
         cache: "no-store",
       });
 
-      const result = await response.json();
+      const result = await readJsonResponse(response);
 
       if (!response.ok) {
         alert(result.message || "Gagal mengambil data karyawan.");
@@ -171,7 +152,12 @@ export default function AdminEmployeesPage() {
       }
 
       setEmployees(result.data || []);
-    } catch {
+      setUnits(result.units || []);
+      setDepartments(result.departments || []);
+      setPositions(result.positions || []);
+      setShifts(result.shifts || []);
+    } catch (error) {
+      console.error("LOAD_EMPLOYEES_ERROR:", error);
       alert("Terjadi kesalahan saat mengambil data karyawan.");
     } finally {
       setIsLoading(false);
@@ -180,83 +166,19 @@ export default function AdminEmployeesPage() {
 
   useEffect(() => {
     void loadEmployees();
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadSession() {
-      try {
-        const response = await fetch("/api/auth/me", {
-          method: "GET",
-          cache: "no-store",
-        });
-        const result = await response.json();
-        if (!active || !response.ok || !result.user?.role) return;
-        setSessionRole(String(result.user.role));
-      } catch {
-        if (active) {
-          setSessionRole("admin");
-        }
-      }
-    }
-
-    void loadSession();
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      stopCamera();
-    };
-  }, []);
+  }, [loadEmployees]);
 
   const filteredEmployees = useMemo(() => {
     return employees.filter((employee) => {
-      const category = employee.employee_category || "tetap";
+      const text = `
+        ${employee.name}
+        ${employee.email}
+        ${employee.department || ""}
+        ${employee.position || ""}
+        ${employee.status}
+      `.toLowerCase();
 
-      if (filterCategory !== "all" && category !== filterCategory) {
-        return false;
-      }
-
-      if (
-        filterName &&
-        !employee.name.toLowerCase().includes(filterName.toLowerCase())
-      ) {
-        return false;
-      }
-
-      if (
-        filterPosition &&
-        !(employee.position || "")
-          .toLowerCase()
-          .includes(filterPosition.toLowerCase())
-      ) {
-        return false;
-      }
-
-      if (
-        filterDivision &&
-        !(employee.department || "")
-          .toLowerCase()
-          .includes(filterDivision.toLowerCase())
-      ) {
-        return false;
-      }
-
-      if (
-        filterPhone &&
-        !(employee.phone || "")
-          .toLowerCase()
-          .includes(filterPhone.toLowerCase())
-      ) {
-        return false;
-      }
-
-      return true;
+      return text.includes(keyword.toLowerCase());
     });
   }, [
     employees,
@@ -271,8 +193,8 @@ export default function AdminEmployeesPage() {
     (employee) => employee.status === "active",
   ).length;
 
-  const internEmployees = employees.filter(
-    (employee) => employee.employee_category === "magang",
+  const inactiveEmployees = employees.filter(
+    (employee) => employee.status === "inactive"
   ).length;
 
   const paidEmployees = employees.filter(
@@ -380,92 +302,15 @@ export default function AdminEmployeesPage() {
   }
 
   function openRegisterModal() {
-    if (!canEditData) {
-      alert("Role Anda hanya dapat melihat data.");
-      return;
-    }
-
-    stopCamera();
     setForm(initialForm);
     setEditingEmployeeId(null);
     setCameraError("");
     setIsModalOpen(true);
   }
 
-  function openEditModal(employee: Employee) {
-    if (!canEditData) {
-      alert("Role Anda hanya dapat melihat data.");
-      return;
-    }
-
-    stopCamera();
-    const methods =
-      employee.payroll_methods && employee.payroll_methods.length > 0
-        ? employee.payroll_methods.map((method) => ({
-            bankName: method.bankName || "",
-            cardType: method.cardType || "Debit",
-            accountNumber: method.accountNumber || "",
-            accountHolderName: method.accountHolderName || "",
-            expiryMonth: method.expiryMonth || "",
-            expiryYear: method.expiryYear || "",
-          }))
-        : [createEmptyPayrollMethod()];
-
-    setForm({
-      name: employee.name,
-      email: employee.email,
-      department: employee.department || "",
-      position: employee.position || "",
-      phone: employee.phone || "",
-      role: employee.role || "employee",
-      employeeCategory: employee.employee_category || "tetap",
-      payrollStatus: employee.payroll_status || "unpaid",
-      status: employee.status,
-      profilePhotoUrl: employee.profile_photo_url || "",
-      payrollMethods: methods,
-    });
-    setEditingEmployeeId(employee.id);
-    setCameraError("");
-    setIsModalOpen(true);
-  }
-
-  function addPayrollMethod() {
-    setForm((prev) => ({
-      ...prev,
-      payrollMethods: [...prev.payrollMethods, createEmptyPayrollMethod()],
-    }));
-  }
-
-  function removePayrollMethod(index: number) {
-    setForm((prev) => {
-      const nextMethods = prev.payrollMethods.filter((_, idx) => idx !== index);
-
-      return {
-        ...prev,
-        payrollMethods:
-          nextMethods.length > 0 ? nextMethods : [createEmptyPayrollMethod()],
-      };
-    });
-  }
-
-  function updatePayrollMethod(
-    index: number,
-    field: keyof PayrollMethodForm,
-    value: string,
-  ) {
-    setForm((prev) => ({
-      ...prev,
-      payrollMethods: prev.payrollMethods.map((method, idx) =>
-        idx === index ? { ...method, [field]: value } : method,
-      ),
-    }));
-  }
-
   function closeRegisterModal() {
     stopCamera();
     setIsModalOpen(false);
-    setEditingEmployeeId(null);
-    setCameraError("");
     setForm(initialForm);
   }
 
@@ -511,43 +356,21 @@ export default function AdminEmployeesPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!canEditData) {
-      alert("Role Anda hanya dapat melihat data.");
+    const isEditing = Boolean(editingEmployee);
+
+    if (
+      !form.name ||
+      !form.email ||
+      !form.department ||
+      !form.position ||
+      !form.temporaryPassword
+    ) {
+      alert("Semua field wajib diisi.");
       return;
     }
 
-    if (!form.name || !form.email || !form.department || !form.position) {
-      alert("Nama, email, jabatan, dan divisi wajib diisi.");
-      return;
-    }
-
-    const payrollMethods = form.payrollMethods
-      .map((method) => ({
-        bankName: method.bankName.trim(),
-        cardType: method.cardType.trim() || "Debit",
-        accountNumber: method.accountNumber.trim(),
-        accountHolderName: method.accountHolderName.trim(),
-        expiryMonth: method.expiryMonth.trim(),
-        expiryYear: method.expiryYear.trim(),
-      }))
-      .filter(
-        (method) =>
-          method.bankName ||
-          method.accountNumber ||
-          method.accountHolderName ||
-          method.expiryMonth ||
-          method.expiryYear,
-      );
-
-    const hasInvalidPayrollMethod = payrollMethods.some(
-      (method) =>
-        !method.bankName || !method.accountNumber || !method.accountHolderName,
-    );
-
-    if (hasInvalidPayrollMethod) {
-      alert(
-        "Lengkapi data rekening: Nama bank, nomor rekening, dan nama pemilik wajib diisi.",
-      );
+    if (form.temporaryPassword.length < 8) {
+      alert("Temporary password minimal 8 karakter.");
       return;
     }
 
@@ -555,45 +378,67 @@ export default function AdminEmployeesPage() {
       setIsSaving(true);
 
       const response = await fetch("/api/employees", {
-        method: editingEmployeeId ? "PUT" : "POST",
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          id: editingEmployeeId,
           name: form.name,
           email: form.email,
+          temporaryPassword: form.temporaryPassword,
           department: form.department,
           position: form.position,
-          phone: form.phone,
-          role: form.role,
-          employeeCategory: form.employeeCategory,
-          profilePhotoUrl: form.profilePhotoUrl,
-          payrollStatus: form.payrollStatus,
-          payrollMethods,
           status: form.status,
         }),
       });
 
-      const result = await response.json();
+      const result = await readJsonResponse(response);
 
       if (!response.ok) {
-        alert(result.message || "Gagal menyimpan karyawan.");
+        alert(result.message || "Gagal menambahkan karyawan.");
         return;
       }
 
-      alert(
-        editingEmployeeId
-          ? "Employee berhasil diperbarui."
-          : "Employee berhasil dibuat.",
-      );
+      alert("Employee berhasil dibuat.");
 
       closeRegisterModal();
       await loadEmployees();
-    } catch {
+    } catch (error) {
+      console.error("SAVE_EMPLOYEE_ERROR:", error);
       alert("Terjadi kesalahan saat menyimpan karyawan.");
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function handleDeleteEmployee(employee: Employee) {
+    const confirmDelete = window.confirm(
+      `Yakin ingin menghapus employee "${employee.name}"? Data yang dihapus tidak bisa dikembalikan.`,
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      setDeletingId(employee.id);
+
+      const response = await fetch(`/api/employees?id=${employee.id}`, {
+        method: "DELETE",
+      });
+
+      const result = await readJsonResponse(response);
+
+      if (!response.ok) {
+        alert(result.message || "Gagal menghapus employee.");
+        return;
+      }
+
+      alert("Employee berhasil dihapus.");
+      await loadEmployees();
+    } catch (error) {
+      console.error("DELETE_EMPLOYEE_ERROR:", error);
+      alert("Terjadi kesalahan saat menghapus employee.");
+    } finally {
+      setDeletingId("");
     }
   }
 
@@ -622,20 +467,13 @@ export default function AdminEmployeesPage() {
               </h2>
 
               <p className="mt-3 max-w-2xl text-sm leading-7 text-blue-100">
-                Foto wajah ditampilkan supaya list tidak kosong, payroll hanya
-                menampilkan status digaji tanpa detail rekening.
-              </p>
-              <p className="mt-2 text-xs font-bold uppercase tracking-[0.16em] text-blue-200">
-                Role aktif: {getAdminRoleLabel(sessionRole)} • Hak akses:{" "}
-                {canDeleteData
-                  ? "Full (view/edit/delete)"
-                  : canEditData
-                    ? "View + Edit"
-                    : "View Only"}
+                Admin dapat menambahkan akun karyawan untuk login ke sistem
+                absensi. Register wajah akan dibuat pada tahap berikutnya.
               </p>
             </div>
 
             <button
+              type="button"
               onClick={openRegisterModal}
               disabled={!canEditData}
               className="group inline-flex w-full items-center justify-center gap-4 rounded-[1.8rem] bg-white px-6 py-5 text-[#123c8c] shadow-2xl shadow-blue-950/20 ring-1 ring-white/70 transition-all duration-300 hover:-translate-y-1 hover:bg-blue-50 hover:shadow-blue-950/30 active:scale-[0.97] md:w-auto"
@@ -734,65 +572,28 @@ export default function AdminEmployeesPage() {
               </p>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-5">
-              <select
-                value={filterCategory}
-                onChange={(event) =>
-                  setFilterCategory(
-                    event.target.value as "all" | "magang" | "tetap",
-                  )
-                }
-                className="rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white"
-              >
-                <option value="all">Semua Tipe</option>
-                <option value="magang">Magang</option>
-                <option value="tetap">Karyawan Tetap</option>
-              </select>
-
-              <div className="relative">
-                <Search
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                />
-                <input
-                  value={filterName}
-                  onChange={(event) => setFilterName(event.target.value)}
-                  placeholder="Nama"
-                  className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-9 pr-4 text-sm font-semibold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white"
-                />
-              </div>
-
-              <input
-                value={filterPosition}
-                onChange={(event) => setFilterPosition(event.target.value)}
-                placeholder="Jabatan"
-                className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white"
+            <div className="relative w-full md:w-[330px]">
+              <Search
+                size={18}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
               />
-
               <input
-                value={filterDivision}
-                onChange={(event) => setFilterDivision(event.target.value)}
-                placeholder="Divisi"
-                className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white"
-              />
-
-              <input
-                value={filterPhone}
-                onChange={(event) => setFilterPhone(event.target.value)}
-                placeholder="Nomor Telepon"
-                className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white"
+                value={keyword}
+                onChange={(event) => setKeyword(event.target.value)}
+                placeholder="Search employee..."
+                className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
               />
             </div>
           </div>
 
           <div className="mt-5 overflow-hidden rounded-3xl border border-blue-100">
-            <div className="hidden grid-cols-[1.2fr_1fr_0.95fr_0.8fr_0.9fr_0.9fr] bg-[#f6f8ff] px-5 py-4 text-xs font-black uppercase tracking-[0.16em] text-[#123c8c] md:grid">
-              <p>Foto / Nama</p>
-              <p>Jabatan - Divisi</p>
-              <p>No Telepon</p>
-              <p>Tipe Karyawan</p>
-              <p>Payroll</p>
+            <div className="hidden grid-cols-[1fr_1.2fr_1fr_1fr_0.7fr] bg-[#f6f8ff] px-5 py-4 text-xs font-black uppercase tracking-[0.16em] text-[#123c8c] md:grid">
+              <p>Employee</p>
+              <p>Email</p>
+              <p>Department</p>
+              <p>Position</p>
               <p>Status</p>
+              <p className="text-center">Aksi</p>
             </div>
 
             <div className="divide-y divide-blue-50">
@@ -808,7 +609,7 @@ export default function AdminEmployeesPage() {
                 filteredEmployees.map((employee) => (
                   <div
                     key={employee.id}
-                    className="grid gap-4 px-5 py-5 transition hover:bg-[#f8fbff] md:grid-cols-[1.2fr_1fr_0.95fr_0.8fr_0.9fr_0.9fr] md:items-center"
+                    className="grid gap-4 px-5 py-5 transition hover:bg-[#f8fbff] md:grid-cols-[1fr_1.2fr_1fr_1fr_0.7fr] md:items-center"
                   >
                     <div className="flex items-center gap-3">
                       {employee.profile_photo_url ? (
@@ -828,7 +629,7 @@ export default function AdminEmployeesPage() {
                           {employee.name}
                         </p>
                         <p className="mt-1 text-xs font-bold text-slate-400">
-                          {employee.email}
+                          Employee Account
                         </p>
                       </div>
                     </div>
@@ -844,22 +645,12 @@ export default function AdminEmployeesPage() {
                     </div>
 
                     <p className="text-sm font-semibold text-slate-600">
-                      {employee.phone || "-"}
+                      {employee.department || "-"}
                     </p>
 
                     <p className="text-sm font-semibold text-slate-600">
-                      {formatEmployeeCategory(employee.employee_category)}
+                      {employee.position || "-"}
                     </p>
-
-                    <span
-                      className={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-black ${
-                        employee.payroll_status === "paid"
-                          ? "bg-cyan-50 text-cyan-700"
-                          : "bg-amber-50 text-amber-700"
-                      }`}
-                    >
-                      {formatPayrollStatus(employee.payroll_status)}
-                    </span>
 
                     <div>
                       <span
@@ -896,6 +687,27 @@ export default function AdminEmployeesPage() {
                         <Trash2 size={14} />
                       </button>
                     </div>
+
+                    <div className="grid gap-2 md:flex md:justify-center">
+                      <button
+                        type="button"
+                        onClick={() => openEditModal(employee)}
+                        className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#123c8c] px-4 text-xs font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#0f3274] active:scale-[0.97] md:h-auto md:rounded-xl md:border md:border-blue-100 md:bg-white md:py-2 md:text-[#123c8c] md:shadow-none md:hover:bg-[#eaf1ff]"
+                      >
+                        <Edit size={15} />
+                        Edit
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteEmployee(employee)}
+                        disabled={deletingId === employee.id}
+                        className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-red-100 bg-red-50 px-4 text-xs font-black text-red-600 transition hover:bg-red-100 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 md:h-auto md:rounded-xl md:py-2"
+                      >
+                        <Trash2 size={15} />
+                        {deletingId === employee.id ? "..." : "Hapus"}
+                      </button>
+                    </div>
                   </div>
                 ))}
 
@@ -921,20 +733,21 @@ export default function AdminEmployeesPage() {
               <div>
                 <div className="inline-flex items-center gap-2 rounded-full bg-[#eaf1ff] px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[#123c8c]">
                   <Plus size={15} strokeWidth={3} />
-                  {editingEmployeeId ? "Edit Employee" : "Register Employee"}
+                  Register Employee
                 </div>
 
                 <h2 className="mt-4 text-2xl font-black text-slate-950">
-                  {editingEmployeeId ? "Edit Karyawan" : "Tambah Karyawan Baru"}
+                  Tambah Karyawan Baru
                 </h2>
 
                 <p className="mt-1 text-sm leading-6 text-slate-500">
-                  Aktifkan kamera untuk foto wajah, gunakan switch camera,
-                  on/off camera, retake bila perlu, lalu lengkapi data rekening.
+                  Untuk sekarang hanya membuat akun karyawan. Register wajah
+                  akan ditambahkan nanti.
                 </p>
               </div>
 
               <button
+                type="button"
                 onClick={closeRegisterModal}
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 transition hover:bg-slate-200"
               >
@@ -1076,74 +889,78 @@ export default function AdminEmployeesPage() {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="mb-2 block text-sm font-black text-slate-700">
-                      Divisi
-                    </label>
-                    <div className="relative">
-                      <Building2
-                        size={18}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                      />
-                      <input
-                        value={form.department}
-                        onChange={(event) =>
-                          setForm((prev) => ({
-                            ...prev,
-                            department: event.target.value,
-                          }))
-                        }
-                        placeholder="Digital Marketing"
-                        className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white"
-                      />
-                    </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-sm font-black text-slate-700">
+                    Department
+                  </label>
+                  <div className="relative">
+                    <Building2
+                      size={18}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+                    <input
+                      value={form.department}
+                      onChange={(event) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          department: event.target.value,
+                        }))
+                      }
+                      placeholder="IT Department"
+                      className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white"
+                    />
                   </div>
+                </div>
 
-                  <div>
-                    <label className="mb-2 block text-sm font-black text-slate-700">
-                      Jabatan
-                    </label>
-                    <div className="relative">
-                      <BriefcaseBusiness
-                        size={18}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                      />
-                      <input
-                        value={form.position}
-                        onChange={(event) =>
-                          setForm((prev) => ({
-                            ...prev,
-                            position: event.target.value,
-                          }))
-                        }
-                        placeholder="Web Developer"
-                        className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white"
-                      />
-                    </div>
+                <div>
+                  <label className="mb-2 block text-sm font-black text-slate-700">
+                    Position
+                  </label>
+                  <div className="relative">
+                    <BriefcaseBusiness
+                      size={18}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+                    <input
+                      value={form.position}
+                      onChange={(event) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          position: event.target.value,
+                        }))
+                      }
+                      placeholder="Backend Intern"
+                      className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white"
+                    />
                   </div>
+                </div>
+              </div>
 
-                  <div>
-                    <label className="mb-2 block text-sm font-black text-slate-700">
-                      Nomor Telepon
-                    </label>
-                    <div className="relative">
-                      <Phone
-                        size={18}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                      />
-                      <input
-                        value={form.phone}
-                        onChange={(event) =>
-                          setForm((prev) => ({
-                            ...prev,
-                            phone: event.target.value,
-                          }))
-                        }
-                        placeholder="08xxxxxxxxxx"
-                        className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white"
-                      />
-                    </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-sm font-black text-slate-700">
+                    Temporary Password
+                  </label>
+                  <div className="relative">
+                    <KeyRound
+                      size={18}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+                    <input
+                      type="password"
+                      value={form.temporaryPassword}
+                      onChange={(event) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          temporaryPassword: event.target.value,
+                        }))
+                      }
+                      placeholder="Minimal 8 karakter"
+                      className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white"
+                    />
                   </div>
+                </div>
 
                   <div>
                     <label className="mb-2 block text-sm font-black text-slate-700">
@@ -1227,145 +1044,18 @@ export default function AdminEmployeesPage() {
                     </select>
                   </div>
 
-                  <div className="md:col-span-2">
-                    <div className="rounded-2xl border border-blue-100 bg-[#f6f8ff] p-4">
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                          <p className="inline-flex items-center gap-2 text-sm font-black text-[#123c8c]">
-                            <CreditCard size={16} />
-                            Data Rekening
-                          </p>
-                          <p className="mt-1 text-xs font-semibold text-slate-500">
-                            Isi seperti kartu bank pada umumnya. Bisa tambah,
-                            edit, atau hapus kartu.
-                          </p>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={addPayrollMethod}
-                          className="inline-flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-white px-3 py-2 text-xs font-black text-[#123c8c]"
-                        >
-                          <Plus size={14} />
-                          Tambah Kartu
-                        </button>
-                      </div>
-
-                      <div className="mt-3 space-y-3">
-                        {form.payrollMethods.map((method, index) => (
-                          <div
-                            key={`payroll-method-${index}`}
-                            className="rounded-2xl border border-blue-100 bg-white p-3"
-                          >
-                            <div className="flex items-center justify-between">
-                              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#123c8c]">
-                                Kartu {index + 1}
-                              </p>
-
-                              <button
-                                type="button"
-                                onClick={() => removePayrollMethod(index)}
-                                className="inline-flex items-center gap-1 rounded-lg border border-rose-100 bg-rose-50 px-2.5 py-1 text-[11px] font-black text-rose-600"
-                              >
-                                <Trash2 size={12} />
-                                Hapus
-                              </button>
-                            </div>
-
-                            <div className="mt-2 grid gap-2 md:grid-cols-2">
-                              <input
-                                value={method.bankName}
-                                onChange={(event) =>
-                                  updatePayrollMethod(
-                                    index,
-                                    "bankName",
-                                    event.target.value,
-                                  )
-                                }
-                                placeholder="Nama Bank (BCA, BNI, Mandiri)"
-                                className="w-full rounded-xl border border-blue-100 bg-[#f6f8ff] px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white"
-                              />
-
-                              <select
-                                value={method.cardType}
-                                onChange={(event) =>
-                                  updatePayrollMethod(
-                                    index,
-                                    "cardType",
-                                    event.target.value,
-                                  )
-                                }
-                                className="w-full rounded-xl border border-blue-100 bg-[#f6f8ff] px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white"
-                              >
-                                <option value="Debit">Debit</option>
-                                <option value="Visa">Visa</option>
-                                <option value="Mastercard">Mastercard</option>
-                                <option value="GPN">GPN</option>
-                              </select>
-
-                              <input
-                                value={method.accountNumber}
-                                onChange={(event) =>
-                                  updatePayrollMethod(
-                                    index,
-                                    "accountNumber",
-                                    event.target.value,
-                                  )
-                                }
-                                placeholder="Nomor Rekening"
-                                inputMode="numeric"
-                                className="w-full rounded-xl border border-blue-100 bg-[#f6f8ff] px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white"
-                              />
-
-                              <input
-                                value={method.accountHolderName}
-                                onChange={(event) =>
-                                  updatePayrollMethod(
-                                    index,
-                                    "accountHolderName",
-                                    event.target.value,
-                                  )
-                                }
-                                placeholder="Nama Pemilik Rekening"
-                                className="w-full rounded-xl border border-blue-100 bg-[#f6f8ff] px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white"
-                              />
-
-                              <input
-                                value={method.expiryMonth}
-                                onChange={(event) =>
-                                  updatePayrollMethod(
-                                    index,
-                                    "expiryMonth",
-                                    event.target.value,
-                                  )
-                                }
-                                placeholder="Bulan Exp (MM)"
-                                maxLength={2}
-                                inputMode="numeric"
-                                className="w-full rounded-xl border border-blue-100 bg-[#f6f8ff] px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white"
-                              />
-
-                              <input
-                                value={method.expiryYear}
-                                onChange={(event) =>
-                                  updatePayrollMethod(
-                                    index,
-                                    "expiryYear",
-                                    event.target.value,
-                                  )
-                                }
-                                placeholder="Tahun Exp (YY)"
-                                maxLength={2}
-                                inputMode="numeric"
-                                className="w-full rounded-xl border border-blue-100 bg-[#f6f8ff] px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white"
-                              />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <div className="rounded-2xl border border-blue-100 bg-[#f6f8ff] p-4">
+                <p className="text-sm font-black text-[#123c8c]">
+                  Catatan sementara
+                </p>
+                <p className="mt-1 text-sm leading-6 text-slate-500">
+                  Temporary password digunakan untuk login karyawan. Password
+                  akan disimpan ke MySQL dalam bentuk{" "}
+                  <span className="font-black text-slate-700">
+                    password_hash
+                  </span>
+                  , bukan password asli.
+                </p>
               </div>
 
               <div className="mt-2 flex flex-col-reverse gap-3 md:flex-row md:justify-end">
@@ -1382,11 +1072,7 @@ export default function AdminEmployeesPage() {
                   disabled={isSaving}
                   className="rounded-2xl bg-[#123c8c] px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#0f3274] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {isSaving
-                    ? "Saving..."
-                    : editingEmployeeId
-                      ? "Update Employee"
-                      : "Save Employee"}
+                  {isSaving ? "Saving..." : "Save Employee"}
                 </button>
               </div>
             </form>

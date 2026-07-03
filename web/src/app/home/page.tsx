@@ -17,7 +17,6 @@ import {
 import { useRouter } from "next/navigation";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
-import LateReasonModal from "@/components/LateReasonModal";
 import MobileShell from "@/components/MobileShell";
 import { useAppData } from "@/context/AppDataContext";
 
@@ -93,16 +92,6 @@ function getLateReasonStorageKey(userId: string, dateKey: string) {
   return `late-reason-${userId}-${dateKey}`;
 }
 
-type LateStatus = {
-  isLate: boolean;
-  hasReason: boolean;
-  employeeName: string;
-  scheduledCheckIn: string;
-  checkInTime: string;
-  lateMinutes: number;
-  lateSeconds: number;
-};
-
 export default function HomePage() {
   const router = useRouter();
   const { authUser, state } = useAppData();
@@ -111,7 +100,6 @@ export default function HomePage() {
   const [showLateReasonPopup, setShowLateReasonPopup] = useState(false);
   const [lateReason, setLateReason] = useState("");
   const [isSubmittingLateReason, setIsSubmittingLateReason] = useState(false);
-  const [lateStatus, setLateStatus] = useState<LateStatus | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -181,58 +169,28 @@ export default function HomePage() {
       record.date === new Date().toISOString().slice(0, 10),
   );
 
+  const isLateToday =
+    (todayAttendance?.status || "").toLowerCase() === "late" ||
+    Number(todayAttendance?.lateMinutes || 0) > 0;
+
   useEffect(() => {
-    if (!effectiveUser) {
-      setLateStatus(null);
+    if (!effectiveUser || !isLateToday) {
       setShowLateReasonPopup(false);
       return;
     }
 
-    let active = true;
+    const savedReason = window.localStorage.getItem(
+      getLateReasonStorageKey(effectiveUser.id, todayKey),
+    );
 
-    async function loadLateStatus() {
-      try {
-        const response = await fetch("/api/attendance/late-reason", {
-          method: "GET",
-          cache: "no-store",
-        });
-
-        const result = await response.json();
-        if (!active || !response.ok || !result.success) {
-          setShowLateReasonPopup(false);
-          return;
-        }
-
-        const data = result.data as LateStatus;
-        setLateStatus(data);
-
-        if (!data.isLate || data.hasReason) {
-          setShowLateReasonPopup(false);
-          return;
-        }
-
-        const savedReason = window.localStorage.getItem(
-          getLateReasonStorageKey(effectiveUser.id, todayKey),
-        );
-
-        if (savedReason) {
-          setLateReason(savedReason);
-        }
-
-        setShowLateReasonPopup(true);
-      } catch {
-        if (active) {
-          setShowLateReasonPopup(false);
-        }
-      }
+    if (savedReason) {
+      setLateReason(savedReason);
+      setShowLateReasonPopup(false);
+      return;
     }
 
-    void loadLateStatus();
-
-    return () => {
-      active = false;
-    };
-  }, [effectiveUser, todayKey]);
+    setShowLateReasonPopup(true);
+  }, [effectiveUser, isLateToday, todayKey]);
 
   if (isLoadingSession) {
     return (
@@ -287,12 +245,6 @@ export default function HomePage() {
         reason,
       );
       setShowLateReasonPopup(false);
-      if (lateStatus) {
-        setLateStatus({
-          ...lateStatus,
-          hasReason: true,
-        });
-      }
       alert(result.message || "Alasan telat berhasil dikirim.");
     } catch {
       alert("Terjadi kesalahan saat mengirim alasan telat.");
@@ -363,20 +315,39 @@ export default function HomePage() {
 
   return (
     <MobileShell variant="employee">
-      <LateReasonModal
-        open={showLateReasonPopup}
-        employeeName={lateStatus?.employeeName || effectiveUser.name}
-        scheduledCheckIn={lateStatus?.scheduledCheckIn || "-"}
-        checkInTime={lateStatus?.checkInTime || "-"}
-        lateMinutes={lateStatus?.lateMinutes || 0}
-        lateSeconds={lateStatus?.lateSeconds || 0}
-        reason={lateReason}
-        isSubmitting={isSubmittingLateReason}
-        onReasonChange={setLateReason}
-        onSubmit={() => {
-          void submitLateReason();
-        }}
-      />
+      {showLateReasonPopup && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/70 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-3xl border border-amber-200 bg-white p-6 shadow-2xl shadow-slate-950/30 md:p-7">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">
+              Wajib Isi Alasan Telat
+            </p>
+            <h2 className="mt-2 text-2xl font-black text-slate-950">
+              Anda terdeteksi terlambat hari ini
+            </h2>
+            <p className="mt-3 text-sm leading-7 text-slate-600">
+              Isi alasan bebas langsung dari halaman home. Aturan operasional:
+              kantor dulu baru kunjungan, dan jika ada kunjungan jam kerja tetap
+              mengikuti jam karyawan tetap.
+            </p>
+
+            <textarea
+              value={lateReason}
+              onChange={(event) => setLateReason(event.target.value)}
+              placeholder="Contoh: Terlambat karena antrean transportasi, sudah izin ke atasan."
+              className="mt-4 min-h-32 w-full rounded-2xl border border-amber-100 bg-amber-50/30 px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-amber-400 focus:bg-white"
+            />
+
+            <button
+              type="button"
+              onClick={submitLateReason}
+              disabled={isSubmittingLateReason}
+              className="mt-4 inline-flex w-full items-center justify-center rounded-2xl bg-amber-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-amber-200 transition disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {isSubmittingLateReason ? "Mengirim..." : "Kirim Alasan Telat"}
+            </button>
+          </div>
+        </div>
+      )}
 
       <AppHeader
         title="Good Morning"
@@ -384,11 +355,7 @@ export default function HomePage() {
         rightLabel={effectiveUser.id}
       />
 
-      <section
-        className={`mx-auto max-w-7xl space-y-6 px-5 py-6 md:px-10 lg:px-16 ${
-          showLateReasonPopup ? "pointer-events-none select-none" : ""
-        }`}
-      >
+      <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 md:px-10 lg:px-16">
         <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
           <div className="relative overflow-hidden rounded-3xl bg-[#123c8c] p-6 text-white shadow-2xl shadow-blue-900/20 md:p-8">
             <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
@@ -602,6 +569,84 @@ export default function HomePage() {
               <p className="text-xs font-black uppercase tracking-[0.22em] text-[#123c8c]">
                 Quick Actions
               </p>
+              <h2 className="mt-2 text-2xl font-black text-slate-950">
+                Akses Cepat
+              </h2>
+            </div>
+
+            <p className="max-w-md text-sm leading-6 text-slate-500">
+              Gunakan fitur utama untuk absensi, melihat riwayat, dan mengecek
+              data profil karyawan.
+            </p>
+          </div>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+            {quickActions.map((menu) => {
+              const Icon = menu.icon;
+
+              return (
+                <Link
+                  key={menu.href}
+                  href={menu.href}
+                  className="group rounded-3xl border border-blue-100 bg-white p-5 shadow-lg shadow-slate-200/50 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-300/50 active:scale-[0.98]"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
+                      <Icon size={24} strokeWidth={2.6} />
+                    </div>
+
+                    <ArrowRight
+                      size={20}
+                      className="text-[#123c8c] transition group-hover:translate-x-1"
+                    />
+                  </div>
+
+                  <h3 className="mt-5 text-lg font-black text-slate-950">
+                    {menu.title}
+                  </h3>
+
+                  <p className="mt-2 text-sm leading-6 text-slate-500">
+                    {menu.description}
+                  </p>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      <BottomNav />
+    </MobileShell>
+  );
+}
+    </div>
+
+                <div className="h-2 w-full rounded-full bg-amber-100">
+                  <div
+                    className="h-2 rounded-full bg-amber-600 transition-all"
+                    style={{ width: `${rewardProgressPercent}%` }}
+                  />
+                </div>
+
+                <p className="mt-1 text-[11px] font-semibold text-slate-500">
+                  Target bidang {effectiveUser.department}: {rewardTarget} poin
+                </p>
+
+                <p className="mt-1 text-[11px] font-semibold text-slate-500">
+                  Kartu tambahan: {payoutProfile?.cards?.length || 0}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-6">
+          <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-[#123c8c]">
+                Quick Actions
+              </p>
+
               <h2 className="mt-2 text-2xl font-black text-slate-950">
                 Akses Cepat
               </h2>
