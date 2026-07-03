@@ -78,8 +78,8 @@ const demoUsers: DemoUser[] = [
   {
     id: "OWN-DEMO-001",
     name: "Owner Creativemu",
-    email: "owner@creativemu.com",
-    password: "owner123456",
+    email: "owner@creativemu.co.id",
+    password: "123456",
     role: "owner",
     employee_category: "tetap",
     department: "Management",
@@ -88,7 +88,7 @@ const demoUsers: DemoUser[] = [
     profile_photo_url: null,
     payout_label: "Payroll BCA",
     account_holder_name: "Owner Creativemu",
-    payout_contact_email: "owner@creativemu.com",
+    payout_contact_email: "owner@creativemu.co.id",
     payout_phone_number: "081234000010",
     account_number: "1234500010",
     expiry_month: "12",
@@ -115,8 +115,8 @@ const demoUsers: DemoUser[] = [
   {
     id: "ADM-DEMO-001",
     name: "Admin Creativemu",
-    email: "admin@creativemu.com",
-    password: "admin123456",
+    email: "admin@creativemu.co.id",
+    password: "123456",
     role: "admin",
     employee_category: "tetap",
     department: "Operations",
@@ -125,7 +125,7 @@ const demoUsers: DemoUser[] = [
     profile_photo_url: null,
     payout_label: "Payroll BCA",
     account_holder_name: "Admin Creativemu",
-    payout_contact_email: "admin@creativemu.com",
+    payout_contact_email: "admin@creativemu.co.id",
     payout_phone_number: "081234000001",
     account_number: "1234567890",
     expiry_month: "12",
@@ -152,8 +152,8 @@ const demoUsers: DemoUser[] = [
   {
     id: "CS-DEMO-001",
     name: "CS Creativemu",
-    email: "cs@creativemu.com",
-    password: "cs123456",
+    email: "cs@creativemu.co.id",
+    password: "123456",
     role: "cs",
     employee_category: "tetap",
     department: "Customer Service",
@@ -162,7 +162,7 @@ const demoUsers: DemoUser[] = [
     profile_photo_url: null,
     payout_label: "Payroll BNI",
     account_holder_name: "CS Creativemu",
-    payout_contact_email: "cs@creativemu.com",
+    payout_contact_email: "cs@creativemu.co.id",
     payout_phone_number: "081234000011",
     account_number: "1234500011",
     expiry_month: "10",
@@ -241,8 +241,16 @@ export function isDatabaseUnavailable(error: unknown) {
 }
 
 export function findDemoUserByEmail(email: string) {
+  const normalizedEmail = email.trim().toLowerCase();
+  const legacyEmail = normalizedEmail.replace(
+    "@creativemu.com",
+    "@creativemu.co.id",
+  );
+
   return demoUsers.find(
-    (item) => item.email.toLowerCase() === email.toLowerCase(),
+    (item) =>
+      item.email.toLowerCase() === normalizedEmail ||
+      item.email.toLowerCase() === legacyEmail,
   );
 }
 

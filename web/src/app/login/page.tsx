@@ -5,20 +5,11 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import MobileShell from "@/components/MobileShell";
 
-const OWNER_DEMO = {
-  email: "owner@creativemu.com",
-  password: "owner123456",
-};
-
-const ADMIN_DEMO = {
-  email: "admin@creativemu.com",
-  password: "admin123456",
-};
-
-const CS_DEMO = {
-  email: "cs@creativemu.com",
-  password: "cs123456",
-};
+const DEMO_ACCOUNTS = [
+  { label: "Demo Owner", email: "owner@creativemu.co.id", password: "123456" },
+  { label: "Demo Admin", email: "admin@creativemu.co.id", password: "123456" },
+  { label: "Demo CS", email: "cs@creativemu.co.id", password: "123456" },
+] as const;
 
 export default function LoginPage() {
   const router = useRouter();
@@ -67,11 +58,10 @@ export default function LoginPage() {
     await loginUser(email, password);
   }
 
-  async function handleQuickLogin(payload: {
-    email: string;
-    password: string;
-  }) {
-    await loginUser(payload.email, payload.password);
+  async function handleQuickLogin(emailValue: string, passwordValue: string) {
+    setEmail(emailValue);
+    setPassword(passwordValue);
+    await loginUser(emailValue, passwordValue);
   }
 
   return (
@@ -156,8 +146,7 @@ export default function LoginPage() {
                   Sign In
                 </h3>
                 <p className="mt-2 text-sm leading-6 text-slate-500">
-                  Gunakan akun karyawan, owner, admin, atau CS untuk masuk ke
-                  sistem.
+                  Gunakan akun owner, admin, atau CS sesuai bidang kerja.
                 </p>
               </div>
 
@@ -189,33 +178,34 @@ export default function LoginPage() {
                 {isLoading ? "Signing In..." : "Sign In"}
               </button>
 
-              <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                <button
-                  type="button"
-                  onClick={() => handleQuickLogin(OWNER_DEMO)}
-                  disabled={isLoading}
-                  className="rounded-2xl bg-[#fff4e6] px-4 py-3 text-center text-xs font-black text-[#ff8a00] transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  Demo Owner
-                </button>
+              <div className="mt-4 rounded-2xl border border-blue-100 bg-[#f6f8ff] p-4">
+                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#123c8c]">
+                  Akun Login
+                </p>
+                <div className="mt-2 space-y-1 text-xs font-semibold text-slate-600">
+                  <p>Owner: owner@creativemu.co.id</p>
+                  <p>Admin: admin@creativemu.co.id</p>
+                  <p>CS: cs@creativemu.co.id</p>
+                </div>
+                <p className="mt-2 text-xs font-bold text-slate-500">
+                  Password semua akun: 123456
+                </p>
 
-                <button
-                  type="button"
-                  onClick={() => handleQuickLogin(ADMIN_DEMO)}
-                  disabled={isLoading}
-                  className="rounded-2xl bg-[#eaf1ff] px-4 py-3 text-center text-xs font-black text-[#123c8c] transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  Demo Admin
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleQuickLogin(CS_DEMO)}
-                  disabled={isLoading}
-                  className="rounded-2xl bg-[#eafaf5] px-4 py-3 text-center text-xs font-black text-emerald-700 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  Demo CS
-                </button>
+                <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                  {DEMO_ACCOUNTS.map((account) => (
+                    <button
+                      key={account.label}
+                      type="button"
+                      onClick={() =>
+                        handleQuickLogin(account.email, account.password)
+                      }
+                      disabled={isLoading}
+                      className="rounded-xl border border-blue-100 bg-white px-3 py-2 text-xs font-black text-[#123c8c] transition hover:bg-[#eaf1ff] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {account.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </form>
           </div>

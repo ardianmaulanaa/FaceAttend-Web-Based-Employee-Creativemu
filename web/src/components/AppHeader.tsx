@@ -135,34 +135,6 @@ type AdminSessionUser = {
   profile_photo_url?: string | null;
 };
 
-type DemoSwitchTarget = {
-  id: "owner" | "admin" | "cs";
-  label: string;
-  email: string;
-  password: string;
-};
-
-const demoSwitchTargets: DemoSwitchTarget[] = [
-  {
-    id: "owner",
-    label: "Owner",
-    email: "owner@creativemu.com",
-    password: "owner123456",
-  },
-  {
-    id: "admin",
-    label: "Admin",
-    email: "admin@creativemu.com",
-    password: "admin123456",
-  },
-  {
-    id: "cs",
-    label: "CS",
-    email: "cs@creativemu.com",
-    password: "cs123456",
-  },
-];
-
 type AttendanceNotification = {
   id: string;
   type: "check-in" | "check-out" | "absent" | "complaint" | "call";
@@ -184,8 +156,6 @@ export default function AppHeader({
 
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isBellMenuOpen, setIsBellMenuOpen] = useState(false);
-  const [isRoleSwitchOpen, setIsRoleSwitchOpen] = useState(false);
-  const [isSwitchingRole, setIsSwitchingRole] = useState(false);
   const [attendanceNotifications, setAttendanceNotifications] = useState<
     AttendanceNotification[]
   >([]);
@@ -195,7 +165,6 @@ export default function AppHeader({
   const { authUser, state } = useAppData();
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
   const bellMenuRef = useRef<HTMLDivElement | null>(null);
-  const roleSwitchRef = useRef<HTMLDivElement | null>(null);
 
   const unreadEmployeeNotifications = useMemo(() => {
     if (!authUser || authUser.role !== "employee") return 0;
@@ -337,13 +306,6 @@ export default function AppHeader({
       ) {
         setIsBellMenuOpen(false);
       }
-
-      if (
-        roleSwitchRef.current &&
-        !roleSwitchRef.current.contains(event.target as Node)
-      ) {
-        setIsRoleSwitchOpen(false);
-      }
     }
 
     document.addEventListener("mousedown", onClickOutside);
@@ -352,43 +314,19 @@ export default function AppHeader({
     };
   }, []);
 
-  function handleSwitchAccount() {
-    setIsProfileMenuOpen(false);
-    router.push("/login?switch=1");
-  }
-
-  async function switchDemoRole(target: DemoSwitchTarget) {
-    if (isSwitchingRole) return;
-
+  async function handleLogout() {
     try {
-      setIsSwitchingRole(true);
-
-      const response = await fetch("/api/auth/login", {
+      const response = await fetch("/api/auth/logout", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: target.email,
-          password: target.password,
-        }),
       });
-
-      const result = await response.json();
-
       if (!response.ok) {
-        alert(result.message || "Gagal switch akun demo.");
+        alert("Gagal logout.");
         return;
       }
-
-      setIsRoleSwitchOpen(false);
       setIsProfileMenuOpen(false);
-      router.push(result.redirectTo || "/admin/dashboard");
-      router.refresh();
+      router.replace("/login");
     } catch {
-      alert("Terjadi kesalahan saat switch akun demo.");
-    } finally {
-      setIsSwitchingRole(false);
+      alert("Terjadi kesalahan saat logout.");
     }
   }
 
@@ -477,13 +415,14 @@ export default function AppHeader({
             </nav>
 
             <div className="mt-auto pt-4">
-              <Link
-                href="/login?switch=1"
+              <button
+                type="button"
+                onClick={handleLogout}
                 className="flex items-center justify-between rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-black text-[#123c8c] transition hover:bg-[#eaf1ff]"
               >
                 <span>Logout</span>
                 <UserCircle2 size={16} />
-              </Link>
+              </button>
             </div>
           </div>
         </aside>
@@ -581,53 +520,6 @@ export default function AppHeader({
                 )}
               </div>
 
-              <div ref={roleSwitchRef} className="relative hidden md:block">
-                <button
-                  type="button"
-                  onClick={() => setIsRoleSwitchOpen((prev) => !prev)}
-                  disabled={isSwitchingRole}
-                  className="inline-flex h-10 items-center gap-2 rounded-2xl border border-blue-100 bg-[#f6f8ff] px-3 text-xs font-black text-[#123c8c] transition hover:bg-[#eaf1ff] disabled:cursor-not-allowed disabled:opacity-70"
-                >
-                  <UserCircle2 size={15} />
-                  {isSwitchingRole ? "Switching..." : "Switch Demo"}
-                </button>
-
-                {isRoleSwitchOpen && (
-                  <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-52 rounded-2xl border border-blue-100 bg-white p-2 shadow-xl shadow-slate-300/40">
-                    <p className="px-2 pb-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#123c8c]">
-                      Quick Switch
-                    </p>
-
-                    <div className="space-y-1">
-                      {demoSwitchTargets.map((target) => {
-                        const active = sessionUser?.role === target.id;
-
-                        return (
-                          <button
-                            key={target.id}
-                            type="button"
-                            onClick={() => switchDemoRole(target)}
-                            disabled={isSwitchingRole}
-                            className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-bold transition ${
-                              active
-                                ? "bg-[#eaf1ff] text-[#123c8c]"
-                                : "text-slate-700 hover:bg-[#f5f8ff]"
-                            } disabled:cursor-not-allowed disabled:opacity-70`}
-                          >
-                            <span>{target.label}</span>
-                            {active && (
-                              <span className="text-[10px] font-black uppercase tracking-wide">
-                                Active
-                              </span>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-
               <div ref={profileMenuRef} className="relative hidden md:block">
                 <button
                   type="button"
@@ -650,34 +542,16 @@ export default function AppHeader({
                 {isProfileMenuOpen && (
                   <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-56 rounded-2xl border border-blue-100 bg-white p-2 shadow-xl shadow-slate-300/40">
                     <p className="px-3 pb-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#123c8c]">
-                      Switch Demo Role
+                      Profil
                     </p>
 
-                    <div className="space-y-1 px-1 pb-1">
-                      {demoSwitchTargets.map((target) => {
-                        const active = sessionUser?.role === target.id;
-
-                        return (
-                          <button
-                            key={`profile-${target.id}`}
-                            type="button"
-                            onClick={() => switchDemoRole(target)}
-                            disabled={isSwitchingRole}
-                            className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-bold transition ${
-                              active
-                                ? "bg-[#eaf1ff] text-[#123c8c]"
-                                : "text-slate-700 hover:bg-[#f5f8ff]"
-                            } disabled:cursor-not-allowed disabled:opacity-70`}
-                          >
-                            <span>{target.label}</span>
-                            {active && (
-                              <span className="text-[10px] font-black uppercase tracking-wide">
-                                Active
-                              </span>
-                            )}
-                          </button>
-                        );
-                      })}
+                    <div className="rounded-xl bg-[#f6f8ff] px-3 py-2">
+                      <p className="text-xs font-black text-slate-800">
+                        {sessionUser?.name || "Admin Creativemu"}
+                      </p>
+                      <p className="mt-0.5 text-[11px] font-semibold text-slate-500">
+                        {getAdminRoleLabel(sessionUser?.role || "admin")}
+                      </p>
                     </div>
 
                     <div className="my-1 h-px bg-blue-100" />
@@ -693,11 +567,11 @@ export default function AppHeader({
 
                     <button
                       type="button"
-                      onClick={handleSwitchAccount}
+                      onClick={handleLogout}
                       className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-slate-700 transition hover:bg-[#f5f8ff]"
                     >
                       <UserCircle2 size={15} className="text-[#123c8c]" />
-                      Ganti Akun
+                      Logout
                     </button>
                   </div>
                 )}

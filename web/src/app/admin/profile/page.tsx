@@ -1,8 +1,16 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Camera, Loader2, Phone, User } from "lucide-react";
+import {
+  Camera,
+  CameraOff,
+  Loader2,
+  Phone,
+  RefreshCw,
+  Upload,
+  User,
+} from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import MobileShell from "@/components/MobileShell";
 
@@ -25,6 +33,107 @@ export default function AdminProfilePage() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [cameraFacingMode, setCameraFacingMode] = useState<
+    "user" | "environment"
+  >("user");
+  const [isCameraOn, setIsCameraOn] = useState(false);
+  const [cameraError, setCameraError] = useState("");
+
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  function stopCamera() {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+
+    setIsCameraOn(false);
+  }
+
+  async function startCamera() {
+    try {
+      setCameraError("");
+      stopCamera();
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: cameraFacingMode,
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+        },
+        audio: false,
+      });
+
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+
+      setIsCameraOn(true);
+    } catch {
+      setCameraError("Kamera tidak dapat diakses. Periksa izin browser.");
+      setIsCameraOn(false);
+    }
+  }
+
+  async function toggleCamera() {
+    if (isCameraOn) {
+      stopCamera();
+      return;
+    }
+
+    await startCamera();
+  }
+
+  async function switchCamera() {
+    setCameraFacingMode((prev) => (prev === "user" ? "environment" : "user"));
+
+    if (isCameraOn) {
+      await startCamera();
+    }
+  }
+
+  function captureFromCamera() {
+    if (!videoRef.current) return;
+
+    const video = videoRef.current;
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+
+    const context = canvas.getContext("2d");
+    if (!context) return;
+
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+
+    setForm((prev) => ({
+      ...prev,
+      profilePhotoUrl: dataUrl,
+    }));
+
+    stopCamera();
+  }
+
+  function handleProfilePhotoUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setForm((prev) => ({
+        ...prev,
+        profilePhotoUrl: String(reader.result || ""),
+      }));
+      stopCamera();
+    };
+    reader.readAsDataURL(file);
+  }
 
   useEffect(() => {
     async function loadProfile() {
@@ -54,6 +163,19 @@ export default function AdminProfilePage() {
     }
 
     void loadProfile();
+
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+      }
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+
+      setIsCameraOn(false);
+    };
   }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -141,28 +263,76 @@ export default function AdminProfilePage() {
                         Update Foto
                       </p>
                       <p className="mt-1 text-xs font-semibold text-slate-500">
-                        Isi URL foto profil untuk mengganti avatar.
+                        Gunakan kamera atau pilih file gambar dari perangkat.
                       </p>
                     </div>
                   </div>
 
-                  <label className="w-full md:w-[360px]">
-                    <span className="mb-1.5 inline-flex items-center gap-1 text-xs font-black uppercase tracking-[0.14em] text-slate-500">
-                      <Camera className="h-3.5 w-3.5" />
-                      URL Foto Profil
-                    </span>
-                    <input
-                      value={form.profilePhotoUrl}
-                      onChange={(event) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          profilePhotoUrl: event.target.value,
-                        }))
-                      }
-                      placeholder="https://..."
-                      className="w-full rounded-xl border border-blue-100 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 outline-none ring-[#123c8c]/20 transition focus:ring"
-                    />
-                  </label>
+                  <div className="w-full space-y-2 md:w-[420px]">
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <button
+                        type="button"
+                        onClick={toggleCamera}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-blue-100 bg-white px-3 py-2.5 text-xs font-black uppercase tracking-[0.12em] text-[#123c8c] transition hover:bg-[#f0f5ff]"
+                      >
+                        {isCameraOn ? (
+                          <CameraOff className="h-4 w-4" />
+                        ) : (
+                          <Camera className="h-4 w-4" />
+                        )}
+                        {isCameraOn ? "Matikan Kamera" : "Buka Kamera"}
+                      </button>
+
+                      <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-blue-100 bg-white px-3 py-2.5 text-xs font-black uppercase tracking-[0.12em] text-[#123c8c] transition hover:bg-[#f0f5ff]">
+                        <Upload className="h-4 w-4" />
+                        Pilih File
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleProfilePhotoUpload}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+
+                    {isCameraOn && (
+                      <div className="space-y-2 rounded-2xl border border-blue-100 bg-white p-3">
+                        <video
+                          ref={videoRef}
+                          autoPlay
+                          playsInline
+                          muted
+                          className="h-44 w-full rounded-xl bg-slate-900 object-cover"
+                        />
+
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          <button
+                            type="button"
+                            onClick={captureFromCamera}
+                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#123c8c] px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-white transition hover:bg-[#0f3377]"
+                          >
+                            <Camera className="h-4 w-4" />
+                            Ambil Foto
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={switchCamera}
+                            className="inline-flex items-center justify-center gap-2 rounded-xl border border-blue-100 bg-[#f6f8ff] px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-[#123c8c] transition hover:bg-[#eaf1ff]"
+                          >
+                            <RefreshCw className="h-4 w-4" />
+                            Ganti Kamera
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {cameraError && (
+                      <p className="text-xs font-bold text-rose-600">
+                        {cameraError}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
@@ -198,7 +368,7 @@ export default function AdminProfilePage() {
                           email: event.target.value,
                         }))
                       }
-                      placeholder="admin@creativemu.com"
+                      placeholder="admin@creativemu.co.id"
                       className="w-full rounded-xl border border-blue-100 bg-[#f8faff] px-3 py-2.5 text-sm font-semibold text-slate-700 outline-none ring-[#123c8c]/20 transition focus:ring"
                       required
                     />

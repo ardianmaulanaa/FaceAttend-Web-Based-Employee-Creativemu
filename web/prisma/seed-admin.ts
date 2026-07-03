@@ -16,11 +16,30 @@ const adapter = new PrismaMariaDb({
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  const password_hash = await bcrypt.hash("admin123456", 10);
+  const password_hash = await bcrypt.hash("123456", 10);
 
   await prisma.user.upsert({
     where: {
-      email: "admin@creativemu.com",
+      email: "owner@creativemu.co.id",
+    },
+    update: {
+      name: "Owner Creativemu",
+      password_hash,
+      role: "owner",
+      status: "active",
+    },
+    create: {
+      name: "Owner Creativemu",
+      email: "owner@creativemu.co.id",
+      password_hash,
+      role: "owner",
+      status: "active",
+    },
+  });
+
+  await prisma.user.upsert({
+    where: {
+      email: "admin@creativemu.co.id",
     },
     update: {
       name: "Admin Creativemu",
@@ -30,14 +49,33 @@ async function main() {
     },
     create: {
       name: "Admin Creativemu",
-      email: "admin@creativemu.com",
+      email: "admin@creativemu.co.id",
       password_hash,
       role: "admin",
       status: "active",
     },
   });
 
-  console.log("Admin berhasil dibuat");
+  await prisma.user.upsert({
+    where: {
+      email: "cs@creativemu.co.id",
+    },
+    update: {
+      name: "CS Creativemu",
+      password_hash,
+      role: "cs",
+      status: "active",
+    },
+    create: {
+      name: "CS Creativemu",
+      email: "cs@creativemu.co.id",
+      password_hash,
+      role: "cs",
+      status: "active",
+    },
+  });
+
+  console.log("Akun owner, admin, dan CS berhasil dibuat");
 }
 
 main()

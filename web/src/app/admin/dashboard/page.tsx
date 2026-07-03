@@ -6,6 +6,7 @@ import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import MobileShell from "@/components/MobileShell";
 import { useAppData } from "@/context/AppDataContext";
+import { getAdminRoleLabel, type AdminRole } from "@/lib/adminAccess";
 
 type Employee = {
   id: string;
@@ -32,8 +33,35 @@ function resolveStatusLabel(checkIn: string): "Presence" | "Late" | "Absent" {
 export default function AdminDashboardPage() {
   const { state } = useAppData();
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [sessionRole, setSessionRole] = useState<AdminRole>("admin");
 
   const todayKey = new Date().toISOString().slice(0, 10);
+
+  useEffect(() => {
+    async function loadSessionRole() {
+      try {
+        const response = await fetch("/api/auth/me", {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        const result = await response.json();
+        if (!response.ok || !result.user?.role) return;
+
+        if (
+          result.user.role === "owner" ||
+          result.user.role === "admin" ||
+          result.user.role === "cs"
+        ) {
+          setSessionRole(result.user.role);
+        }
+      } catch {
+        // Keep default role.
+      }
+    }
+
+    void loadSessionRole();
+  }, []);
 
   useEffect(() => {
     async function loadEmployees() {
@@ -99,29 +127,69 @@ export default function AdminDashboardPage() {
       });
   }, [employees, state.attendance, todayKey]);
 
+  const dashboardTitle =
+    sessionRole === "owner"
+      ? "Owner Dashboard"
+      : sessionRole === "cs"
+        ? "CS Dashboard"
+        : "Admin Dashboard";
+
+  const dashboardSubtitle =
+    sessionRole === "owner"
+      ? "Ringkasan bisnis, absensi, dan kendali operasional"
+      : sessionRole === "cs"
+        ? "Pantau keluhan, panggilan, dan respons layanan"
+        : "Ringkasan karyawan dan status absensi harian";
+
+  const roleFocusItems =
+    sessionRole === "owner"
+      ? [
+          "Pantau performa karyawan dan tingkat kehadiran.",
+          "Validasi kebutuhan operasional lintas divisi.",
+          "Pastikan keputusan bisnis berdasarkan data aktual.",
+        ]
+      : sessionRole === "cs"
+        ? [
+            "Prioritaskan tindak lanjut keluhan dan panggilan masuk.",
+            "Lacak ketersediaan tim untuk respons cepat.",
+            "Koordinasikan eskalasi layanan dengan admin/owner.",
+          ]
+        : [
+            "Kelola data karyawan aktif dan absensi harian.",
+            "Pantau keterlambatan dan potensi ketidakhadiran.",
+            "Siapkan data operasional untuk laporan owner.",
+          ];
+
   return (
     <MobileShell variant="admin">
       <AppHeader
-        title="Admin Dashboard"
-        subtitle="Ringkasan karyawan dan status absensi hari ini"
+        title={dashboardTitle}
+        subtitle={dashboardSubtitle}
         variant="admin"
       />
 
       <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 md:px-10 lg:px-16">
         <div className="rounded-3xl border border-blue-100 bg-white p-6 shadow-xl shadow-slate-300/30">
           <p className="text-xs font-black uppercase tracking-[0.2em] text-[#123c8c]">
-            Admin Control Center
+            {getAdminRoleLabel(sessionRole)} Control Center
           </p>
           <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-3xl">
-            Selamat pagi ...
-            <p>
-            di CV. Mulya Kreatif Cipta
-            </p>
+            Selamat datang di dashboard {getAdminRoleLabel(sessionRole)}
+            Creativemu
           </h2>
           <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-500">
-            Dashboard difokuskan untuk data karyawan dan status absensi supaya
-            pemantauan operasional harian lebih cepat dibaca.
+            Halaman ini menyesuaikan fokus kerja{" "}
+            {getAdminRoleLabel(sessionRole)}
+            supaya perpindahan page lebih relevan dengan bidang tugas.
           </p>
+
+          <div className="mt-4 grid gap-2 rounded-2xl bg-[#f6f8ff] p-4 md:grid-cols-3">
+            {roleFocusItems.map((item) => (
+              <p key={item} className="text-xs font-bold text-slate-600">
+                {item}
+              </p>
+            ))}
+          </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

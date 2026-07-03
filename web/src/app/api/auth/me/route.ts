@@ -189,6 +189,8 @@ export async function PUT(req: NextRequest) {
       phone: String(body.phone || "").trim(),
       profilePhotoUrl: String(body.profilePhotoUrl || "").trim(),
     };
+    const profilePhotoForLegacyColumn =
+      payload.profilePhotoUrl.length <= 255 ? payload.profilePhotoUrl : "";
 
     if (!payload.name || !payload.email) {
       return NextResponse.json(
@@ -241,7 +243,7 @@ export async function PUT(req: NextRequest) {
         name: payload.name,
         email: payload.email,
         phone: payload.phone || null,
-        profile_photo: payload.profilePhotoUrl || null,
+        profile_photo: profilePhotoForLegacyColumn || null,
       },
       select: {
         id: true,
