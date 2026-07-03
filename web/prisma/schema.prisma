@@ -1,172 +1,185 @@
-  generator client {
+generator client {
   provider = "prisma-client-js"
-    output   = "../src/generated/prisma"
-  }
+  output   = "../src/generated/prisma"
+}
 
-  datasource db {
-    provider = "mysql"
-  }
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
 
-  model User {
-    id              String   @id @default(uuid()) @db.Char(36)
-    employee_code   String?  @unique @db.VarChar(30)
+model User {
+  id                String            @id @default(uuid()) @db.Char(36)
+  name              String            @db.VarChar(100)
+  email             String            @unique @db.VarChar(100)
+  password_hash     String            @db.VarChar(255)
+  role              String            @default("employee") @db.VarChar(20)
+  phone             String?           @db.VarChar(20)
+  status            String            @default("active") @db.VarChar(20)
+  created_at        DateTime          @default(now())
+  profile_photo     String?           @db.VarChar(255)
+  updated_at        DateTime          @default(now()) @updatedAt
+  department_id     String?           @db.Char(36)
+  employee_code     String?           @unique @db.VarChar(30)
+  position_id       String?           @db.Char(36)
+  shift_id          String?           @db.Char(36)
+  profile_photo_url String?           @db.LongText
+  attendance        attendance[]
+  attendances       attendances[]
+  payroll_methods   payroll_methods[]
+  department        department?       @relation(fields: [department_id], references: [id])
+  position          position?         @relation(fields: [position_id], references: [id])
+  shift             shift?            @relation(fields: [shift_id], references: [id])
 
-    name            String   @db.VarChar(100)
-    email           String   @unique @db.VarChar(100)
-    password_hash   String   @db.VarChar(255)
+  @@index([department_id], map: "users_department_id_fkey")
+  @@index([position_id], map: "users_position_id_fkey")
+  @@index([shift_id], map: "users_shift_id_fkey")
+  @@map("users")
+}
 
-    role            String   @default("employee") @db.VarChar(20)
-    phone           String?  @db.VarChar(20)
-    status          String   @default("active") @db.VarChar(20)
+model attendance {
+  id                   String                       @id @db.Char(36)
+  status               attendance_status            @default(PENDING)
+  attendance_date      DateTime                     @db.Date
+  check_in_latitude    Float?
+  check_in_longitude   Float?
+  check_in_photo       Bytes?
+  check_in_photo_mime  String?                      @db.VarChar(50)
+  check_in_status      attendance_check_in_status?
+  check_in_time        DateTime?
+  check_out_latitude   Float?
+  check_out_longitude  Float?
+  check_out_photo      Bytes?
+  check_out_photo_mime String?                      @db.VarChar(50)
+  check_out_status     attendance_check_out_status?
+  check_out_time       DateTime?
+  created_at           DateTime                     @default(now())
+  early_leave_minutes  Int                          @default(0)
+  late_minutes         Int                          @default(0)
+  note                 String?                      @db.VarChar(255)
+  scheduled_check_in   DateTime?
+  scheduled_check_out  DateTime?
+  updated_at           DateTime                     @default(now())
+  user_id              String                       @db.Char(36)
+  work_minutes         Int                          @default(0)
+  users                User                         @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "Attendance_user_id_fkey")
 
-    profile_photo   String?  @db.VarChar(255)
+  @@unique([user_id, attendance_date], map: "Attendance_user_id_attendance_date_key")
+  @@index([attendance_date], map: "Attendance_attendance_date_idx")
+  @@index([check_in_status], map: "Attendance_check_in_status_idx")
+  @@index([status], map: "Attendance_status_idx")
+}
 
-    department_id   String?  @db.Char(36)
-    position_id     String?  @db.Char(36)
-    shift_id        String?  @db.Char(36)
+model attendances {
+  id                  String    @id @db.Char(36)
+  employee_id         String    @db.Char(36)
+  attendance_date     DateTime  @db.Date
+  check_in_time       DateTime?
+  check_out_time      DateTime?
+  check_in_photo_url  String?   @db.LongText
+  check_out_photo_url String?   @db.LongText
+  check_in_latitude   Decimal?  @db.Decimal(10, 6)
+  check_in_longitude  Decimal?  @db.Decimal(10, 6)
+  check_out_latitude  Decimal?  @db.Decimal(10, 6)
+  check_out_longitude Decimal?  @db.Decimal(10, 6)
+  notes               String?   @db.VarChar(255)
+  created_at          DateTime  @default(now())
+  updated_at          DateTime
+  users               User      @relation(fields: [employee_id], references: [id], onDelete: Cascade)
 
-    department      Department? @relation(fields: [department_id], references: [id], onDelete: SetNull)
-    position        Position?   @relation(fields: [position_id], references: [id], onDelete: SetNull)
-    shift           Shift?      @relation(fields: [shift_id], references: [id], onDelete: SetNull)
+  @@unique([employee_id, attendance_date])
+  @@index([attendance_date])
+}
 
-    created_at      DateTime @default(now())
-    updated_at      DateTime @default(now()) @updatedAt
+model department {
+  id                 String   @id @db.Char(36)
+  name               String   @unique(map: "Department_name_key") @db.VarChar(100)
+  shift_id           String?  @db.Char(36)
+  salary_calculation String   @default("monthly") @db.VarChar(30)
+  status             String   @default("active") @db.VarChar(20)
+  created_at         DateTime @default(now())
+  updated_at         DateTime @default(now())
+  shift              shift?   @relation(fields: [shift_id], references: [id], map: "Department_shift_id_fkey")
+  users              User[]
 
-    attendances     Attendance[]
+  @@index([shift_id], map: "Department_shift_id_fkey")
+}
 
-    @@map("users")
-  }
+model payroll_methods {
+  id                  String   @id @db.Char(36)
+  user_id             String   @db.Char(36)
+  bank_name           String   @db.VarChar(100)
+  card_type           String   @default("Debit") @db.VarChar(30)
+  account_number      String   @db.VarChar(80)
+  account_holder_name String   @db.VarChar(100)
+  expiry_month        String?  @db.VarChar(10)
+  expiry_year         String?  @db.VarChar(10)
+  created_at          DateTime @default(now())
+  users               User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-  model Department {
-    id                  String   @id @default(uuid()) @db.Char(36)
-    name                String   @unique @db.VarChar(100)
+  @@index([user_id])
+}
 
-    shift_id            String?  @db.Char(36)
-    shift               Shift?   @relation(fields: [shift_id], references: [id], onDelete: SetNull)
+model position {
+  id         String   @id @db.Char(36)
+  name       String   @unique(map: "Position_name_key") @db.VarChar(100)
+  status     String   @default("active") @db.VarChar(20)
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now())
+  users      User[]
+}
 
-    salary_calculation  String   @default("monthly") @db.VarChar(30)
-    status              String   @default("active") @db.VarChar(20)
+model shift {
+  id                String         @id @db.Char(36)
+  name              String         @unique(map: "Shift_name_key") @db.VarChar(100)
+  tolerance_minutes Int            @default(0)
+  status            String         @default("active") @db.VarChar(20)
+  created_at        DateTime       @default(now())
+  updated_at        DateTime       @default(now())
+  department        department[]
+  users             User[]
+  workschedule      workschedule[]
+}
 
-    users               User[]
+model workschedule {
+  id             String                   @id @db.Char(36)
+  shift_id       String                   @db.Char(36)
+  day_of_week    workschedule_day_of_week
+  is_work_day    Boolean                  @default(true)
+  check_in_time  String?                  @db.VarChar(5)
+  check_out_time String?                  @db.VarChar(5)
+  created_at     DateTime                 @default(now())
+  updated_at     DateTime                 @default(now())
+  shift          shift                    @relation(fields: [shift_id], references: [id], onDelete: Cascade, map: "WorkSchedule_shift_id_fkey")
 
-    created_at          DateTime @default(now())
-    updated_at          DateTime @default(now()) @updatedAt
-  }
+  @@unique([shift_id, day_of_week], map: "WorkSchedule_shift_id_day_of_week_key")
+}
 
-  model Position {
-    id          String   @id @default(uuid()) @db.Char(36)
-    name        String   @unique @db.VarChar(100)
-    status      String   @default("active") @db.VarChar(20)
+enum attendance_status {
+  PENDING
+  PRESENT
+  LATE
+  ABSENT
+  PERMISSION
+  SICK
+}
 
-    users       User[]
+enum workschedule_day_of_week {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
 
-    created_at  DateTime @default(now())
-    updated_at  DateTime @default(now()) @updatedAt
-  }
+enum attendance_check_in_status {
+  ON_TIME
+  LATE
+}
 
-  model Shift {
-    id                 String   @id @default(uuid()) @db.Char(36)
-    name               String   @unique @db.VarChar(100)
-
-    tolerance_minutes  Int      @default(0)
-    status             String   @default("active") @db.VarChar(20)
-
-    users              User[]
-    departments        Department[]
-    work_schedules     WorkSchedule[]
-
-    created_at         DateTime @default(now())
-    updated_at         DateTime @default(now()) @updatedAt
-  }
-
-  model WorkSchedule {
-    id              String    @id @default(uuid()) @db.Char(36)
-
-    shift_id        String    @db.Char(36)
-    shift           Shift     @relation(fields: [shift_id], references: [id], onDelete: Cascade)
-
-    day_of_week     DayOfWeek
-    is_work_day     Boolean   @default(true)
-
-    check_in_time   String?   @db.VarChar(5)
-    check_out_time  String?   @db.VarChar(5)
-
-    created_at      DateTime  @default(now())
-    updated_at      DateTime  @default(now()) @updatedAt
-
-    @@unique([shift_id, day_of_week])
-  }
-
-  model Attendance {
-    id                    String   @id @default(uuid()) @db.Char(36)
-
-    user_id               String   @db.Char(36)
-    user                  User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-
-    attendance_date       DateTime @db.Date
-
-    scheduled_check_in    DateTime?
-    scheduled_check_out   DateTime?
-
-    check_in_time         DateTime?
-    check_out_time        DateTime?
-
-    check_in_photo        Bytes?
-    check_out_photo       Bytes?
-
-    check_in_photo_mime   String?  @db.VarChar(50)
-    check_out_photo_mime  String?  @db.VarChar(50)
-
-    check_in_latitude     Float?
-    check_in_longitude    Float?
-
-    check_out_latitude    Float?
-    check_out_longitude   Float?
-
-    late_minutes          Int      @default(0)
-    early_leave_minutes   Int      @default(0)
-    work_minutes          Int      @default(0)
-
-    status                AttendanceStatus @default(PENDING)
-    check_in_status       CheckInStatus?
-    check_out_status      CheckOutStatus?
-
-    note                  String?  @db.VarChar(255)
-
-    created_at            DateTime @default(now())
-    updated_at            DateTime @default(now()) @updatedAt
-
-    @@unique([user_id, attendance_date])
-    @@index([attendance_date])
-    @@index([status])
-    @@index([check_in_status])
-  }
-
-  enum DayOfWeek {
-    MONDAY
-    TUESDAY
-    WEDNESDAY
-    THURSDAY
-    FRIDAY
-    SATURDAY
-    SUNDAY
-  }
-
-  enum AttendanceStatus {
-    PENDING
-    PRESENT
-    LATE
-    ABSENT
-    PERMISSION
-    SICK
-  }
-
-  enum CheckInStatus {
-    ON_TIME
-    LATE
-  }
-
-  enum CheckOutStatus {
-    NORMAL
-    EARLY
-  }
+enum attendance_check_out_status {
+  NORMAL
+  EARLY
+}
