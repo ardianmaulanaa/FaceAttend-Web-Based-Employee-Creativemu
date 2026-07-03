@@ -25,7 +25,7 @@ import { useRouter } from "next/navigation";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import MobileShell from "@/components/MobileShell";
-import { useAppData } from "@/context/AppDataContext";
+import StatCard from "@/components/StatCard";
 
 type ShiftWorkSchedule = {
   day_of_week: string;
@@ -151,7 +151,7 @@ function getActiveScheduleText(schedules?: ShiftWorkSchedule[]) {
     (schedule) =>
       schedule.is_work_day &&
       schedule.check_in_time &&
-      schedule.check_out_time,
+      schedule.check_out_time
   );
 
   if (activeSchedules.length === 0) return "";
@@ -177,7 +177,7 @@ function InfoCard({ item }: { item: InfoCardItem }) {
   const Icon = item.icon;
 
   return (
-    <div className="rounded-3xl border border-blue-100 bg-white p-5 shadow-lg shadow-slate-200/60 transition hover:-translate-y-0.5 hover:shadow-xl">
+    <div className="rounded-3xl border border-blue-100 bg-[#f8fbff] p-4 md:p-5">
       <div className="flex items-start gap-4">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
           <Icon size={22} strokeWidth={2.7} />
@@ -232,13 +232,14 @@ function PasswordInput({
           value={value}
           onChange={(event) => onChange(event.target.value)}
           placeholder={placeholder}
-          className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 pr-12 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+          className="w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-3 pr-12 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
         />
 
         <button
           type="button"
           onClick={onToggleShow}
           className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-slate-400 transition hover:bg-white hover:text-[#123c8c]"
+          aria-label={show ? "Sembunyikan password" : "Tampilkan password"}
         >
           {show ? <EyeOff size={18} /> : <Eye size={18} />}
         </button>
@@ -276,7 +277,7 @@ export default function ProfilePage() {
 
       if (!response.ok) {
         throw new Error(
-          data.error || data.message || "Gagal mengambil profil.",
+          data.error || data.message || "Gagal mengambil profil."
         );
       }
 
@@ -285,7 +286,7 @@ export default function ProfilePage() {
       console.error("PROFILE_ERROR:", error);
 
       setErrorMessage(
-        error instanceof Error ? error.message : "Gagal mengambil profil.",
+        error instanceof Error ? error.message : "Gagal mengambil profil."
       );
     } finally {
       setLoading(false);
@@ -328,7 +329,7 @@ export default function ProfilePage() {
                 ...currentUser,
                 profile_photo: data.user.profile_photo,
               }
-            : currentUser,
+            : currentUser
         );
       }
 
@@ -391,7 +392,7 @@ export default function ProfilePage() {
 
       if (!response.ok) {
         throw new Error(
-          data.error || data.message || "Gagal mengubah password.",
+          data.error || data.message || "Gagal mengubah password."
         );
       }
 
@@ -400,9 +401,7 @@ export default function ProfilePage() {
     } catch (error) {
       console.error("CHANGE_PASSWORD_ERROR:", error);
 
-      alert(
-        error instanceof Error ? error.message : "Gagal mengubah password.",
-      );
+      alert(error instanceof Error ? error.message : "Gagal mengubah password.");
     } finally {
       setIsChangingPassword(false);
     }
@@ -412,7 +411,10 @@ export default function ProfilePage() {
     loadProfile();
   }, []);
 
-  if (!authUser) return null;
+  const initials = useMemo(() => {
+    if (!user?.name) return "";
+    return getInitials(user.name);
+  }, [user?.name]);
 
   const subtitleInfo = useMemo(() => {
     if (!user) return "";
@@ -525,66 +527,144 @@ export default function ProfilePage() {
     return items;
   }, [user, workSchedule]);
 
-  if (loading) {
-    return (
-      <MobileShell variant="employee">
+  const headerRightLabel = user?.employee_code || user?.shift?.name || undefined;
+  const statusTone = user?.status?.toLowerCase() === "active" ? "green" : "red";
+
+  return (
+    <MobileShell variant="employee" withBottomPadding={false}>
+      <div className="hidden md:block">
         <AppHeader
           title="Profile"
           subtitle="Informasi akun karyawan"
-          rightLabel="Loading"
+          rightLabel={headerRightLabel}
+          variant="employee"
         />
+      </div>
 
-    setCardForm({
-      bankName: "",
-      cardHolderName: "",
-      accountNumber: "",
-      expiryMonth: "",
-      expiryYear: "",
-      cvc: "",
-    });
-    setCardMessage("Kartu baru berhasil ditambahkan ke daftar.");
-  };
+      <main className="min-h-dvh bg-gradient-to-br from-[#f6f8ff] via-white to-[#eef4ff] pb-28 text-slate-950">
+        <section className="mx-auto max-w-7xl px-5 pt-7 md:hidden">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.28em] text-[#123c8c]">
+                FaceAttend
+              </p>
 
-  const handleClaim = (reward: (typeof claimableRewards)[number]) => {
-    const result = claimEmployeeReward(reward);
-    setClaimMessage(result.message);
-  };
+              <h1 className="mt-2 text-3xl font-black tracking-tight text-[#073456]">
+                Profil Saya
+              </h1>
 
-  return (
-    <MobileShell variant="employee">
-      <AppHeader
-        title="Profile"
-        subtitle="Informasi akun karyawan"
-        rightLabel={user.employee_code || "Profile"}
-      />
+              <p className="mt-2 text-sm font-bold text-slate-500">
+                Informasi akun dan data karyawan.
+              </p>
+            </div>
 
-      <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 pb-28 md:px-10 lg:px-16">
-        <div className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-xl shadow-slate-300/30">
-          <div className="bg-[#123c8c] p-6 text-white md:p-8">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-                <div className="relative mx-auto flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-[2rem] bg-white text-4xl font-black text-[#123c8c] shadow-xl shadow-blue-950/25 sm:mx-0">
-                  {user.profile_photo ? (
-                    <img
-                      src={user.profile_photo}
-                      alt={user.name}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    initials
-                  )}
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#123c8c] text-white ring-1 ring-[#123c8c]">
+              <UserRound size={24} strokeWidth={2.6} />
+            </div>
+          </div>
+        </section>
 
-                  <div className="absolute inset-0 ring-1 ring-inset ring-white/30" />
+        {user ? (
+          <section className="mx-auto hidden max-w-7xl px-10 pt-8 md:block lg:px-16">
+            <div className="relative overflow-hidden rounded-[2.2rem] bg-[#123c8c] p-8 text-white">
+              <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-white/10" />
+              <div className="absolute bottom-[-7rem] right-24 h-60 w-60 rounded-full bg-blue-300/10" />
+
+              <div className="relative z-10 flex items-center justify-between gap-8">
+                <div className="flex min-w-0 items-center gap-5">
+                  <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/15 text-2xl font-black text-white ring-4 ring-white/20">
+                    {user.profile_photo ? (
+                      <img
+                        src={user.profile_photo}
+                        alt={user.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      initials
+                    )}
+                  </div>
+
+                  <div className="min-w-0">
+                    <h1 className="truncate text-4xl font-black tracking-tight">
+                      {user.name}
+                    </h1>
+
+                    <p className="mt-3 max-w-3xl text-sm font-semibold leading-7 text-blue-100">
+                      Data profil ini mengikuti informasi yang sudah didaftarkan
+                      oleh admin, termasuk unit, divisi, jabatan, shift, jam
+                      kerja, dan kantor terdaftar.
+                    </p>
+
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {user.shift?.name ? (
+                        <span className="rounded-full bg-white/15 px-4 py-2 text-xs font-black text-white ring-1 ring-white/20">
+                          {user.shift.name}
+                        </span>
+                      ) : null}
+
+                      {user.position?.name ? (
+                        <span className="rounded-full bg-white/15 px-4 py-2 text-xs font-black text-white ring-1 ring-white/20">
+                          {user.position.name}
+                        </span>
+                      ) : null}
+
+                      {user.unit?.name ? (
+                        <span className="rounded-full bg-white/15 px-4 py-2 text-xs font-black text-white ring-1 ring-white/20">
+                          {user.unit.name}
+                        </span>
+                      ) : null}
+
+                      {user.department?.name ? (
+                        <span className="rounded-full bg-white/15 px-4 py-2 text-xs font-black text-white ring-1 ring-white/20">
+                          {user.department.name}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
                 </div>
 
-                <div className="text-center sm:text-left">
-                  <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-100">
-                    Employee Profile
-                  </p>
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-white/80 ring-1 ring-white/20">
+                  <UserRound size={30} strokeWidth={2.6} />
+                </div>
+              </div>
+            </div>
+          </section>
+        ) : null}
 
-                  <h1 className="mt-2 text-3xl font-black tracking-tight md:text-4xl">
+        <section className="mx-auto max-w-7xl rounded-t-[2.5rem] bg-white px-5 pb-10 pt-8 md:mt-8 md:rounded-[2.5rem] md:px-8 lg:px-10">
+          {loading ? (
+            <div className="flex items-center gap-3 rounded-3xl border border-blue-100 bg-[#f8fbff] p-5 text-sm font-bold text-slate-500">
+              <Loader2 size={20} className="animate-spin text-[#123c8c]" />
+              Mengambil data profil...
+            </div>
+          ) : errorMessage || !user ? (
+            <div className="rounded-3xl border border-red-100 bg-red-50 px-6 py-8 text-center">
+              <p className="text-sm font-black text-red-700">
+                {errorMessage || "Profil tidak ditemukan."}
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="relative overflow-hidden rounded-[2rem] bg-[#123c8c] p-6 text-white md:hidden">
+                <div className="absolute -right-16 -top-20 h-60 w-60 rounded-full bg-white/10" />
+                <div className="absolute bottom-[-7rem] right-24 h-56 w-56 rounded-full bg-blue-300/10" />
+
+                <div className="relative z-10 flex flex-col items-center text-center">
+                  <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/15 text-4xl font-black text-white ring-4 ring-white/20">
+                    {user.profile_photo ? (
+                      <img
+                        src={user.profile_photo}
+                        alt={user.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      initials
+                    )}
+                  </div>
+
+                  <h2 className="mt-5 text-3xl font-black tracking-tight">
                     {user.name}
-                  </h1>
+                  </h2>
 
                   {subtitleInfo ? (
                     <p className="mt-2 max-w-2xl text-sm font-semibold leading-7 text-blue-100">
@@ -592,22 +672,62 @@ export default function ProfilePage() {
                     </p>
                   ) : null}
 
-                  <div className="mt-4 flex flex-wrap justify-center gap-2 sm:justify-start">
+                  <div className="mt-4 flex flex-wrap justify-center gap-2">
                     <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-black text-white ring-1 ring-white/20">
                       <BadgeCheck size={16} strokeWidth={2.7} />
                       {formatStatus(user.status)}
                     </span>
 
-                    <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-black text-white ring-1 ring-white/20">
-                      <ShieldCheck size={16} strokeWidth={2.7} />
-                      {formatRole(user.role)}
-                    </span>
+                    {user.shift?.name ? (
+                      <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-black text-white ring-1 ring-white/20">
+                        <CalendarDays size={16} strokeWidth={2.7} />
+                        {user.shift.name}
+                      </span>
+                    ) : null}
                   </div>
                 </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2 lg:w-auto">
-                <label className="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl bg-white px-5 text-sm font-black text-[#123c8c] shadow-lg shadow-blue-950/20 transition hover:bg-blue-50 active:scale-[0.98]">
+              <div className="mt-0 grid grid-cols-2 gap-3 md:grid-cols-4">
+                <StatCard
+                  label="Kode"
+                  value={user.employee_code || "-"}
+                  description="Kode karyawan"
+                  tone="blue"
+                  icon={IdCard}
+                />
+
+                <StatCard
+                  label="Status"
+                  value={formatStatus(user.status)}
+                  description="Status akun"
+                  tone={statusTone}
+                  icon={BadgeCheck}
+                />
+
+                <StatCard
+                  label="Unit"
+                  value={user.unit?.name || "-"}
+                  description="Unit kerja"
+                  tone="blue"
+                  icon={Building2}
+                />
+
+                <StatCard
+                  label="Shift"
+                  value={user.shift?.name || "-"}
+                  description={
+                    user.shift?.tolerance_minutes !== undefined
+                      ? `Toleransi ${user.shift.tolerance_minutes} menit`
+                      : "Shift kerja"
+                  }
+                  tone="orange"
+                  icon={CalendarDays}
+                />
+              </div>
+
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+                <label className="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl bg-[#123c8c] px-5 text-sm font-black text-white transition active:scale-[0.98]">
                   {isUploadingPhoto ? (
                     <>
                       <Loader2 size={18} className="animate-spin" />
@@ -640,197 +760,162 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={openPasswordModal}
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 text-sm font-black text-white shadow-lg shadow-blue-950/20 transition hover:bg-slate-900 active:scale-[0.98]"
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 text-sm font-black text-white transition active:scale-[0.98]"
                 >
                   <LockKeyhole size={18} strokeWidth={2.7} />
                   Ubah Password
                 </button>
               </div>
-            </div>
-          </div>
 
-          <div className="p-5 md:p-8">
-            <div className="grid gap-4 md:grid-cols-4">
-              <div className="rounded-3xl border border-blue-100 bg-[#f8fbff] p-5">
-                <p className="text-sm font-bold text-slate-500">
-                  Kode Karyawan
-                </p>
-                <p className="mt-2 text-2xl font-black text-slate-950">
-                  {user.employee_code || "-"}
-                </p>
-              </div>
+              <div className="mt-6 rounded-3xl border border-blue-100 bg-[#f8fbff] p-5 md:p-6">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
+                    <UserRound size={23} strokeWidth={2.7} />
+                  </div>
 
-              <div className="rounded-3xl border border-blue-100 bg-[#f8fbff] p-5">
-                <p className="text-sm font-bold text-slate-500">Status</p>
-                <p className="mt-2 text-2xl font-black text-[#123c8c]">
-                  {formatStatus(user.status)}
-                </p>
-              </div>
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-[#123c8c]">
+                      Informasi Akun
+                    </p>
 
-              <div className="rounded-3xl border border-blue-100 bg-[#f8fbff] p-5">
-                <p className="text-sm font-bold text-slate-500">Unit</p>
-                <p className="mt-2 text-2xl font-black text-slate-950">
-                  {user.unit?.name || "-"}
-                </p>
-              </div>
-
-              <div className="rounded-3xl border border-blue-100 bg-[#f8fbff] p-5">
-                <p className="text-sm font-bold text-slate-500">Shift</p>
-                <p className="mt-2 text-2xl font-black text-slate-950">
-                  {user.shift?.name || "-"}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6 rounded-3xl bg-[#f8fbff] p-5 md:p-6">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
-                  <UserRound size={23} strokeWidth={2.7} />
+                    <h2 className="text-xl font-black text-slate-950">
+                      Detail Profil Karyawan
+                    </h2>
+                  </div>
                 </div>
 
+                <p className="mt-4 text-sm font-semibold leading-7 text-slate-500">
+                  Data profil ini mengikuti informasi yang sudah didaftarkan
+                  oleh admin.
+                </p>
+              </div>
+
+              {infoCards.length > 0 ? (
+                <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {infoCards.map((item) => (
+                    <InfoCard key={item.label} item={item} />
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-6 rounded-3xl border border-blue-100 bg-[#f8fbff] p-6 text-center">
+                  <p className="text-sm font-black text-slate-500">
+                    Belum ada informasi akun tambahan.
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+        </section>
+
+        {isPasswordModalOpen ? (
+          <div className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/50 px-4 pb-4 backdrop-blur-sm md:items-center md:pb-0">
+            <div className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-[2rem] bg-white p-5 md:p-7">
+              <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-[#123c8c]">
-                    Informasi Akun
+                  <p className="text-xs font-black uppercase tracking-[0.22em] text-[#123c8c]">
+                    Keamanan Akun
                   </p>
 
-                  <h2 className="text-xl font-black text-slate-950">
-                    Detail Profil Karyawan
+                  <h2 className="mt-2 text-2xl font-black text-slate-950">
+                    Ubah Password
                   </h2>
+
+                  <p className="mt-1 text-sm text-slate-500">
+                    Gunakan password baru minimal 8 karakter.
+                  </p>
                 </div>
-              </div>
 
-              <p className="mt-4 text-sm font-semibold leading-7 text-slate-500">
-                Data profil ini mengikuti informasi yang sudah didaftarkan oleh
-                admin, termasuk unit, divisi, jabatan, shift, jam kerja, dan
-                kantor terdaftar.
-              </p>
-            </div>
-
-            {infoCards.length > 0 ? (
-              <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {infoCards.map((item) => (
-                  <InfoCard key={item.label} item={item} />
-                ))}
-              </div>
-            ) : (
-              <div className="mt-6 rounded-3xl border border-blue-100 bg-white p-6 text-center shadow-lg shadow-slate-200/60">
-                <p className="text-sm font-black text-slate-500">
-                  Belum ada informasi akun tambahan.
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {isPasswordModalOpen ? (
-        <div className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/50 px-4 pb-4 backdrop-blur-sm md:items-center md:pb-0">
-          <div className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-[2rem] bg-white p-5 shadow-2xl shadow-slate-950/30 md:p-7">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.22em] text-[#123c8c]">
-                  Keamanan Akun
-                </p>
-
-                <h2 className="mt-2 text-2xl font-black text-slate-950">
-                  Ubah Password
-                </h2>
-
-                <p className="mt-1 text-sm text-slate-500">
-                  Gunakan password baru minimal 8 karakter.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={closePasswordModal}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 transition active:scale-[0.96]"
-              >
-                ×
-              </button>
-            </div>
-
-            <form onSubmit={handleChangePassword} className="mt-6 space-y-4">
-              <PasswordInput
-                label="Password Lama"
-                value={passwordForm.current_password}
-                placeholder="Masukkan password lama"
-                show={showCurrentPassword}
-                onToggleShow={() => setShowCurrentPassword((prev) => !prev)}
-                onChange={(value) =>
-                  setPasswordForm((prev) => ({
-                    ...prev,
-                    current_password: value,
-                  }))
-                }
-              />
-
-              <PasswordInput
-                label="Password Baru"
-                value={passwordForm.new_password}
-                placeholder="Minimal 8 karakter"
-                show={showNewPassword}
-                onToggleShow={() => setShowNewPassword((prev) => !prev)}
-                onChange={(value) =>
-                  setPasswordForm((prev) => ({
-                    ...prev,
-                    new_password: value,
-                  }))
-                }
-              />
-
-              <PasswordInput
-                label="Konfirmasi Password Baru"
-                value={passwordForm.confirm_password}
-                placeholder="Ulangi password baru"
-                show={showConfirmPassword}
-                onToggleShow={() => setShowConfirmPassword((prev) => !prev)}
-                onChange={(value) =>
-                  setPasswordForm((prev) => ({
-                    ...prev,
-                    confirm_password: value,
-                  }))
-                }
-              />
-
-              <div className="rounded-2xl border border-blue-100 bg-[#f8fbff] p-4 text-xs font-semibold leading-6 text-slate-500">
-                Setelah password berhasil diubah, gunakan password baru untuk
-                login berikutnya.
-              </div>
-
-              <div className="flex flex-col-reverse gap-3 pt-2 md:flex-row md:justify-end">
                 <button
                   type="button"
                   onClick={closePasswordModal}
-                  className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-black text-slate-600 transition hover:bg-slate-200"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 transition active:scale-[0.96]"
                 >
-                  Cancel
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={isChangingPassword}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#123c8c] px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#0f3274] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {isChangingPassword ? (
-                    <>
-                      <Loader2 size={18} className="animate-spin" />
-                      Menyimpan...
-                    </>
-                  ) : (
-                    <>
-                      <LockKeyhole size={18} />
-                      Simpan Password
-                    </>
-                  )}
+                  ×
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      ) : null}
 
-      <BottomNav />
+              <form onSubmit={handleChangePassword} className="mt-6 space-y-4">
+                <PasswordInput
+                  label="Password Lama"
+                  value={passwordForm.current_password}
+                  placeholder="Masukkan password lama"
+                  show={showCurrentPassword}
+                  onToggleShow={() => setShowCurrentPassword((prev) => !prev)}
+                  onChange={(value) =>
+                    setPasswordForm((prev) => ({
+                      ...prev,
+                      current_password: value,
+                    }))
+                  }
+                />
+
+                <PasswordInput
+                  label="Password Baru"
+                  value={passwordForm.new_password}
+                  placeholder="Minimal 8 karakter"
+                  show={showNewPassword}
+                  onToggleShow={() => setShowNewPassword((prev) => !prev)}
+                  onChange={(value) =>
+                    setPasswordForm((prev) => ({
+                      ...prev,
+                      new_password: value,
+                    }))
+                  }
+                />
+
+                <PasswordInput
+                  label="Konfirmasi Password Baru"
+                  value={passwordForm.confirm_password}
+                  placeholder="Ulangi password baru"
+                  show={showConfirmPassword}
+                  onToggleShow={() => setShowConfirmPassword((prev) => !prev)}
+                  onChange={(value) =>
+                    setPasswordForm((prev) => ({
+                      ...prev,
+                      confirm_password: value,
+                    }))
+                  }
+                />
+
+                <div className="rounded-2xl border border-blue-100 bg-[#f8fbff] p-4 text-xs font-semibold leading-6 text-slate-500">
+                  Setelah password berhasil diubah, gunakan password baru untuk
+                  login berikutnya.
+                </div>
+
+                <div className="flex flex-col-reverse gap-3 pt-2 md:flex-row md:justify-end">
+                  <button
+                    type="button"
+                    onClick={closePasswordModal}
+                    className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-black text-slate-600 transition hover:bg-slate-200"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={isChangingPassword}
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#123c8c] px-5 py-3 text-sm font-black text-white transition hover:bg-[#0f3274] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isChangingPassword ? (
+                      <>
+                        <Loader2 size={18} className="animate-spin" />
+                        Menyimpan...
+                      </>
+                    ) : (
+                      <>
+                        <LockKeyhole size={18} />
+                        Simpan Password
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        ) : null}
+
+        <BottomNav />
+      </main>
     </MobileShell>
   );
 }

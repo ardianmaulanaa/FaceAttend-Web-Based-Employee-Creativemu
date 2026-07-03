@@ -7,6 +7,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Boxes,
   Bell,
+  CalendarDays,
   Briefcase,
   ChevronDown,
   ChevronRight,
@@ -98,6 +99,7 @@ const adminMainNav: Array<{
     href: "/admin/cuti",
     label: "Laporan Cuti",
     icon: CalendarDays,
+    roles: ["owner", "admin"],
   },
 ];
 
@@ -156,7 +158,6 @@ export default function AppHeader({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const router = useRouter();
   const menus = variant === "admin" ? adminMainNav : employeeNav;
   const activeMasterTab = searchParams.get("tab") || "shift";
 
