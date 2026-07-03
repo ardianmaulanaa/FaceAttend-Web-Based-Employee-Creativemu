@@ -9,6 +9,7 @@ const DEMO_ACCOUNTS = [
   { label: "Demo Owner", email: "owner@creativemu.co.id", password: "123456" },
   { label: "Demo Admin", email: "admin@creativemu.co.id", password: "123456" },
   { label: "Demo CS", email: "cs@creativemu.co.id", password: "123456" },
+  { label: "Demo Karyawan", email: "employee@company.com", password: "123456" },
 ] as const;
 
 export default function LoginPage() {
@@ -146,7 +147,7 @@ export default function LoginPage() {
                   Sign In
                 </h3>
                 <p className="mt-2 text-sm leading-6 text-slate-500">
-                  Gunakan akun owner, admin, atau CS sesuai bidang kerja.
+                  Gunakan akun owner, admin, CS, atau karyawan demo.
                 </p>
               </div>
 
@@ -186,12 +187,13 @@ export default function LoginPage() {
                   <p>Owner: owner@creativemu.co.id</p>
                   <p>Admin: admin@creativemu.co.id</p>
                   <p>CS: cs@creativemu.co.id</p>
+                  <p>Karyawan: employee@company.com</p>
                 </div>
                 <p className="mt-2 text-xs font-bold text-slate-500">
                   Password semua akun: 123456
                 </p>
 
-                <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
                   {DEMO_ACCOUNTS.map((account) => (
                     <button
                       key={account.label}

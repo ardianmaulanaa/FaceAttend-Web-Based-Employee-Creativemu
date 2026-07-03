@@ -246,6 +246,18 @@ export function findDemoUserByEmail(email: string) {
     "@creativemu.com",
     "@creativemu.co.id",
   );
+  const employeeAliases = new Set([
+    "employee@company.com",
+    "employee@creativemu.co.id",
+    "employee@creativemu.com",
+  ]);
+
+  if (employeeAliases.has(normalizedEmail)) {
+    const employeeUser = demoUsers.find((item) => item.id === "EMP-DEMO-001");
+    if (employeeUser) {
+      return employeeUser;
+    }
+  }
 
   return demoUsers.find(
     (item) =>
