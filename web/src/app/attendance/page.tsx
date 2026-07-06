@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import {
   Camera,
   CheckCircle2,
@@ -550,6 +551,18 @@ export default function AttendancePage() {
               </select>
             </div>
 
+            {workMode === "visit" && (
+              <div className="mt-3 rounded-2xl border border-blue-100 bg-[#f4f7ff] p-4 text-xs font-semibold text-blue-900 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                <span className="leading-relaxed">Ingin mengirim detail & foto bukti kunjungan lapangan?</span>
+                <Link
+                  href="/attendance/visit"
+                  className="shrink-0 rounded-xl bg-[#123c8c] px-3.5 py-2 font-black text-white hover:bg-[#0f3275] transition active:scale-[0.97]"
+                >
+                  Kirim Bukti Kunjungan
+                </Link>
+              </div>
+            )}
+
             <div className="mt-4 grid grid-cols-2 gap-3">
               <button
                 disabled={loading || cameraStarting}
@@ -602,6 +615,18 @@ export default function AttendancePage() {
                   Restart
                 </span>
               </button>
+            </div>
+
+            <div className="mt-6 rounded-3xl border border-dashed border-blue-200 bg-blue-50/10 p-5 text-center">
+              <p className="text-sm font-semibold text-slate-500">
+                Memiliki agenda kunjungan kerja tambahan hari ini?
+              </p>
+              <Link
+                href="/attendance/visit"
+                className="mt-2.5 inline-flex items-center gap-1.5 rounded-xl bg-white border border-blue-100 px-4 py-2.5 text-xs font-black text-[#123c8c] hover:bg-[#f6f9ff] hover:text-[#0f3275] shadow-sm transition active:scale-[0.98]"
+              >
+                Kirim Bukti Kunjungan Lapangan &rarr;
+              </Link>
             </div>
 
             {lastPhotoUrl ? (

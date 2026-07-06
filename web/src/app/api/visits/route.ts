@@ -2,8 +2,56 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
 import { canViewAdminPanel } from "@/lib/adminAccess";
+import { AttendanceStatus, CheckInStatus, type DayOfWeek } from "@/generated/prisma/enums";
 
 export const runtime = "nodejs";
+
+function getJakartaDayOfWeek(date = new Date()): DayOfWeek {
+  const day = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Jakarta",
+    weekday: "long",
+  }).format(date);
+
+  return day.toUpperCase() as DayOfWeek;
+}
+
+function timeToMinutes(time?: string | null) {
+  if (!time) return null;
+  const [hourText, minuteText] = time.split(":");
+  const hour = Number(hourText);
+  const minute = Number(minuteText);
+
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return null;
+  return hour * 60 + minute;
+}
+
+function getJakartaMinutes(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Jakarta",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+  const hour = Number(parts.find((part) => part.type === "hour")?.value || 0);
+  const minute = Number(parts.find((part) => part.type === "minute")?.value || 0);
+
+  return hour * 60 + minute;
+}
+
+function combineDateAndTime(dateKey: string, time?: string | null) {
+  if (!time) return null;
+  return new Date(`${dateKey}T${time}:00.000+07:00`);
+}
+
+function getDefaultSchedule(shiftName?: string | null) {
+  const name = String(shiftName || "").toLowerCase();
+
+  if (name.includes("b") || name.includes("siang")) {
+    return { checkIn: "13:00", checkOut: "21:00" };
+  }
+
+  return { checkIn: "08:00", checkOut: "17:00" };
+}
 
 function getJakartaDateKey(date = new Date()) {
   return new Intl.DateTimeFormat("en-CA", {
@@ -160,12 +208,87 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: "Foto bukti kunjungan wajib dikirim." }, { status: 400 });
     }
 
-    const todayDate = toDateOnly(getJakartaDateKey());
-    const attendance = await prisma.attendance.findFirst({
+    const todayKey = getJakartaDateKey();
+    const todayDate = toDateOnly(todayKey);
+    let attendance = await prisma.attendance.findFirst({
       where: { user_id: payload.id, attendance_date: todayDate },
       select: { id: true },
       orderBy: { created_at: "desc" },
     });
+
+    let newAttendanceCreated = false;
+
+    if (!attendance) {
+      // Auto check-in today since they are doing a visit!
+      const user = await prisma.user.findUnique({
+        where: { id: payload.id },
+        select: {
+          id: true,
+          status: true,
+          employee_type: true,
+          registered_office_id: true,
+          shift: {
+            select: {
+              name: true,
+              tolerance_minutes: true,
+              work_schedules: {
+                where: { day_of_week: getJakartaDayOfWeek() },
+                select: { check_in_time: true, check_out_time: true, is_work_day: true },
+              },
+            },
+          },
+        },
+      });
+
+      if (user && user.status === "active") {
+        const defaultSchedule = getDefaultSchedule(user.shift?.name);
+        const schedule = user.shift?.work_schedules?.[0];
+        const checkInTime = schedule?.check_in_time || defaultSchedule.checkIn;
+        const checkOutTime = schedule?.check_out_time || defaultSchedule.checkOut;
+        const startMinutes = timeToMinutes(checkInTime) ?? 8 * 60;
+        const now = new Date();
+        const nowMinutes = getJakartaMinutes(now);
+        const toleranceMinutes = user.shift?.tolerance_minutes || 0;
+        const shiftName = String(user.shift?.name || "").toLowerCase();
+        const isFlexible =
+          ["shift", "magang"].includes(String(user.employee_type || "").toLowerCase()) ||
+          shiftName.includes("shift") ||
+          shiftName.includes("flex") ||
+          shiftName.includes("bebas");
+
+        const lateMinutes = isFlexible ? 0 : Math.max(0, nowMinutes - startMinutes - toleranceMinutes);
+        const attendanceStatus = lateMinutes > 0 ? AttendanceStatus.LATE : AttendanceStatus.PRESENT;
+        const checkInStatus = lateMinutes > 0 ? CheckInStatus.LATE : CheckInStatus.ON_TIME;
+
+        attendance = await prisma.attendance.create({
+          data: {
+            user_id: payload.id,
+            attendance_date: todayDate,
+            scheduled_check_in: combineDateAndTime(todayKey, checkInTime),
+            scheduled_check_out: combineDateAndTime(todayKey, checkOutTime),
+            check_in_time: now,
+            check_in_photo: buffer,
+            check_in_photo_mime: mime,
+            check_in_latitude: latitude,
+            check_in_longitude: longitude,
+            check_in_accuracy: accuracy,
+            check_in_distance: null,
+            check_in_within_radius: true,
+            registered_office_id: user.registered_office_id,
+            work_mode: "visit",
+            is_visit: true,
+            status: attendanceStatus,
+            check_in_status: checkInStatus,
+            late_minutes: lateMinutes,
+            late_seconds: lateMinutes * 60,
+            is_over_tolerance: lateMinutes > 0,
+            activity_note: `mode=visit | visit_title=${title.slice(0, 100)}`,
+          },
+          select: { id: true },
+        });
+        newAttendanceCreated = true;
+      }
+    }
 
     const visit = await prisma.employeeVisit.create({
       data: {
@@ -187,10 +310,13 @@ export async function POST(req: NextRequest) {
       select: { id: true },
     });
 
-    if (attendance?.id) {
+    if (attendance?.id && !newAttendanceCreated) {
       await prisma.attendance.update({
         where: { id: attendance.id },
-        data: { is_visit: true, work_mode: "visit" },
+        data: {
+          is_visit: true,
+          work_mode: "visit",
+        },
       });
     }
 

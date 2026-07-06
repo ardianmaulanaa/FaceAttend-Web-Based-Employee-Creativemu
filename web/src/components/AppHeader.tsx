@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -150,7 +150,24 @@ type AttendanceNotification = {
   message: string;
 };
 
-export default function AppHeader({
+export default function AppHeader(props: AppHeaderProps) {
+  return (
+    <Suspense fallback={
+      <header className="sticky top-0 z-30 border-b border-white/60 bg-white/90 px-5 py-4 shadow-sm shadow-slate-200/40 backdrop-blur-2xl">
+        <div className="mx-auto max-w-7xl flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#123c8c]">FaceAttend</p>
+            <h1 className="mt-1 text-2xl font-black tracking-tight text-slate-950">{props.title}</h1>
+          </div>
+        </div>
+      </header>
+    }>
+      <AppHeaderContent {...props} />
+    </Suspense>
+  );
+}
+
+function AppHeaderContent({
   title,
   subtitle,
   variant = "employee",

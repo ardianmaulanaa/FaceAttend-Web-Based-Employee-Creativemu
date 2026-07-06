@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Pencil, Save, Trash2, X } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
@@ -304,6 +304,22 @@ const initialGlossary: GlossaryItem[] = [
 ];
 
 export default function AdminMasterDataPage() {
+  return (
+    <Suspense fallback={
+      <MobileShell variant="admin">
+        <AppHeader title="Master Data" subtitle="Loading data..." variant="admin" />
+        <div className="flex h-64 items-center justify-center">
+          <p className="text-sm font-semibold text-slate-500">Loading master data...</p>
+        </div>
+        <BottomNav variant="admin" />
+      </MobileShell>
+    }>
+      <AdminMasterDataPageContent />
+    </Suspense>
+  );
+}
+
+function AdminMasterDataPageContent() {
   const searchParams = useSearchParams();
   const [tab, setTab] = useState<MasterTab>("shift");
 
