@@ -10,6 +10,7 @@ import {
   CalendarClock,
   CalendarDays,
   Clock3,
+  FileImage,
   History,
   Home,
   LayoutDashboard,
@@ -92,6 +93,11 @@ const operationalMenus = [
     href: "/admin/employees",
     label: "Register Employee",
     icon: UserPlus,
+  },
+  {
+    href: "/admin/laporan-kehadiran",
+    label: "Laporan Kehadiran",
+    icon: FileImage,
   },
   {
     href: "/admin/cuti",
