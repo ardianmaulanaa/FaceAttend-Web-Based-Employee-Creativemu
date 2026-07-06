@@ -34,6 +34,7 @@ export default function AttendancePage() {
   const [statusText, setStatusText] = useState(
     "Aktifkan kamera dan izinkan lokasi GPS sebelum melakukan absensi.",
   );
+  const [workMode, setWorkMode] = useState("office");
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -322,6 +323,7 @@ export default function AttendancePage() {
       formData.append("latitude", String(latitude));
       formData.append("longitude", String(longitude));
       formData.append("accuracy", String(accuracy));
+      formData.append("workMode", workMode);
 
       if (action === "check-in") {
         formData.append("checkInLatitude", String(latitude));
@@ -532,6 +534,22 @@ export default function AttendancePage() {
 
             <canvas ref={canvasRef} className="hidden" />
 
+            <div className="mt-4">
+              <label className="text-xs font-black uppercase tracking-[0.2em] text-[#123c8c]">
+                Mode Kerja
+              </label>
+              <select
+                value={workMode}
+                onChange={(event) => setWorkMode(event.target.value)}
+                className="mt-2 h-13 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm font-black text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+              >
+                <option value="office">WFO / Kantor</option>
+                <option value="wfh">WFH</option>
+                <option value="visit">Kunjungan</option>
+                <option value="flexible">Shift Fleksibel</option>
+              </select>
+            </div>
+
             <div className="mt-4 grid grid-cols-2 gap-3">
               <button
                 disabled={loading || cameraStarting}
@@ -672,6 +690,7 @@ export default function AttendancePage() {
 
                   {lastLatitude && lastLongitude ? (
                     <div className="mt-1 space-y-1 text-sm text-slate-500">
+                      <p>Mode: {workMode === "office" ? "WFO" : workMode.toUpperCase()}</p>
                       <p>Lat: {lastLatitude.toFixed(6)}</p>
                       <p>Lng: {lastLongitude.toFixed(6)}</p>
                       <p>

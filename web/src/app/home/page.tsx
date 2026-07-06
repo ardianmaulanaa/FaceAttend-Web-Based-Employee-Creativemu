@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   ArrowRight,
+  Briefcase,
   CalendarCheck,
   Clock3,
   History,
@@ -39,6 +40,12 @@ const quickActions = [
     title: "Face Attendance",
     description: "Lakukan check-in atau check-out dengan verifikasi wajah.",
     icon: ScanFace,
+  },
+  {
+    href: "/attendance/visit",
+    title: "Bukti Kunjungan Kerja",
+    description: "Kirim bukti presensi kunjungan kerja lapangan tambahan.",
+    icon: Briefcase,
   },
   {
     href: "/history",

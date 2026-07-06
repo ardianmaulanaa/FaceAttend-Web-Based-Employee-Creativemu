@@ -51,11 +51,18 @@ export type DemoAttendance = {
   check_in_longitude: number | null;
   check_out_latitude: number | null;
   check_out_longitude: number | null;
-  work_mode: "onsite" | "wfh" | "cuti";
+  work_mode: "onsite" | "wfh" | "cuti" | "office" | "visit" | "flexible";
   leave_type: "cuti" | "sakit" | null;
   leave_letter_url: string | null;
   work_location_name: string | null;
   notes: string | null;
+  late_reason?: string | null;
+  is_over_tolerance?: boolean | null;
+  late_minutes?: number | null;
+  late_seconds?: number | null;
+  status?: string | null;
+  scheduled_check_in?: Date | null;
+  scheduled_check_out?: Date | null;
 };
 
 export type DemoAttendanceNotification = {
@@ -225,7 +232,7 @@ const demoUsers: DemoUser[] = [
   },
 ];
 
-const attendanceStore = new Map<string, DemoAttendance>();
+export const attendanceStore = new Map<string, DemoAttendance>();
 
 function getDateKey(date: Date) {
   return date.toISOString().slice(0, 10);

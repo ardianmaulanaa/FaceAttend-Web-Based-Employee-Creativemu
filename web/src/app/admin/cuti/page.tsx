@@ -27,6 +27,13 @@ type LeaveRequest = {
   status: string;
   statusLabel: string;
   adminNote: string | null;
+  requestedWorkMode: string | null;
+  locationUnlockRequested: boolean;
+  locationUnlockApproved: boolean;
+  visitLocationName: string | null;
+  visitAddress: string | null;
+  visitLatitude: number | null;
+  visitLongitude: number | null;
   createdAt: string;
   employee: {
     id: string;
@@ -35,6 +42,8 @@ type LeaveRequest = {
     email: string;
     department: string | null;
     position: string | null;
+    employeeType: string | null;
+    shift: string | null;
   };
 };
 
@@ -92,6 +101,7 @@ export default function AdminLeaveRequestsPage() {
   const [searchKeyword, setSearchKeyword] = useState("");
   const [selectedRequestId, setSelectedRequestId] = useState("");
   const [adminNote, setAdminNote] = useState("");
+  const [locationUnlockApproved, setLocationUnlockApproved] = useState(true);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -164,6 +174,7 @@ export default function AdminLeaveRequestsPage() {
           id,
           status,
           adminNote,
+          locationUnlockApproved,
         }),
       });
 
@@ -178,6 +189,7 @@ export default function AdminLeaveRequestsPage() {
 
       setSelectedRequestId("");
       setAdminNote("");
+      setLocationUnlockApproved(true);
 
       await getLeaveRequests();
     } catch (error) {
@@ -215,8 +227,8 @@ export default function AdminLeaveRequestsPage() {
   return (
     <MobileShell variant="admin">
       <AppHeader
-        title="Laporan Cuti"
-        subtitle="Kelola dan pantau pengajuan cuti karyawan"
+        title="Pengajuan Karyawan"
+        subtitle="Kelola cuti, sakit, izin, WFH, kunjungan, lembur, dan buka kunci lokasi"
         rightLabel="Admin"
         variant="admin"
       />
@@ -265,11 +277,11 @@ export default function AdminLeaveRequestsPage() {
 
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.2em] text-[#123c8c]">
-                  Leave Request Report
+                  Employee Request Report
                 </p>
 
                 <h2 className="mt-1 text-2xl font-black text-slate-950">
-                  Daftar Pengajuan Cuti
+                  Daftar Pengajuan Karyawan
                 </h2>
               </div>
             </div>
@@ -350,6 +362,8 @@ export default function AdminLeaveRequestsPage() {
                           item.employee.employeeCode,
                           item.employee.department,
                           item.employee.position,
+                          item.employee.employeeType,
+                          item.employee.shift,
                         ]
                           .filter(Boolean)
                           .join(" • ")}
@@ -378,6 +392,28 @@ export default function AdminLeaveRequestsPage() {
                     </p>
                   </div>
 
+                  {item.locationUnlockRequested ? (
+                    <div className="mt-3 rounded-2xl bg-amber-50 p-4">
+                      <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">
+                        Kunci Lokasi
+                      </p>
+                      <p className="mt-2 text-sm font-semibold leading-6 text-amber-700">
+                        {item.locationUnlockApproved ? "Sudah dibuka admin" : "Diminta karyawan, belum dibuka"}
+                      </p>
+                    </div>
+                  ) : null}
+
+                  {item.visitLocationName || item.visitAddress ? (
+                    <div className="mt-3 rounded-2xl bg-[#f8fbff] p-4">
+                      <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
+                        Lokasi Kunjungan
+                      </p>
+                      <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">
+                        {[item.visitLocationName, item.visitAddress].filter(Boolean).join(" - ")}
+                      </p>
+                    </div>
+                  ) : null}
+
                   {item.adminNote ? (
                     <div className="mt-3 rounded-2xl bg-blue-50 p-4">
                       <p className="text-xs font-black uppercase tracking-[0.18em] text-[#123c8c]">
@@ -401,12 +437,25 @@ export default function AdminLeaveRequestsPage() {
                         />
                       ) : null}
 
+                      {isSelected && item.locationUnlockRequested ? (
+                        <label className="flex items-center gap-3 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-black text-amber-700">
+                          <input
+                            type="checkbox"
+                            checked={locationUnlockApproved}
+                            onChange={(event) => setLocationUnlockApproved(event.target.checked)}
+                            className="h-5 w-5 rounded border-amber-200"
+                          />
+                          Buka kunci lokasi saat pengajuan disetujui
+                        </label>
+                      ) : null}
+
                       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-end">
                         <button
                           type="button"
                           onClick={() => {
                             setSelectedRequestId(item.id);
                             setAdminNote("");
+                            setLocationUnlockApproved(item.locationUnlockRequested);
                           }}
                           className="rounded-2xl border border-blue-100 bg-white px-5 py-3 text-sm font-black text-[#123c8c] shadow-sm transition active:scale-[0.98]"
                         >

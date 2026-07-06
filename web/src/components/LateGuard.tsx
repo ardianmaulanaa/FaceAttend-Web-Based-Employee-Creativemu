@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import LateReasonModal from "./LateReasonModal";
 
 export default function LateGuard() {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [employeeName, setEmployeeName] = useState("");
   const [scheduledCheckIn, setScheduledCheckIn] = useState("");
@@ -33,8 +34,13 @@ export default function LateGuard() {
           cache: "no-store",
         });
         
-        if (res.status === 401 || res.status === 403) {
-          // Unauthorized or Admin access, do not block
+        if (res.status === 401) {
+          setOpen(false);
+          router.replace("/login");
+          return;
+        }
+        
+        if (res.status === 403) {
           setOpen(false);
           return;
         }

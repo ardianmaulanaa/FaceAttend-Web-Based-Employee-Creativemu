@@ -69,6 +69,9 @@ function formatLeaveType(type: string) {
   if (type === "annual") return "Cuti Tahunan";
   if (type === "permission") return "Izin";
   if (type === "sick") return "Sakit";
+  if (type === "overtime") return "Lembur";
+  if (type === "visit") return "Kunjungan";
+  if (type === "wfh") return "WFH";
   if (type === "other") return "Lainnya";
 
   return type;
@@ -108,6 +111,13 @@ export async function GET(req: NextRequest) {
         end_date: true,
         total_days: true,
         reason: true,
+        requested_work_mode: true,
+        location_unlock_requested: true,
+        location_unlock_approved: true,
+        visit_location_name: true,
+        visit_address: true,
+        visit_latitude: true,
+        visit_longitude: true,
         status: true,
         admin_note: true,
         created_at: true,
@@ -117,6 +127,12 @@ export async function GET(req: NextRequest) {
             employee_code: true,
             name: true,
             email: true,
+            employee_type: true,
+            shift: {
+              select: {
+                name: true,
+              },
+            },
             department: {
               select: {
                 name: true,
@@ -168,6 +184,13 @@ export async function GET(req: NextRequest) {
         endDate: formatDate(item.end_date),
         totalDays: item.total_days,
         reason: item.reason,
+        requestedWorkMode: item.requested_work_mode,
+        locationUnlockRequested: item.location_unlock_requested,
+        locationUnlockApproved: item.location_unlock_approved,
+        visitLocationName: item.visit_location_name,
+        visitAddress: item.visit_address,
+        visitLatitude: item.visit_latitude,
+        visitLongitude: item.visit_longitude,
         status: item.status,
         statusLabel: formatStatus(item.status),
         adminNote: item.admin_note,
@@ -177,6 +200,8 @@ export async function GET(req: NextRequest) {
           employeeCode: item.user.employee_code,
           name: item.user.name,
           email: item.user.email,
+          employeeType: item.user.employee_type,
+          shift: item.user.shift?.name || null,
           department: item.user.department?.name || null,
           position: item.user.position?.name || null,
         },
@@ -207,6 +232,7 @@ export async function PATCH(req: NextRequest) {
     const id = String(body.id || "").trim();
     const status = String(body.status || "").trim();
     const adminNote = String(body.adminNote || "").trim();
+    const locationUnlockApproved = Boolean(body.locationUnlockApproved);
 
     if (!id || !status) {
       return NextResponse.json(
@@ -235,17 +261,19 @@ export async function PATCH(req: NextRequest) {
       data: {
         status,
         admin_note: adminNote || null,
+        location_unlock_approved: status === "approved" ? locationUnlockApproved : false,
       },
       select: {
         id: true,
         status: true,
         admin_note: true,
+        location_unlock_approved: true,
       },
     });
 
     return NextResponse.json({
       success: true,
-      message: "Status pengajuan cuti berhasil diperbarui.",
+      message: "Status pengajuan karyawan berhasil diperbarui.",
       request: updatedRequest,
     });
   } catch (error) {

@@ -78,7 +78,7 @@ const adminMainNav: Array<{
     roles: ["owner"],
   },
   {
-    href: "/admin/company-monitor",
+    href: "/admin/monitor_perusahaan",
     label: "Monitor Perusahaan",
     icon: ClipboardList,
     roles: ["owner"],

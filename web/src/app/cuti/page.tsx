@@ -25,6 +25,13 @@ type LeaveRequest = {
   status: string;
   statusLabel: string;
   adminNote: string | null;
+  requestedWorkMode: string | null;
+  locationUnlockRequested: boolean;
+  locationUnlockApproved: boolean;
+  visitLocationName: string | null;
+  visitAddress: string | null;
+  visitLatitude: number | null;
+  visitLongitude: number | null;
   createdAt: string;
 };
 
@@ -73,6 +80,12 @@ export default function LeaveRequestPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [reason, setReason] = useState("");
+  const [requestedWorkMode, setRequestedWorkMode] = useState("office");
+  const [locationUnlockRequested, setLocationUnlockRequested] = useState(false);
+  const [visitLocationName, setVisitLocationName] = useState("");
+  const [visitAddress, setVisitAddress] = useState("");
+  const [visitLatitude, setVisitLatitude] = useState("");
+  const [visitLongitude, setVisitLongitude] = useState("");
 
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -123,6 +136,12 @@ export default function LeaveRequestPage() {
           startDate,
           endDate,
           reason,
+          requestedWorkMode,
+          locationUnlockRequested,
+          visitLocationName,
+          visitAddress,
+          visitLatitude,
+          visitLongitude,
         }),
       });
 
@@ -139,6 +158,12 @@ export default function LeaveRequestPage() {
       setStartDate("");
       setEndDate("");
       setReason("");
+      setRequestedWorkMode("office");
+      setLocationUnlockRequested(false);
+      setVisitLocationName("");
+      setVisitAddress("");
+      setVisitLatitude("");
+      setVisitLongitude("");
 
       await getLeaveRequests();
     } catch (error) {
@@ -156,8 +181,8 @@ export default function LeaveRequestPage() {
   return (
     <MobileShell variant="employee">
       <AppHeader
-        title="Pengajuan Cuti"
-        subtitle="Ajukan cuti, izin, atau sakit kepada admin"
+        title="Pengajuan Karyawan"
+        subtitle="Ajukan cuti, sakit, izin, WFH, kunjungan, lembur, atau alasan lain"
         rightLabel="Cuti"
       />
 
@@ -195,9 +220,84 @@ export default function LeaveRequestPage() {
                 <option value="annual">Cuti Tahunan</option>
                 <option value="permission">Izin</option>
                 <option value="sick">Sakit</option>
+                <option value="wfh">WFH</option>
+                <option value="visit">Kunjungan</option>
+                <option value="overtime">Lembur</option>
                 <option value="other">Lainnya</option>
               </select>
             </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="text-sm font-black text-slate-700">
+                  Mode Kerja
+                </label>
+
+                <select
+                  value={requestedWorkMode}
+                  onChange={(event) => setRequestedWorkMode(event.target.value)}
+                  className="mt-2 h-14 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                >
+                  <option value="office">WFO / Kantor</option>
+                  <option value="wfh">WFH</option>
+                  <option value="visit">Kunjungan Lokasi</option>
+                  <option value="flexible">Shift Fleksibel</option>
+                </select>
+              </div>
+
+              <label className="flex min-h-14 items-center gap-3 rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 text-sm font-bold text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={locationUnlockRequested}
+                  onChange={(event) => setLocationUnlockRequested(event.target.checked)}
+                  className="h-5 w-5 rounded border-blue-200 text-[#123c8c]"
+                />
+                Minta admin membuka kunci lokasi
+              </label>
+            </div>
+
+            {leaveType === "visit" || requestedWorkMode === "visit" ? (
+              <div className="space-y-4 rounded-2xl border border-blue-100 bg-[#f8fbff] p-4">
+                <div>
+                  <label className="text-sm font-black text-slate-700">
+                    Nama Lokasi Kunjungan
+                  </label>
+                  <input
+                    value={visitLocationName}
+                    onChange={(event) => setVisitLocationName(event.target.value)}
+                    placeholder="Contoh: Client Bandung"
+                    className="mt-2 h-12 w-full rounded-xl border border-blue-100 bg-white px-4 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c]"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-black text-slate-700">
+                    Alamat / Catatan Lokasi
+                  </label>
+                  <input
+                    value={visitAddress}
+                    onChange={(event) => setVisitAddress(event.target.value)}
+                    placeholder="Alamat lokasi kunjungan"
+                    className="mt-2 h-12 w-full rounded-xl border border-blue-100 bg-white px-4 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c]"
+                  />
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <input
+                    value={visitLatitude}
+                    onChange={(event) => setVisitLatitude(event.target.value)}
+                    placeholder="Latitude opsional"
+                    className="h-12 rounded-xl border border-blue-100 bg-white px-4 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c]"
+                  />
+                  <input
+                    value={visitLongitude}
+                    onChange={(event) => setVisitLongitude(event.target.value)}
+                    placeholder="Longitude opsional"
+                    className="h-12 rounded-xl border border-blue-100 bg-white px-4 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c]"
+                  />
+                </div>
+              </div>
+            ) : null}
 
             <div className="grid gap-4 md:grid-cols-2">
               <div>
@@ -281,8 +381,7 @@ export default function LeaveRequestPage() {
             </div>
 
             <p className="mt-4 text-sm font-semibold leading-6 text-blue-100">
-              Status pengajuan akan berubah setelah admin melakukan persetujuan
-              atau penolakan.
+              Status pengajuan dan kunci lokasi akan berubah setelah admin melakukan persetujuan atau penolakan.
             </p>
           </div>
 
@@ -338,6 +437,18 @@ export default function LeaveRequestPage() {
                     <p className="mt-4 rounded-2xl bg-[#f8fbff] p-4 text-sm font-semibold leading-6 text-slate-600">
                       {item.reason}
                     </p>
+
+                    {item.locationUnlockRequested ? (
+                      <p className="mt-3 rounded-2xl bg-amber-50 p-4 text-sm font-semibold leading-6 text-amber-700">
+                        Kunci lokasi: {item.locationUnlockApproved ? "dibuka admin" : "menunggu approval admin"}
+                      </p>
+                    ) : null}
+
+                    {item.visitLocationName || item.visitAddress ? (
+                      <p className="mt-3 rounded-2xl bg-[#f8fbff] p-4 text-sm font-semibold leading-6 text-slate-600">
+                        Lokasi: {[item.visitLocationName, item.visitAddress].filter(Boolean).join(" - ")}
+                      </p>
+                    ) : null}
 
                     {item.adminNote ? (
                       <p className="mt-3 rounded-2xl bg-blue-50 p-4 text-sm font-semibold leading-6 text-[#123c8c]">

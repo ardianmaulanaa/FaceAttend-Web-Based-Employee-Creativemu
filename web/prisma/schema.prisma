@@ -330,6 +330,9 @@ model EmployeeVisit {
 
   note String? @db.VarChar(255)
 
+  visit_photo      Bytes?
+  visit_photo_mime String? @db.VarChar(50)
+
   // planned, ongoing, completed, cancelled
   status String @default("planned") @db.VarChar(20)
 
@@ -376,8 +379,20 @@ model LeaveRequest {
   user_id String @db.Char(36)
   user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-  // annual_leave, permission, sick, other
+  // annual, permission, sick, overtime, visit, wfh, other
   leave_type String @db.VarChar(30)
+
+  // office, wfh, visit, flexible
+  requested_work_mode String? @db.VarChar(20)
+
+  // Jika true, approval admin membuka kunci lokasi untuk tanggal pengajuan.
+  location_unlock_requested Boolean @default(false)
+  location_unlock_approved  Boolean @default(false)
+
+  visit_location_name String? @db.VarChar(150)
+  visit_address       String? @db.VarChar(255)
+  visit_latitude      Float?
+  visit_longitude     Float?
 
   start_date DateTime @db.Date
   end_date   DateTime @db.Date
@@ -395,6 +410,8 @@ model LeaveRequest {
 
   @@index([status])
   @@index([start_date])
+  @@index([leave_type])
+  @@index([location_unlock_approved])
 }
 
 model Announcement {

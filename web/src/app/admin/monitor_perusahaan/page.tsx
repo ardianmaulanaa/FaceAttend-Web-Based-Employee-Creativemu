@@ -6,6 +6,7 @@ import {
   BarChart3,
   Building2,
   CalendarDays,
+  ClipboardList,
   Clock3,
   Loader2,
   RefreshCcw,
@@ -88,6 +89,18 @@ type LateReasonItem = {
   reason: string;
 };
 
+type VisitItem = {
+  id: string;
+  date: string;
+  employeeName: string;
+  title: string;
+  clientName: string | null;
+  address: string | null;
+  startTime: string;
+  note: string | null;
+  hasPhoto: boolean;
+};
+
 type MonitorResponse = {
   month: number;
   year: number;
@@ -98,6 +111,7 @@ type MonitorResponse = {
   dailyChart: DailyChartPoint[];
   alerts: AlertItem[];
   lateReasons: LateReasonItem[];
+  visits: VisitItem[];
 };
 
 const monthOptions = [
@@ -606,6 +620,78 @@ export default function AdminCompanyMonitorPage() {
                           </td>
                           <td className="py-3 pr-4 font-semibold text-slate-600">
                             {item.reason}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-xl shadow-slate-300/30">
+              <div className="flex items-center gap-2 text-[#123c8c]">
+                <ClipboardList size={18} />
+                <h3 className="text-lg font-black text-slate-950">
+                  Bukti Kunjungan Kerja Lapangan
+                </h3>
+              </div>
+
+              {!data.visits || data.visits.length === 0 ? (
+                <p className="mt-4 text-sm font-semibold text-slate-500">
+                  Belum ada data bukti kunjungan pada periode ini.
+                </p>
+              ) : (
+                <div className="mt-4 overflow-x-auto">
+                  <table className="min-w-[760px] w-full text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-100 text-xs uppercase tracking-[0.14em] text-slate-500">
+                        <th className="py-3 pr-4">Tanggal</th>
+                        <th className="py-3 pr-4">Karyawan</th>
+                        <th className="py-3 pr-4">Nama/Kunjungan</th>
+                        <th className="py-3 pr-4">Client / Alamat</th>
+                        <th className="py-3 pr-4">Waktu</th>
+                        <th className="py-3 pr-4">Catatan</th>
+                        <th className="py-3 pr-4">Bukti Foto</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.visits.map((item) => (
+                        <tr
+                          key={item.id}
+                          className="border-b border-slate-100 last:border-0"
+                        >
+                          <td className="py-3 pr-4 font-bold text-slate-700">
+                            {item.date}
+                          </td>
+                          <td className="py-3 pr-4 font-black text-slate-900">
+                            {item.employeeName}
+                          </td>
+                          <td className="py-3 pr-4 font-semibold text-slate-800">
+                            {item.title}
+                          </td>
+                          <td className="py-3 pr-4 text-slate-600">
+                            {item.clientName ? `${item.clientName} - ` : ""}{item.address || "-"}
+                          </td>
+                          <td className="py-3 pr-4 text-slate-600">
+                            {item.startTime}
+                          </td>
+                          <td className="py-3 pr-4 text-slate-600 text-xs">
+                            {item.note || "-"}
+                          </td>
+                          <td className="py-3 pr-4">
+                            {item.hasPhoto ? (
+                              <a
+                                href={`/api/visits/${item.id}/photo`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1 text-xs font-black text-[#123c8c] hover:bg-blue-100 transition active:scale-[0.97]"
+                              >
+                                Lihat Foto
+                              </a>
+                            ) : (
+                              <span className="text-xs text-slate-400">Tidak ada</span>
+                            )}
                           </td>
                         </tr>
                       ))}

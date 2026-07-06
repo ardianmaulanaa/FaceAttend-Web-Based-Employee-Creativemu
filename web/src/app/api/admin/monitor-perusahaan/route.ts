@@ -385,6 +385,37 @@ export async function GET(req: NextRequest) {
         reason: record.late_reason || "Belum ada alasan",
       }));
 
+    const monthVisits = await prisma.employeeVisit.findMany({
+      where: {
+        visit_date: {
+          gte: monthStart,
+          lt: nextMonthStart,
+        },
+      },
+      include: {
+        user: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        visit_date: "desc",
+      },
+    });
+
+    const visits = monthVisits.map((v) => ({
+      id: v.id,
+      date: formatDateKey(v.visit_date),
+      employeeName: v.user?.name || "Tanpa Nama",
+      title: v.title,
+      clientName: v.client_name,
+      address: v.address,
+      startTime: formatTime(v.start_time),
+      note: v.note,
+      hasPhoto: Boolean(v.visit_photo_mime),
+    }));
+
     return NextResponse.json({
       month,
       year,
@@ -415,6 +446,7 @@ export async function GET(req: NextRequest) {
       dailyChart,
       alerts,
       lateReasons,
+      visits,
     });
   } catch (error) {
     console.error("GET /api/admin/monitor-perusahaan error:", error);
