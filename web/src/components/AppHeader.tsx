@@ -72,14 +72,19 @@ const masterDataMenus = [
     icon: CalendarClock,
   },
   {
-    href: "/admin/units",
-    label: "Unit",
-    icon: Building2,
+  href: "/admin/kantor",
+  label: "Kantor",
+  icon: Building2,
   },
   {
     href: "/admin/departments",
     label: "Divisi",
     icon: Network,
+  },
+  {
+    href: "/admin/units",
+    label: "Unit",
+    icon: Building2,
   },
   {
     href: "/admin/positions",
@@ -175,14 +180,14 @@ export default function AppHeader({
             <button
               type="button"
               onClick={() => setIsSidebarOpen(true)}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c] shadow-sm transition active:scale-[0.96]"
-              aria-label="Open menu"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c] shadow-lg shadow-slate-200/70 ring-1 ring-blue-100 transition hover:bg-blue-50 active:scale-[0.96]"
+              aria-label="Buka menu"
             >
-              <Menu size={24} strokeWidth={2.8} />
+              <Menu size={25} strokeWidth={3} />
             </button>
 
             <div className="min-w-0">
-              <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#123c8c] md:text-[10px]">
+              <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#123c8c]">
                 FaceAttend
               </p>
 
@@ -191,14 +196,14 @@ export default function AppHeader({
               </h1>
 
               {subtitle ? (
-                <p className="mt-1 line-clamp-1 max-w-xl text-sm font-semibold leading-5 text-slate-500 md:text-sm">
+                <p className="mt-1 line-clamp-1 max-w-xl text-sm font-semibold leading-5 text-slate-500">
                   {subtitle}
                 </p>
               ) : null}
             </div>
           </div>
 
-          {!isAdmin && rightLabel ? (
+          {rightLabel ? (
             <div className="hidden items-center justify-end gap-3 md:flex">
               <span className="rounded-2xl bg-white px-4 py-2 text-xs font-black text-slate-600 shadow-sm ring-1 ring-blue-100">
                 {rightLabel}
@@ -208,12 +213,12 @@ export default function AppHeader({
         </div>
       </header>
 
-      <div className={subtitle ? "h-[105px]" : "h-[88px]"} />
+      <div className={subtitle ? "h-[106px]" : "h-[88px]"} />
 
       {isSidebarOpen ? (
         <button
           type="button"
-          aria-label="Close sidebar"
+          aria-label="Tutup menu"
           onClick={() => setIsSidebarOpen(false)}
           className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-sm"
         />
@@ -253,7 +258,7 @@ export default function AppHeader({
               type="button"
               onClick={() => setIsSidebarOpen(false)}
               className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 transition active:scale-[0.96]"
-              aria-label="Close menu"
+              aria-label="Tutup menu"
             >
               <X size={20} strokeWidth={2.8} />
             </button>

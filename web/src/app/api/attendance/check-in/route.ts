@@ -13,6 +13,7 @@ type ParsedAttendanceBody = {
   latitude: number | null;
   longitude: number | null;
   accuracy: number | null;
+  lateReason: string;
 };
 
 type GeoPoint = {
@@ -31,13 +32,8 @@ type OfficeGeofence = {
 async function getUserIdFromRequest(req: NextRequest) {
   const token = req.cookies.get("faceattend_token")?.value;
 
-  if (!token) {
-    throw new Error("Token login tidak ditemukan.");
-  }
-
-  if (!process.env.JWT_SECRET) {
-    throw new Error("JWT_SECRET belum ada di file .env");
-  }
+  if (!token) throw new Error("Token login tidak ditemukan.");
+  if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET belum ada di file .env");
 
   const secret = new TextEncoder().encode(process.env.JWT_SECRET);
   const { payload } = await jwtVerify(token, secret);
@@ -47,9 +43,7 @@ async function getUserIdFromRequest(req: NextRequest) {
     (payload.userId as string | undefined) ||
     (payload.sub as string | undefined);
 
-  if (!userId) {
-    throw new Error("User ID tidak ditemukan di token.");
-  }
+  if (!userId) throw new Error("User ID tidak ditemukan di token.");
 
   return userId;
 }
@@ -66,26 +60,21 @@ function toJakartaDate(date = new Date()) {
 
 function timeToMinutes(time: string) {
   const [hourText, minuteText] = time.split(":");
-  const hour = Number(hourText || 0);
-  const minute = Number(minuteText || 0);
-
-  return hour * 60 + minute;
+  return Number(hourText || 0) * 60 + Number(minuteText || 0);
 }
 
 function dateToMinutes(date: Date) {
   const jakartaDate = toJakartaDate(date);
-
   return jakartaDate.getHours() * 60 + jakartaDate.getMinutes();
 }
 
 function calculateLateMinutes(
   checkInAt: Date,
   startTime: string,
-  toleranceMinutes: number,
+  toleranceMinutes: number
 ) {
-  const checkInMinutes = dateToMinutes(checkInAt);
-  const startMinutes = timeToMinutes(startTime);
-  const late = checkInMinutes - startMinutes - toleranceMinutes;
+  const late =
+    dateToMinutes(checkInAt) - timeToMinutes(startTime) - toleranceMinutes;
 
   return late > 0 ? late : 0;
 }
@@ -93,22 +82,15 @@ function calculateLateMinutes(
 function getShiftStartTime(shiftName?: string | null) {
   const name = String(shiftName || "").toUpperCase();
 
-  if (name.includes("SHIFT SIANG")) return "13:00";
-  if (name.includes("SIANG")) return "13:00";
-
-  if (name.includes("SHIFT PAGI")) return "08:00";
-  if (name.includes("PAGI")) return "08:00";
-
-  if (name.includes("MAGANG")) return "08:00";
-  if (name.includes("UTAMA")) return "08:00";
+  if (name.includes("SHIFT SIANG") || name.includes("SIANG")) return "13:00";
+  if (name.includes("SHIFT PAGI") || name.includes("PAGI")) return "08:00";
+  if (name.includes("MAGANG") || name.includes("UTAMA")) return "08:00";
 
   return "08:00";
 }
 
 function toNumber(value: unknown) {
-  if (value === null || value === undefined || value === "") {
-    return null;
-  }
+  if (value === null || value === undefined || value === "") return null;
 
   const numberValue = Number(value);
 
@@ -145,7 +127,6 @@ function getDistanceInMeters(from: GeoPoint, to: GeoPoint) {
 
   const lat1 = (from.lat * Math.PI) / 180;
   const lat2 = (to.lat * Math.PI) / 180;
-
   const deltaLat = ((to.lat - from.lat) * Math.PI) / 180;
   const deltaLng = ((to.lng - from.lng) * Math.PI) / 180;
 
@@ -156,36 +137,58 @@ function getDistanceInMeters(from: GeoPoint, to: GeoPoint) {
       Math.sin(deltaLng / 2) *
       Math.sin(deltaLng / 2);
 
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-  return earthRadius * c;
+  return earthRadius * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 }
 
 function findNearestValidOffice(
   userLocation: GeoPoint,
-  offices: OfficeGeofence[],
+  offices: OfficeGeofence[]
 ) {
-  const validOffices = offices
-    .map((office) => {
-      const distance = getDistanceInMeters(userLocation, {
-        lat: office.latitude,
-        lng: office.longitude,
-      });
+  return (
+    offices
+      .map((office) => {
+        const distance = getDistanceInMeters(userLocation, {
+          lat: office.latitude,
+          lng: office.longitude,
+        });
 
-      return {
-        office,
-        distance,
-        isWithinRadius: distance <= office.radius_meters,
-      };
-    })
-    .filter((item) => item.isWithinRadius)
-    .sort((a, b) => a.distance - b.distance);
+        return {
+          office,
+          distance,
+          isWithinRadius: distance <= office.radius_meters,
+        };
+      })
+      .filter((item) => item.isWithinRadius)
+      .sort((a, b) => a.distance - b.distance)[0] ?? null
+  );
+}
 
-  return validOffices[0] ?? null;
+function getFormText(formData: FormData, keys: string[]) {
+  for (const key of keys) {
+    const value = formData.get(key);
+
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  return "";
+}
+
+function getBodyText(body: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    const value = body[key];
+
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  return "";
 }
 
 async function parseAttendanceBody(
-  req: NextRequest,
+  req: NextRequest
 ): Promise<ParsedAttendanceBody> {
   const contentType = req.headers.get("content-type") || "";
 
@@ -199,16 +202,24 @@ async function parseAttendanceBody(
       formData.get("image");
 
     const latitude = toNumber(
-      formData.get("latitude") ?? formData.get("checkInLatitude"),
+      formData.get("latitude") ?? formData.get("checkInLatitude")
     );
 
     const longitude = toNumber(
-      formData.get("longitude") ?? formData.get("checkInLongitude"),
+      formData.get("longitude") ?? formData.get("checkInLongitude")
     );
 
     const accuracy = toNumber(
-      formData.get("accuracy") ?? formData.get("checkInAccuracy"),
+      formData.get("accuracy") ?? formData.get("checkInAccuracy")
     );
+
+    const lateReason = getFormText(formData, [
+      "lateReason",
+      "late_reason",
+      "reason",
+      "lateNote",
+      "late_note",
+    ]);
 
     if (photo instanceof File) {
       const result = await fileToBuffer(photo);
@@ -219,6 +230,7 @@ async function parseAttendanceBody(
         latitude,
         longitude,
         accuracy,
+        lateReason,
       };
     }
 
@@ -231,6 +243,7 @@ async function parseAttendanceBody(
         latitude,
         longitude,
         accuracy,
+        lateReason,
       };
     }
 
@@ -240,10 +253,11 @@ async function parseAttendanceBody(
       latitude,
       longitude,
       accuracy,
+      lateReason,
     };
   }
 
-  const body = await req.json();
+  const body = (await req.json()) as Record<string, unknown>;
 
   const photoDataUrl =
     typeof body.photo === "string"
@@ -257,16 +271,30 @@ async function parseAttendanceBody(
             : null;
 
   const latitude = toNumber(
-    body.latitude ?? body.checkInLatitude ?? body.location?.latitude,
+    body.latitude ??
+      body.checkInLatitude ??
+      (body.location as { latitude?: unknown } | undefined)?.latitude
   );
 
   const longitude = toNumber(
-    body.longitude ?? body.checkInLongitude ?? body.location?.longitude,
+    body.longitude ??
+      body.checkInLongitude ??
+      (body.location as { longitude?: unknown } | undefined)?.longitude
   );
 
   const accuracy = toNumber(
-    body.accuracy ?? body.checkInAccuracy ?? body.location?.accuracy,
+    body.accuracy ??
+      body.checkInAccuracy ??
+      (body.location as { accuracy?: unknown } | undefined)?.accuracy
   );
+
+  const lateReason = getBodyText(body, [
+    "lateReason",
+    "late_reason",
+    "reason",
+    "lateNote",
+    "late_note",
+  ]);
 
   if (!photoDataUrl) {
     return {
@@ -275,6 +303,7 @@ async function parseAttendanceBody(
       latitude,
       longitude,
       accuracy,
+      lateReason,
     };
   }
 
@@ -286,6 +315,7 @@ async function parseAttendanceBody(
     latitude,
     longitude,
     accuracy,
+    lateReason,
   };
 }
 
@@ -293,27 +323,33 @@ export async function POST(req: NextRequest) {
   try {
     const userId = await getUserIdFromRequest(req);
 
-    const { photoBuffer, photoMime, latitude, longitude, accuracy } =
-      await parseAttendanceBody(req);
+    const {
+      photoBuffer,
+      photoMime,
+      latitude,
+      longitude,
+      accuracy,
+      lateReason,
+    } = await parseAttendanceBody(req);
 
     if (!photoBuffer) {
       return NextResponse.json(
         { error: "Foto check-in wajib dikirim." },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
     if (latitude === null || longitude === null) {
       return NextResponse.json(
         { error: "Lokasi GPS check-in wajib dikirim." },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
     if (accuracy === null) {
       return NextResponse.json(
         { error: "Akurasi GPS check-in wajib dikirim." },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -323,7 +359,7 @@ export async function POST(req: NextRequest) {
           error: `Akurasi GPS terlalu rendah. Maksimal ±${MAX_GPS_ACCURACY_METERS} meter.`,
           accuracy,
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -348,14 +384,14 @@ export async function POST(req: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { error: "Data user tidak ditemukan." },
-        { status: 404 },
+        { status: 404 }
       );
     }
 
     if (user.status !== "active") {
       return NextResponse.json(
         { error: "Akun kamu sedang tidak aktif." },
-        { status: 403 },
+        { status: 403 }
       );
     }
 
@@ -375,7 +411,7 @@ export async function POST(req: NextRequest) {
     if (offices.length === 0) {
       return NextResponse.json(
         { error: "Belum ada data kantor aktif untuk validasi GPS." },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -384,7 +420,7 @@ export async function POST(req: NextRequest) {
         lat: latitude,
         lng: longitude,
       },
-      offices,
+      offices
     );
 
     if (!matchedOffice) {
@@ -395,7 +431,7 @@ export async function POST(req: NextRequest) {
           longitude,
           accuracy,
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -412,20 +448,54 @@ export async function POST(req: NextRequest) {
     if (existingAttendance?.check_in_time) {
       return NextResponse.json(
         { error: "Kamu sudah melakukan check-in hari ini." },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
     const startTime = getShiftStartTime(user.shift?.name);
     const toleranceMinutes = user.shift?.tolerance_minutes || 0;
+    const lateMinutes = calculateLateMinutes(now, startTime, toleranceMinutes);
+    const isLate = lateMinutes > 0;
 
-    const lateMinutes = calculateLateMinutes(
-      now,
-      startTime,
-      toleranceMinutes,
-    );
+    if (isLate && !lateReason) {
+      return NextResponse.json(
+        {
+          success: false,
+          requiresLateReason: true,
+          error: "Kamu sudah melewati batas toleransi. Alasan telat wajib diisi.",
+          message:
+            "Kamu sudah melewati batas toleransi. Alasan telat wajib diisi.",
+          lateMinutes,
+          schedule: {
+            shift: user.shift?.name || "Tanpa Shift",
+            startTime,
+            toleranceMinutes,
+          },
+        },
+        { status: 400 }
+      );
+    }
 
-    const attendanceStatus = lateMinutes > 0 ? "LATE" : "PRESENT";
+    const attendanceStatus = isLate ? "LATE" : "PRESENT";
+
+    const checkInData = {
+      check_in_time: now,
+      check_in_photo: photoBuffer,
+      check_in_photo_mime: photoMime,
+
+      check_in_latitude: latitude,
+      check_in_longitude: longitude,
+      check_in_accuracy: accuracy,
+      check_in_distance: matchedOffice.distance,
+      check_in_within_radius: true,
+
+      registered_office_id: user.registered_office_id,
+      check_in_office_id: matchedOffice.office.id,
+
+      status: attendanceStatus,
+      late_minutes: lateMinutes,
+      late_reason: isLate ? lateReason : null,
+    };
 
     const attendance = existingAttendance
       ? await prisma.attendance.update({
@@ -433,21 +503,7 @@ export async function POST(req: NextRequest) {
             id: existingAttendance.id,
           },
           data: {
-            check_in_time: now,
-            check_in_photo: photoBuffer,
-            check_in_photo_mime: photoMime,
-
-            check_in_latitude: latitude,
-            check_in_longitude: longitude,
-            check_in_accuracy: accuracy,
-            check_in_distance: matchedOffice.distance,
-            check_in_within_radius: true,
-
-            registered_office_id: user.registered_office_id,
-            check_in_office_id: matchedOffice.office.id,
-
-            status: attendanceStatus,
-            late_minutes: lateMinutes,
+            ...checkInData,
             work_minutes: existingAttendance.work_minutes ?? 0,
           },
         })
@@ -455,35 +511,20 @@ export async function POST(req: NextRequest) {
           data: {
             user_id: userId,
             attendance_date: today,
-
-            check_in_time: now,
-            check_in_photo: photoBuffer,
-            check_in_photo_mime: photoMime,
-
-            check_in_latitude: latitude,
-            check_in_longitude: longitude,
-            check_in_accuracy: accuracy,
-            check_in_distance: matchedOffice.distance,
-            check_in_within_radius: true,
-
-            registered_office_id: user.registered_office_id,
-            check_in_office_id: matchedOffice.office.id,
-
-            status: attendanceStatus,
-            late_minutes: lateMinutes,
+            ...checkInData,
             work_minutes: 0,
           },
         });
 
     return NextResponse.json({
       success: true,
-      message:
-        lateMinutes > 0
-          ? `Check-in berhasil. Kamu terlambat ${lateMinutes} menit.`
-          : "Check-in berhasil.",
+      message: isLate
+        ? `Check-in berhasil. Kamu terlambat ${lateMinutes} menit.`
+        : "Check-in berhasil.",
       attendanceId: attendance.id,
       status: attendanceStatus,
       lateMinutes,
+      lateReason: isLate ? lateReason : null,
       schedule: {
         shift: user.shift?.name || "Tanpa Shift",
         startTime,
@@ -506,7 +547,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(
       { error: "Gagal melakukan check-in." },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

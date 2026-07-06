@@ -161,13 +161,13 @@ export default function LeaveRequestPage() {
         rightLabel="Cuti"
       />
 
-      <section className="mx-auto grid max-w-7xl gap-6 px-5 py-6 md:px-10 lg:grid-cols-[0.85fr_1.15fr] lg:px-16">
+      <section className="mx-auto grid max-w-7xl items-start gap-6 px-5 py-6 md:px-10 lg:grid-cols-[0.85fr_1.15fr] lg:px-16">
         <form
           onSubmit={handleSubmit}
-          className="rounded-[2rem] border border-blue-100 bg-white p-5 shadow-xl shadow-slate-200/60"
+          className="h-fit self-start rounded-[2rem] border border-blue-100 bg-white p-5 shadow-xl shadow-slate-200/60"
         >
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
               <CalendarDays size={24} strokeWidth={2.6} />
             </div>
 
@@ -175,13 +175,14 @@ export default function LeaveRequestPage() {
               <p className="text-xs font-black uppercase tracking-[0.2em] text-[#123c8c]">
                 Form Cuti
               </p>
+
               <h2 className="mt-1 text-2xl font-black text-slate-950">
                 Buat Pengajuan
               </h2>
             </div>
           </div>
 
-          <div className="mt-6 space-y-4">
+          <div className="mt-5 space-y-4">
             <div>
               <label className="text-sm font-black text-slate-700">
                 Jenis Pengajuan
@@ -190,7 +191,7 @@ export default function LeaveRequestPage() {
               <select
                 value={leaveType}
                 onChange={(event) => setLeaveType(event.target.value)}
-                className="mt-2 h-14 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                className="mt-2 h-13 min-h-13 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
               >
                 <option value="annual">Cuti Tahunan</option>
                 <option value="permission">Izin</option>
@@ -209,7 +210,7 @@ export default function LeaveRequestPage() {
                   type="date"
                   value={startDate}
                   onChange={(event) => setStartDate(event.target.value)}
-                  className="mt-2 h-14 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                  className="mt-2 h-13 min-h-13 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
                   required
                 />
               </div>
@@ -223,7 +224,7 @@ export default function LeaveRequestPage() {
                   type="date"
                   value={endDate}
                   onChange={(event) => setEndDate(event.target.value)}
-                  className="mt-2 h-14 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                  className="mt-2 h-13 min-h-13 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
                   required
                 />
               </div>
@@ -238,7 +239,7 @@ export default function LeaveRequestPage() {
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}
                 placeholder="Contoh: Mengajukan cuti karena keperluan keluarga."
-                className="mt-2 min-h-36 w-full resize-none rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-4 text-sm font-bold leading-6 text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                className="mt-2 min-h-28 w-full resize-none rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-4 text-sm font-bold leading-6 text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
                 required
               />
             </div>
@@ -246,7 +247,7 @@ export default function LeaveRequestPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#123c8c] px-5 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-13 min-h-13 w-full items-center justify-center gap-2 rounded-2xl bg-[#123c8c] px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting ? (
                 <>
@@ -263,10 +264,10 @@ export default function LeaveRequestPage() {
           </div>
         </form>
 
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <div className="rounded-[2rem] bg-[#123c8c] p-5 text-white shadow-xl shadow-blue-900/20">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/15">
                 <FileText size={25} strokeWidth={2.6} />
               </div>
 
@@ -274,9 +275,8 @@ export default function LeaveRequestPage() {
                 <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-100">
                   Riwayat
                 </p>
-                <h2 className="mt-1 text-2xl font-black">
-                  Pengajuan Saya
-                </h2>
+
+                <h2 className="mt-1 text-2xl font-black">Pengajuan Saya</h2>
               </div>
             </div>
 
@@ -326,7 +326,7 @@ export default function LeaveRequestPage() {
                       </div>
 
                       <div
-                        className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-black ring-1 ${getStatusStyle(
+                        className={`inline-flex w-fit items-center gap-2 rounded-full px-4 py-2 text-xs font-black ring-1 ${getStatusStyle(
                           item.status
                         )}`}
                       >

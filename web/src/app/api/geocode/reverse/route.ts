@@ -7,11 +7,12 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
 
     const lat = searchParams.get("lat");
-    const lon = searchParams.get("lon");
+    const lon = searchParams.get("lon") || searchParams.get("lng");
 
     if (!lat || !lon) {
       return NextResponse.json(
         {
+          success: false,
           message: "Latitude dan longitude wajib diisi.",
         },
         { status: 400 }
@@ -19,7 +20,9 @@ export async function GET(req: NextRequest) {
     }
 
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`,
+      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(
+        lat
+      )}&lon=${encodeURIComponent(lon)}&zoom=18&addressdetails=1`,
       {
         method: "GET",
         headers: {
@@ -33,6 +36,7 @@ export async function GET(req: NextRequest) {
     if (!response.ok) {
       return NextResponse.json(
         {
+          success: false,
           message: "Gagal mengambil alamat lokasi.",
         },
         { status: 500 }
@@ -42,11 +46,13 @@ export async function GET(req: NextRequest) {
     const data = await response.json();
 
     return NextResponse.json({
+      success: true,
       address: data.display_name || "Alamat tidak ditemukan.",
     });
   } catch (error) {
     return NextResponse.json(
       {
+        success: false,
         message: "Gagal mengambil alamat lokasi.",
         error: error instanceof Error ? error.message : String(error),
       },

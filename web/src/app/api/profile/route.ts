@@ -1,23 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
+import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { verifyPassword } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
-async function getCurrentUserId(req: NextRequest) {
-  const token =
-    req.cookies.get("faceattend_token")?.value ||
-    req.cookies.get("token")?.value ||
-    req.cookies.get("auth_token")?.value ||
-    req.cookies.get("authToken")?.value ||
-    "";
+type JsonBody = Record<string, unknown>;
+
+async function getUserIdFromRequest(req: NextRequest) {
+  const token = req.cookies.get("faceattend_token")?.value;
 
   if (!token) {
     throw new Error("Token login tidak ditemukan.");
   }
 
   if (!process.env.JWT_SECRET) {
-    throw new Error("JWT_SECRET belum ada di file .env.");
+    throw new Error("JWT_SECRET belum ada di file .env");
   }
 
   const secret = new TextEncoder().encode(process.env.JWT_SECRET);
@@ -26,7 +25,6 @@ async function getCurrentUserId(req: NextRequest) {
   const userId =
     (payload.id as string | undefined) ||
     (payload.userId as string | undefined) ||
-    (payload.user_id as string | undefined) ||
     (payload.sub as string | undefined);
 
   if (!userId) {
@@ -36,118 +34,469 @@ async function getCurrentUserId(req: NextRequest) {
   return userId;
 }
 
-export async function PATCH(req: NextRequest) {
-  try {
-    const userId = await getCurrentUserId(req);
-    const body = await req.json();
+function normalizeKey(key: string) {
+  return key.replace(/[_\-\s]/g, "").toLowerCase();
+}
 
-    const name = String(body.name || "").trim();
-    const phone = String(body.phone || "").trim();
+function findText(body: unknown, keys: string[]) {
+  const targets = new Set(keys.map(normalizeKey));
 
-    if (!name) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Nama lengkap wajib diisi.",
-        },
-        {
-          status: 400,
-        }
-      );
+  function walk(value: unknown): string {
+    if (!value || typeof value !== "object") return "";
+
+    for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
+      if (targets.has(normalizeKey(key))) {
+        if (typeof item === "string") return item.trim();
+        if (typeof item === "number") return String(item);
+      }
+
+      if (item && typeof item === "object") {
+        const nested = walk(item);
+        if (nested) return nested;
+      }
     }
 
-    if (name.length < 2) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Nama lengkap minimal 2 karakter.",
-        },
-        {
-          status: 400,
-        }
-      );
+    return "";
+  }
+
+  return walk(body);
+}
+
+function findOptionalText(body: unknown, keys: string[]) {
+  const targets = new Set(keys.map(normalizeKey));
+  let found = false;
+
+  function walk(value: unknown): string | undefined {
+    if (!value || typeof value !== "object") return undefined;
+
+    for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
+      if (targets.has(normalizeKey(key))) {
+        found = true;
+
+        if (item === null || item === undefined) return "";
+        if (typeof item === "string") return item.trim();
+        if (typeof item === "number") return String(item);
+
+        return "";
+      }
+
+      if (item && typeof item === "object") {
+        const nested = walk(item);
+        if (nested !== undefined) return nested;
+      }
     }
 
-    if (phone && phone.length < 8) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Nomor telepon minimal 8 karakter.",
-        },
-        {
-          status: 400,
-        }
-      );
+    return undefined;
+  }
+
+  const result = walk(body);
+
+  if (!found) return undefined;
+
+  return result ?? "";
+}
+
+function hasAnyKey(body: unknown, keys: string[]) {
+  const targets = new Set(keys.map(normalizeKey));
+
+  function walk(value: unknown): boolean {
+    if (!value || typeof value !== "object") return false;
+
+    for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
+      if (targets.has(normalizeKey(key))) return true;
+
+      if (item && typeof item === "object" && walk(item)) {
+        return true;
+      }
     }
 
-    const user = await prisma.user.findUnique({
-      where: {
-        id: userId,
-      },
-      select: {
-        id: true,
-        status: true,
-      },
-    });
+    return false;
+  }
 
-    if (!user) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "User tidak ditemukan.",
-        },
-        {
-          status: 404,
-        }
-      );
-    }
+  return walk(body);
+}
 
-    if (user.status !== "active") {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Akun tidak aktif.",
-        },
-        {
-          status: 403,
-        }
-      );
-    }
+async function getUserTableColumns() {
+  const columns = await prisma.$queryRaw<Array<{ COLUMN_NAME: string }>>`
+    SELECT COLUMN_NAME
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'users'
+  `;
 
-    const updatedUser = await prisma.user.update({
-      where: {
-        id: userId,
-      },
-      data: {
-        name,
-        phone: phone || null,
-      },
-      select: {
-        id: true,
-        name: true,
-        phone: true,
-      },
-    });
+  return new Set(columns.map((item) => item.COLUMN_NAME));
+}
 
-    return NextResponse.json({
-      success: true,
-      message: "Profil berhasil diperbarui.",
-      user: updatedUser,
-    });
-  } catch (error) {
-    console.error("PATCH /api/profile error:", error);
+async function getSafeUser(userId: string) {
+  const rows = await prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
+    "SELECT * FROM users WHERE id = ? LIMIT 1",
+    userId
+  );
+
+  const user = rows[0];
+
+  if (!user) return null;
+
+  delete user.password_hash;
+  delete user.password;
+
+  return user;
+}
+
+async function handleChangePassword(userId: string, body: JsonBody) {
+  const oldPassword = findText(body, [
+    "oldPassword",
+    "old_password",
+    "currentPassword",
+    "current_password",
+    "passwordLama",
+    "password_lama",
+    "kataSandiLama",
+    "kata_sandi_lama",
+    "old",
+    "current",
+  ]);
+
+  const newPassword = findText(body, [
+    "newPassword",
+    "new_password",
+    "passwordBaru",
+    "password_baru",
+    "kataSandiBaru",
+    "kata_sandi_baru",
+    "new",
+  ]);
+
+  const confirmPassword = findText(body, [
+    "confirmPassword",
+    "confirm_password",
+    "confirmNewPassword",
+    "confirm_new_password",
+    "konfirmasiPassword",
+    "konfirmasi_password",
+    "konfirmasiKataSandi",
+    "konfirmasi_kata_sandi",
+    "passwordConfirmation",
+    "password_confirmation",
+    "confirm",
+    "confirmation",
+  ]);
+
+  if (!oldPassword || !newPassword || !confirmPassword) {
+    console.log("CHANGE_PASSWORD_EMPTY_BODY:", body);
 
     return NextResponse.json(
       {
         success: false,
         message:
-          error instanceof Error
-            ? error.message
-            : "Gagal memperbarui profil.",
+          "Kata sandi lama, kata sandi baru, dan konfirmasi wajib diisi.",
       },
-      {
-        status: 500,
-      }
+      { status: 400 }
     );
   }
+
+  if (newPassword.length < 8) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Kata sandi baru minimal 8 karakter.",
+      },
+      { status: 400 }
+    );
+  }
+
+  if (newPassword !== confirmPassword) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Konfirmasi kata sandi baru tidak sama.",
+      },
+      { status: 400 }
+    );
+  }
+
+  if (oldPassword === newPassword) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Kata sandi baru tidak boleh sama dengan kata sandi lama.",
+      },
+      { status: 400 }
+    );
+  }
+
+  const user = await prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+    select: {
+      id: true,
+      password_hash: true,
+      status: true,
+    },
+  });
+
+  if (!user) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Data user tidak ditemukan.",
+      },
+      { status: 404 }
+    );
+  }
+
+  if (user.status !== "active") {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Akun kamu sedang tidak aktif.",
+      },
+      { status: 403 }
+    );
+  }
+
+  const isOldPasswordValid = await verifyPassword(
+    oldPassword,
+    user.password_hash
+  );
+
+  if (!isOldPasswordValid) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Kata sandi lama salah.",
+      },
+      { status: 401 }
+    );
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+  await prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      password_hash: hashedPassword,
+    },
+  });
+
+  return NextResponse.json({
+    success: true,
+    message: "Kata sandi berhasil diubah.",
+  });
+}
+
+async function handleUpdateProfile(userId: string, body: JsonBody) {
+  const columns = await getUserTableColumns();
+  const updates: Array<[string, string]> = [];
+
+  function addUpdate(column: string, value: string | undefined) {
+    if (value === undefined) return;
+    if (!columns.has(column)) return;
+
+    updates.push([column, value]);
+  }
+
+  const name = findOptionalText(body, ["name", "fullName", "full_name", "nama"]);
+  const email = findOptionalText(body, ["email"]);
+  const phone = findOptionalText(body, [
+    "phone",
+    "phoneNumber",
+    "phone_number",
+    "noHp",
+    "no_hp",
+    "nomorHp",
+    "nomor_hp",
+  ]);
+  const address = findOptionalText(body, ["address", "alamat"]);
+  const gender = findOptionalText(body, ["gender", "jenisKelamin", "jenis_kelamin"]);
+  const birthDate = findOptionalText(body, [
+    "birthDate",
+    "birth_date",
+    "dateOfBirth",
+    "date_of_birth",
+    "tanggalLahir",
+    "tanggal_lahir",
+  ]);
+
+  if (name !== undefined && !name) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Nama tidak boleh kosong.",
+      },
+      { status: 400 }
+    );
+  }
+
+  if (email !== undefined && !email) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Email tidak boleh kosong.",
+      },
+      { status: 400 }
+    );
+  }
+
+  if (email) {
+    const duplicateEmail = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
+      "SELECT id FROM users WHERE email = ? AND id <> ? LIMIT 1",
+      email,
+      userId
+    );
+
+    if (duplicateEmail.length > 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Email sudah digunakan oleh akun lain.",
+        },
+        { status: 400 }
+      );
+    }
+  }
+
+  addUpdate("name", name);
+  addUpdate("email", email);
+
+  addUpdate("phone", phone);
+  addUpdate("phone_number", phone);
+
+  addUpdate("address", address);
+  addUpdate("alamat", address);
+
+  addUpdate("gender", gender);
+  addUpdate("jenis_kelamin", gender);
+
+  addUpdate("birth_date", birthDate);
+  addUpdate("date_of_birth", birthDate);
+  addUpdate("tanggal_lahir", birthDate);
+
+  if (columns.has("updated_at")) {
+    updates.push(["updated_at", "NOW()"]);
+  }
+
+  if (updates.length === 0) {
+    const user = await getSafeUser(userId);
+
+    return NextResponse.json({
+      success: true,
+      message: "Tidak ada data profil yang diubah.",
+      user,
+    });
+  }
+
+  const setClauses: string[] = [];
+  const values: string[] = [];
+
+  for (const [column, value] of updates) {
+    if (column === "updated_at" && value === "NOW()") {
+      setClauses.push("`updated_at` = NOW()");
+      continue;
+    }
+
+    setClauses.push(`\`${column}\` = ?`);
+    values.push(value);
+  }
+
+  await prisma.$executeRawUnsafe(
+    `UPDATE users SET ${setClauses.join(", ")} WHERE id = ?`,
+    ...values,
+    userId
+  );
+
+  const user = await getSafeUser(userId);
+
+  return NextResponse.json({
+    success: true,
+    message: "Profil berhasil diperbarui.",
+    user,
+  });
+}
+
+export async function GET(req: NextRequest) {
+  try {
+    const userId = await getUserIdFromRequest(req);
+    const user = await getSafeUser(userId);
+
+    if (!user) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Data user tidak ditemukan.",
+        },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      user,
+    });
+  } catch (error) {
+    console.error("GET_PROFILE_ERROR:", error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Gagal mengambil profil.",
+      },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const userId = await getUserIdFromRequest(req);
+    const body = (await req.json()) as JsonBody;
+
+    const isPasswordRequest = hasAnyKey(body, [
+      "oldPassword",
+      "old_password",
+      "currentPassword",
+      "current_password",
+      "passwordLama",
+      "password_lama",
+      "kataSandiLama",
+      "kata_sandi_lama",
+      "newPassword",
+      "new_password",
+      "passwordBaru",
+      "password_baru",
+      "kataSandiBaru",
+      "kata_sandi_baru",
+      "confirmPassword",
+      "confirm_password",
+      "confirmNewPassword",
+      "confirm_new_password",
+      "konfirmasiPassword",
+      "konfirmasi_password",
+      "passwordConfirmation",
+      "password_confirmation",
+    ]);
+
+    if (isPasswordRequest) {
+      return handleChangePassword(userId, body);
+    }
+
+    return handleUpdateProfile(userId, body);
+  } catch (error) {
+    console.error("UPDATE_PROFILE_ERROR:", error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Gagal memperbarui profil.",
+      },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(req: NextRequest) {
+  return PATCH(req);
 }
