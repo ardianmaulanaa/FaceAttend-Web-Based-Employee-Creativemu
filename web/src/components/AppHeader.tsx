@@ -143,6 +143,22 @@ export default function AppHeader({
   }, [pathname, variant]);
 
   const isAdmin = resolvedVariant === "admin";
+  const [readNotifIds, setReadNotifIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("read_notification_ids");
+      if (stored) {
+        setReadNotifIds(JSON.parse(stored));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
+  const unreadNotifications = useMemo(() => {
+    return attendanceNotifications.filter((notif) => !readNotifIds.includes(notif.id));
+  }, [attendanceNotifications, readNotifIds]);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -255,9 +271,9 @@ export default function AppHeader({
                   aria-label="Notifications"
                 >
                   <Bell size={22} strokeWidth={2.5} />
-                  {attendanceNotifications.length > 0 && (
+                  {unreadNotifications.length > 0 && (
                     <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-black text-white">
-                      {attendanceNotifications.length}
+                      {unreadNotifications.length}
                     </span>
                   )}
                 </button>
@@ -274,38 +290,55 @@ export default function AppHeader({
                       <p className="mt-3 text-sm font-semibold text-slate-400">Tidak ada notifikasi baru.</p>
                     ) : (
                       <div className="mt-3 max-h-64 space-y-2 overflow-y-auto">
-                        {attendanceNotifications.map((notif) => (
-                          <div
-                            key={notif.id}
-                            onClick={() => {
-                              if (notif.type === "leave-request") {
-                                setIsBellMenuOpen(false);
-                                handleNavigate("/admin/cuti");
-                              }
-                            }}
-                            className={`rounded-xl p-3 transition text-left ${
-                              notif.type === "leave-request"
-                                ? "bg-red-50 hover:bg-red-100/70 cursor-pointer border border-red-100"
-                                : "bg-[#f6f8ff]"
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <p className="text-xs font-black text-[#123c8c]">{notif.employeeName}</p>
-                              {notif.type === "leave-request" && (
-                                <span className="rounded-full bg-red-100 px-2 py-0.5 text-[9px] font-black text-red-600 uppercase">
-                                  Pengajuan
-                                </span>
-                              )}
+                        {attendanceNotifications.map((notif) => {
+                          const isRead = readNotifIds.includes(notif.id);
+                          return (
+                            <div
+                              key={notif.id}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+
+                                if (!isRead) {
+                                  const nextIds = [...readNotifIds, notif.id];
+                                  setReadNotifIds(nextIds);
+                                  localStorage.setItem("read_notification_ids", JSON.stringify(nextIds));
+                                }
+
+                                if (notif.type === "leave-request") {
+                                  setIsBellMenuOpen(false);
+                                  router.push("/admin/cuti");
+                                }
+                              }}
+                              className={`relative rounded-xl p-3 transition text-left ${
+                                notif.type === "leave-request"
+                                  ? "bg-red-50 hover:bg-red-100/70 cursor-pointer border border-red-100"
+                                  : "bg-[#f6f8ff]"
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <p className="text-xs font-black text-[#123c8c]">{notif.employeeName}</p>
+                                <div className="flex items-center gap-1.5">
+                                  {!isRead && (
+                                    <span className="h-2 w-2 rounded-full bg-red-500" />
+                                  )}
+                                  {notif.type === "leave-request" && (
+                                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-[9px] font-black text-red-600 uppercase">
+                                      Pengajuan
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <p className="mt-1 text-xs font-semibold text-slate-600 leading-snug">{notif.message}</p>
+                              <p className="mt-1 text-[10px] font-semibold text-slate-400">
+                                {new Date(notif.happenedAt).toLocaleTimeString("id-ID", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </p>
                             </div>
-                            <p className="mt-1 text-xs font-semibold text-slate-600 leading-snug">{notif.message}</p>
-                            <p className="mt-1 text-[10px] font-semibold text-slate-400">
-                              {new Date(notif.happenedAt).toLocaleTimeString("id-ID", {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </p>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
