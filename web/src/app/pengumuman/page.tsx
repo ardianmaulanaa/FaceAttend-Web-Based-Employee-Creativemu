@@ -15,6 +15,8 @@ type Announcement = {
   title: string;
   content?: string;
   status?: string;
+  attachment_url?: string | null;
+  attachmentUrl?: string | null;
   created_at?: string;
   createdAt?: string;
 };
@@ -192,6 +194,24 @@ export default function AnnouncementPage() {
                       <p className="mt-5 rounded-3xl bg-[#f8fbff] p-4 text-sm font-semibold text-slate-400">
                         Tidak ada isi pengumuman.
                       </p>
+                    )}
+
+                    {(announcement.attachment_url || announcement.attachmentUrl) && (
+                      <div className="mt-5 overflow-hidden rounded-3xl border border-blue-100 bg-[#f8fbff] p-3">
+                        {/\.(mp4|webm|ogg|mov)$/i.test(announcement.attachment_url || announcement.attachmentUrl || "") ? (
+                          <video
+                            src={announcement.attachment_url || announcement.attachmentUrl || ""}
+                            controls
+                            className="w-full rounded-2xl max-h-[400px] object-contain bg-black"
+                          />
+                        ) : (
+                          <img
+                            src={announcement.attachment_url || announcement.attachmentUrl || ""}
+                            alt="Media Pengumuman"
+                            className="w-full rounded-2xl max-h-[500px] object-contain bg-slate-50"
+                          />
+                        )}
+                      </div>
                     )}
                   </article>
                 );

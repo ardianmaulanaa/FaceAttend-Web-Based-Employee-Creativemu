@@ -79,6 +79,8 @@ function formatAnnouncement(item: any) {
     content: item.content,
     target: item.target,
     status: item.status,
+    attachment_url: item.attachment_url || null,
+    attachmentUrl: item.attachment_url || null,
 
     author: item.author || null,
     authorName: item.author?.name || "-",
@@ -137,6 +139,7 @@ export async function GET(req: NextRequest) {
         content: true,
         target: true,
         status: true,
+        attachment_url: true,
         created_at: true,
         updated_at: true,
         author: {
@@ -205,12 +208,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const attachment_url = body.attachmentUrl || body.attachment_url || null;
+
     const announcement = await prisma.announcement.create({
       data: {
         title,
         content,
         target,
         status,
+        attachment_url,
         author_id: admin.id,
       },
       select: {
@@ -219,6 +225,7 @@ export async function POST(req: NextRequest) {
         content: true,
         target: true,
         status: true,
+        attachment_url: true,
         created_at: true,
         updated_at: true,
         author: {
@@ -289,6 +296,12 @@ export async function PATCH(req: NextRequest) {
       data.status = normalizeStatus(body.status);
     }
 
+    if (body.attachmentUrl !== undefined) {
+      data.attachment_url = body.attachmentUrl || null;
+    } else if (body.attachment_url !== undefined) {
+      data.attachment_url = body.attachment_url || null;
+    }
+
     const announcement = await prisma.announcement.update({
       where: {
         id,
@@ -300,6 +313,7 @@ export async function PATCH(req: NextRequest) {
         content: true,
         target: true,
         status: true,
+        attachment_url: true,
         created_at: true,
         updated_at: true,
         author: {

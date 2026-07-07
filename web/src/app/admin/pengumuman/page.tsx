@@ -22,6 +22,8 @@ type Announcement = {
   content: string;
   target: string;
   status: AnnouncementStatus;
+  attachment_url: string | null;
+  attachmentUrl?: string | null;
   created_at: string;
   updated_at: string;
   author: {
@@ -35,12 +37,14 @@ type AnnouncementForm = {
   title: string;
   content: string;
   status: AnnouncementStatus;
+  attachmentUrl: string | null;
 };
 
 const initialForm: AnnouncementForm = {
   title: "",
   content: "",
   status: "published",
+  attachmentUrl: null,
 };
 
 function formatStatus(status: AnnouncementStatus) {
@@ -172,6 +176,7 @@ export default function AdminAnnouncementsPage() {
       title: announcement.title,
       content: announcement.content,
       status: announcement.status,
+      attachmentUrl: announcement.attachment_url || announcement.attachmentUrl || null,
     });
     setIsModalOpen(true);
   }
@@ -207,6 +212,7 @@ export default function AdminAnnouncementsPage() {
           content,
           target: "all",
           status: form.status,
+          attachmentUrl: form.attachmentUrl,
         }),
       });
 
@@ -457,6 +463,15 @@ export default function AdminAnnouncementsPage() {
                       <p className="mt-1 text-xs font-semibold text-slate-400">
                         {formatDate(announcement.created_at)}
                       </p>
+                      {(announcement.attachment_url || announcement.attachmentUrl) && (
+                        <div className="mt-2 max-w-[120px] overflow-hidden rounded-xl border border-slate-100 bg-slate-50 p-1">
+                          {/\.(mp4|webm|ogg|mov)$/i.test(announcement.attachment_url || announcement.attachmentUrl || "") ? (
+                            <video src={announcement.attachment_url || announcement.attachmentUrl || ""} className="max-h-20 w-full rounded-lg object-cover bg-black" />
+                          ) : (
+                            <img src={announcement.attachment_url || announcement.attachmentUrl || ""} alt="Media" className="max-h-20 w-full rounded-lg object-cover bg-slate-100" />
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <p className="line-clamp-2 font-semibold leading-6 text-slate-600">
@@ -593,6 +608,76 @@ export default function AdminAnnouncementsPage() {
                   placeholder="Tulis isi pemberitahuan..."
                   className="w-full resize-none rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold leading-6 text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
                 />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-black text-slate-700">
+                  Media Pengumuman (Foto/Video, Maks 50MB)
+                </label>
+                
+                {form.attachmentUrl ? (
+                  <div className="relative overflow-hidden rounded-2xl border border-blue-100 bg-slate-50 p-2">
+                    {/\.(mp4|webm|ogg|mov)$/i.test(form.attachmentUrl) ? (
+                      <video src={form.attachmentUrl} controls className="max-h-60 w-full rounded-xl object-contain bg-black" />
+                    ) : (
+                      <img src={form.attachmentUrl} alt="Preview Attachment" className="max-h-60 w-full rounded-xl object-contain bg-slate-100" />
+                    )}
+                    
+                    <button
+                      type="button"
+                      onClick={() => setForm(prev => ({ ...prev, attachmentUrl: null }))}
+                      className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-rose-500 text-white shadow hover:bg-rose-600 transition"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-blue-200 bg-[#f6f8ff] py-6 hover:bg-[#eaf1ff] transition duration-200">
+                    <input
+                      type="file"
+                      accept="image/*,video/*"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+
+                        if (file.size > 50 * 1024 * 1024) {
+                          alert("Ukuran file tidak boleh melebihi 50MB.");
+                          return;
+                        }
+
+                        try {
+                          setIsSubmitting(true);
+                          const formData = new FormData();
+                          formData.append("file", file);
+
+                          const res = await fetch("/api/upload", {
+                            method: "POST",
+                            body: formData,
+                          });
+                          const data = await res.json();
+                          if (res.ok && data.success) {
+                            setForm(prev => ({ ...prev, attachmentUrl: data.url }));
+                          } else {
+                            alert(data.error || "Gagal mengunggah file.");
+                          }
+                        } catch (err) {
+                          console.error(err);
+                          alert("Gagal mengunggah file.");
+                        } finally {
+                          setIsSubmitting(false);
+                        }
+                      }}
+                      className="absolute inset-0 cursor-pointer opacity-0"
+                    />
+                    <Megaphone className="h-8 w-8 text-[#123c8c] opacity-60" />
+                    <p className="mt-2 text-xs font-black text-[#123c8c]">
+                      Pilih Foto / Video
+                    </p>
+                    <p className="mt-1 text-[10px] font-semibold text-slate-400">
+                      Mendukung semua format gambar dan video (Maks 50MB)
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div>

@@ -429,6 +429,8 @@ model Announcement {
   author_id String? @db.Char(36)
   author    User?   @relation("AnnouncementAuthor", fields: [author_id], references: [id], onDelete: SetNull)
 
+  attachment_url String? @db.Text
+
   created_at DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
 
