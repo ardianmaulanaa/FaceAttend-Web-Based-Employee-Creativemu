@@ -75,7 +75,31 @@ async function main() {
     },
   });
 
-  console.log("Akun owner, admin, dan CS berhasil dibuat");
+  await prisma.shift.upsert({
+    where: { name: "Jam Kerja Utama" },
+    update: { tolerance_minutes: 15, status: "active" },
+    create: { id: "shift-1", name: "Jam Kerja Utama", tolerance_minutes: 15, status: "active" },
+  });
+
+  await prisma.unit.upsert({
+    where: { name: "Pusat" },
+    update: { status: "active" },
+    create: { id: "unit-1", name: "Pusat", status: "active" },
+  });
+
+  await prisma.department.upsert({
+    where: { id: "dept-1" },
+    update: { name: "IT Development", unit_id: "unit-1", shift_id: "shift-1" },
+    create: { id: "dept-1", name: "IT Development", unit_id: "unit-1", shift_id: "shift-1" },
+  });
+
+  await prisma.position.upsert({
+    where: { id: "pos-1" },
+    update: { name: "Software Engineer", department_id: "dept-1", status: "active" },
+    create: { id: "pos-1", name: "Software Engineer", department_id: "dept-1", status: "active" },
+  });
+
+  console.log("Akun owner, admin, CS, serta data Shift, Unit, Divisi, dan Jabatan berhasil dibuat");
 }
 
 main()
