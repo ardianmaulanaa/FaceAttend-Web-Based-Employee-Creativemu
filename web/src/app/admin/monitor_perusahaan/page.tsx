@@ -10,7 +10,6 @@ import {
   ClipboardList,
   Clock3,
   Loader2,
-  RefreshCcw,
   TrendingUp,
 } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
@@ -79,7 +78,7 @@ type LateReasonItem = {
   date: string;
   checkIn: string;
   lateMinutes: number;
-  reason: string;
+  reason?: string;
 };
 
 type VisitItem = {
@@ -355,7 +354,13 @@ export default function AdminCompanyMonitorPage() {
         };
       }
 
-      setData(monitorResult);
+      setData({
+        ...monitorResult,
+        lateReasons: Array.isArray(monitorResult?.lateReasons)
+          ? monitorResult.lateReasons
+          : [],
+      });
+
       setLeaveRequests(
         leaveResponse.ok &&
           leaveResult.success &&
@@ -473,19 +478,7 @@ export default function AdminCompanyMonitorPage() {
                   dari tanggal karyawan mengajukan cuti.
                 </p>
 
-                <button
-                  type="button"
-                  onClick={loadMonitorData}
-                  disabled={isLoading}
-                  className="mt-6 inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-black text-[#123c8c] shadow-lg shadow-blue-950/20 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {isLoading ? (
-                    <Loader2 size={16} className="animate-spin" />
-                  ) : (
-                    <RefreshCcw size={16} />
-                  )}
-                  Refresh Data
-                </button>
+              
               </div>
 
               <div className="space-y-5 p-5 md:p-6">
@@ -771,7 +764,7 @@ export default function AdminCompanyMonitorPage() {
                   <Clock3 size={18} />
 
                   <h3 className="text-lg font-black text-slate-950">
-                    Rekap Alasan Terlambat
+                    Rekap Karyawan Terlambat
                   </h3>
                 </div>
 
@@ -782,14 +775,13 @@ export default function AdminCompanyMonitorPage() {
                   </p>
                 ) : (
                   <div className="mt-4 overflow-x-auto">
-                    <table className="w-full min-w-[760px] text-left text-sm">
+                    <table className="w-full min-w-[620px] text-left text-sm">
                       <thead>
                         <tr className="border-b border-slate-100 text-xs uppercase tracking-[0.14em] text-slate-500">
                           <th className="py-3 pr-4">Tanggal</th>
                           <th className="py-3 pr-4">Karyawan</th>
                           <th className="py-3 pr-4">Check-in</th>
                           <th className="py-3 pr-4">Durasi Telat</th>
-                          <th className="py-3 pr-4">Alasan</th>
                         </tr>
                       </thead>
 
@@ -813,10 +805,6 @@ export default function AdminCompanyMonitorPage() {
 
                             <td className="py-3 pr-4 font-black text-amber-700">
                               {formatMinutes(item.lateMinutes)}
-                            </td>
-
-                            <td className="py-3 pr-4 font-semibold text-slate-600">
-                              {item.reason}
                             </td>
                           </tr>
                         ))}

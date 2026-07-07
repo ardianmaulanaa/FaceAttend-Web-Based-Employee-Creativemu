@@ -27,6 +27,7 @@ async function main() {
       status: "active",
     },
     create: {
+      id: "office-1",
       name: "Kantor Utama",
       address: "Alamat kantor utama",
       latitude: -6.917464,
@@ -48,6 +49,7 @@ async function main() {
     status: "active",
   },
   create: {
+    id: "office-2",
     name: "Creativemu Academy",
     address: "Jogja",
     latitude: -7.812201,

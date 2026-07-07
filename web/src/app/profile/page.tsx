@@ -29,7 +29,7 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import MobileShell from "@/components/MobileShell";

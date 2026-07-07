@@ -71,6 +71,19 @@ function getStatusStyle(status: string) {
   return "bg-slate-100 text-slate-600 ring-slate-200";
 }
 
+function isLateReport(report: AttendanceReportDetail) {
+  const status = String(report.status || "").toLowerCase();
+  const label = String(report.statusLabel || "").toLowerCase();
+
+  return (
+    status.includes("late") ||
+    status.includes("terlambat") ||
+    label.includes("late") ||
+    label.includes("terlambat") ||
+    Boolean(report.lateReason?.trim())
+  );
+}
+
 function PhotoCard({
   title,
   subtitle,
@@ -111,6 +124,42 @@ function PhotoCard({
           </p>
         </div>
       )}
+    </div>
+  );
+}
+
+function LateReasonCard({ report }: { report: AttendanceReportDetail }) {
+  if (!isLateReport(report)) return null;
+
+  return (
+    <div className="overflow-hidden rounded-[2rem] border border-amber-100 bg-white shadow-xl shadow-slate-200/60">
+      <div className="flex flex-col gap-4 p-5 md:flex-row md:items-start md:justify-between md:p-6">
+        <div className="flex items-start gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-700 ring-1 ring-amber-100">
+            <Clock3 size={24} strokeWidth={2.7} />
+          </div>
+
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">
+              Pesan Alasan Terlambat
+            </p>
+
+            <h3 className="mt-2 text-xl font-black text-slate-950">
+              Keterangan dari karyawan
+            </h3>
+
+            <p className="mt-2 max-w-4xl text-sm font-semibold leading-7 text-slate-500">
+              {report.lateReason?.trim()
+                ? report.lateReason
+                : "Belum ada alasan terlambat yang tersimpan pada laporan ini."}
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-full bg-amber-50 px-4 py-2 text-xs font-black text-amber-700 ring-1 ring-amber-100">
+          {report.statusLabel}
+        </div>
+      </div>
     </div>
   );
 }
@@ -288,6 +337,8 @@ export default function AdminAttendanceReportDetailPage() {
                 </div>
               </div>
 
+              <LateReasonCard report={report} />
+
               <div className="rounded-[2rem] border border-blue-100 bg-white p-5 shadow-xl shadow-slate-200/60">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div className="flex items-start gap-3">
@@ -305,12 +356,14 @@ export default function AdminAttendanceReportDetailPage() {
                       </p>
 
                       <p className="mt-1 max-w-3xl text-sm font-semibold leading-6 text-slate-500">
-                        {report.officeAddress || "Alamat kantor belum tersedia."}
+                        {report.officeAddress ||
+                          "Alamat kantor belum tersedia."}
                       </p>
                     </div>
                   </div>
 
-                  {report.officeLatitude && report.officeLongitude ? (
+                  {report.officeLatitude !== null &&
+                  report.officeLongitude !== null ? (
                     <a
                       href={`https://www.google.com/maps?q=${report.officeLatitude},${report.officeLongitude}`}
                       target="_blank"
@@ -322,18 +375,6 @@ export default function AdminAttendanceReportDetailPage() {
                   ) : null}
                 </div>
               </div>
-
-              {report.lateReason ? (
-                <div className="rounded-[2rem] border border-amber-100 bg-amber-50 p-5">
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">
-                    Alasan Terlambat
-                  </p>
-
-                  <p className="mt-2 text-sm font-semibold leading-7 text-amber-800">
-                    {report.lateReason}
-                  </p>
-                </div>
-              ) : null}
 
               <div className="grid gap-6 lg:grid-cols-2">
                 <PhotoCard

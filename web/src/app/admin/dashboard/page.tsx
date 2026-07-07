@@ -8,7 +8,6 @@ import {
   Loader2,
   LogIn,
   LogOut,
-  RefreshCcw,
   UsersRound,
 } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
@@ -208,20 +207,6 @@ export default function AdminDashboardPage() {
                 database.
               </p>
 
-
-              <button
-                type="button"
-                onClick={loadDashboardData}
-                disabled={isLoading}
-                className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-black text-[#123c8c] shadow-lg shadow-blue-950/20 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isLoading ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <RefreshCcw size={16} />
-                )}
-                Refresh Data
-              </button>
             </div>
 
             <div className="grid grid-cols-2 gap-3 p-5 md:p-6">
