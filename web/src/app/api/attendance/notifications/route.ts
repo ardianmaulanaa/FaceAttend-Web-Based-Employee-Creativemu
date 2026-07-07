@@ -135,7 +135,7 @@ export async function GET() {
             a.check_in_time,
             a.check_out_time,
             a.status
-          FROM attendances a
+          FROM Attendance a
           INNER JOIN users u ON u.id = a.user_id
           WHERE u.role = 'employee'
           ORDER BY COALESCE(a.check_out_time, a.check_in_time, a.created_at) DESC
@@ -148,7 +148,7 @@ export async function GET() {
             a.check_in_time,
             a.check_out_time,
             a.status
-          FROM attendances a
+          FROM Attendance a
           INNER JOIN users u ON u.id = a.user_id
           WHERE a.user_id = ${payload.id}
           ORDER BY COALESCE(a.check_out_time, a.check_in_time, a.created_at) DESC
