@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
+  AlertCircle,
+  BriefcaseBusiness,
   Camera,
   CheckCircle2,
   Clock3,
@@ -19,12 +21,66 @@ import {
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import MobileShell from "@/components/MobileShell";
-import { AppButton, AppCard, AppTextarea } from "@/components/ui/AppUI";
+import {
+  AppButton,
+  AppCard,
+  AppInput,
+  AppSelect,
+  AppTextarea,
+} from "@/components/ui/AppUI";
 
 type AttendanceAction = "check-in" | "check-out";
+type AlertType = "success" | "error" | "warning";
+type WorkMode = "office" | "wfh" | "wfc" | "visit";
 
-const LATE_LIMIT_HOUR = 8;
-const LATE_LIMIT_MINUTE = 15;
+type CustomAlert = {
+  open: boolean;
+  title: string;
+  message: string;
+  type: AlertType;
+};
+
+type VisitForm = {
+  visitTitle: string;
+  visitClientName: string;
+  visitAddress: string;
+  visitNote: string;
+};
+
+type CurrentUser = {
+  id?: string;
+  name?: string;
+  email?: string;
+  shift?: {
+    id?: string;
+    name?: string | null;
+    tolerance_minutes?: number | null;
+    toleranceMinutes?: number | null;
+  } | null;
+};
+
+type AuthMeResponse = {
+  user?: CurrentUser;
+  data?: CurrentUser | { user?: CurrentUser };
+  currentUser?: CurrentUser;
+};
+
+const DEFAULT_SHIFT_START_TIME = "08:00";
+const DEFAULT_SHIFT_END_TIME = "17:00";
+
+const emptyAlert: CustomAlert = {
+  open: false,
+  title: "",
+  message: "",
+  type: "warning",
+};
+
+const emptyVisitForm: VisitForm = {
+  visitTitle: "",
+  visitClientName: "",
+  visitAddress: "",
+  visitNote: "",
+};
 
 const cameraOptions: MediaStreamConstraints = {
   video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
@@ -45,35 +101,154 @@ function createAbortError(message: string) {
   return error;
 }
 
-function isLateCheckInNow() {
-  const now = new Date();
-  const limit = new Date();
+function isMobileAttendanceDevice() {
+  if (typeof window === "undefined" || typeof navigator === "undefined") {
+    return false;
+  }
 
-  limit.setHours(LATE_LIMIT_HOUR, LATE_LIMIT_MINUTE, 0, 0);
+  const userAgent = navigator.userAgent.toLowerCase();
+  const mobileUserAgent =
+    /android|iphone|ipad|ipod|mobile|blackberry|iemobile|opera mini/.test(
+      userAgent
+    );
 
-  return now.getTime() > limit.getTime();
+  const hasTouch = navigator.maxTouchPoints > 0;
+  const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+  const smallScreen = window.innerWidth <= 900;
+
+  return mobileUserAgent || (hasTouch && coarsePointer && smallScreen);
+}
+
+function normalizeCurrentUser(
+  data: AuthMeResponse | CurrentUser
+): CurrentUser | null {
+  const maybeData = data as AuthMeResponse;
+
+  const user =
+    maybeData.user ||
+    maybeData.currentUser ||
+    (maybeData.data && "user" in maybeData.data ? maybeData.data.user : null) ||
+    (maybeData.data && !("user" in maybeData.data) ? maybeData.data : null) ||
+    data;
+
+  if (!user || typeof user !== "object") return null;
+
+  return user as CurrentUser;
+}
+
+function getShiftStartTime(shiftName?: string | null) {
+  const name = String(shiftName || "").toUpperCase();
+
+  if (name.includes("SHIFT SIANG") || name.includes("SIANG")) return "13:00";
+
+  return DEFAULT_SHIFT_START_TIME;
+}
+
+function getShiftToleranceMinutes(user: CurrentUser | null) {
+  const tolerance =
+    user?.shift?.tolerance_minutes ?? user?.shift?.toleranceMinutes ?? 0;
+
+  const parsedTolerance = Number(tolerance);
+
+  return Number.isFinite(parsedTolerance) && parsedTolerance >= 0
+    ? parsedTolerance
+    : 0;
+}
+
+function timeToMinutes(time: string) {
+  const [hourText, minuteText] = time.split(":");
+  const hour = Number(hourText || 0);
+  const minute = Number(minuteText || 0);
+
+  return hour * 60 + minute;
+}
+
+function minutesToClock(totalMinutes: number) {
+  const normalizedMinutes = ((totalMinutes % 1440) + 1440) % 1440;
+  const hour = Math.floor(normalizedMinutes / 60);
+  const minute = normalizedMinutes % 60;
+
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
+function getJakartaMinutesNow() {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Jakarta",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date());
+
+  const hour = Number(parts.find((part) => part.type === "hour")?.value || 0);
+  const minute = Number(
+    parts.find((part) => part.type === "minute")?.value || 0
+  );
+
+  return hour * 60 + minute;
+}
+
+function getLateLimitMinutes(user: CurrentUser | null) {
+  const startTime = getShiftStartTime(user?.shift?.name);
+  const toleranceMinutes = getShiftToleranceMinutes(user);
+
+  return timeToMinutes(startTime) + toleranceMinutes;
+}
+
+function getLateLimitLabel(user: CurrentUser | null) {
+  return minutesToClock(getLateLimitMinutes(user));
+}
+
+function isLateCheckInNow(user: CurrentUser | null) {
+  const nowMinutes = getJakartaMinutesNow();
+  const lateLimitMinutes = getLateLimitMinutes(user);
+
+  return nowMinutes > lateLimitMinutes;
+}
+
+function getWorkModeLabel(workMode: WorkMode) {
+  if (workMode === "wfh") return "WFH";
+  if (workMode === "wfc") return "WFC";
+  if (workMode === "visit") return "Kunjungan";
+  return "Kantor";
+}
+
+function getWorkModeDescription(workMode: WorkMode) {
+  if (workMode === "office") return "Wajib berada dalam radius kantor.";
+  if (workMode === "wfh") return "Bebas lokasi, GPS tetap disimpan.";
+  if (workMode === "wfc") return "Bebas lokasi kerja, GPS tetap disimpan.";
+  return "Bebas lokasi, wajib isi data kunjungan.";
 }
 
 function CameraStatusIcon({
   cameraReady,
   cameraStarting,
+  laptopBlocked,
 }: {
   cameraReady: boolean;
   cameraStarting: boolean;
+  laptopBlocked: boolean;
 }) {
   return (
     <div
       className={cn(
         "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-lg shadow-blue-100/50 ring-1",
-        cameraReady && "bg-[#123c8c] text-white ring-[#123c8c]",
-        cameraStarting && "bg-amber-50 text-amber-700 ring-amber-100",
-        !cameraReady &&
+        laptopBlocked && "bg-orange-50 text-orange-600 ring-orange-100",
+        !laptopBlocked &&
+          cameraReady &&
+          "bg-[#123c8c] text-white ring-[#123c8c]",
+        !laptopBlocked &&
+          cameraStarting &&
+          "bg-amber-50 text-amber-700 ring-amber-100",
+        !laptopBlocked &&
+          !cameraReady &&
           !cameraStarting &&
           "bg-white text-slate-400 ring-blue-100"
       )}
     >
       {cameraStarting ? (
         <Loader2 size={23} className="animate-spin" />
+      ) : laptopBlocked ? (
+        <AlertCircle size={24} strokeWidth={2.5} />
       ) : (
         <ScanFace size={24} strokeWidth={2.5} />
       )}
@@ -84,70 +259,86 @@ function CameraStatusIcon({
 function StatusPill({
   cameraReady,
   cameraStarting,
+  laptopBlocked,
 }: {
   cameraReady: boolean;
   cameraStarting: boolean;
+  laptopBlocked: boolean;
 }) {
   return (
     <span
       className={cn(
         "rounded-full px-4 py-2 text-xs font-black",
-        cameraReady && "bg-emerald-50 text-emerald-700",
-        cameraStarting && "bg-amber-50 text-amber-700",
-        !cameraReady && !cameraStarting && "bg-slate-100 text-slate-500"
+        laptopBlocked && "bg-orange-50 text-orange-700",
+        !laptopBlocked && cameraReady && "bg-emerald-50 text-emerald-700",
+        !laptopBlocked && cameraStarting && "bg-amber-50 text-amber-700",
+        !laptopBlocked &&
+          !cameraReady &&
+          !cameraStarting &&
+          "bg-slate-100 text-slate-500"
       )}
     >
-      {cameraReady
-        ? "Camera Active"
-        : cameraStarting
-          ? "Starting..."
-          : "Camera Off"}
+      {laptopBlocked
+        ? "Mobile Only"
+        : cameraReady
+          ? "Camera Active"
+          : cameraStarting
+            ? "Starting..."
+            : "Camera Off"}
     </span>
   );
 }
 
-function CameraCorners() {
-  const base =
-    "pointer-events-none absolute h-11 w-11 border-blue-300 md:h-12 md:w-12";
-
+function PhotoFrameOverlay() {
   return (
-    <>
-      <div
-        className={`${base} left-6 top-6 rounded-tl-3xl border-l-4 border-t-4 md:left-7 md:top-7`}
-      />
-      <div
-        className={`${base} right-6 top-6 rounded-tr-3xl border-r-4 border-t-4 md:right-7 md:top-7`}
-      />
-      <div
-        className={`${base} bottom-6 left-6 rounded-bl-3xl border-b-4 border-l-4 md:bottom-7 md:left-7`}
-      />
-      <div
-        className={`${base} bottom-6 right-6 rounded-br-3xl border-b-4 border-r-4 md:bottom-7 md:right-7`}
-      />
-    </>
+    <div className="pointer-events-none absolute inset-0 z-20">
+      <div className="absolute inset-0 rounded-[1.35rem] border border-white/45 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.28)]" />
+      <div className="absolute inset-[0.55rem] rounded-[1.05rem] border border-white/25" />
+      <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white/18 via-white/5 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-slate-950/20 via-slate-950/5 to-transparent" />
+
+      <div className="absolute left-4 top-4 h-10 w-10 rounded-tl-[1.1rem] border-l-[3px] border-t-[3px] border-white/70" />
+      <div className="absolute right-4 top-4 h-10 w-10 rounded-tr-[1.1rem] border-r-[3px] border-t-[3px] border-white/70" />
+      <div className="absolute bottom-4 left-4 h-10 w-10 rounded-bl-[1.1rem] border-b-[3px] border-l-[3px] border-white/70" />
+      <div className="absolute bottom-4 right-4 h-10 w-10 rounded-br-[1.1rem] border-b-[3px] border-r-[3px] border-white/70" />
+    </div>
   );
 }
 
-function CameraEmptyState({ cameraStarting }: { cameraStarting: boolean }) {
+function CameraEmptyState({
+  cameraStarting,
+  laptopBlocked,
+}: {
+  cameraStarting: boolean;
+  laptopBlocked: boolean;
+}) {
   return (
-    <div className="absolute inset-0 flex items-center justify-center px-6 pb-20 text-center text-white md:pb-24">
+    <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-white">
       <div>
-        <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-white/10 backdrop-blur-xl">
+        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white/10 backdrop-blur-xl md:h-24 md:w-24">
           {cameraStarting ? (
-            <Loader2 size={42} className="animate-spin" />
+            <Loader2 size={38} className="animate-spin" />
+          ) : laptopBlocked ? (
+            <AlertCircle size={38} />
           ) : (
-            <Camera size={42} />
+            <Camera size={38} />
           )}
         </div>
 
-        <p className="mt-5 text-sm font-black text-white">
-          {cameraStarting ? "Starting Camera" : "Camera Preview"}
+        <p className="mt-4 text-sm font-black text-white">
+          {laptopBlocked
+            ? "Absensi Mobile Only"
+            : cameraStarting
+              ? "Starting Camera"
+              : "Camera Preview"}
         </p>
 
         <p className="mt-1 text-xs font-semibold leading-5 text-slate-400">
-          {cameraStarting
-            ? "Mohon tunggu sampai kamera memuat gambar."
-            : "Kamera sedang mati. Klik Aktifkan Kamera di area kamera."}
+          {laptopBlocked
+            ? "Check-in dan check-out hanya dapat dilakukan melalui HP."
+            : cameraStarting
+              ? "Mohon tunggu sampai kamera memuat gambar."
+              : "Kamera sedang mati. Klik Aktifkan Kamera di bawah layar kamera."}
         </p>
       </div>
     </div>
@@ -173,8 +364,8 @@ function CameraControlButton({
       variant="soft"
       full
       className={cn(
-        "min-h-12 rounded-2xl px-3 text-xs shadow-xl backdrop-blur-md md:text-sm",
-        danger ? "bg-red-500/95 text-white" : "bg-white/95 text-[#123c8c]"
+        "min-h-11 rounded-2xl px-3 text-xs shadow-lg backdrop-blur-md md:min-h-12 md:text-sm",
+        danger ? "bg-red-500/95 text-white" : "bg-white text-[#123c8c]"
       )}
     >
       {children}
@@ -207,19 +398,19 @@ function ActionButton({
       disabled={disabled}
       variant={primary ? "primary" : "secondary"}
       className={cn(
-        "min-h-[92px] rounded-[1.7rem] px-5 shadow-xl md:min-h-[70px] md:rounded-2xl",
+        "min-h-[4.5rem] rounded-[1.45rem] px-3 shadow-xl md:min-h-[70px] md:rounded-2xl md:px-5",
         primary
           ? "bg-[#123c8c] text-white shadow-blue-900/25"
           : "border border-blue-200 bg-white text-[#123c8c] shadow-slate-200/70 md:bg-[#f8fbff]"
       )}
     >
-      <span className="flex w-full items-center justify-center gap-3">
+      <span className="flex w-full items-center justify-center gap-2 md:gap-3">
         {loading ? (
-          <Loader2 size={24} className="animate-spin" />
+          <Loader2 size={22} className="animate-spin" />
         ) : (
           <span
             className={cn(
-              "flex h-12 w-12 items-center justify-center rounded-2xl md:h-10 md:w-10",
+              "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl",
               primary ? "bg-white/15" : "bg-blue-50"
             )}
           >
@@ -230,15 +421,15 @@ function ActionButton({
         <span className="text-left">
           <span
             className={cn(
-              "block text-[11px] font-black uppercase tracking-[0.22em]",
+              "block text-[9px] font-black uppercase tracking-[0.18em] md:text-[11px] md:tracking-[0.22em]",
               primary ? "text-blue-100" : "text-slate-400"
             )}
           >
             {subtitle}
           </span>
 
-          <span className="block text-xl font-black md:text-lg">
-            {loading ? "Processing..." : label}
+          <span className="block text-base font-black md:text-lg">
+            {loading ? "Proses..." : label}
           </span>
         </span>
       </span>
@@ -250,7 +441,7 @@ function LastPhoto({ url }: { url: string | null }) {
   if (!url) return null;
 
   return (
-    <div className="mt-5 rounded-3xl border border-blue-100 bg-[#f6f8ff] p-4">
+    <div className="mt-5 hidden rounded-3xl border border-blue-100 bg-[#f6f8ff] p-4 md:block">
       <div className="mb-3 flex items-center gap-2">
         <ImageUp size={18} className="text-[#123c8c]" />
         <p className="text-sm font-black text-slate-950">Foto Terakhir</p>
@@ -265,7 +456,13 @@ function LastPhoto({ url }: { url: string | null }) {
   );
 }
 
-function ProofCard({ cameraReady }: { cameraReady: boolean }) {
+function ProofCard({
+  cameraReady,
+  workMode,
+}: {
+  cameraReady: boolean;
+  workMode: WorkMode;
+}) {
   return (
     <div className="overflow-hidden rounded-[2rem] bg-[#123c8c] text-white shadow-2xl shadow-blue-900/20">
       <div className="relative p-6 md:p-8">
@@ -285,6 +482,10 @@ function ProofCard({ cameraReady }: { cameraReady: boolean }) {
             <h2 className="mt-1 text-2xl font-black tracking-tight md:text-3xl">
               {cameraReady ? "Ready to Capture" : "Camera Standby"}
             </h2>
+
+            <p className="mt-2 text-sm font-bold text-blue-100">
+              Mode: {getWorkModeLabel(workMode)}
+            </p>
           </div>
         </div>
       </div>
@@ -310,15 +511,316 @@ function InfoTile({
   );
 }
 
+function WorkModeFilter({
+  value,
+  disabled,
+  onChange,
+  onOpenVisit,
+}: {
+  value: WorkMode;
+  disabled: boolean;
+  onChange: (value: WorkMode) => void;
+  onOpenVisit: () => void;
+}) {
+  return (
+    <div className="grid grid-cols-[1fr_auto] items-end gap-2 rounded-[1.6rem] border border-blue-100 bg-[#f8fbff] p-3">
+      <AppSelect
+        label="Mode Attendance"
+        value={value}
+        onChange={(event) => onChange(event.target.value as WorkMode)}
+        disabled={disabled}
+      >
+        <option value="office">Kantor</option>
+        <option value="wfh">WFH</option>
+        <option value="wfc">WFC</option>
+        <option value="visit">Kunjungan</option>
+      </AppSelect>
+
+      {value === "visit" ? (
+        <button
+          type="button"
+          onClick={onOpenVisit}
+          disabled={disabled}
+          className="mb-0.5 flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 text-orange-600 ring-1 ring-orange-100 transition active:scale-95 disabled:opacity-60"
+          aria-label="Isi data kunjungan"
+        >
+          <BriefcaseBusiness size={21} strokeWidth={2.7} />
+        </button>
+      ) : null}
+
+      <p className="col-span-2 text-xs font-semibold leading-5 text-slate-500">
+        {getWorkModeDescription(value)}
+      </p>
+    </div>
+  );
+}
+
+function VisitDataModal({
+  form,
+  loading,
+  onChange,
+  onClose,
+  onSave,
+}: {
+  form: VisitForm;
+  loading: boolean;
+  onChange: <K extends keyof VisitForm>(key: K, value: VisitForm[K]) => void;
+  onClose: () => void;
+  onSave: () => void;
+}) {
+  const canSave =
+    form.visitTitle.trim().length > 0 &&
+    form.visitAddress.trim().length > 0 &&
+    form.visitNote.trim().length > 0 &&
+    !loading;
+
+  return (
+    <>
+      <style jsx global>{`
+        @keyframes visitOverlayIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        @keyframes visitModalIn {
+          from {
+            opacity: 0;
+            transform: translateY(22px) scale(0.97);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+      `}</style>
+
+      <div className="fixed inset-0 z-[82] flex items-end justify-center bg-slate-950/45 px-4 pb-4 backdrop-blur-sm animate-[visitOverlayIn_180ms_ease-out] md:items-center md:pb-0">
+        <AppCard className="relative max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto border-white/80 bg-white p-0 shadow-2xl shadow-slate-950/25 animate-[visitModalIn_230ms_ease-out]">
+          <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-slate-200 md:hidden" />
+
+          <div className="p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-orange-50 text-orange-600 ring-1 ring-orange-100">
+                  <BriefcaseBusiness size={24} strokeWidth={2.7} />
+                </div>
+
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.22em] text-orange-600">
+                    Data Kunjungan
+                  </p>
+
+                  <h2 className="mt-1 text-2xl font-black tracking-tight text-slate-950">
+                    Isi detail kunjungan
+                  </h2>
+
+                  <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">
+                    Khusus mode kunjungan, tempat, alamat, dan keperluan wajib
+                    diisi sebelum check-in.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={loading}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-700 active:scale-95 disabled:opacity-60"
+                aria-label="Tutup popup"
+              >
+                <X size={19} strokeWidth={2.7} />
+              </button>
+            </div>
+
+            <div className="mt-5 space-y-3">
+              <AppInput
+                label="Nama Tempat / Tujuan Kunjungan"
+                value={form.visitTitle}
+                onChange={(event) => onChange("visitTitle", event.target.value)}
+                placeholder="Contoh: PT Maju Jaya"
+                disabled={loading}
+              />
+
+              <AppInput
+                label="Nama Client / PIC"
+                value={form.visitClientName}
+                onChange={(event) =>
+                  onChange("visitClientName", event.target.value)
+                }
+                placeholder="Opsional"
+                disabled={loading}
+              />
+
+              <AppTextarea
+                label="Alamat Kunjungan"
+                value={form.visitAddress}
+                onChange={(event) =>
+                  onChange("visitAddress", event.target.value)
+                }
+                placeholder="Contoh: Jl. Kaliurang No. 10, Yogyakarta"
+                className="min-h-24 rounded-[1.5rem]"
+                disabled={loading}
+              />
+
+              <AppTextarea
+                label="Keperluan Kunjungan"
+                value={form.visitNote}
+                onChange={(event) => onChange("visitNote", event.target.value)}
+                placeholder="Contoh: Meeting project, survey lokasi, atau presentasi."
+                className="min-h-24 rounded-[1.5rem]"
+                disabled={loading}
+              />
+            </div>
+
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <AppButton
+                type="button"
+                variant="secondary"
+                onClick={onClose}
+                disabled={loading}
+                full
+              >
+                Batal
+              </AppButton>
+
+              <AppButton
+                type="button"
+                disabled={!canSave}
+                onClick={onSave}
+                full
+              >
+                Simpan
+              </AppButton>
+            </div>
+          </div>
+        </AppCard>
+      </div>
+    </>
+  );
+}
+
+function CustomAttendanceAlert({
+  alert,
+  onClose,
+}: {
+  alert: CustomAlert;
+  onClose: () => void;
+}) {
+  if (!alert.open) return null;
+
+  const isSuccess = alert.type === "success";
+  const isError = alert.type === "error";
+
+  return (
+    <>
+      <style jsx global>{`
+        @keyframes attendanceToastIn {
+          from {
+            opacity: 0;
+            transform: translateX(28px) scale(0.96);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+          }
+        }
+      `}</style>
+
+      <div className="fixed right-4 top-4 z-[90] w-[calc(100%-2rem)] max-w-[26rem] animate-[attendanceToastIn_230ms_ease-out] md:right-6 md:top-6">
+        <div className="relative overflow-hidden rounded-[1.8rem] border border-white/80 bg-white/85 p-4 shadow-2xl shadow-slate-950/20 backdrop-blur-2xl ring-1 ring-white/70">
+          <div
+            className={cn(
+              "absolute inset-x-0 top-0 h-24",
+              isSuccess &&
+                "bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.20),transparent_48%)]",
+              isError &&
+                "bg-[radial-gradient(circle_at_top_left,rgba(239,68,68,0.20),transparent_48%)]",
+              !isSuccess &&
+                !isError &&
+                "bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.22),transparent_48%)]"
+            )}
+          />
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-2xl bg-white/60 text-slate-500 shadow-sm ring-1 ring-white/70 transition hover:bg-white hover:text-slate-700 active:scale-95"
+            aria-label="Tutup alert"
+          >
+            <X size={19} strokeWidth={2.7} />
+          </button>
+
+          <div className="relative flex gap-4 pr-10">
+            <div
+              className={cn(
+                "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ring-1",
+                isSuccess && "bg-emerald-50 text-emerald-600 ring-emerald-100",
+                isError && "bg-red-50 text-red-600 ring-red-100",
+                !isSuccess &&
+                  !isError &&
+                  "bg-orange-50 text-orange-600 ring-orange-100"
+              )}
+            >
+              {isSuccess ? (
+                <CheckCircle2 size={29} strokeWidth={2.8} />
+              ) : (
+                <AlertCircle size={29} strokeWidth={2.8} />
+              )}
+            </div>
+
+            <div className="min-w-0 pt-1">
+              <p
+                className={cn(
+                  "inline-flex rounded-full bg-white/60 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] ring-1 ring-white/70",
+                  isSuccess && "text-emerald-700",
+                  isError && "text-red-700",
+                  !isSuccess && !isError && "text-orange-700"
+                )}
+              >
+                {isSuccess ? "Berhasil" : isError ? "Gagal" : "Perhatian"}
+              </p>
+
+              <h2 className="mt-2 text-lg font-black tracking-tight text-slate-950">
+                {alert.title}
+              </h2>
+
+              <p className="mt-1 line-clamp-3 text-sm font-semibold leading-6 text-slate-500">
+                {alert.message}
+              </p>
+            </div>
+          </div>
+
+          <AppButton
+            type="button"
+            full
+            onClick={onClose}
+            className="relative mt-4 min-h-11 rounded-2xl"
+          >
+            Mengerti
+          </AppButton>
+        </div>
+      </div>
+    </>
+  );
+}
+
 function LateReasonModal({
   value,
   loading,
+  lateLimitLabel,
+  toleranceMinutes,
   onChange,
   onCancel,
   onSubmit,
 }: {
   value: string;
   loading: boolean;
+  lateLimitLabel: string;
+  toleranceMinutes: number;
   onChange: (value: string) => void;
   onCancel: () => void;
   onSubmit: () => void;
@@ -370,8 +872,8 @@ function LateReasonModal({
                   </h2>
 
                   <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">
-                    Kamu sudah melewati batas toleransi. Isi alasan terlebih
-                    dahulu sebelum melanjutkan absensi.
+                    Kamu sudah melewati batas toleransi shift. Isi alasan
+                    terlebih dahulu sebelum melanjutkan absensi.
                   </p>
                 </div>
               </div>
@@ -395,8 +897,11 @@ function LateReasonModal({
                   </p>
 
                   <p className="mt-1 text-lg font-black text-orange-800">
-                    {String(LATE_LIMIT_HOUR).padStart(2, "0")}:
-                    {String(LATE_LIMIT_MINUTE).padStart(2, "0")}
+                    {lateLimitLabel}
+                  </p>
+
+                  <p className="mt-1 text-xs font-bold text-orange-700/70">
+                    Toleransi shift: {toleranceMinutes} menit
                   </p>
                 </div>
 
@@ -462,6 +967,15 @@ export default function AttendancePage() {
   const mountedRef = useRef(false);
   const lastPhotoUrlRef = useRef<string | null>(null);
 
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [isUserLoading, setIsUserLoading] = useState(false);
+
+  const [isLaptopBlocked, setIsLaptopBlocked] = useState(false);
+
+  const [workMode, setWorkMode] = useState<WorkMode>("office");
+  const [visitForm, setVisitForm] = useState<VisitForm>(emptyVisitForm);
+  const [isVisitModalOpen, setIsVisitModalOpen] = useState(false);
+
   const [cameraReady, setCameraReady] = useState(false);
   const [cameraStarting, setCameraStarting] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -476,14 +990,43 @@ export default function AttendancePage() {
 
   const [lateReason, setLateReason] = useState("");
   const [isLateReasonOpen, setIsLateReasonOpen] = useState(false);
+  const [customAlert, setCustomAlert] = useState<CustomAlert>(emptyAlert);
 
   const [statusTitle, setStatusTitle] = useState("Waiting for Camera");
   const [statusText, setStatusText] = useState(
-    "Aktifkan kamera dan izinkan lokasi GPS sebelum melakukan absensi."
+    "Pilih mode attendance, aktifkan kamera, lalu izinkan lokasi GPS sebelum melakukan absensi."
   );
+
+  const shiftStartTime = getShiftStartTime(currentUser?.shift?.name);
+  const shiftToleranceMinutes = getShiftToleranceMinutes(currentUser);
+  const lateLimitLabel = getLateLimitLabel(currentUser);
 
   useEffect(() => {
     mountedRef.current = true;
+
+    const blocked = !isMobileAttendanceDevice();
+    setIsLaptopBlocked(blocked);
+
+    void loadCurrentUser();
+
+    if (blocked) {
+      safeSetStatus(
+        "Absensi hanya lewat HP",
+        "Check-in dan check-out tidak dapat dilakukan melalui laptop atau desktop."
+      );
+
+      showLaptopBlockedAlert();
+
+      return () => {
+        mountedRef.current = false;
+        releaseCamera(false, false);
+
+        if (lastPhotoUrlRef.current) {
+          URL.revokeObjectURL(lastPhotoUrlRef.current);
+          lastPhotoUrlRef.current = null;
+        }
+      };
+    }
 
     const timer = window.setTimeout(startCamera, 700);
 
@@ -504,6 +1047,118 @@ export default function AttendancePage() {
     if (!mountedRef.current) return;
     setStatusTitle(title);
     setStatusText(text);
+  }
+
+  function showCustomAlert(title: string, message: string, type: AlertType) {
+    setCustomAlert({
+      open: true,
+      title,
+      message,
+      type,
+    });
+  }
+
+  function closeCustomAlert() {
+    setCustomAlert(emptyAlert);
+  }
+
+  function showLaptopBlockedAlert() {
+    showCustomAlert(
+      "Absensi hanya lewat HP",
+      "Untuk menjaga validasi kamera dan lokasi, check-in/check-out tidak dapat dilakukan melalui laptop atau desktop. Silakan buka FaceAttend melalui browser HP.",
+      "warning"
+    );
+  }
+
+  function updateVisitForm<K extends keyof VisitForm>(
+    key: K,
+    value: VisitForm[K]
+  ) {
+    setVisitForm((current) => ({
+      ...current,
+      [key]: value,
+    }));
+  }
+
+  function handleWorkModeChange(value: WorkMode) {
+    setWorkMode(value);
+
+    if (value === "visit") {
+      setIsVisitModalOpen(true);
+    } else {
+      setIsVisitModalOpen(false);
+      setVisitForm(emptyVisitForm);
+    }
+
+    safeSetStatus(
+      `Mode ${getWorkModeLabel(value)}`,
+      getWorkModeDescription(value)
+    );
+  }
+
+  function validateVisitForm() {
+    if (workMode !== "visit") return true;
+
+    if (
+      !visitForm.visitTitle.trim() ||
+      !visitForm.visitAddress.trim() ||
+      !visitForm.visitNote.trim()
+    ) {
+      setIsVisitModalOpen(true);
+
+      showCustomAlert(
+        "Data kunjungan belum lengkap",
+        "Isi nama/tempat kunjungan, alamat kunjungan, dan keperluan kunjungan terlebih dahulu.",
+        "warning"
+      );
+
+      return false;
+    }
+
+    return true;
+  }
+
+  async function loadCurrentUser() {
+    try {
+      setIsUserLoading(true);
+
+      const response = await fetch("/api/auth/me", {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      const data = (await response.json()) as AuthMeResponse | CurrentUser;
+
+      if (!response.ok) {
+        throw new Error("Gagal mengambil data shift karyawan.");
+      }
+
+      const user = normalizeCurrentUser(data);
+
+      if (!user) {
+        throw new Error("Data user tidak valid.");
+      }
+
+      if (mountedRef.current) {
+        setCurrentUser(user);
+      }
+
+      return user;
+    } catch (error) {
+      console.error("LOAD_CURRENT_USER_ERROR:", error);
+      safeSetStatus(
+        "Data Shift Belum Siap",
+        error instanceof Error
+          ? error.message
+          : "Gagal mengambil data shift karyawan."
+      );
+
+      return null;
+    } finally {
+      if (mountedRef.current) {
+        setIsUserLoading(false);
+      }
+    }
   }
 
   function releaseCamera(updateStatus = true, updateState = true) {
@@ -608,6 +1263,11 @@ export default function AttendancePage() {
   }
 
   async function startCamera() {
+    if (isLaptopBlocked) {
+      showLaptopBlockedAlert();
+      return;
+    }
+
     if (startingRef.current) return;
 
     try {
@@ -671,6 +1331,11 @@ export default function AttendancePage() {
   }
 
   async function toggleCamera() {
+    if (isLaptopBlocked) {
+      showLaptopBlockedAlert();
+      return;
+    }
+
     if (streamRef.current) {
       releaseCamera(true, true);
       return;
@@ -742,16 +1407,46 @@ export default function AttendancePage() {
     });
   }
 
-  function requestCheckIn() {
-    if (isLateCheckInNow() && !lateReason.trim()) {
+  async function requestCheckIn() {
+    if (isLaptopBlocked) {
+      showLaptopBlockedAlert();
+      return;
+    }
+
+    if (!validateVisitForm()) return;
+
+    const user = currentUser || (await loadCurrentUser());
+
+    if (!user) {
+      showCustomAlert(
+        "Data shift belum terbaca",
+        "Refresh halaman lalu coba lagi.",
+        "warning"
+      );
+      return;
+    }
+
+    const shouldAskLateReason = isLateCheckInNow(user);
+
+    if (shouldAskLateReason && !lateReason.trim()) {
       setIsLateReasonOpen(true);
       return;
     }
 
-    handleAttendance("check-in", lateReason.trim());
+    await handleAttendance(
+      "check-in",
+      shouldAskLateReason ? lateReason.trim() : ""
+    );
   }
 
   async function handleAttendance(action: AttendanceAction, reason = "") {
+    if (isLaptopBlocked) {
+      showLaptopBlockedAlert();
+      return;
+    }
+
+    if (action === "check-in" && !validateVisitForm()) return;
+
     try {
       setLoading(true);
       setActiveAction(action);
@@ -787,9 +1482,24 @@ export default function AttendancePage() {
       formData.append(`${prefix}Longitude`, String(longitude));
       formData.append(`${prefix}Accuracy`, String(accuracy));
 
-      if (action === "check-in" && reason) {
-        formData.append("lateReason", reason);
-        formData.append("late_reason", reason);
+      if (action === "check-in") {
+        formData.append("workMode", workMode);
+        formData.append("work_mode", workMode);
+        formData.append("activityNote", getWorkModeLabel(workMode));
+
+        if (reason.trim()) {
+          formData.append("lateReason", reason.trim());
+          formData.append("late_reason", reason.trim());
+        }
+
+        if (workMode === "visit") {
+          formData.append("visitTitle", visitForm.visitTitle.trim());
+          formData.append("visitPlaceName", visitForm.visitTitle.trim());
+          formData.append("visitClientName", visitForm.visitClientName.trim());
+          formData.append("visitAddress", visitForm.visitAddress.trim());
+          formData.append("visitNote", visitForm.visitNote.trim());
+          formData.append("visitPurpose", visitForm.visitNote.trim());
+        }
       }
 
       const response = await fetch(`/api/attendance/${action}`, {
@@ -802,24 +1512,34 @@ export default function AttendancePage() {
       if (!response.ok) {
         const message = data.error || data.message || "Absensi gagal.";
 
-        if (data.requiresLateReason) setIsLateReasonOpen(true);
+        if (data.requiresLateReason) {
+          setIsLateReasonOpen(true);
+        } else {
+          showCustomAlert(
+            action === "check-out"
+              ? "Check-out belum bisa"
+              : "Absensi gagal",
+            message,
+            "warning"
+          );
+        }
 
         safeSetStatus("Attendance Failed", message);
-        alert(message);
         return;
       }
 
       const officeName = data.office?.name;
       const distance = data.office?.distance;
       const radius = data.office?.radius;
+      const modeLabel = data.workModeLabel || getWorkModeLabel(workMode);
 
       safeSetStatus(
         "Attendance Success",
         officeName
-          ? `${data.message} Lokasi valid di ${officeName}. Jarak ${distance} meter dari kantor, radius ${radius} meter. Akurasi GPS ±${Math.round(
+          ? `${data.message} Mode ${modeLabel}. Lokasi valid di ${officeName}. Jarak ${distance} meter dari kantor, radius ${radius} meter. Akurasi GPS ±${Math.round(
               accuracy
             )} meter.`
-          : `${data.message || "Absensi berhasil."} Akurasi GPS ±${Math.round(
+          : `${data.message || "Absensi berhasil."} Mode ${modeLabel}. GPS tersimpan dengan akurasi ±${Math.round(
               accuracy
             )} meter.`
       );
@@ -827,7 +1547,17 @@ export default function AttendancePage() {
       setLateReason("");
       setIsLateReasonOpen(false);
 
-      alert(data.message || "Absensi berhasil.");
+      if (action === "check-in" && workMode === "visit") {
+        setVisitForm(emptyVisitForm);
+      }
+
+      showCustomAlert(
+        action === "check-in" ? "Check-in berhasil" : "Check-out berhasil",
+        action === "check-in"
+          ? `${data.message || "Absensi berhasil."} Mode: ${modeLabel}.`
+          : data.message || "Absensi berhasil.",
+        "success"
+      );
     } catch (error) {
       console.error("ATTENDANCE_ERROR", error);
 
@@ -837,7 +1567,7 @@ export default function AttendancePage() {
           : "Gagal melakukan absensi. Pastikan kamera dan lokasi GPS diizinkan.";
 
       safeSetStatus("Attendance Failed", message);
-      alert(message);
+      showCustomAlert("Absensi gagal", message, "error");
     } finally {
       setLoading(false);
       setActiveAction(null);
@@ -853,35 +1583,46 @@ export default function AttendancePage() {
         <AppHeader
           title="Face Attendance"
           subtitle="Ambil foto dan lokasi GPS untuk absensi"
-          rightLabel={cameraReady ? "CAM ON" : undefined}
+          rightLabel={
+            isLaptopBlocked
+              ? "MOBILE ONLY"
+              : cameraReady
+                ? getWorkModeLabel(workMode)
+                : undefined
+          }
           variant="employee"
         />
       </div>
 
-      <main className="min-h-dvh bg-gradient-to-br from-[#f6f8ff] via-white to-[#eef4ff] pb-40 text-slate-950 md:pb-28">
-        <section className="mx-auto max-w-7xl px-5 pt-7 md:hidden">
+      <main className="min-h-dvh overflow-x-hidden bg-gradient-to-br from-[#f6f8ff] via-white to-[#eef4ff] pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))] text-slate-950 md:min-h-dvh md:pb-28">
+        <section className="mx-auto w-full max-w-7xl px-5 pt-4 md:hidden">
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.28em] text-[#123c8c]">
                 FaceAttend
               </p>
 
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-[#073456]">
+              <h1 className="mt-1 text-2xl font-black tracking-tight text-[#073456]">
                 Face Attendance
               </h1>
+
+              <p className="mt-1 text-xs font-bold text-slate-500">
+                Mode: {getWorkModeLabel(workMode)}
+              </p>
             </div>
 
             <CameraStatusIcon
               cameraReady={cameraReady}
               cameraStarting={cameraStarting}
+              laptopBlocked={isLaptopBlocked}
             />
           </div>
         </section>
 
-        <section className="mx-auto grid max-w-7xl gap-5 px-5 pt-6 md:px-10 md:py-8 lg:grid-cols-[1.05fr_0.95fr] lg:px-16">
+        <section className="mx-auto grid w-full max-w-7xl gap-3 px-5 pt-3 md:px-10 md:py-8 lg:grid-cols-[1.05fr_0.95fr] lg:px-16">
           <AppCard
             padding="md"
-            className="rounded-[2rem] border-white/80 bg-white/95 p-4 shadow-2xl shadow-slate-300/30 backdrop-blur-xl md:p-6"
+            className="flex flex-col rounded-[2rem] border-white/80 bg-white/95 p-3 shadow-2xl shadow-slate-300/30 backdrop-blur-xl md:p-6"
           >
             <div className="mb-4 hidden items-start justify-between gap-4 md:flex">
               <div>
@@ -894,109 +1635,127 @@ export default function AttendancePage() {
                 </h2>
 
                 <p className="mt-1 text-sm font-medium text-slate-500">
-                  Foto akan disimpan sebagai bukti absensi.
+                  Foto, GPS, dan mode attendance akan disimpan sebagai bukti.
                 </p>
               </div>
 
               <StatusPill
                 cameraReady={cameraReady}
                 cameraStarting={cameraStarting}
+                laptopBlocked={isLaptopBlocked}
               />
             </div>
 
-            <div className="relative overflow-hidden rounded-[1.7rem] bg-slate-950 shadow-inner">
-              <div className="aspect-[3/4] md:aspect-[4/3] lg:aspect-[4/3]">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  onLoadedMetadata={() => {
-                    const video = videoRef.current;
+            <WorkModeFilter
+              value={workMode}
+              disabled={loading}
+              onChange={handleWorkModeChange}
+              onOpenVisit={() => setIsVisitModalOpen(true)}
+            />
 
-                    if (
-                      video &&
-                      video.readyState >= 2 &&
-                      video.videoWidth > 0 &&
-                      video.videoHeight > 0
-                    ) {
-                      setCameraReady(true);
-                      setCameraStarting(false);
-                    }
-                  }}
-                  onCanPlay={() => {
-                    const video = videoRef.current;
+            <div className="mt-3 rounded-[1.9rem] bg-white p-2 shadow-[0_22px_55px_rgba(15,23,42,0.20)] ring-1 ring-slate-200/80">
+              <div className="relative overflow-hidden rounded-[1.45rem] border border-slate-200 bg-slate-950 shadow-inner">
+                <div className="relative h-[56dvh] min-h-[360px] max-h-[620px] md:h-auto md:aspect-[16/10] md:min-h-0 md:max-h-none lg:aspect-[16/10]">
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    onLoadedMetadata={() => {
+                      const video = videoRef.current;
 
-                    if (
-                      video &&
-                      video.readyState >= 2 &&
-                      video.videoWidth > 0 &&
-                      video.videoHeight > 0
-                    ) {
-                      setCameraReady(true);
-                      setCameraStarting(false);
-                    }
-                  }}
-                  className={cn(
-                    "h-full w-full object-cover transition",
-                    cameraReady ? "opacity-100" : "opacity-0"
-                  )}
-                />
+                      if (
+                        video &&
+                        video.readyState >= 2 &&
+                        video.videoWidth > 0 &&
+                        video.videoHeight > 0
+                      ) {
+                        setCameraReady(true);
+                        setCameraStarting(false);
+                      }
+                    }}
+                    onCanPlay={() => {
+                      const video = videoRef.current;
 
-                <div className="pointer-events-none absolute inset-5 rounded-[1.4rem] border border-white/15 md:inset-6" />
-                <CameraCorners />
-
-                <div className="absolute left-4 top-4 z-20 rounded-full bg-slate-950/50 px-3 py-1.5 text-[11px] font-black text-white backdrop-blur-md md:left-5 md:top-5 md:text-xs">
-                  {cameraReady
-                    ? "Camera Active"
-                    : cameraStarting
-                      ? "Starting..."
-                      : "Camera Off"}
-                </div>
-
-                <div className="absolute bottom-4 left-4 right-4 z-30 grid grid-cols-2 gap-3 md:bottom-5 md:left-5 md:right-5">
-                  <CameraControlButton
-                    onClick={toggleCamera}
-                    disabled={loading || cameraStarting}
-                    danger={cameraReady}
-                  >
-                    {cameraStarting ? (
-                      <Loader2 size={17} className="animate-spin" />
-                    ) : (
-                      <Power size={17} />
+                      if (
+                        video &&
+                        video.readyState >= 2 &&
+                        video.videoWidth > 0 &&
+                        video.videoHeight > 0
+                      ) {
+                        setCameraReady(true);
+                        setCameraStarting(false);
+                      }
+                    }}
+                    className={cn(
+                      "h-full w-full object-cover transition",
+                      cameraReady ? "opacity-100" : "opacity-0"
                     )}
-                    {cameraReady ? "Matikan" : "Aktifkan"}
-                  </CameraControlButton>
+                  />
 
-                  <CameraControlButton
-                    onClick={startCamera}
-                    disabled={loading || cameraStarting}
-                  >
-                    {cameraStarting ? (
-                      <Loader2 size={17} className="animate-spin" />
-                    ) : (
-                      <RotateCcw size={17} />
-                    )}
-                    Restart
-                  </CameraControlButton>
+                  <PhotoFrameOverlay />
+
+                  <div className="absolute left-4 top-4 z-30 rounded-full bg-slate-950/55 px-3 py-1.5 text-[11px] font-black text-white backdrop-blur-md md:left-5 md:top-5 md:text-xs">
+                    {isLaptopBlocked
+                      ? "Mobile Only"
+                      : cameraReady
+                        ? "Camera Active"
+                        : cameraStarting
+                          ? "Starting..."
+                          : "Camera Off"}
+                  </div>
+
+                  <div className="absolute bottom-4 left-4 z-30 rounded-full bg-white/90 px-3 py-1.5 text-[11px] font-black text-[#123c8c] backdrop-blur-md">
+                    {getWorkModeLabel(workMode)}
+                  </div>
+
+                  {!cameraReady ? (
+                    <CameraEmptyState
+                      cameraStarting={cameraStarting}
+                      laptopBlocked={isLaptopBlocked}
+                    />
+                  ) : null}
                 </div>
-
-                {!cameraReady ? (
-                  <CameraEmptyState cameraStarting={cameraStarting} />
-                ) : null}
               </div>
+            </div>
+
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <CameraControlButton
+                onClick={toggleCamera}
+                disabled={loading || cameraStarting}
+                danger={cameraReady}
+              >
+                {cameraStarting ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Power size={16} />
+                )}
+                {cameraReady ? "Matikan" : "Aktifkan"}
+              </CameraControlButton>
+
+              <CameraControlButton
+                onClick={startCamera}
+                disabled={loading || cameraStarting}
+              >
+                {cameraStarting ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <RotateCcw size={16} />
+                )}
+                Restart
+              </CameraControlButton>
             </div>
 
             <canvas ref={canvasRef} className="hidden" />
 
-            <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-3">
+            <div className="mt-3 grid grid-cols-2 gap-3">
               <ActionButton
                 label="Check-in"
                 subtitle="Masuk"
-                loading={checkInProcessing}
-                disabled={loading || cameraStarting}
+                loading={checkInProcessing || isUserLoading}
+                disabled={loading || cameraStarting || isUserLoading}
                 primary
-                icon={<LogIn size={23} />}
+                icon={<LogIn size={22} />}
                 onClick={requestCheckIn}
               />
 
@@ -1005,7 +1764,7 @@ export default function AttendancePage() {
                 subtitle="Keluar"
                 loading={checkOutProcessing}
                 disabled={loading || cameraStarting}
-                icon={<LogOut size={23} />}
+                icon={<LogOut size={22} />}
                 onClick={() => handleAttendance("check-out")}
               />
             </div>
@@ -1013,8 +1772,8 @@ export default function AttendancePage() {
             <LastPhoto url={lastPhotoUrl} />
           </AppCard>
 
-          <div className="space-y-5">
-            <ProofCard cameraReady={cameraReady} />
+          <div className="hidden space-y-5 md:block">
+            <ProofCard cameraReady={cameraReady} workMode={workMode} />
 
             <AppCard
               padding="md"
@@ -1044,7 +1803,17 @@ export default function AttendancePage() {
                   title="Jam Kerja"
                   icon={<Clock3 size={22} className="text-[#123c8c]" />}
                 >
-                  08:00 - 17:00
+                  <div className="space-y-1">
+                    <p>
+                      {shiftStartTime} - {DEFAULT_SHIFT_END_TIME}
+                    </p>
+                    <p className="font-semibold text-slate-400">
+                      Toleransi: {shiftToleranceMinutes} menit
+                    </p>
+                    <p className="font-semibold text-slate-400">
+                      Batas telat: {lateLimitLabel}
+                    </p>
+                  </div>
                 </InfoTile>
 
                 <InfoTile
@@ -1071,10 +1840,32 @@ export default function AttendancePage() {
           </div>
         </section>
 
+        {isVisitModalOpen ? (
+          <VisitDataModal
+            form={visitForm}
+            loading={loading}
+            onChange={updateVisitForm}
+            onClose={() => {
+              if (!loading) setIsVisitModalOpen(false);
+            }}
+            onSave={() => {
+              if (!validateVisitForm()) return;
+              setIsVisitModalOpen(false);
+              showCustomAlert(
+                "Data kunjungan tersimpan",
+                "Data kunjungan siap dikirim saat check-in.",
+                "success"
+              );
+            }}
+          />
+        ) : null}
+
         {isLateReasonOpen ? (
           <LateReasonModal
             value={lateReason}
             loading={loading}
+            lateLimitLabel={lateLimitLabel}
+            toleranceMinutes={shiftToleranceMinutes}
             onChange={setLateReason}
             onCancel={() => {
               setIsLateReasonOpen(false);
@@ -1083,6 +1874,8 @@ export default function AttendancePage() {
             onSubmit={() => handleAttendance("check-in", lateReason.trim())}
           />
         ) : null}
+
+        <CustomAttendanceAlert alert={customAlert} onClose={closeCustomAlert} />
 
         <BottomNav />
       </main>

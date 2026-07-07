@@ -5,6 +5,7 @@ import {
   BriefcaseBusiness,
   Edit,
   Loader2,
+  MapPin,
   Plus,
   RefreshCw,
   Search,
@@ -15,10 +16,19 @@ import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import MobileShell from "@/components/MobileShell";
 
+type Office = {
+  id: string;
+  name: string;
+  address?: string | null;
+  status?: string;
+};
+
 type Unit = {
   id: string;
   name: string;
-  status: string;
+  office_id?: string | null;
+  office?: Office | null;
+  status?: string;
 };
 
 type Department = {
@@ -44,12 +54,16 @@ type Position = {
 
 type PositionForm = {
   name: string;
+  office_id: string;
+  unit_id: string;
   department_id: string;
   status: string;
 };
 
 const initialForm: PositionForm = {
   name: "",
+  office_id: "",
+  unit_id: "",
   department_id: "",
   status: "active",
 };
@@ -92,6 +106,8 @@ export default function AdminPositionsPage() {
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [officeFilter, setOfficeFilter] = useState("all");
+  const [unitFilter, setUnitFilter] = useState("all");
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [form, setForm] = useState<PositionForm>(initialForm);
 
@@ -103,11 +119,69 @@ export default function AdminPositionsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPosition, setEditingPosition] = useState<Position | null>(null);
 
+  const units = useMemo(() => {
+    const unitMap = new Map<string, Unit>();
+
+    departments.forEach((department) => {
+      const unit = department.unit;
+
+      if (unit?.id) {
+        unitMap.set(unit.id, unit);
+      }
+    });
+
+    return Array.from(unitMap.values()).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+  }, [departments]);
+
+  const offices = useMemo(() => {
+    const officeMap = new Map<string, Office>();
+
+    units.forEach((unit) => {
+      const office = unit.office;
+
+      if (office?.id) {
+        officeMap.set(office.id, office);
+      }
+    });
+
+    return Array.from(officeMap.values()).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+  }, [units]);
+
+  const activeOffices = useMemo(() => {
+    return offices.filter((office) => office.status !== "inactive");
+  }, [offices]);
+
+  const activeUnits = useMemo(() => {
+    return units.filter((unit) => unit.status !== "inactive");
+  }, [units]);
+
   const activeDepartments = useMemo(() => {
     return departments.filter((department) => {
       return department.status === "active";
     });
   }, [departments]);
+
+  const formUnits = useMemo(() => {
+    if (!form.office_id) return [];
+
+    return activeUnits.filter((unit) => {
+      const officeId = unit.office_id || unit.office?.id || "";
+
+      return officeId === form.office_id;
+    });
+  }, [activeUnits, form.office_id]);
+
+  const formDepartments = useMemo(() => {
+    if (!form.unit_id) return [];
+
+    return activeDepartments.filter((department) => {
+      return department.unit_id === form.unit_id;
+    });
+  }, [activeDepartments, form.unit_id]);
 
   const filteredPositions = useMemo(() => {
     const keyword = search.toLowerCase().trim();
@@ -117,18 +191,50 @@ export default function AdminPositionsPage() {
       const positionStatus = position.status.toLowerCase();
       const departmentName = position.department?.name?.toLowerCase() || "";
       const unitName = position.department?.unit?.name?.toLowerCase() || "";
+      const officeName =
+        position.department?.unit?.office?.name?.toLowerCase() || "";
+      const officeAddress =
+        position.department?.unit?.office?.address?.toLowerCase() || "";
+      const positionOfficeId =
+        position.department?.unit?.office_id ||
+        position.department?.unit?.office?.id ||
+        "";
+      const positionUnitId =
+        position.department?.unit_id || position.department?.unit?.id || "";
 
       if (
         keyword &&
         !positionName.includes(keyword) &&
         !departmentName.includes(keyword) &&
-        !unitName.includes(keyword)
+        !unitName.includes(keyword) &&
+        !officeName.includes(keyword) &&
+        !officeAddress.includes(keyword)
       ) {
         return false;
       }
 
       if (statusFilter !== "all" && positionStatus !== statusFilter) {
         return false;
+      }
+
+      if (officeFilter !== "all") {
+        if (officeFilter === "none" && positionOfficeId) {
+          return false;
+        }
+
+        if (officeFilter !== "none" && positionOfficeId !== officeFilter) {
+          return false;
+        }
+      }
+
+      if (unitFilter !== "all") {
+        if (unitFilter === "none" && positionUnitId) {
+          return false;
+        }
+
+        if (unitFilter !== "none" && positionUnitId !== unitFilter) {
+          return false;
+        }
       }
 
       if (departmentFilter !== "all") {
@@ -146,7 +252,14 @@ export default function AdminPositionsPage() {
 
       return true;
     });
-  }, [positions, search, statusFilter, departmentFilter]);
+  }, [
+    positions,
+    search,
+    statusFilter,
+    officeFilter,
+    unitFilter,
+    departmentFilter,
+  ]);
 
   async function loadPositions() {
     try {
@@ -161,7 +274,7 @@ export default function AdminPositionsPage() {
 
       if (!response.ok) {
         throw new Error(
-          data.error || data.message || "Gagal mengambil jabatan.",
+          data.error || data.message || "Gagal mengambil jabatan."
         );
       }
 
@@ -173,7 +286,7 @@ export default function AdminPositionsPage() {
       setErrorMessage(
         error instanceof Error
           ? error.message
-          : "Gagal mengambil data jabatan.",
+          : "Gagal mengambil data jabatan."
       );
     } finally {
       setIsLoading(false);
@@ -191,9 +304,18 @@ export default function AdminPositionsPage() {
   }
 
   function openEditModal(position: Position) {
+    const officeId =
+      position.department?.unit?.office_id ||
+      position.department?.unit?.office?.id ||
+      "";
+    const unitId =
+      position.department?.unit_id || position.department?.unit?.id || "";
+
     setEditingPosition(position);
     setForm({
       name: position.name,
+      office_id: officeId,
+      unit_id: unitId,
       department_id: position.department_id || "",
       status: position.status || "active",
     });
@@ -209,6 +331,8 @@ export default function AdminPositionsPage() {
   function resetFilter() {
     setSearch("");
     setStatusFilter("all");
+    setOfficeFilter("all");
+    setUnitFilter("all");
     setDepartmentFilter("all");
   }
 
@@ -216,6 +340,16 @@ export default function AdminPositionsPage() {
     event.preventDefault();
 
     const name = form.name.trim();
+
+    if (!form.office_id) {
+      alert("Kantor wajib dipilih.");
+      return;
+    }
+
+    if (!form.unit_id) {
+      alert("Unit wajib dipilih.");
+      return;
+    }
 
     if (!form.department_id) {
       alert("Divisi jabatan wajib dipilih.");
@@ -252,7 +386,7 @@ export default function AdminPositionsPage() {
 
       if (!response.ok) {
         throw new Error(
-          data.error || data.message || "Gagal menyimpan jabatan.",
+          data.error || data.message || "Gagal menyimpan jabatan."
         );
       }
 
@@ -270,13 +404,13 @@ export default function AdminPositionsPage() {
   async function handleDeletePosition(position: Position) {
     if ((position._count?.users || 0) > 0) {
       alert(
-        "Jabatan ini masih digunakan oleh karyawan. Ubah status menjadi Nonaktif jika tidak ingin digunakan.",
+        "Jabatan ini masih digunakan oleh karyawan. Ubah status menjadi Nonaktif jika tidak ingin digunakan."
       );
       return;
     }
 
     const confirmDelete = window.confirm(
-      `Yakin ingin menghapus jabatan "${position.name}"? Data yang dihapus tidak bisa dikembalikan.`,
+      `Yakin ingin menghapus jabatan "${position.name}"? Data yang dihapus tidak bisa dikembalikan.`
     );
 
     if (!confirmDelete) return;
@@ -309,7 +443,7 @@ export default function AdminPositionsPage() {
     <MobileShell variant="admin">
       <AppHeader
         title="Daftar Jabatan"
-        subtitle="Kelola master data jabatan berdasarkan divisi"
+        subtitle="Kelola master data jabatan berdasarkan kantor, unit, dan divisi"
         variant="admin"
       />
 
@@ -327,8 +461,8 @@ export default function AdminPositionsPage() {
                 </h1>
 
                 <p className="mt-3 max-w-2xl text-sm font-semibold leading-7 text-blue-100">
-                  Jabatan sekarang terhubung dengan divisi, sehingga posisi
-                  seperti Akuntansi bisa dimasukkan ke Divisi Finance.
+                  Jabatan sekarang mengikuti relasi Kantor → Unit → Divisi,
+                  sehingga pilihan jabatan di employee lebih akurat.
                 </p>
               </div>
 
@@ -344,10 +478,10 @@ export default function AdminPositionsPage() {
           </div>
 
           <div className="p-5 md:p-8">
-            <div className="grid gap-3 md:grid-cols-[1fr_240px_220px_auto]">
+            <div className="grid gap-3 md:grid-cols-[1fr_200px_200px_200px_200px_auto]">
               <div>
                 <label className="text-sm font-black text-slate-500">
-                  Nama Jabatan / Divisi
+                  Nama Jabatan / Divisi / Unit / Kantor
                 </label>
 
                 <div className="relative mt-3">
@@ -359,10 +493,66 @@ export default function AdminPositionsPage() {
                   <input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Cari jabatan, divisi, atau unit..."
+                    placeholder="Cari jabatan, divisi, unit, atau kantor..."
                     className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-4 pl-12 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-black text-slate-500">
+                  Filter Kantor
+                </label>
+
+                <select
+                  value={officeFilter}
+                  onChange={(event) => {
+                    setOfficeFilter(event.target.value);
+                    setUnitFilter("all");
+                    setDepartmentFilter("all");
+                  }}
+                  className="mt-3 w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                >
+                  <option value="all">Semua Kantor</option>
+                  <option value="none">Tanpa Kantor</option>
+                  {offices.map((office) => (
+                    <option key={office.id} value={office.id}>
+                      {office.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm font-black text-slate-500">
+                  Filter Unit
+                </label>
+
+                <select
+                  value={unitFilter}
+                  onChange={(event) => {
+                    setUnitFilter(event.target.value);
+                    setDepartmentFilter("all");
+                  }}
+                  className="mt-3 w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                >
+                  <option value="all">Semua Unit</option>
+                  <option value="none">Tanpa Unit</option>
+                  {units
+                    .filter((unit) => {
+                      if (officeFilter === "all") return true;
+                      if (officeFilter === "none") return !unit.office_id;
+                      return (
+                        (unit.office_id || unit.office?.id || "") ===
+                        officeFilter
+                      );
+                    })
+                    .map((unit) => (
+                      <option key={unit.id} value={unit.id}>
+                        {unit.name}
+                      </option>
+                    ))}
+                </select>
               </div>
 
               <div>
@@ -377,14 +567,38 @@ export default function AdminPositionsPage() {
                 >
                   <option value="all">Semua Divisi</option>
                   <option value="none">Tanpa Divisi</option>
-                  {departments.map((department) => (
-                    <option key={department.id} value={department.id}>
-                      {department.name}
-                      {department.unit?.name
-                        ? ` - ${department.unit.name}`
-                        : ""}
-                    </option>
-                  ))}
+                  {departments
+                    .filter((department) => {
+                      const departmentOfficeId =
+                        department.unit?.office_id ||
+                        department.unit?.office?.id ||
+                        "";
+                      const departmentUnitId =
+                        department.unit_id || department.unit?.id || "";
+
+                      if (
+                        officeFilter !== "all" &&
+                        officeFilter !== "none" &&
+                        departmentOfficeId !== officeFilter
+                      ) {
+                        return false;
+                      }
+
+                      if (
+                        unitFilter !== "all" &&
+                        unitFilter !== "none" &&
+                        departmentUnitId !== unitFilter
+                      ) {
+                        return false;
+                      }
+
+                      return true;
+                    })
+                    .map((department) => (
+                      <option key={department.id} value={department.id}>
+                        {department.name}
+                      </option>
+                    ))}
                 </select>
               </div>
 
@@ -433,11 +647,12 @@ export default function AdminPositionsPage() {
             ) : null}
 
             <div className="mt-8 overflow-hidden rounded-2xl border border-blue-100">
-              <div className="hidden grid-cols-[0.3fr_1.3fr_1.1fr_1.1fr_0.8fr_1fr] bg-[#f6f8ff] px-5 py-4 text-xs font-black uppercase tracking-[0.18em] text-[#123c8c] md:grid">
+              <div className="hidden grid-cols-[0.25fr_1.05fr_0.95fr_0.95fr_0.95fr_0.7fr_1fr] bg-[#f6f8ff] px-5 py-4 text-xs font-black uppercase tracking-[0.18em] text-[#123c8c] md:grid">
                 <p>#</p>
                 <p>Jabatan</p>
-                <p>Divisi</p>
+                <p>Kantor</p>
                 <p>Unit</p>
+                <p>Divisi</p>
                 <p>Status</p>
                 <p className="text-center">Aksi</p>
               </div>
@@ -467,7 +682,7 @@ export default function AdminPositionsPage() {
                   filteredPositions.map((position, index) => (
                     <div
                       key={position.id}
-                      className="grid gap-4 px-4 py-4 text-sm transition hover:bg-[#f8fbff] md:grid-cols-[0.3fr_1.3fr_1.1fr_1.1fr_0.8fr_1fr] md:items-center md:px-5 md:py-6"
+                      className="grid gap-4 px-4 py-4 text-sm transition hover:bg-[#f8fbff] md:grid-cols-[0.25fr_1.05fr_0.95fr_0.95fr_0.95fr_0.7fr_1fr] md:items-center md:px-5 md:py-6"
                     >
                       <div className="flex items-start justify-between gap-3 md:block">
                         <div className="flex items-center gap-3">
@@ -481,8 +696,10 @@ export default function AdminPositionsPage() {
                             </p>
 
                             <p className="mt-1 text-xs font-semibold text-slate-400">
-                              {position.department?.name || "Tanpa Divisi"} •{" "}
-                              {position.department?.unit?.name || "Tanpa Unit"}
+                              {position.department?.unit?.office?.name ||
+                                "Tanpa Kantor"}{" "}
+                              • {position.department?.unit?.name || "Tanpa Unit"}{" "}
+                              • {position.department?.name || "Tanpa Divisi"}
                             </p>
 
                             <p className="mt-1 text-xs font-semibold text-slate-400">
@@ -514,11 +731,12 @@ export default function AdminPositionsPage() {
 
                       <div className="rounded-2xl border border-blue-100 bg-[#f8fbff] p-3 md:border-0 md:bg-transparent md:p-0">
                         <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-400 md:hidden">
-                          Divisi
+                          Kantor
                         </p>
 
                         <p className="mt-1 font-black text-slate-600 md:mt-0">
-                          {position.department?.name || "Tanpa Divisi"}
+                          {position.department?.unit?.office?.name ||
+                            "Tanpa Kantor"}
                         </p>
                       </div>
 
@@ -529,6 +747,16 @@ export default function AdminPositionsPage() {
 
                         <p className="mt-1 font-black text-slate-600 md:mt-0">
                           {position.department?.unit?.name || "Tanpa Unit"}
+                        </p>
+                      </div>
+
+                      <div className="rounded-2xl border border-blue-100 bg-[#f8fbff] p-3 md:border-0 md:bg-transparent md:p-0">
+                        <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-400 md:hidden">
+                          Divisi
+                        </p>
+
+                        <p className="mt-1 font-black text-slate-600 md:mt-0">
+                          {position.department?.name || "Tanpa Divisi"}
                         </p>
                       </div>
 
@@ -601,7 +829,8 @@ export default function AdminPositionsPage() {
                 </h2>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Pilih divisi terlebih dahulu, lalu isi nama jabatan.
+                  Pilih kantor, unit, dan divisi terlebih dahulu, lalu isi nama
+                  jabatan.
                 </p>
               </div>
 
@@ -617,6 +846,68 @@ export default function AdminPositionsPage() {
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
               <div>
                 <label className="mb-2 block text-sm font-black text-slate-700">
+                  Kantor
+                </label>
+
+                <div className="relative">
+                  <MapPin
+                    size={18}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+
+                  <select
+                    value={form.office_id}
+                    onChange={(event) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        office_id: event.target.value,
+                        unit_id: "",
+                        department_id: "",
+                      }))
+                    }
+                    className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                  >
+                    <option value="">Pilih Kantor</option>
+                    {activeOffices.map((office) => (
+                      <option key={office.id} value={office.id}>
+                        {office.name}
+                        {office.address ? ` - ${office.address}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-black text-slate-700">
+                  Unit
+                </label>
+
+                <select
+                  value={form.unit_id}
+                  onChange={(event) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      unit_id: event.target.value,
+                      department_id: "",
+                    }))
+                  }
+                  disabled={!form.office_id}
+                  className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                >
+                  <option value="">
+                    {form.office_id ? "Pilih Unit" : "Pilih Kantor dulu"}
+                  </option>
+                  {formUnits.map((unit) => (
+                    <option key={unit.id} value={unit.id}>
+                      {unit.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-black text-slate-700">
                   Divisi
                 </label>
 
@@ -628,23 +919,34 @@ export default function AdminPositionsPage() {
                       department_id: event.target.value,
                     }))
                   }
-                  className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                  disabled={!form.unit_id}
+                  className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
                 >
-                  <option value="">Pilih Divisi</option>
-                  {activeDepartments.map((department) => (
+                  <option value="">
+                    {form.unit_id ? "Pilih Divisi" : "Pilih Unit dulu"}
+                  </option>
+                  {formDepartments.map((department) => (
                     <option key={department.id} value={department.id}>
                       {department.name}
-                      {department.unit?.name
-                        ? ` - ${department.unit.name}`
-                        : ""}
                     </option>
                   ))}
                 </select>
 
                 <p className="mt-2 text-xs font-semibold text-slate-400">
-                  Contoh: pilih Finance untuk jabatan Akuntansi.
+                  Divisi aktif saja yang bisa dipilih untuk jabatan baru.
                 </p>
               </div>
+
+              {form.unit_id && formDepartments.length === 0 ? (
+                <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
+                  <p className="text-sm font-black text-amber-700">
+                    Divisi belum tersedia untuk unit ini
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-amber-700/80">
+                    Tambahkan Divisi terlebih dahulu pada unit yang dipilih.
+                  </p>
+                </div>
+              ) : null}
 
               <div>
                 <label className="mb-2 block text-sm font-black text-slate-700">

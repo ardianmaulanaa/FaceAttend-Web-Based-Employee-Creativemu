@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { AttendanceStatus } from "@/generated/prisma/enums";
 import { jwtVerify } from "jose";
 import { Buffer } from "node:buffer";
 import { prisma } from "@/lib/prisma";
+import { AttendanceStatus } from "@/generated/prisma/enums";
 
 export const runtime = "nodejs";
 
 const MAX_GPS_ACCURACY_METERS = 100;
+
+type WorkMode = "office" | "wfh" | "wfc" | "visit";
 
 type ParsedAttendanceBody = {
   photoBuffer: Buffer | null;
@@ -15,6 +17,12 @@ type ParsedAttendanceBody = {
   longitude: number | null;
   accuracy: number | null;
   lateReason: string;
+  workMode: WorkMode;
+  activityNote: string;
+  visitTitle: string;
+  visitClientName: string;
+  visitAddress: string;
+  visitNote: string;
 };
 
 type GeoPoint = {
@@ -34,7 +42,9 @@ async function getUserIdFromRequest(req: NextRequest) {
   const token = req.cookies.get("faceattend_token")?.value;
 
   if (!token) throw new Error("Token login tidak ditemukan.");
-  if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET belum ada di file .env");
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET belum ada di file .env");
+  }
 
   const secret = new TextEncoder().encode(process.env.JWT_SECRET);
   const { payload } = await jwtVerify(token, secret);
@@ -96,6 +106,26 @@ function toNumber(value: unknown) {
   const numberValue = Number(value);
 
   return Number.isFinite(numberValue) ? numberValue : null;
+}
+
+function normalizeWorkMode(value: unknown): WorkMode {
+  const mode = String(value || "office").trim().toLowerCase();
+
+  if (mode === "wfh") return "wfh";
+  if (mode === "wfc") return "wfc";
+  if (mode === "visit" || mode === "kunjungan") return "visit";
+  if (mode === "office" || mode === "wfo" || mode === "kantor") {
+    return "office";
+  }
+
+  return "office";
+}
+
+function getWorkModeLabel(workMode: WorkMode) {
+  if (workMode === "wfh") return "WFH";
+  if (workMode === "wfc") return "WFC";
+  if (workMode === "visit") return "Kunjungan";
+  return "Kantor";
 }
 
 function dataUrlToBuffer(dataUrl: string) {
@@ -222,16 +252,70 @@ async function parseAttendanceBody(
       "late_note",
     ]);
 
+    const workMode = normalizeWorkMode(
+      formData.get("workMode") ||
+        formData.get("work_mode") ||
+        formData.get("attendanceMode") ||
+        formData.get("attendance_mode")
+    );
+
+    const activityNote = getFormText(formData, [
+      "activityNote",
+      "activity_note",
+      "note",
+    ]);
+
+    const visitTitle = getFormText(formData, [
+      "visitTitle",
+      "visit_title",
+      "visitPlaceName",
+      "visit_place_name",
+      "placeName",
+      "place_name",
+      "title",
+    ]);
+
+    const visitClientName = getFormText(formData, [
+      "visitClientName",
+      "visit_client_name",
+      "clientName",
+      "client_name",
+    ]);
+
+    const visitAddress = getFormText(formData, [
+      "visitAddress",
+      "visit_address",
+      "address",
+    ]);
+
+    const visitNote = getFormText(formData, [
+      "visitNote",
+      "visit_note",
+      "visitPurpose",
+      "visit_purpose",
+      "purpose",
+    ]);
+
+    const baseData = {
+      latitude,
+      longitude,
+      accuracy,
+      lateReason,
+      workMode,
+      activityNote,
+      visitTitle,
+      visitClientName,
+      visitAddress,
+      visitNote,
+    };
+
     if (photo instanceof File) {
       const result = await fileToBuffer(photo);
 
       return {
+        ...baseData,
         photoBuffer: result.buffer,
         photoMime: result.mime,
-        latitude,
-        longitude,
-        accuracy,
-        lateReason,
       };
     }
 
@@ -239,22 +323,16 @@ async function parseAttendanceBody(
       const result = dataUrlToBuffer(photo);
 
       return {
+        ...baseData,
         photoBuffer: result.buffer,
         photoMime: result.mime,
-        latitude,
-        longitude,
-        accuracy,
-        lateReason,
       };
     }
 
     return {
+      ...baseData,
       photoBuffer: null,
       photoMime: "image/jpeg",
-      latitude,
-      longitude,
-      accuracy,
-      lateReason,
     };
   }
 
@@ -297,26 +375,77 @@ async function parseAttendanceBody(
     "late_note",
   ]);
 
+  const workMode = normalizeWorkMode(
+    body.workMode ??
+      body.work_mode ??
+      body.attendanceMode ??
+      body.attendance_mode
+  );
+
+  const activityNote = getBodyText(body, [
+    "activityNote",
+    "activity_note",
+    "note",
+  ]);
+
+  const visitTitle = getBodyText(body, [
+    "visitTitle",
+    "visit_title",
+    "visitPlaceName",
+    "visit_place_name",
+    "placeName",
+    "place_name",
+    "title",
+  ]);
+
+  const visitClientName = getBodyText(body, [
+    "visitClientName",
+    "visit_client_name",
+    "clientName",
+    "client_name",
+  ]);
+
+  const visitAddress = getBodyText(body, [
+    "visitAddress",
+    "visit_address",
+    "address",
+  ]);
+
+  const visitNote = getBodyText(body, [
+    "visitNote",
+    "visit_note",
+    "visitPurpose",
+    "visit_purpose",
+    "purpose",
+  ]);
+
+  const baseData = {
+    latitude,
+    longitude,
+    accuracy,
+    lateReason,
+    workMode,
+    activityNote,
+    visitTitle,
+    visitClientName,
+    visitAddress,
+    visitNote,
+  };
+
   if (!photoDataUrl) {
     return {
+      ...baseData,
       photoBuffer: null,
       photoMime: "image/jpeg",
-      latitude,
-      longitude,
-      accuracy,
-      lateReason,
     };
   }
 
   const result = dataUrlToBuffer(photoDataUrl);
 
   return {
+    ...baseData,
     photoBuffer: result.buffer,
     photoMime: result.mime,
-    latitude,
-    longitude,
-    accuracy,
-    lateReason,
   };
 }
 
@@ -331,7 +460,19 @@ export async function POST(req: NextRequest) {
       longitude,
       accuracy,
       lateReason,
+      workMode,
+      activityNote,
+      visitTitle,
+      visitClientName,
+      visitAddress,
+      visitNote,
     } = await parseAttendanceBody(req);
+
+    const isOfficeMode = workMode === "office";
+    const isWfhMode = workMode === "wfh";
+    const isWfcMode = workMode === "wfc";
+    const isVisitMode = workMode === "visit";
+    const isFlexibleMode = isWfhMode || isWfcMode || isVisitMode;
 
     if (!photoBuffer) {
       return NextResponse.json(
@@ -364,12 +505,27 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (isVisitMode && (!visitTitle || !visitAddress || !visitNote)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Data kunjungan wajib diisi. Isi nama/tempat kunjungan, alamat, dan keperluan kunjungan.",
+          message:
+            "Data kunjungan wajib diisi. Isi nama/tempat kunjungan, alamat, dan keperluan kunjungan.",
+        },
+        { status: 400 }
+      );
+    }
+
     const user = await prisma.user.findUnique({
       where: {
         id: userId,
       },
       select: {
         id: true,
+        name: true,
+        employee_code: true,
         status: true,
         registered_office_id: true,
         shift: {
@@ -396,44 +552,52 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const offices = await prisma.officeLocation.findMany({
-      where: {
-        status: "active",
-      },
-      select: {
-        id: true,
-        name: true,
-        latitude: true,
-        longitude: true,
-        radius_meters: true,
-      },
-    });
+    let matchedOffice: {
+      office: OfficeGeofence;
+      distance: number;
+      isWithinRadius: boolean;
+    } | null = null;
 
-    if (offices.length === 0) {
-      return NextResponse.json(
-        { error: "Belum ada data kantor aktif untuk validasi GPS." },
-        { status: 400 }
-      );
-    }
-
-    const matchedOffice = findNearestValidOffice(
-      {
-        lat: latitude,
-        lng: longitude,
-      },
-      offices
-    );
-
-    if (!matchedOffice) {
-      return NextResponse.json(
-        {
-          error: "Lokasi kamu berada di luar radius semua kantor aktif.",
-          latitude,
-          longitude,
-          accuracy,
+    if (isOfficeMode) {
+      const offices = await prisma.officeLocation.findMany({
+        where: {
+          status: "active",
         },
-        { status: 400 }
+        select: {
+          id: true,
+          name: true,
+          latitude: true,
+          longitude: true,
+          radius_meters: true,
+        },
+      });
+
+      if (offices.length === 0) {
+        return NextResponse.json(
+          { error: "Belum ada data kantor aktif untuk validasi GPS." },
+          { status: 400 }
+        );
+      }
+
+      matchedOffice = findNearestValidOffice(
+        {
+          lat: latitude,
+          lng: longitude,
+        },
+        offices
       );
+
+      if (!matchedOffice) {
+        return NextResponse.json(
+          {
+            error: "Lokasi kamu berada di luar radius semua kantor aktif.",
+            latitude,
+            longitude,
+            accuracy,
+          },
+          { status: 400 }
+        );
+      }
     }
 
     const now = new Date();
@@ -457,6 +621,7 @@ export async function POST(req: NextRequest) {
     const toleranceMinutes = user.shift?.tolerance_minutes || 0;
     const lateMinutes = calculateLateMinutes(now, startTime, toleranceMinutes);
     const isLate = lateMinutes > 0;
+    const attendanceStatus = isLate ? "LATE" : "PRESENT";
 
     if (isLate && !lateReason) {
       return NextResponse.json(
@@ -477,45 +642,99 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const attendanceStatus = isLate ? AttendanceStatus.LATE : AttendanceStatus.PRESENT;
-
     const checkInData = {
       check_in_time: now,
       check_in_photo: photoBuffer,
       check_in_photo_mime: photoMime,
 
+      work_mode: workMode,
+      is_wfh: isWfhMode,
+      is_wfc: isWfcMode,
+      is_visit: isVisitMode,
+
       check_in_latitude: latitude,
       check_in_longitude: longitude,
       check_in_accuracy: accuracy,
-      check_in_distance: matchedOffice.distance,
-      check_in_within_radius: true,
+      check_in_distance: matchedOffice?.distance ?? null,
+      check_in_within_radius: Boolean(matchedOffice?.isWithinRadius),
 
       registered_office_id: user.registered_office_id,
-      check_in_office_id: matchedOffice.office.id,
+      check_in_office_id: matchedOffice?.office.id ?? null,
 
-      status: attendanceStatus,
+      status: attendanceStatus as any,
+      check_in_status: isLate ? "LATE" : "ON_TIME",
       late_minutes: lateMinutes,
+      is_over_tolerance: isLate,
       late_reason: isLate ? lateReason : null,
+
+      activity_note: activityNote || null,
     };
 
-    const attendance = existingAttendance
-      ? await prisma.attendance.update({
-          where: {
-            id: existingAttendance.id,
-          },
-          data: {
-            ...checkInData,
-            work_minutes: existingAttendance.work_minutes ?? 0,
-          },
-        })
-      : await prisma.attendance.create({
+    const attendance = await prisma.$transaction(async (tx: any) => {
+      const savedAttendance = existingAttendance
+        ? await tx.attendance.update({
+            where: {
+              id: existingAttendance.id,
+            },
+            data: {
+              ...checkInData,
+              work_minutes: existingAttendance.work_minutes ?? 0,
+            },
+          })
+        : await tx.attendance.create({
+            data: {
+              user_id: userId,
+              attendance_date: today,
+              ...checkInData,
+              work_minutes: 0,
+            },
+          });
+
+      if (isVisitMode) {
+        await tx.employeeVisit.create({
           data: {
             user_id: userId,
-            attendance_date: today,
-            ...checkInData,
-            work_minutes: 0,
+            attendance_id: savedAttendance.id,
+            visit_date: today,
+            title: visitTitle,
+            client_name: visitClientName || null,
+            address: visitAddress,
+            latitude,
+            longitude,
+            accuracy,
+            start_time: now,
+            note: visitNote,
+            status: "ongoing",
           },
         });
+      }
+
+      if (isFlexibleMode) {
+        const modeLabel = getWorkModeLabel(workMode);
+        const employeeName = user.name || "Karyawan";
+        const coordinateText = `${latitude}, ${longitude}`;
+
+        await tx.adminNotification.create({
+          data: {
+            attendance_id: savedAttendance.id,
+            user_id: userId,
+            type: workMode,
+            title:
+              workMode === "visit"
+                ? "Karyawan melakukan kunjungan"
+                : `Karyawan ${modeLabel}`,
+            message:
+              workMode === "visit"
+                ? `${employeeName} check-in kunjungan di ${visitTitle}. Alamat: ${visitAddress}. Keperluan: ${visitNote}. GPS: ${coordinateText}.`
+                : `${employeeName} check-in dengan mode ${modeLabel}. GPS: ${coordinateText}.`,
+            status: "unread",
+            is_read: false,
+          },
+        });
+      }
+
+      return savedAttendance;
+    });
 
     return NextResponse.json({
       success: true,
@@ -524,6 +743,11 @@ export async function POST(req: NextRequest) {
         : "Check-in berhasil.",
       attendanceId: attendance.id,
       status: attendanceStatus,
+      workMode,
+      workModeLabel: getWorkModeLabel(workMode),
+      isWfh: isWfhMode,
+      isWfc: isWfcMode,
+      isVisit: isVisitMode,
       lateMinutes,
       lateReason: isLate ? lateReason : null,
       schedule: {
@@ -531,12 +755,22 @@ export async function POST(req: NextRequest) {
         startTime,
         toleranceMinutes,
       },
-      office: {
-        id: matchedOffice.office.id,
-        name: matchedOffice.office.name,
-        distance: Math.round(matchedOffice.distance),
-        radius: matchedOffice.office.radius_meters,
-      },
+      office: matchedOffice
+        ? {
+            id: matchedOffice.office.id,
+            name: matchedOffice.office.name,
+            distance: Math.round(matchedOffice.distance),
+            radius: matchedOffice.office.radius_meters,
+          }
+        : null,
+      visit: isVisitMode
+        ? {
+            title: visitTitle,
+            clientName: visitClientName || null,
+            address: visitAddress,
+            note: visitNote,
+          }
+        : null,
       gps: {
         latitude,
         longitude,

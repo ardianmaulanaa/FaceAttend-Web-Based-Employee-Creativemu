@@ -48,6 +48,7 @@ model User {
 
   attendances          Attendance[]
   attendance_summaries AttendanceMonthlySummary[]
+  admin_notifications  AdminNotification[]
 
   announcements  Announcement[] @relation("AnnouncementAuthor")
   leave_requests LeaveRequest[]
@@ -70,7 +71,11 @@ model User {
 model Unit {
   id String @id @default(uuid()) @db.Char(36)
 
-  name String @unique @db.VarChar(100)
+  name String @db.VarChar(100)
+
+  // Kantor pemilik unit
+  office_id String?         @db.Char(36)
+  office    OfficeLocation? @relation(fields: [office_id], references: [id], onDelete: SetNull)
 
   // active, inactive
   status String @default("active") @db.VarChar(20)
@@ -80,6 +85,9 @@ model Unit {
 
   created_at DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
+
+  @@unique([office_id, name])
+  @@index([office_id])
 }
 
 model Department {
@@ -178,6 +186,9 @@ model OfficeLocation {
 
   users User[] @relation("EmployeeRegisteredOffice")
 
+  // Unit yang berada di kantor ini
+  units Unit[]
+
   registered_attendances Attendance[] @relation("RegisteredOfficeAttendance")
   check_in_attendances   Attendance[] @relation("CheckInOfficeAttendance")
   check_out_attendances  Attendance[] @relation("CheckOutOfficeAttendance")
@@ -206,7 +217,7 @@ model Attendance {
   check_in_photo_mime  String? @db.VarChar(50)
   check_out_photo_mime String? @db.VarChar(50)
 
-  // office, wfh, visit
+  // office, wfh, wfc, visit
   work_mode String @default("office") @db.VarChar(20)
 
   // Kantor asal karyawan saat absensi dibuat
@@ -247,8 +258,9 @@ model Attendance {
   // alasan jika pulang cepat
   early_leave_reason String? @db.VarChar(255)
 
-  // WFH / Kunjungan
+  // WFH / WFC / Kunjungan
   is_wfh   Boolean @default(false)
+  is_wfc   Boolean @default(false)
   is_visit Boolean @default(false)
 
   wfh_request_id String?     @db.Char(36)
@@ -264,6 +276,8 @@ model Attendance {
 
   visits EmployeeVisit[]
 
+  admin_notifications AdminNotification[]
+
   created_at DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
 
@@ -274,6 +288,7 @@ model Attendance {
   @@index([check_out_status])
   @@index([work_mode])
   @@index([is_wfh])
+  @@index([is_wfc])
   @@index([is_visit])
 }
 
@@ -297,6 +312,7 @@ model AttendanceMonthlySummary {
   total_work_minutes        Int @default(0)
 
   total_wfh_days   Int @default(0)
+  total_wfc_days   Int @default(0)
   total_visit_days Int @default(0)
 
   created_at DateTime @default(now())
@@ -436,6 +452,35 @@ model Announcement {
 
   @@index([target])
   @@index([status])
+  @@index([created_at])
+}
+
+model AdminNotification {
+  id String @id @default(uuid()) @db.Char(36)
+
+  attendance_id String?     @db.Char(36)
+  attendance    Attendance? @relation(fields: [attendance_id], references: [id], onDelete: SetNull)
+
+  user_id String @db.Char(36)
+  user    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  // wfh, wfc, visit, attendance
+  type String @db.VarChar(50)
+
+  title   String @db.VarChar(150)
+  message String @db.Text
+
+  // unread, read
+  status String @default("unread") @db.VarChar(20)
+
+  is_read Boolean @default(false)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
+
+  @@index([type])
+  @@index([status])
+  @@index([is_read])
   @@index([created_at])
 }
 

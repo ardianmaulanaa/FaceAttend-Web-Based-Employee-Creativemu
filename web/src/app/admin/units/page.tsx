@@ -5,6 +5,7 @@ import {
   Building2,
   Edit,
   Loader2,
+  MapPin,
   Plus,
   RefreshCw,
   Search,
@@ -15,9 +16,18 @@ import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import MobileShell from "@/components/MobileShell";
 
+type Office = {
+  id: string;
+  name: string;
+  address: string | null;
+  status: string;
+};
+
 type Unit = {
   id: string;
   name: string;
+  office_id: string | null;
+  office?: Office | null;
   status: string;
   created_at?: string;
   updated_at?: string;
@@ -29,11 +39,13 @@ type Unit = {
 
 type UnitForm = {
   name: string;
+  office_id: string;
   status: string;
 };
 
 const initialForm: UnitForm = {
   name: "",
+  office_id: "",
   status: "active",
 };
 
@@ -71,8 +83,11 @@ async function readJsonResponse(response: Response) {
 
 export default function UnitsPage() {
   const [units, setUnits] = useState<Unit[]>([]);
+  const [offices, setOffices] = useState<Office[]>([]);
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [officeFilter, setOfficeFilter] = useState("all");
   const [form, setForm] = useState<UnitForm>(initialForm);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -83,14 +98,25 @@ export default function UnitsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
 
+  const activeOffices = useMemo(() => {
+    return offices.filter((office) => office.status === "active");
+  }, [offices]);
+
   const filteredUnits = useMemo(() => {
     const keyword = search.toLowerCase().trim();
 
     return units.filter((unit) => {
       const unitName = unit.name.toLowerCase();
       const unitStatus = unit.status.toLowerCase();
+      const officeName = unit.office?.name?.toLowerCase() || "";
+      const officeAddress = unit.office?.address?.toLowerCase() || "";
 
-      if (keyword && !unitName.includes(keyword)) {
+      if (
+        keyword &&
+        !unitName.includes(keyword) &&
+        !officeName.includes(keyword) &&
+        !officeAddress.includes(keyword)
+      ) {
         return false;
       }
 
@@ -98,9 +124,19 @@ export default function UnitsPage() {
         return false;
       }
 
+      if (officeFilter !== "all") {
+        if (officeFilter === "none" && unit.office_id) {
+          return false;
+        }
+
+        if (officeFilter !== "none" && unit.office_id !== officeFilter) {
+          return false;
+        }
+      }
+
       return true;
     });
-  }, [search, statusFilter, units]);
+  }, [search, statusFilter, officeFilter, units]);
 
   async function loadUnits() {
     try {
@@ -110,6 +146,7 @@ export default function UnitsPage() {
       const params = new URLSearchParams({
         search,
         status: statusFilter,
+        office: officeFilter,
       });
 
       const response = await fetch(`/api/admin/units?${params.toString()}`, {
@@ -123,11 +160,12 @@ export default function UnitsPage() {
       }
 
       setUnits(data.units || data.data || []);
+      setOffices(data.offices || []);
     } catch (error) {
       console.error("LOAD_UNITS_ERROR:", error);
 
       setErrorMessage(
-        error instanceof Error ? error.message : "Gagal mengambil data unit.",
+        error instanceof Error ? error.message : "Gagal mengambil data unit."
       );
     } finally {
       setIsLoading(false);
@@ -149,6 +187,7 @@ export default function UnitsPage() {
     setEditingUnit(unit);
     setForm({
       name: unit.name,
+      office_id: unit.office_id || unit.office?.id || "",
       status: unit.status || "active",
     });
     setIsModalOpen(true);
@@ -163,12 +202,18 @@ export default function UnitsPage() {
   function resetFilter() {
     setSearch("");
     setStatusFilter("all");
+    setOfficeFilter("all");
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const name = form.name.trim();
+
+    if (!form.office_id) {
+      alert("Kantor unit wajib dipilih.");
+      return;
+    }
 
     if (!name) {
       alert("Nama unit wajib diisi.");
@@ -191,6 +236,7 @@ export default function UnitsPage() {
         body: JSON.stringify({
           id: editingUnit?.id,
           name,
+          office_id: form.office_id,
           status: form.status,
         }),
       });
@@ -218,13 +264,13 @@ export default function UnitsPage() {
 
     if (totalDepartments > 0 || totalUsers > 0) {
       alert(
-        "Unit ini masih memiliki divisi atau karyawan. Ubah status menjadi Nonaktif jika tidak ingin digunakan.",
+        "Unit ini masih memiliki divisi atau karyawan. Ubah status menjadi Nonaktif jika tidak ingin digunakan."
       );
       return;
     }
 
     const confirmDelete = window.confirm(
-      `Yakin ingin menghapus unit "${unit.name}"? Data yang dihapus tidak bisa dikembalikan.`,
+      `Yakin ingin menghapus unit "${unit.name}"? Data yang dihapus tidak bisa dikembalikan.`
     );
 
     if (!confirmDelete) return;
@@ -257,7 +303,7 @@ export default function UnitsPage() {
     <MobileShell variant="admin">
       <AppHeader
         title="Daftar Unit"
-        subtitle="Kelola master data unit kerja perusahaan"
+        subtitle="Kelola master data unit kerja berdasarkan kantor"
         variant="admin"
       />
 
@@ -274,6 +320,10 @@ export default function UnitsPage() {
                   Daftar Unit
                 </h1>
 
+                <p className="mt-3 max-w-2xl text-sm font-semibold leading-7 text-blue-100">
+                  Unit sekarang terhubung dengan kantor. Saat register employee,
+                  unit yang muncul akan mengikuti kantor yang dipilih.
+                </p>
               </div>
 
               <button
@@ -288,10 +338,10 @@ export default function UnitsPage() {
           </div>
 
           <div className="p-5 md:p-8">
-            <div className="grid gap-3 md:grid-cols-[1fr_260px_auto]">
+            <div className="grid gap-3 md:grid-cols-[1fr_240px_220px_auto]">
               <div>
                 <label className="text-sm font-black text-slate-500">
-                  Nama Unit
+                  Nama Unit / Kantor
                 </label>
 
                 <div className="relative mt-3">
@@ -303,10 +353,30 @@ export default function UnitsPage() {
                   <input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Cari nama unit..."
+                    placeholder="Cari nama unit atau kantor..."
                     className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-4 pl-12 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-black text-slate-500">
+                  Filter Kantor
+                </label>
+
+                <select
+                  value={officeFilter}
+                  onChange={(event) => setOfficeFilter(event.target.value)}
+                  className="mt-3 w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                >
+                  <option value="all">Semua Kantor</option>
+                  <option value="none">Belum Terhubung</option>
+                  {offices.map((office) => (
+                    <option key={office.id} value={office.id}>
+                      {office.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -354,9 +424,10 @@ export default function UnitsPage() {
             ) : null}
 
             <div className="mt-8 overflow-hidden rounded-2xl border border-blue-100">
-              <div className="hidden grid-cols-[0.3fr_1.4fr_0.8fr_0.8fr_1fr] bg-[#f6f8ff] px-5 py-4 text-xs font-black uppercase tracking-[0.18em] text-[#123c8c] md:grid">
+              <div className="hidden grid-cols-[0.3fr_1.2fr_1.1fr_0.7fr_0.7fr_1fr] bg-[#f6f8ff] px-5 py-4 text-xs font-black uppercase tracking-[0.18em] text-[#123c8c] md:grid">
                 <p>#</p>
                 <p>Unit</p>
+                <p>Kantor</p>
                 <p>Divisi</p>
                 <p>Status</p>
                 <p className="text-center">Aksi</p>
@@ -384,7 +455,7 @@ export default function UnitsPage() {
                   filteredUnits.map((unit, index) => (
                     <div
                       key={unit.id}
-                      className="grid gap-4 px-4 py-4 text-sm transition hover:bg-[#f8fbff] md:grid-cols-[0.3fr_1.4fr_0.8fr_0.8fr_1fr] md:items-center md:px-5 md:py-6"
+                      className="grid gap-4 px-4 py-4 text-sm transition hover:bg-[#f8fbff] md:grid-cols-[0.3fr_1.2fr_1.1fr_0.7fr_0.7fr_1fr] md:items-center md:px-5 md:py-6"
                     >
                       <div className="flex items-start justify-between gap-3 md:block">
                         <div className="flex items-center gap-3">
@@ -397,6 +468,7 @@ export default function UnitsPage() {
                               {unit.name}
                             </p>
                             <p className="mt-1 text-xs font-semibold text-slate-400">
+                              {unit.office?.name || "Belum terhubung"} •{" "}
                               {unit._count?.departments || 0} divisi •{" "}
                               {unit._count?.users || 0} karyawan
                             </p>
@@ -420,6 +492,18 @@ export default function UnitsPage() {
                         </p>
                         <p className="mt-1 text-xs font-semibold text-slate-400">
                           {unit._count?.users || 0} karyawan
+                        </p>
+                      </div>
+
+                      <div className="rounded-2xl border border-blue-100 bg-[#f8fbff] p-3 md:border-0 md:bg-transparent md:p-0">
+                        <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-400 md:hidden">
+                          Kantor
+                        </p>
+                        <p className="mt-1 font-black text-slate-600 md:mt-0">
+                          {unit.office?.name || "Belum terhubung"}
+                        </p>
+                        <p className="mt-1 line-clamp-1 text-xs font-semibold text-slate-400">
+                          {unit.office?.address || ""}
                         </p>
                       </div>
 
@@ -504,7 +588,7 @@ export default function UnitsPage() {
                 </h2>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Unit digunakan untuk mengelompokkan divisi dan karyawan.
+                  Pilih kantor pemilik unit agar relasi employee bisa berurutan.
                 </p>
               </div>
 
@@ -518,6 +602,42 @@ export default function UnitsPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+              <div>
+                <label className="mb-2 block text-sm font-black text-slate-700">
+                  Kantor
+                </label>
+
+                <div className="relative">
+                  <MapPin
+                    size={18}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+                  <select
+                    value={form.office_id}
+                    onChange={(event) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        office_id: event.target.value,
+                      }))
+                    }
+                    className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                  >
+                    <option value="">Pilih Kantor</option>
+                    {activeOffices.map((office) => (
+                      <option key={office.id} value={office.id}>
+                        {office.name}
+                        {office.address ? ` - ${office.address}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <p className="mt-2 text-xs font-semibold text-slate-400">
+                  Contoh: pilih Alfabank jika unit ini berada di kantor
+                  Alfabank.
+                </p>
+              </div>
+
               <div>
                 <label className="mb-2 block text-sm font-black text-slate-700">
                   Nama Unit

@@ -1,13 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
+import { jwtVerify } from "jose";
+import { Buffer } from "node:buffer";
 import { prisma } from "@/lib/prisma";
-import { verifyToken } from "@/lib/auth";
-import { getDistanceInMeters } from "@/lib/geo";
 
 export const runtime = "nodejs";
 
 const MAX_GPS_ACCURACY_METERS = 100;
 
-type WorkMode = "office" | "wfh" | "visit" | "flexible";
+type WorkMode = "office" | "wfh" | "wfc" | "visit";
+
+type ParsedAttendanceBody = {
+  photoBuffer: Buffer | null;
+  photoMime: string;
+  latitude: number | null;
+  longitude: number | null;
+  accuracy: number | null;
+};
+
+type GeoPoint = {
+  lat: number;
+  lng: number;
+};
 
 type OfficeGeofence = {
   id: string;
@@ -17,56 +30,178 @@ type OfficeGeofence = {
   radius_meters: number;
 };
 
-function getJakartaDateKey(date = new Date()) {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Jakarta",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(date);
+async function getUserIdFromRequest(req: NextRequest) {
+  const token = req.cookies.get("faceattend_token")?.value;
+
+  if (!token) {
+    throw new Error("Token login tidak ditemukan.");
+  }
+
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET belum ada di file .env");
+  }
+
+  const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+  const { payload } = await jwtVerify(token, secret);
+
+  const userId =
+    (payload.id as string | undefined) ||
+    (payload.userId as string | undefined) ||
+    (payload.sub as string | undefined);
+
+  if (!userId) {
+    throw new Error("User ID tidak ditemukan di token.");
+  }
+
+  return userId;
 }
 
-function toDateOnly(dateKey: string) {
-  return new Date(`${dateKey}T00:00:00.000Z`);
+function getTodayDateOnly() {
+  const now = new Date();
+
+  return new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
 }
 
-function getJakartaMinutes(date = new Date()) {
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Asia/Jakarta",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).formatToParts(date);
-  const hour = Number(parts.find((part) => part.type === "hour")?.value || 0);
-  const minute = Number(parts.find((part) => part.type === "minute")?.value || 0);
+function toJakartaDate(date = new Date()) {
+  return new Date(date.toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
+}
+
+function getDayOfWeekEnum(date = new Date()) {
+  const dayIndex = toJakartaDate(date).getDay();
+
+  const days = [
+    "SUNDAY",
+    "MONDAY",
+    "TUESDAY",
+    "WEDNESDAY",
+    "THURSDAY",
+    "FRIDAY",
+    "SATURDAY",
+  ];
+
+  return days[dayIndex];
+}
+
+function timeToMinutes(time: string) {
+  const [hourText, minuteText] = time.split(":");
+  const hour = Number(hourText || 0);
+  const minute = Number(minuteText || 0);
 
   return hour * 60 + minute;
 }
 
-function normalizeWorkMode(value: FormDataEntryValue | null): WorkMode {
-  const mode = String(value || "office").toLowerCase();
-  if (["wfh", "visit", "flexible"].includes(mode)) return mode as WorkMode;
-  return "office";
+function dateToMinutes(date: Date) {
+  const jakartaDate = toJakartaDate(date);
+
+  return jakartaDate.getHours() * 60 + jakartaDate.getMinutes();
 }
 
-function toNumber(value: FormDataEntryValue | null) {
-  if (value === null || value === undefined || value === "") return null;
+function getShiftDefaultCheckOutTime(shiftName?: string | null) {
+  const name = String(shiftName || "").toUpperCase();
+
+  if (name.includes("SHIFT SIANG")) return "21:00";
+  if (name.includes("SIANG")) return "21:00";
+
+  if (name.includes("SHIFT PAGI")) return "17:00";
+  if (name.includes("PAGI")) return "17:00";
+
+  if (name.includes("MAGANG")) return "17:00";
+  if (name.includes("UTAMA")) return "17:00";
+
+  return "17:00";
+}
+
+function calculateEarlyLeaveMinutes(checkOutAt: Date, scheduledCheckOut: string) {
+  const checkOutMinutes = dateToMinutes(checkOutAt);
+  const scheduledMinutes = timeToMinutes(scheduledCheckOut);
+  const early = scheduledMinutes - checkOutMinutes;
+
+  return early > 0 ? early : 0;
+}
+
+function toNumber(value: unknown) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
   const numberValue = Number(value);
+
   return Number.isFinite(numberValue) ? numberValue : null;
 }
 
-async function fileToBuffer(value: FormDataEntryValue | null) {
-  if (!(value instanceof File)) return { buffer: null, mime: "image/jpeg" };
+function normalizeWorkMode(value: unknown): WorkMode {
+  const mode = String(value || "office").trim().toLowerCase();
+
+  if (mode === "wfh") return "wfh";
+  if (mode === "wfc") return "wfc";
+  if (mode === "visit" || mode === "kunjungan") return "visit";
+  if (mode === "office" || mode === "wfo" || mode === "kantor") {
+    return "office";
+  }
+
+  return "office";
+}
+
+function getWorkModeLabel(workMode: WorkMode) {
+  if (workMode === "wfh") return "WFH";
+  if (workMode === "wfc") return "WFC";
+  if (workMode === "visit") return "Kunjungan";
+  return "Kantor";
+}
+
+function dataUrlToBuffer(dataUrl: string) {
+  const match = dataUrl.match(/^data:(.+);base64,(.+)$/);
+
+  if (!match) {
+    return {
+      buffer: Buffer.from(dataUrl, "base64"),
+      mime: "image/jpeg",
+    };
+  }
+
   return {
-    buffer: Buffer.from(await value.arrayBuffer()),
-    mime: value.type || "image/jpeg",
+    buffer: Buffer.from(match[2], "base64"),
+    mime: match[1],
   };
 }
 
-function findNearestOffice(location: { lat: number; lng: number }, offices: OfficeGeofence[]) {
-  return offices
+async function fileToBuffer(file: File) {
+  const arrayBuffer = await file.arrayBuffer();
+
+  return {
+    buffer: Buffer.from(arrayBuffer),
+    mime: file.type || "image/jpeg",
+  };
+}
+
+function getDistanceInMeters(from: GeoPoint, to: GeoPoint) {
+  const earthRadius = 6371000;
+
+  const lat1 = (from.lat * Math.PI) / 180;
+  const lat2 = (to.lat * Math.PI) / 180;
+
+  const deltaLat = ((to.lat - from.lat) * Math.PI) / 180;
+  const deltaLng = ((to.lng - from.lng) * Math.PI) / 180;
+
+  const a =
+    Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+    Math.cos(lat1) *
+      Math.cos(lat2) *
+      Math.sin(deltaLng / 2) *
+      Math.sin(deltaLng / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return earthRadius * c;
+}
+
+function findNearestValidOffice(
+  userLocation: GeoPoint,
+  offices: OfficeGeofence[]
+) {
+  const validOffices = offices
     .map((office) => {
-      const distance = getDistanceInMeters(location, {
+      const distance = getDistanceInMeters(userLocation, {
         lat: office.latitude,
         lng: office.longitude,
       });
@@ -77,206 +212,403 @@ function findNearestOffice(location: { lat: number; lng: number }, offices: Offi
         isWithinRadius: distance <= office.radius_meters,
       };
     })
-    .sort((a, b) => a.distance - b.distance)[0] ?? null;
+    .filter((item) => item.isWithinRadius)
+    .sort((a, b) => a.distance - b.distance);
+
+  return validOffices[0] ?? null;
 }
 
-async function getApprovedLocationUnlock(userId: string, date: Date) {
-  return prisma.leaveRequest.findFirst({
-    where: {
-      user_id: userId,
-      status: "approved",
-      location_unlock_approved: true,
-      start_date: { lte: date },
-      end_date: { gte: date },
-    },
-    orderBy: { created_at: "desc" },
-    select: {
-      id: true,
-      leave_type: true,
-      requested_work_mode: true,
-      visit_location_name: true,
-    },
-  });
-}
+async function parseAttendanceBody(
+  req: NextRequest
+): Promise<ParsedAttendanceBody> {
+  const contentType = req.headers.get("content-type") || "";
 
-async function hasApprovedOvertime(userId: string, date: Date) {
-  const request = await prisma.leaveRequest.findFirst({
-    where: {
-      user_id: userId,
-      status: "approved",
-      leave_type: "overtime",
-      start_date: { lte: date },
-      end_date: { gte: date },
-    },
-    select: { id: true },
-  });
-  return Boolean(request);
+  if (contentType.includes("multipart/form-data")) {
+    const formData = await req.formData();
+
+    const photo =
+      formData.get("photo") ||
+      formData.get("photoDataUrl") ||
+      formData.get("checkOutPhoto") ||
+      formData.get("image");
+
+    const latitude = toNumber(
+      formData.get("latitude") ?? formData.get("checkOutLatitude")
+    );
+
+    const longitude = toNumber(
+      formData.get("longitude") ?? formData.get("checkOutLongitude")
+    );
+
+    const accuracy = toNumber(
+      formData.get("accuracy") ?? formData.get("checkOutAccuracy")
+    );
+
+    if (photo instanceof File) {
+      const result = await fileToBuffer(photo);
+
+      return {
+        photoBuffer: result.buffer,
+        photoMime: result.mime,
+        latitude,
+        longitude,
+        accuracy,
+      };
+    }
+
+    if (typeof photo === "string") {
+      const result = dataUrlToBuffer(photo);
+
+      return {
+        photoBuffer: result.buffer,
+        photoMime: result.mime,
+        latitude,
+        longitude,
+        accuracy,
+      };
+    }
+
+    return {
+      photoBuffer: null,
+      photoMime: "image/jpeg",
+      latitude,
+      longitude,
+      accuracy,
+    };
+  }
+
+  const body = await req.json();
+
+  const photoDataUrl =
+    typeof body.photo === "string"
+      ? body.photo
+      : typeof body.photoDataUrl === "string"
+        ? body.photoDataUrl
+        : typeof body.checkOutPhoto === "string"
+          ? body.checkOutPhoto
+          : typeof body.image === "string"
+            ? body.image
+            : null;
+
+  const latitude = toNumber(
+    body.latitude ?? body.checkOutLatitude ?? body.location?.latitude
+  );
+
+  const longitude = toNumber(
+    body.longitude ?? body.checkOutLongitude ?? body.location?.longitude
+  );
+
+  const accuracy = toNumber(
+    body.accuracy ?? body.checkOutAccuracy ?? body.location?.accuracy
+  );
+
+  if (!photoDataUrl) {
+    return {
+      photoBuffer: null,
+      photoMime: "image/jpeg",
+      latitude,
+      longitude,
+      accuracy,
+    };
+  }
+
+  const result = dataUrlToBuffer(photoDataUrl);
+
+  return {
+    photoBuffer: result.buffer,
+    photoMime: result.mime,
+    latitude,
+    longitude,
+    accuracy,
+  };
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const token = req.cookies.get("faceattend_token")?.value;
+    const userId = await getUserIdFromRequest(req);
 
-    if (!token) {
-      return NextResponse.json({ error: "Belum login." }, { status: 401 });
-    }
+    const { photoBuffer, photoMime, latitude, longitude, accuracy } =
+      await parseAttendanceBody(req);
 
-    const payload = await verifyToken(token);
-
-    if (payload.role !== "employee") {
+    if (!photoBuffer) {
       return NextResponse.json(
-        { error: "Hanya karyawan yang dapat check-out." },
-        { status: 403 },
+        { error: "Foto check-out wajib dikirim." },
+        { status: 400 }
       );
     }
 
-    const formData = await req.formData();
-    const { buffer: photoBuffer, mime: photoMime } = await fileToBuffer(
-      formData.get("photo") || formData.get("checkOutPhoto"),
-    );
-    const latitude = toNumber(formData.get("latitude") || formData.get("checkOutLatitude"));
-    const longitude = toNumber(formData.get("longitude") || formData.get("checkOutLongitude"));
-    const accuracy = toNumber(formData.get("accuracy") || formData.get("checkOutAccuracy"));
-    const requestedMode = normalizeWorkMode(formData.get("workMode"));
-
-    if (!photoBuffer) {
-      return NextResponse.json({ error: "Foto check-out wajib dikirim." }, { status: 400 });
+    if (latitude === null || longitude === null) {
+      return NextResponse.json(
+        { error: "Lokasi GPS check-out wajib dikirim." },
+        { status: 400 }
+      );
     }
 
-    if (latitude === null || longitude === null || accuracy === null) {
-      return NextResponse.json({ error: "Lokasi GPS check-out wajib dikirim." }, { status: 400 });
+    if (accuracy === null) {
+      return NextResponse.json(
+        { error: "Akurasi GPS check-out wajib dikirim." },
+        { status: 400 }
+      );
     }
 
     if (accuracy > MAX_GPS_ACCURACY_METERS) {
       return NextResponse.json(
         {
-          error: `Akurasi GPS terlalu rendah. Maksimal ±�${MAX_GPS_ACCURACY_METERS} meter.`,
+          error: `Akurasi GPS terlalu rendah. Maksimal ±${MAX_GPS_ACCURACY_METERS} meter.`,
           accuracy,
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
-    const todayKey = getJakartaDateKey();
-    const todayDate = toDateOnly(todayKey);
-    const attendance = await prisma.attendance.findFirst({
-      where: { user_id: payload.id, attendance_date: todayDate },
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
       select: {
         id: true,
-        check_in_time: true,
-        check_out_time: true,
-        scheduled_check_out: true,
-        work_mode: true,
-        is_wfh: true,
-        is_visit: true,
-        status: true,
-        activity_note: true,
+        name: true,
+        registered_office_id: true,
+        shift: {
+          select: {
+            id: true,
+            name: true,
+            work_schedules: {
+              select: {
+                id: true,
+                day_of_week: true,
+                is_work_day: true,
+                check_out_time: true,
+              },
+            },
+          },
+        },
       },
     });
 
-    if (!attendance?.check_in_time) {
-      return NextResponse.json({ error: "Kamu belum check-in hari ini." }, { status: 400 });
-    }
-
-    if (attendance.check_out_time) {
-      return NextResponse.json({ error: "Kamu sudah melakukan check-out hari ini." }, { status: 409 });
-    }
-
-    const approvedUnlock = await getApprovedLocationUnlock(payload.id, todayDate);
-    const hasOvertimeRequest = await hasApprovedOvertime(payload.id, todayDate);
-    const effectiveMode = approvedUnlock?.requested_work_mode || attendance.work_mode || requestedMode;
-    const requiresOfficeRadius = effectiveMode === "office" && !approvedUnlock;
-
-    const offices = await prisma.officeLocation.findMany({
-      where: { status: "active" },
-      select: { id: true, name: true, latitude: true, longitude: true, radius_meters: true },
-    });
-    const nearestOffice = findNearestOffice({ lat: latitude, lng: longitude }, offices);
-
-    if (requiresOfficeRadius && (!nearestOffice || !nearestOffice.isWithinRadius)) {
+    if (!user) {
       return NextResponse.json(
-        {
-          error: "Lokasi check-out berada di luar radius kantor. Minta admin membuka kunci lokasi jika sedang WFH/kunjungan/lembur.",
-          latitude,
-          longitude,
-          accuracy,
-        },
-        { status: 400 },
+        { error: "Data user tidak ditemukan." },
+        { status: 404 }
       );
     }
 
     const now = new Date();
+    const today = getTodayDateOnly();
+
+    const attendance = await prisma.attendance.findFirst({
+      where: {
+        user_id: userId,
+        attendance_date: today,
+      },
+    });
+
+    if (!attendance || !attendance.check_in_time) {
+      return NextResponse.json(
+        { error: "Kamu belum melakukan check-in hari ini." },
+        { status: 400 }
+      );
+    }
+
+    if (attendance.check_out_time) {
+      return NextResponse.json(
+        { error: "Kamu sudah melakukan check-out hari ini." },
+        { status: 400 }
+      );
+    }
+
+    const workMode = normalizeWorkMode(attendance.work_mode);
+    const isOfficeMode = workMode === "office";
+    const isWfhMode = workMode === "wfh";
+    const isWfcMode = workMode === "wfc";
+    const isVisitMode = workMode === "visit";
+    const isFlexibleMode = isWfhMode || isWfcMode || isVisitMode;
+
+    let matchedOffice: {
+      office: OfficeGeofence;
+      distance: number;
+      isWithinRadius: boolean;
+    } | null = null;
+
+    if (isOfficeMode) {
+      const offices = await prisma.officeLocation.findMany({
+        where: {
+          status: "active",
+        },
+        select: {
+          id: true,
+          name: true,
+          latitude: true,
+          longitude: true,
+          radius_meters: true,
+        },
+      });
+
+      if (offices.length === 0) {
+        return NextResponse.json(
+          { error: "Belum ada data kantor aktif untuk validasi GPS." },
+          { status: 400 }
+        );
+      }
+
+      matchedOffice = findNearestValidOffice(
+        {
+          lat: latitude,
+          lng: longitude,
+        },
+        offices
+      );
+
+      if (!matchedOffice) {
+        return NextResponse.json(
+          {
+            error: "Lokasi kamu berada di luar radius semua kantor aktif.",
+            latitude,
+            longitude,
+            accuracy,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    const todayName = getDayOfWeekEnum(now);
+
+    const todaySchedule = user.shift?.work_schedules?.find((schedule) => {
+      return String(schedule.day_of_week).toUpperCase() === todayName;
+    });
+
+    if (todaySchedule && todaySchedule.is_work_day === false) {
+      return NextResponse.json(
+        { error: "Hari ini bukan jadwal kerja kamu." },
+        { status: 400 }
+      );
+    }
+
+    const scheduledCheckOutTime =
+      todaySchedule?.check_out_time ||
+      getShiftDefaultCheckOutTime(user.shift?.name);
+
     const workMinutes = Math.max(
       0,
-      Math.floor((now.getTime() - new Date(attendance.check_in_time).getTime()) / 60000),
+      Math.floor((now.getTime() - attendance.check_in_time.getTime()) / 60000)
     );
-    const scheduledCheckOutMinutes = attendance.scheduled_check_out
-      ? getJakartaMinutes(new Date(attendance.scheduled_check_out))
-      : 17 * 60;
-    const nowMinutes = getJakartaMinutes(now);
-    const approvedOvertimeAfterFive =
-      (approvedUnlock?.leave_type === "overtime" || hasOvertimeRequest) &&
-      ["office", "wfh"].includes(effectiveMode) &&
-      nowMinutes >= 17 * 60;
-    const earlyLeaveMinutes = approvedOvertimeAfterFive
-      ? 0
-      : Math.max(0, scheduledCheckOutMinutes - nowMinutes);
-    const existingNote = attendance.activity_note ? `${attendance.activity_note} | ` : "";
-    const noteParts = [
-      `${existingNote}checkout_mode=${effectiveMode}`,
-      approvedUnlock ? `location_unlock=${approvedUnlock.leave_type}` : null,
-      approvedOvertimeAfterFive ? "overtime_after_17=true" : null,
-    ].filter(Boolean);
 
-    const updated = await prisma.attendance.update({
-      where: { id: attendance.id },
-      data: {
-        check_out_time: now,
-        check_out_photo: photoBuffer,
-        check_out_photo_mime: photoMime,
-        check_out_latitude: latitude,
-        check_out_longitude: longitude,
-        check_out_accuracy: accuracy,
-        check_out_distance: nearestOffice?.distance ?? null,
-        check_out_within_radius: Boolean(nearestOffice?.isWithinRadius || approvedUnlock),
-        check_out_office_id: nearestOffice?.isWithinRadius ? nearestOffice.office.id : null,
-        check_out_status: earlyLeaveMinutes > 0 ? "EARLY" : "NORMAL",
-        early_leave_minutes: earlyLeaveMinutes,
-        work_minutes: workMinutes,
-        work_mode: effectiveMode === "office" ? "office" : effectiveMode,
-        is_wfh: effectiveMode === "wfh",
-        is_visit: effectiveMode === "visit" || Boolean(approvedUnlock?.leave_type === "visit"),
-        status: attendance.status === "PENDING" ? "PRESENT" : attendance.status,
-        activity_note: noteParts.join(" | ").slice(0, 255),
-        note: approvedUnlock ? "Lokasi check-out dibuka berdasarkan approval admin." : undefined,
-      },
+    const earlyLeaveMinutes = calculateEarlyLeaveMinutes(
+      now,
+      scheduledCheckOutTime
+    );
+
+    const checkOutStatus = earlyLeaveMinutes > 0 ? "EARLY" : "NORMAL";
+
+    const updatedAttendance = await prisma.$transaction(async (tx: any) => {
+      const savedAttendance = await tx.attendance.update({
+        where: {
+          id: attendance.id,
+        },
+        data: {
+          check_out_time: now,
+          check_out_photo: photoBuffer,
+          check_out_photo_mime: photoMime,
+
+          check_out_latitude: latitude,
+          check_out_longitude: longitude,
+          check_out_accuracy: accuracy,
+          check_out_distance: matchedOffice?.distance ?? null,
+          check_out_within_radius: Boolean(matchedOffice?.isWithinRadius),
+          check_out_office_id: matchedOffice?.office.id ?? null,
+
+          registered_office_id:
+            attendance.registered_office_id ?? user.registered_office_id,
+
+          work_minutes: workMinutes,
+          early_leave_minutes: earlyLeaveMinutes,
+          check_out_status: checkOutStatus,
+        },
+      });
+
+      if (isVisitMode) {
+        await tx.employeeVisit.updateMany({
+          where: {
+            attendance_id: attendance.id,
+            user_id: userId,
+            status: {
+              not: "cancelled",
+            },
+          },
+          data: {
+            end_time: now,
+            status: "completed",
+          },
+        });
+      }
+
+      if (isFlexibleMode) {
+        const modeLabel = getWorkModeLabel(workMode);
+        const employeeName = user.name || "Karyawan";
+        const coordinateText = `${latitude}, ${longitude}`;
+
+        await tx.adminNotification.create({
+          data: {
+            attendance_id: savedAttendance.id,
+            user_id: userId,
+            type: workMode,
+            title:
+              workMode === "visit"
+                ? "Karyawan selesai kunjungan"
+                : `Karyawan selesai ${modeLabel}`,
+            message:
+              workMode === "visit"
+                ? `${employeeName} melakukan check-out kunjungan. GPS check-out: ${coordinateText}.`
+                : `${employeeName} melakukan check-out mode ${modeLabel}. GPS check-out: ${coordinateText}.`,
+            status: "unread",
+            is_read: false,
+          },
+        });
+      }
+
+      return savedAttendance;
     });
 
     return NextResponse.json({
       success: true,
-      message: approvedOvertimeAfterFive
-        ? "Check-out lembur berhasil. Status lembur otomatis aktif setelah jam 17.00."
-        : "Check-out berhasil.",
-      attendanceId: updated.id,
-      workMinutes,
-      earlyLeaveMinutes,
-      workMode: effectiveMode,
-      locationUnlock: Boolean(approvedUnlock),
-      office: nearestOffice
+      message:
+        earlyLeaveMinutes > 0
+          ? `Check-out berhasil. Kamu pulang lebih awal ${earlyLeaveMinutes} menit.`
+          : "Check-out berhasil.",
+      attendanceId: updatedAttendance.id,
+      workMode,
+      workModeLabel: getWorkModeLabel(workMode),
+      isWfh: isWfhMode,
+      isWfc: isWfcMode,
+      isVisit: isVisitMode,
+      office: matchedOffice
         ? {
-            id: nearestOffice.office.id,
-            name: nearestOffice.office.name,
-            distance: Math.round(nearestOffice.distance),
-            withinRadius: nearestOffice.isWithinRadius,
+            id: matchedOffice.office.id,
+            name: matchedOffice.office.name,
+            distance: Math.round(matchedOffice.distance),
+            radius: matchedOffice.office.radius_meters,
           }
         : null,
+      gps: {
+        latitude,
+        longitude,
+        accuracy: Math.round(accuracy),
+      },
+      schedule: {
+        shift: user.shift?.name || "Tanpa Shift",
+        scheduledCheckOutTime,
+      },
+      workMinutes,
+      earlyLeaveMinutes,
+      checkOutStatus,
     });
   } catch (error) {
-    console.error("CHECK_OUT_ERROR", error);
+    console.error("CHECK_OUT_ERROR:", error);
 
     return NextResponse.json(
       { error: "Gagal melakukan check-out." },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

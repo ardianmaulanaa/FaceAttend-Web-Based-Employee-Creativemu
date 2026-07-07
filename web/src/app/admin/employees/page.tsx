@@ -29,24 +29,41 @@ type RelationItem = {
   name: string;
 } | null;
 
+type OfficeMiniRelation = {
+  id: string;
+  name: string;
+} | null;
+
+type UnitRelation = {
+  id: string;
+  name: string;
+  office_id?: string | null;
+  office?: OfficeMiniRelation;
+} | null;
+
 type DepartmentRelation = {
   id: string;
   name: string;
   unit_id?: string | null;
-  unit?: RelationItem;
+  unit?: UnitRelation;
 } | null;
 
 type PositionRelation = {
   id: string;
   name: string;
   department_id?: string | null;
-  department?: RelationItem;
+  department?: DepartmentRelation;
 } | null;
 
 type UnitOption = {
   id: string;
   name: string;
   status: string;
+  office_id: string | null;
+  office?: {
+    id: string;
+    name: string;
+  } | null;
 };
 
 type DepartmentOption = {
@@ -57,6 +74,11 @@ type DepartmentOption = {
   unit?: {
     id: string;
     name: string;
+    office_id?: string | null;
+    office?: {
+      id: string;
+      name: string;
+    } | null;
   } | null;
 };
 
@@ -72,6 +94,11 @@ type PositionOption = {
     unit?: {
       id: string;
       name: string;
+      office_id?: string | null;
+      office?: {
+        id: string;
+        name: string;
+      } | null;
     } | null;
   } | null;
 };
@@ -116,7 +143,7 @@ type Employee = {
   name: string;
   email: string;
   role: string;
-  unit: RelationItem;
+  unit: UnitRelation;
   department: DepartmentRelation;
   position: PositionRelation;
   shift: ShiftRelation;
@@ -165,7 +192,13 @@ function formatStatus(status: "active" | "inactive") {
 }
 
 function getRelationName(
-  item: RelationItem | DepartmentRelation | PositionRelation | ShiftRelation | OfficeRelation,
+  item:
+    | RelationItem
+    | UnitRelation
+    | DepartmentRelation
+    | PositionRelation
+    | ShiftRelation
+    | OfficeRelation
 ) {
   return item?.name || "-";
 }
@@ -231,6 +264,22 @@ export default function AdminEmployeesPage() {
     void loadEmployees();
   }, [loadEmployees]);
 
+  const activeOffices = useMemo(() => {
+    return offices.filter((office) => office.status === "active");
+  }, [offices]);
+
+  const filteredUnits = useMemo(() => {
+    if (!form.registered_office_id) {
+      return [];
+    }
+
+    return units.filter((unit) => {
+      const officeId = unit.office_id || unit.office?.id || "";
+
+      return unit.status === "active" && officeId === form.registered_office_id;
+    });
+  }, [units, form.registered_office_id]);
+
   const filteredDepartments = useMemo(() => {
     if (!form.unit_id) {
       return [];
@@ -260,22 +309,18 @@ export default function AdminEmployeesPage() {
     return shifts.filter((shift) => shift.status === "active");
   }, [shifts]);
 
-  const activeOffices = useMemo(() => {
-    return offices.filter((office) => office.status === "active");
-  }, [offices]);
-
   const filteredEmployees = useMemo(() => {
     return employees.filter((employee) => {
       const text = `
         ${employee.name}
         ${employee.email}
         ${employee.employee_code || ""}
+        ${employee.registered_office?.name || ""}
+        ${employee.registered_office?.address || ""}
         ${employee.unit?.name || ""}
         ${employee.department?.name || ""}
         ${employee.position?.name || ""}
         ${employee.shift?.name || ""}
-        ${employee.registered_office?.name || ""}
-        ${employee.registered_office?.address || ""}
         ${employee.status}
       `.toLowerCase();
 
@@ -284,11 +329,11 @@ export default function AdminEmployeesPage() {
   }, [employees, keyword]);
 
   const activeEmployees = employees.filter(
-    (employee) => employee.status === "active",
+    (employee) => employee.status === "active"
   ).length;
 
   const inactiveEmployees = employees.filter(
-    (employee) => employee.status === "inactive",
+    (employee) => employee.status === "inactive"
   ).length;
 
   function openRegisterModal() {
@@ -298,6 +343,7 @@ export default function AdminEmployeesPage() {
   }
 
   function openEditModal(employee: Employee) {
+    const officeId = employee.registered_office?.id || "";
     const unitId = employee.unit?.id || employee.department?.unit_id || "";
     const departmentId = employee.department?.id || "";
     const positionId = employee.position?.id || "";
@@ -306,11 +352,11 @@ export default function AdminEmployeesPage() {
     setForm({
       name: employee.name,
       email: employee.email,
+      registered_office_id: officeId,
       unit_id: unitId,
       department_id: departmentId,
       position_id: positionId,
       shift_id: employee.shift?.id || "",
-      registered_office_id: employee.registered_office?.id || "",
       temporaryPassword: "",
       status: employee.status,
     });
@@ -331,13 +377,13 @@ export default function AdminEmployeesPage() {
     if (
       !form.name ||
       !form.email ||
+      !form.registered_office_id ||
       !form.unit_id ||
       !form.department_id ||
       !form.position_id ||
-      !form.shift_id ||
-      !form.registered_office_id
+      !form.shift_id
     ) {
-      alert("Nama, email, unit, divisi, jabatan, shift, dan kantor terdaftar wajib diisi.");
+      alert("Nama, email, kantor, unit, divisi, jabatan, dan shift wajib diisi.");
       return;
     }
 
@@ -364,11 +410,11 @@ export default function AdminEmployeesPage() {
           name: form.name,
           email: form.email,
           temporaryPassword: form.temporaryPassword,
+          registered_office_id: form.registered_office_id,
           unit_id: form.unit_id,
           department_id: form.department_id,
           position_id: form.position_id,
           shift_id: form.shift_id,
-          registered_office_id: form.registered_office_id,
           status: form.status,
         }),
       });
@@ -380,7 +426,7 @@ export default function AdminEmployeesPage() {
           result.message ||
             (isEditing
               ? "Gagal memperbarui karyawan."
-              : "Gagal menambahkan karyawan."),
+              : "Gagal menambahkan karyawan.")
         );
         return;
       }
@@ -388,7 +434,7 @@ export default function AdminEmployeesPage() {
       alert(
         isEditing
           ? "Employee berhasil diperbarui."
-          : "Employee berhasil dibuat.",
+          : "Employee berhasil dibuat."
       );
 
       closeRegisterModal();
@@ -403,7 +449,7 @@ export default function AdminEmployeesPage() {
 
   async function handleDeleteEmployee(employee: Employee) {
     const confirmDelete = window.confirm(
-      `Yakin ingin menghapus employee "${employee.name}"? Data yang dihapus tidak bisa dikembalikan.`,
+      `Yakin ingin menghapus employee "${employee.name}"? Data yang dihapus tidak bisa dikembalikan.`
     );
 
     if (!confirmDelete) return;
@@ -457,8 +503,8 @@ export default function AdminEmployeesPage() {
               </h2>
 
               <p className="mt-3 max-w-2xl text-sm leading-7 text-blue-100">
-                Admin dapat menambahkan akun karyawan dengan alur Unit → Divisi
-                → Jabatan → Shift → Kantor.
+                Admin dapat menambahkan akun karyawan dengan alur Kantor → Unit
+                → Divisi → Jabatan → Shift.
               </p>
             </div>
 
@@ -573,14 +619,14 @@ export default function AdminEmployeesPage() {
           </div>
 
           <div className="mt-5 overflow-hidden rounded-3xl border border-blue-100">
-            <div className="hidden grid-cols-[1fr_1.05fr_0.65fr_0.65fr_0.7fr_0.65fr_0.8fr_0.6fr_0.85fr] bg-[#f6f8ff] px-5 py-4 text-xs font-black uppercase tracking-[0.16em] text-[#123c8c] md:grid">
+            <div className="hidden grid-cols-[1fr_1.05fr_0.75fr_0.65fr_0.65fr_0.7fr_0.65fr_0.6fr_0.85fr] bg-[#f6f8ff] px-5 py-4 text-xs font-black uppercase tracking-[0.16em] text-[#123c8c] md:grid">
               <p>Employee</p>
               <p>Email</p>
+              <p>Kantor</p>
               <p>Unit</p>
               <p>Divisi</p>
               <p>Jabatan</p>
               <p>Shift</p>
-              <p>Kantor</p>
               <p>Status</p>
               <p className="text-center">Aksi</p>
             </div>
@@ -598,7 +644,7 @@ export default function AdminEmployeesPage() {
                 filteredEmployees.map((employee) => (
                   <div
                     key={employee.id}
-                    className="grid gap-4 px-5 py-5 transition hover:bg-[#f8fbff] md:grid-cols-[1fr_1.05fr_0.65fr_0.65fr_0.7fr_0.65fr_0.8fr_0.6fr_0.85fr] md:items-center"
+                    className="grid gap-4 px-5 py-5 transition hover:bg-[#f8fbff] md:grid-cols-[1fr_1.05fr_0.75fr_0.65fr_0.65fr_0.7fr_0.65fr_0.6fr_0.85fr] md:items-center"
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#eaf1ff] text-sm font-black text-[#123c8c]">
@@ -619,6 +665,13 @@ export default function AdminEmployeesPage() {
                       {employee.email}
                     </p>
 
+                    <div className="text-sm font-semibold text-slate-600">
+                      <p>{getRelationName(employee.registered_office)}</p>
+                      <p className="mt-1 line-clamp-1 text-xs text-slate-400">
+                        {employee.registered_office?.address || "-"}
+                      </p>
+                    </div>
+
                     <p className="text-sm font-semibold text-slate-600">
                       {getRelationName(employee.unit)}
                     </p>
@@ -634,13 +687,6 @@ export default function AdminEmployeesPage() {
                     <p className="text-sm font-semibold text-slate-600">
                       {getRelationName(employee.shift)}
                     </p>
-
-                    <div className="text-sm font-semibold text-slate-600">
-                      <p>{getRelationName(employee.registered_office)}</p>
-                      <p className="mt-1 line-clamp-1 text-xs text-slate-400">
-                        {employee.registered_office?.address || "-"}
-                      </p>
-                    </div>
 
                     <div>
                       <span
@@ -710,8 +756,8 @@ export default function AdminEmployeesPage() {
 
                 <p className="mt-1 text-sm leading-6 text-slate-500">
                   {editingEmployee
-                    ? "Ubah data karyawan dengan alur unit, divisi, jabatan, shift, kantor, dan status."
-                    : "Pilih unit dulu, lalu divisi, jabatan, shift, dan kantor terdaftar."}
+                    ? "Ubah data karyawan dengan alur kantor, unit, divisi, jabatan, shift, dan status."
+                    : "Pilih kantor dulu, lalu unit, divisi, jabatan, dan shift."}
                 </p>
               </div>
 
@@ -775,6 +821,38 @@ export default function AdminEmployeesPage() {
               <div className="grid gap-4 md:grid-cols-5">
                 <div>
                   <label className="mb-2 block text-sm font-black text-slate-700">
+                    Kantor
+                  </label>
+                  <div className="relative">
+                    <MapPin
+                      size={18}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+                    <select
+                      value={form.registered_office_id}
+                      onChange={(event) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          registered_office_id: event.target.value,
+                          unit_id: "",
+                          department_id: "",
+                          position_id: "",
+                        }))
+                      }
+                      className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white"
+                    >
+                      <option value="">Pilih Kantor</option>
+                      {activeOffices.map((office) => (
+                        <option key={office.id} value={office.id}>
+                          {office.name} - {office.address || "Tanpa alamat"}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-black text-slate-700">
                     Unit
                   </label>
                   <div className="relative">
@@ -792,16 +870,19 @@ export default function AdminEmployeesPage() {
                           position_id: "",
                         }))
                       }
-                      className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white"
+                      disabled={!form.registered_office_id}
+                      className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
                     >
-                      <option value="">Pilih Unit</option>
-                      {units
-                        .filter((unit) => unit.status === "active")
-                        .map((unit) => (
-                          <option key={unit.id} value={unit.id}>
-                            {unit.name}
-                          </option>
-                        ))}
+                      <option value="">
+                        {form.registered_office_id
+                          ? "Pilih Unit"
+                          : "Pilih Kantor dulu"}
+                      </option>
+                      {filteredUnits.map((unit) => (
+                        <option key={unit.id} value={unit.id}>
+                          {unit.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>
@@ -895,42 +976,27 @@ export default function AdminEmployeesPage() {
                       <option value="">Pilih Shift</option>
                       {activeShifts.map((shift) => (
                         <option key={shift.id} value={shift.id}>
-                          {shift.name} - Toleransi {shift.tolerance_minutes} menit
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-black text-slate-700">
-                    Kantor
-                  </label>
-                  <div className="relative">
-                    <MapPin
-                      size={18}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                    />
-                    <select
-                      value={form.registered_office_id}
-                      onChange={(event) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          registered_office_id: event.target.value,
-                        }))
-                      }
-                      className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white"
-                    >
-                      <option value="">Pilih Kantor</option>
-                      {activeOffices.map((office) => (
-                        <option key={office.id} value={office.id}>
-                          {office.name} - {office.address || "Tanpa alamat"}
+                          {shift.name} - Toleransi{" "}
+                          {shift.tolerance_minutes} menit
                         </option>
                       ))}
                     </select>
                   </div>
                 </div>
               </div>
+
+              {form.registered_office_id && filteredUnits.length === 0 ? (
+                <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
+                  <p className="text-sm font-black text-amber-700">
+                    Unit belum tersedia untuk kantor ini
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-amber-700/80">
+                    Pastikan data Unit sudah terhubung dengan kantor yang
+                    dipilih. Jika memilih Alfabank, maka Unit harus memiliki
+                    office_id Alfabank.
+                  </p>
+                </div>
+              ) : null}
 
               <div className="grid gap-4 md:grid-cols-2">
                 {!editingEmployee ? (
@@ -984,9 +1050,9 @@ export default function AdminEmployeesPage() {
                   Catatan Employee
                 </p>
                 <p className="mt-1 text-sm leading-6 text-slate-500">
-                  Kantor terdaftar dipakai untuk validasi radius GPS absensi.
-                  Setelah disimpan, kantor dan alamat kantor akan tampil di
-                  halaman detail personal karyawan.
+                  Kantor dipilih terlebih dahulu. Setelah itu sistem hanya
+                  menampilkan Unit milik kantor tersebut. Divisi mengikuti Unit,
+                  Jabatan mengikuti Divisi, sedangkan Shift tetap global.
                 </p>
               </div>
 

@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
+  BriefcaseBusiness,
   CalendarDays,
   Clock3,
   ImageIcon,
   Loader2,
   MapPin,
+  Navigation,
   UserRound,
 } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
@@ -27,13 +29,29 @@ type AttendanceReportDetail = {
   statusLabel: string;
   workMode: string;
   workModeLabel: string;
+
   checkInPhoto: string | null;
   checkOutPhoto: string | null;
   proofPhoto: string | null;
+
   officeName: string | null;
   officeAddress: string | null;
   officeLatitude: number | null;
   officeLongitude: number | null;
+
+  checkInLatitude?: number | null;
+  checkInLongitude?: number | null;
+  checkInAccuracy?: number | null;
+
+  checkOutLatitude?: number | null;
+  checkOutLongitude?: number | null;
+  checkOutAccuracy?: number | null;
+
+  visitTitle?: string | null;
+  visitClientName?: string | null;
+  visitAddress?: string | null;
+  visitNote?: string | null;
+
   lateReason: string | null;
 };
 
@@ -41,6 +59,21 @@ type AttendanceReportDetailResponse = {
   success: boolean;
   message?: string;
   report: AttendanceReportDetail | null;
+};
+
+type ReverseGeocodeResult = {
+  displayName: string;
+  shortName: string;
+  placeName: string;
+};
+
+type ReverseGeocodeResponse = {
+  success?: boolean;
+  display_name?: string;
+  displayName?: string;
+  name?: string;
+  placeName?: string;
+  address?: Record<string, string | undefined>;
 };
 
 async function readJsonResponse(response: Response) {
@@ -82,6 +115,124 @@ function isLateReport(report: AttendanceReportDetail) {
     label.includes("terlambat") ||
     Boolean(report.lateReason?.trim())
   );
+}
+
+function isVisitReport(report: AttendanceReportDetail) {
+  const mode = String(report.workMode || "").toLowerCase();
+  const label = String(report.workModeLabel || "").toLowerCase();
+
+  return (
+    mode.includes("visit") ||
+    mode.includes("kunjungan") ||
+    label.includes("visit") ||
+    label.includes("kunjungan")
+  );
+}
+
+function cleanAddressPart(value?: string | null) {
+  return String(value || "").trim();
+}
+
+function buildNearestAddress(address?: Record<string, string | undefined>) {
+  if (!address) return "";
+
+  const place =
+    cleanAddressPart(address.office) ||
+    cleanAddressPart(address.company) ||
+    cleanAddressPart(address.building) ||
+    cleanAddressPart(address.amenity) ||
+    cleanAddressPart(address.shop) ||
+    cleanAddressPart(address.tourism) ||
+    cleanAddressPart(address.name);
+
+  const road =
+    cleanAddressPart(address.road) ||
+    cleanAddressPart(address.pedestrian) ||
+    cleanAddressPart(address.footway) ||
+    cleanAddressPart(address.path);
+
+  const neighbourhood =
+    cleanAddressPart(address.neighbourhood) ||
+    cleanAddressPart(address.suburb) ||
+    cleanAddressPart(address.hamlet) ||
+    cleanAddressPart(address.village);
+
+  const city =
+    cleanAddressPart(address.city) ||
+    cleanAddressPart(address.town) ||
+    cleanAddressPart(address.county);
+
+  const state = cleanAddressPart(address.state);
+  const postcode = cleanAddressPart(address.postcode);
+
+  return [place, road, neighbourhood, city, state, postcode]
+    .filter(Boolean)
+    .join(", ");
+}
+
+function extractPlaceName(data: ReverseGeocodeResponse) {
+  const address = data.address || {};
+
+  return (
+    cleanAddressPart(data.placeName) ||
+    cleanAddressPart(data.name) ||
+    cleanAddressPart(address.office) ||
+    cleanAddressPart(address.company) ||
+    cleanAddressPart(address.building) ||
+    cleanAddressPart(address.amenity) ||
+    cleanAddressPart(address.shop) ||
+    cleanAddressPart(address.tourism) ||
+    cleanAddressPart(address.name)
+  );
+}
+
+function normalizeReverseGeocode(data: ReverseGeocodeResponse) {
+  const displayName =
+    cleanAddressPart(data.displayName) ||
+    cleanAddressPart(data.display_name) ||
+    buildNearestAddress(data.address);
+
+  const placeName = extractPlaceName(data);
+  const shortName = buildNearestAddress(data.address) || displayName;
+
+  return {
+    displayName,
+    shortName,
+    placeName,
+  };
+}
+
+async function reverseGeocode(
+  latitude?: number | null,
+  longitude?: number | null
+): Promise<ReverseGeocodeResult | null> {
+  if (latitude === null || latitude === undefined) return null;
+  if (longitude === null || longitude === undefined) return null;
+
+  try {
+    const response = await fetch(
+      `/api/geocode/reverse?lat=${encodeURIComponent(
+        latitude
+      )}&lon=${encodeURIComponent(longitude)}`,
+      {
+        method: "GET",
+        cache: "no-store",
+      }
+    );
+
+    const data = (await readJsonResponse(response)) as ReverseGeocodeResponse;
+
+    if (!response.ok) return null;
+
+    const normalized = normalizeReverseGeocode(data);
+
+    if (!normalized.displayName && !normalized.shortName) return null;
+
+    return normalized;
+  } catch (error) {
+    console.error("REVERSE_GEOCODE_ERROR:", error);
+    return null;
+  }
 }
 
 function PhotoCard({
@@ -164,6 +315,182 @@ function LateReasonCard({ report }: { report: AttendanceReportDetail }) {
   );
 }
 
+function VisitInfoCard({ report }: { report: AttendanceReportDetail }) {
+  if (!isVisitReport(report)) return null;
+
+  return (
+    <div className="overflow-hidden rounded-[2rem] border border-orange-100 bg-white shadow-xl shadow-slate-200/60">
+      <div className="flex flex-col gap-4 p-5 md:p-6">
+        <div className="flex items-start gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-orange-50 text-orange-600 ring-1 ring-orange-100">
+            <BriefcaseBusiness size={24} strokeWidth={2.7} />
+          </div>
+
+          <div className="min-w-0">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">
+              Keterangan Kunjungan
+            </p>
+
+            <h3 className="mt-2 text-xl font-black text-slate-950">
+              {report.visitTitle || "Kunjungan"}
+            </h3>
+
+            {report.visitClientName ? (
+              <p className="mt-1 text-sm font-black text-slate-600">
+                Client / PIC: {report.visitClientName}
+              </p>
+            ) : null}
+
+            <p className="mt-3 text-sm font-semibold leading-7 text-slate-500">
+              {report.visitNote ||
+                "Belum ada keperluan kunjungan yang tersimpan."}
+            </p>
+
+            {report.visitAddress ? (
+              <div className="mt-4 rounded-3xl border border-orange-100 bg-orange-50/70 p-4">
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-orange-600">
+                  Alamat Tujuan Kunjungan
+                </p>
+
+                <p className="mt-2 text-sm font-semibold leading-6 text-orange-800">
+                  {report.visitAddress}
+                </p>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GpsLocationCard({
+  title,
+  subtitle,
+  latitude,
+  longitude,
+  accuracy,
+  reverseResult,
+}: {
+  title: string;
+  subtitle: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  accuracy?: number | null;
+  reverseResult: ReverseGeocodeResult | null;
+}) {
+  const hasGps = latitude !== null && latitude !== undefined && longitude !== null && longitude !== undefined;
+
+  return (
+    <div className="rounded-[2rem] border border-blue-100 bg-white p-5 shadow-xl shadow-slate-200/60">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="flex items-start gap-3">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
+            <Navigation size={24} strokeWidth={2.6} />
+          </div>
+
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#123c8c]">
+              {title}
+            </p>
+
+            <p className="mt-2 text-base font-black text-slate-950">
+              {reverseResult?.placeName ||
+                reverseResult?.shortName ||
+                "Alamat GPS belum terbaca"}
+            </p>
+
+            <p className="mt-1 max-w-3xl text-sm font-semibold leading-6 text-slate-500">
+              {reverseResult?.displayName ||
+                reverseResult?.shortName ||
+                subtitle}
+            </p>
+
+            {hasGps ? (
+              <div className="mt-4 grid gap-2 text-xs font-bold text-slate-500 sm:grid-cols-3">
+                <div className="rounded-2xl bg-[#f8fbff] p-3 ring-1 ring-blue-50">
+                  <p className="font-black uppercase tracking-[0.16em] text-slate-400">
+                    Latitude
+                  </p>
+                  <p className="mt-1 text-slate-800">{latitude}</p>
+                </div>
+
+                <div className="rounded-2xl bg-[#f8fbff] p-3 ring-1 ring-blue-50">
+                  <p className="font-black uppercase tracking-[0.16em] text-slate-400">
+                    Longitude
+                  </p>
+                  <p className="mt-1 text-slate-800">{longitude}</p>
+                </div>
+
+                <div className="rounded-2xl bg-[#f8fbff] p-3 ring-1 ring-blue-50">
+                  <p className="font-black uppercase tracking-[0.16em] text-slate-400">
+                    Akurasi
+                  </p>
+                  <p className="mt-1 text-slate-800">
+                    {accuracy !== null && accuracy !== undefined
+                      ? `±${Math.round(accuracy)} meter`
+                      : "-"}
+                  </p>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        {hasGps ? (
+          <a
+            href={`https://www.google.com/maps?q=${latitude},${longitude}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center justify-center rounded-2xl bg-[#123c8c] px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition active:scale-[0.98]"
+          >
+            Buka Maps
+          </a>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function OfficeLocationCard({ report }: { report: AttendanceReportDetail }) {
+  return (
+    <div className="rounded-[2rem] border border-blue-100 bg-white p-5 shadow-xl shadow-slate-200/60">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-start gap-3">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
+            <MapPin size={24} strokeWidth={2.6} />
+          </div>
+
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#123c8c]">
+              Lokasi Kantor
+            </p>
+
+            <p className="mt-2 text-base font-black text-slate-950">
+              {report.officeName || "Kantor belum terdaftar"}
+            </p>
+
+            <p className="mt-1 max-w-3xl text-sm font-semibold leading-6 text-slate-500">
+              {report.officeAddress || "Alamat kantor belum tersedia."}
+            </p>
+          </div>
+        </div>
+
+        {report.officeLatitude !== null && report.officeLongitude !== null ? (
+          <a
+            href={`https://www.google.com/maps?q=${report.officeLatitude},${report.officeLongitude}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center justify-center rounded-2xl bg-[#123c8c] px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition active:scale-[0.98]"
+          >
+            Buka Maps
+          </a>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 export default function AdminAttendanceReportDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -174,10 +501,28 @@ export default function AdminAttendanceReportDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
+  const [checkInAddress, setCheckInAddress] =
+    useState<ReverseGeocodeResult | null>(null);
+  const [checkOutAddress, setCheckOutAddress] =
+    useState<ReverseGeocodeResult | null>(null);
+  const [isAddressLoading, setIsAddressLoading] = useState(false);
+
+  const primaryCheckInPhoto = report?.checkInPhoto || report?.proofPhoto || null;
+
+  const shouldShowOfficeLocation = useMemo(() => {
+    if (!report) return false;
+
+    const mode = String(report.workMode || "").toLowerCase();
+
+    return mode === "office" || mode === "kantor" || Boolean(report.officeName);
+  }, [report]);
+
   async function getAttendanceDetail() {
     try {
       setIsLoading(true);
       setErrorMessage("");
+      setCheckInAddress(null);
+      setCheckOutAddress(null);
 
       const response = await fetch(
         `/api/admin/attendance-reports/${encodeURIComponent(id)}`,
@@ -219,13 +564,33 @@ export default function AdminAttendanceReportDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const primaryCheckInPhoto = report?.checkInPhoto || report?.proofPhoto || null;
+  useEffect(() => {
+    async function loadGpsAddress() {
+      if (!report) return;
+
+      try {
+        setIsAddressLoading(true);
+
+        const [checkInResult, checkOutResult] = await Promise.all([
+          reverseGeocode(report.checkInLatitude, report.checkInLongitude),
+          reverseGeocode(report.checkOutLatitude, report.checkOutLongitude),
+        ]);
+
+        setCheckInAddress(checkInResult);
+        setCheckOutAddress(checkOutResult);
+      } finally {
+        setIsAddressLoading(false);
+      }
+    }
+
+    loadGpsAddress();
+  }, [report]);
 
   return (
     <MobileShell variant="admin" withBottomPadding={false}>
       <AppHeader
         title="Detail Kehadiran"
-        subtitle="Foto bukti absen dan lokasi kantor"
+        subtitle="Foto bukti absen dan lokasi GPS"
         variant="admin"
       />
 
@@ -290,6 +655,13 @@ export default function AdminAttendanceReportDetailPage() {
                       <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-black text-white ring-1 ring-white/20">
                         {report.workModeLabel}
                       </span>
+
+                      {isAddressLoading ? (
+                        <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-black text-white ring-1 ring-white/20">
+                          <Loader2 size={13} className="animate-spin" />
+                          Membaca alamat GPS
+                        </span>
+                      ) : null}
                     </div>
                   </div>
 
@@ -337,44 +709,33 @@ export default function AdminAttendanceReportDetailPage() {
                 </div>
               </div>
 
+              <VisitInfoCard report={report} />
+
               <LateReasonCard report={report} />
 
-              <div className="rounded-[2rem] border border-blue-100 bg-white p-5 shadow-xl shadow-slate-200/60">
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
-                      <MapPin size={24} strokeWidth={2.6} />
-                    </div>
+              <div className="grid gap-6 lg:grid-cols-2">
+                <GpsLocationCard
+                  title="Lokasi GPS Check-in"
+                  subtitle="Alamat check-in belum bisa diterjemahkan. Pastikan API reverse geocode aktif."
+                  latitude={report.checkInLatitude}
+                  longitude={report.checkInLongitude}
+                  accuracy={report.checkInAccuracy}
+                  reverseResult={checkInAddress}
+                />
 
-                    <div>
-                      <p className="text-xs font-black uppercase tracking-[0.18em] text-[#123c8c]">
-                        Lokasi Kantor
-                      </p>
-
-                      <p className="mt-2 text-base font-black text-slate-950">
-                        {report.officeName || "Kantor belum terdaftar"}
-                      </p>
-
-                      <p className="mt-1 max-w-3xl text-sm font-semibold leading-6 text-slate-500">
-                        {report.officeAddress ||
-                          "Alamat kantor belum tersedia."}
-                      </p>
-                    </div>
-                  </div>
-
-                  {report.officeLatitude !== null &&
-                  report.officeLongitude !== null ? (
-                    <a
-                      href={`https://www.google.com/maps?q=${report.officeLatitude},${report.officeLongitude}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center justify-center rounded-2xl bg-[#123c8c] px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition active:scale-[0.98]"
-                    >
-                      Buka Maps
-                    </a>
-                  ) : null}
-                </div>
+                <GpsLocationCard
+                  title="Lokasi GPS Check-out"
+                  subtitle="Alamat check-out belum bisa diterjemahkan. Pastikan API reverse geocode aktif."
+                  latitude={report.checkOutLatitude}
+                  longitude={report.checkOutLongitude}
+                  accuracy={report.checkOutAccuracy}
+                  reverseResult={checkOutAddress}
+                />
               </div>
+
+              {shouldShowOfficeLocation ? (
+                <OfficeLocationCard report={report} />
+              ) : null}
 
               <div className="grid gap-6 lg:grid-cols-2">
                 <PhotoCard

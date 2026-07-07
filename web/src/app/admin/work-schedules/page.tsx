@@ -675,8 +675,8 @@ export default function WorkSchedulesPage() {
                           </label>
                         </div>
 
-                        <div className="mt-4 grid grid-cols-2 gap-3">
-                          <label>
+                        <div className="mt-4 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
+                          <label className="min-w-0">
                             <span className="mb-1 block text-xs font-black text-slate-400">
                               Masuk
                             </span>
@@ -693,11 +693,11 @@ export default function WorkSchedulesPage() {
                                   event.target.value,
                                 )
                               }
-                              className="w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-3 py-3 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-100 disabled:text-slate-400"
+                              className="h-12 w-full max-w-[150px] min-w-0 rounded-2xl border border-blue-100 bg-[#f8fbff] px-3 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-100 disabled:text-slate-400"
                             />
                           </label>
 
-                          <label>
+                          <label className="min-w-0">
                             <span className="mb-1 block text-xs font-black text-slate-400">
                               Pulang
                             </span>
@@ -714,7 +714,7 @@ export default function WorkSchedulesPage() {
                                   event.target.value,
                                 )
                               }
-                              className="w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-3 py-3 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-100 disabled:text-slate-400"
+                              className="h-12 w-full max-w-[150px] min-w-0 rounded-2xl border border-blue-100 bg-[#f8fbff] px-3 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-100 disabled:text-slate-400"
                             />
                           </label>
                         </div>
