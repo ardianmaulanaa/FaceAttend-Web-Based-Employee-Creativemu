@@ -176,7 +176,7 @@ function formatNotificationCount(count: number) {
   return String(count);
 }
 
-const WHATSAPP_LINK = "https://wa.me/6282123459565";
+const WHATSAPP_LINK = "https://wa.me/6289618472759";
 
 function WhatsAppIcon({ className = "" }: { className?: string }) {
   return (
