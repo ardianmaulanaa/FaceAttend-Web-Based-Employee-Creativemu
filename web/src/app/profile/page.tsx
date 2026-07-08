@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -27,6 +27,9 @@ import {
   Upload,
   UserRound,
   X,
+  AlertTriangle,
+  CheckCircle2,
+  Info,
   type LucideIcon,
 } from "lucide-react";
 
@@ -90,6 +93,12 @@ type EditProfileForm = {
 };
 
 type ProfileView = "menu" | "personal-detail";
+
+type ProfileAlert = {
+  type: "warning" | "success" | "error" | "info";
+  title: string;
+  message: string;
+} | null;
 
 const initialPasswordForm: PasswordForm = {
   current_password: "",
@@ -170,9 +179,8 @@ function getActiveScheduleText(schedules?: ShiftWorkSchedule[]) {
 
   const firstSchedule = activeSchedules[0];
 
-  return `${formatDay(firstSchedule.day_of_week)} • ${
-    firstSchedule.check_in_time
-  } - ${firstSchedule.check_out_time}`;
+  return `${formatDay(firstSchedule.day_of_week)} • ${firstSchedule.check_in_time
+    } - ${firstSchedule.check_out_time}`;
 }
 
 async function readJsonResponse(response: Response) {
@@ -328,6 +336,50 @@ function PasswordInput({
   );
 }
 
+function getAlertTheme(type: NonNullable<ProfileAlert>["type"]) {
+  if (type === "success") {
+    return {
+      shell: "from-emerald-50 via-white to-blue-50",
+      iconWrap: "bg-emerald-100 text-emerald-600",
+      badge: "text-emerald-600 bg-white/70",
+      button: "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-900/20",
+      icon: CheckCircle2,
+      label: "BERHASIL",
+    };
+  }
+
+  if (type === "error") {
+    return {
+      shell: "from-red-50 via-white to-blue-50",
+      iconWrap: "bg-red-100 text-red-600",
+      badge: "text-red-600 bg-white/70",
+      button: "bg-red-600 hover:bg-red-700 shadow-red-900/20",
+      icon: AlertTriangle,
+      label: "GAGAL",
+    };
+  }
+
+  if (type === "info") {
+    return {
+      shell: "from-blue-50 via-white to-blue-50",
+      iconWrap: "bg-blue-100 text-[#123c8c]",
+      badge: "text-[#123c8c] bg-white/70",
+      button: "bg-[#123c8c] hover:bg-[#0f3274] shadow-blue-900/20",
+      icon: Info,
+      label: "INFO",
+    };
+  }
+
+  return {
+    shell: "from-orange-50 via-white to-blue-50",
+    iconWrap: "bg-orange-100 text-orange-600",
+    badge: "text-orange-600 bg-white/70",
+    button: "bg-[#526fae] hover:bg-[#46629d] shadow-blue-900/20",
+    icon: AlertTriangle,
+    label: "PERHATIAN",
+  };
+}
+
 export default function ProfilePage() {
   const router = useRouter();
 
@@ -353,6 +405,40 @@ export default function ProfilePage() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [profileAlert, setProfileAlert] = useState<ProfileAlert>(null);
+  const [isAlertClosing, setIsAlertClosing] = useState(false);
+  const alertCloseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showProfileAlert = useCallback(
+    (
+      title: string,
+      message: string,
+      type: "warning" | "success" | "error" | "info" = "warning"
+    ) => {
+      if (alertCloseTimeoutRef.current) {
+        clearTimeout(alertCloseTimeoutRef.current);
+      }
+
+      setIsAlertClosing(false);
+
+      setProfileAlert({
+        type,
+        title,
+        message,
+      });
+    },
+    []
+  );
+
+  const closeProfileAlert = useCallback(() => {
+    setIsAlertClosing(true);
+
+    alertCloseTimeoutRef.current = setTimeout(() => {
+      setProfileAlert(null);
+      setIsAlertClosing(false);
+    }, 200);
+  }, []);
 
   async function loadProfile() {
     try {
@@ -407,17 +493,17 @@ export default function ProfilePage() {
     const phone = editProfileForm.phone.trim();
 
     if (!name) {
-      alert("Nama lengkap wajib diisi.");
+      showProfileAlert("Data belum lengkap", "Nama lengkap wajib diisi.", "warning");
       return;
     }
 
     if (name.split(/\s+/).filter(Boolean).length < 2) {
-      alert("Nama lengkap harus terdiri dari minimal 2 kata.");
+      showProfileAlert("Nama tidak lengkap", "Nama lengkap harus terdiri dari minimal 2 kata.", "warning");
       return;
     }
 
     if (phone && (phone.length !== 12 || !/^\d+$/.test(phone))) {
-      alert("Nomor telepon harus terdiri dari tepat 12 digit angka.");
+      showProfileAlert("Nomor telepon tidak valid", "Nomor telepon harus terdiri dari tepat 12 digit angka dan tidak ada spasi.", "warning");
       return;
     }
 
@@ -438,25 +524,25 @@ export default function ProfilePage() {
       const data = await readJsonResponse(response);
 
       if (!response.ok || !data.success) {
-        alert(data.message || data.error || "Gagal memperbarui profil.");
+        showProfileAlert("Gagal", data.message || data.error || "Gagal memperbarui profil.", "error");
         return;
       }
 
       setUser((currentUser) =>
         currentUser
           ? {
-              ...currentUser,
-              name: data.user?.name || name,
-              phone: data.user?.phone || phone || null,
-            }
+            ...currentUser,
+            name: data.user?.name || name,
+            phone: data.user?.phone || phone || null,
+          }
           : currentUser
       );
 
-      alert("Profil berhasil diperbarui.");
+      showProfileAlert("Sukses", "Profil berhasil diperbarui.", "success");
       closeEditProfileModal();
     } catch (error) {
       console.error("UPDATE_PROFILE_ERROR:", error);
-      alert("Gagal memperbarui profil.");
+      showProfileAlert("Gagal", "Gagal memperbarui profil.", "error");
     } finally {
       setIsUpdatingProfile(false);
     }
@@ -497,12 +583,12 @@ export default function ProfilePage() {
   async function handleUploadProfilePhoto(file: File) {
     try {
       if (!file.type.startsWith("image/")) {
-        alert("File harus berupa gambar.");
+        showProfileAlert("Format file salah", "File harus berupa gambar.", "warning");
         return;
       }
 
       if (file.size > 2 * 1024 * 1024) {
-        alert("Ukuran foto maksimal 2MB.");
+        showProfileAlert("File terlalu besar", "Ukuran foto maksimal 2MB.", "warning");
         return;
       }
 
@@ -519,7 +605,7 @@ export default function ProfilePage() {
       const data = await readJsonResponse(response);
 
       if (!response.ok) {
-        alert(data.error || data.message || "Gagal upload foto profil.");
+        showProfileAlert("Gagal", data.error || data.message || "Gagal upload foto profil.", "error");
         return;
       }
 
@@ -527,17 +613,17 @@ export default function ProfilePage() {
         setUser((currentUser) =>
           currentUser
             ? {
-                ...currentUser,
-                profile_photo: data.user.profile_photo,
-              }
+              ...currentUser,
+              profile_photo: data.user.profile_photo,
+            }
             : currentUser
         );
       }
 
-      alert("Foto profil berhasil diperbarui.");
+      showProfileAlert("Sukses", "Foto profil berhasil diperbarui.", "success");
     } catch (error) {
       console.error("UPLOAD_PROFILE_PHOTO_ERROR:", error);
-      alert("Gagal upload foto profil.");
+      showProfileAlert("Gagal", "Gagal upload foto profil.", "error");
     } finally {
       setIsUploadingPhoto(false);
     }
@@ -564,17 +650,17 @@ export default function ProfilePage() {
       !passwordForm.new_password ||
       !passwordForm.confirm_password
     ) {
-      alert("Semua field password wajib diisi.");
+      showProfileAlert("Data belum lengkap", "Semua field password wajib diisi.", "warning");
       return;
     }
 
     if (passwordForm.new_password.length < 8) {
-      alert("Password baru minimal 8 karakter.");
+      showProfileAlert("Password terlalu pendek", "Password baru minimal 8 karakter.", "warning");
       return;
     }
 
     if (passwordForm.new_password !== passwordForm.confirm_password) {
-      alert("Konfirmasi password tidak sama.");
+      showProfileAlert("Password tidak cocok", "Konfirmasi password tidak sama.", "warning");
       return;
     }
 
@@ -597,12 +683,12 @@ export default function ProfilePage() {
         );
       }
 
-      alert("Password berhasil diperbarui.");
+      showProfileAlert("Sukses", "Password berhasil diperbarui.", "success");
       closePasswordModal();
     } catch (error) {
       console.error("CHANGE_PASSWORD_ERROR:", error);
 
-      alert(error instanceof Error ? error.message : "Gagal mengubah password.");
+      showProfileAlert("Gagal", error instanceof Error ? error.message : "Gagal mengubah password.", "error");
     } finally {
       setIsChangingPassword(false);
     }
@@ -856,11 +942,10 @@ export default function ProfilePage() {
                 />
 
                 <label
-                  className={`block w-full border-b border-slate-100 transition active:scale-[0.99] ${
-                    isUploadingPhoto
+                  className={`block w-full border-b border-slate-100 transition active:scale-[0.99] ${isUploadingPhoto
                       ? "cursor-not-allowed opacity-60"
                       : "cursor-pointer"
-                  }`}
+                    }`}
                 >
                   <div className="flex w-full items-center gap-4 py-5">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eef5ff] text-[#123c8c]">
@@ -1158,6 +1243,73 @@ export default function ProfilePage() {
             </div>
           </div>
         ) : null}
+
+      {profileAlert ? (
+        <div
+          className={`fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm transition-all duration-300 ${
+            isAlertClosing ? "animate-fadeOut" : "animate-fadeIn"
+          }`}
+        >
+          <div
+            className={`w-full max-w-md overflow-hidden rounded-[2rem] border border-white bg-gradient-to-br p-0 shadow-2xl transition-all duration-300 md:max-w-lg ${
+              isAlertClosing ? "scale-95 opacity-0" : "scale-100 opacity-100"
+            } ${getAlertTheme(profileAlert.type).shell}`}
+          >
+            <div className="p-6 md:p-8">
+              <div className="flex items-start gap-4">
+                <div
+                  className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${
+                    getAlertTheme(profileAlert.type).iconWrap
+                  }`}
+                >
+                  {(() => {
+                    const AlertIcon = getAlertTheme(profileAlert.type).icon;
+                    return <AlertIcon size={32} strokeWidth={3} />;
+                  })()}
+                </div>
+
+                <div className="min-w-0 flex-1 pt-1">
+                  <div
+                    className={`inline-flex rounded-full px-4 py-1.5 text-xs font-black uppercase tracking-[0.24em] ${
+                      getAlertTheme(profileAlert.type).badge
+                    }`}
+                  >
+                    {getAlertTheme(profileAlert.type).label}
+                  </div>
+
+                  <h3 className="mt-3 text-2xl font-black leading-tight text-slate-950">
+                    {profileAlert.title}
+                  </h3>
+
+                  <p className="mt-2 text-sm font-bold leading-6 text-slate-600">
+                    {profileAlert.message}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={closeProfileAlert}
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/70 text-slate-500 shadow-sm transition hover:bg-white hover:text-slate-800 active:scale-[0.96]"
+                >
+                  <X size={22} strokeWidth={2.8} />
+                </button>
+              </div>
+            </div>
+
+            <div className="border-t border-white/60 bg-white/70 p-4">
+              <button
+                type="button"
+                onClick={closeProfileAlert}
+                className={`w-full rounded-2xl px-6 py-3.5 text-sm font-black text-white shadow-lg transition active:scale-[0.98] ${
+                  getAlertTheme(profileAlert.type).button
+                }`}
+              >
+                Mengerti
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
         <BottomNav />
       </main>
