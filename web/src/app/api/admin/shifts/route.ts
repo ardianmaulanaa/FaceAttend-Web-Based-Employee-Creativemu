@@ -90,17 +90,15 @@ function sortShifts<T extends { name: string }>(shifts: T[]) {
 }
 
 async function ensureDefaultShifts() {
-  await Promise.all(
-    defaultShifts.map((shift) =>
-      prisma.shift.upsert({
-        where: {
-          name: shift.name,
-        },
-        update: {},
-        create: shift,
-      }),
-    ),
-  );
+  for (const shift of defaultShifts) {
+    await prisma.shift.upsert({
+      where: {
+        name: shift.name,
+      },
+      update: {},
+      create: shift,
+    });
+  }
 }
 
 export async function GET(req: NextRequest) {
