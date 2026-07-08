@@ -1,412 +1,649 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import {
-  Camera,
-  CameraOff,
+  Building2,
+  Globe,
+  KeyRound,
   Loader2,
+  Mail,
+  MapPin,
+  Pencil,
   Phone,
   RefreshCw,
-  Upload,
+  Trash2,
   User,
+  UsersRound,
 } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import MobileShell from "@/components/MobileShell";
+import BottomNav from "@/components/BottomNav";
 
-type ProfilePayload = {
+type AdminProfile = {
   id: string;
   name: string;
   email: string;
-  phone?: string | null;
-  profile_photo_url?: string | null;
+  phone: string | null;
+  profile_photo: string | null;
+  role: string;
+};
+
+type CompanyOffice = {
+  id: string;
+  name: string;
+  address: string | null;
+  latitude: number;
+  longitude: number;
+  radius_meters: number;
 };
 
 const DEFAULT_AVATAR = "/images/creativemu-logo/creativemu.png";
 
 export default function AdminProfilePage() {
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    profilePhotoUrl: "",
-  });
+  const [activeTab, setActiveTab] = useState<"user" | "company" | "password">("user");
+  const [admin, setAdmin] = useState<AdminProfile | null>(null);
+  const [office, setOffice] = useState<CompanyOffice | null>(null);
+  
+  const [totalEmployees, setTotalEmployees] = useState(0);
+  const [maxEmployeesLimit] = useState(50); // Demo limit
+
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [cameraFacingMode, setCameraFacingMode] = useState<
-    "user" | "environment"
-  >("user");
-  const [isCameraOn, setIsCameraOn] = useState(false);
-  const [cameraError, setCameraError] = useState("");
 
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+  // Form states
+  const [userForm, setUserForm] = useState({ name: "", email: "", phone: "" });
+  const [companyForm, setCompanyForm] = useState({ name: "", address: "", latitude: 0, longitude: 0, radius_meters: 100 });
+  const [passwordForm, setPasswordForm] = useState({ current: "", new: "", confirm: "" });
 
-  function stopCamera() {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
+  const [isEditUserOpen, setIsEditUserOpen] = useState(false);
+  const [isEditCompanyOpen, setIsEditCompanyOpen] = useState(false);
 
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-
-    setIsCameraOn(false);
-  }
-
-  async function startCamera() {
+  async function loadData() {
     try {
-      setCameraError("");
-      stopCamera();
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: cameraFacingMode,
-          width: { ideal: 640 },
-          height: { ideal: 480 },
-        },
-        audio: false,
-      });
-
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
+      setIsLoading(true);
+      // 1. Load Admin Data
+      const meResponse = await fetch("/api/auth/me", { cache: "no-store" });
+      const meData = await meResponse.json();
+      if (meData.success && meData.user) {
+        setAdmin(meData.user);
+        setUserForm({
+          name: meData.user.name || "",
+          email: meData.user.email || "",
+          phone: meData.user.phone || "",
+        });
       }
 
-      setIsCameraOn(true);
-    } catch {
-      setCameraError("Kamera tidak dapat diakses. Periksa izin browser.");
-      setIsCameraOn(false);
+      // 2. Load Employees count
+      const empResponse = await fetch("/api/employees", { cache: "no-store" });
+      const empData = await empResponse.json();
+      if (empData.success && empData.employees) {
+        setTotalEmployees(empData.employees.length);
+        
+        // Find first office as company profile
+        if (empData.officeLocations && empData.officeLocations.length > 0) {
+          const mainOffice = empData.officeLocations[0];
+          setOffice(mainOffice);
+          setCompanyForm({
+            name: mainOffice.name || "",
+            address: mainOffice.address || "",
+            latitude: Number(mainOffice.latitude) || 0,
+            longitude: Number(mainOffice.longitude) || 0,
+            radius_meters: Number(mainOffice.radius_meters) || 100,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("LOAD_PROFILE_ERROR:", error);
+    } finally {
+      setIsLoading(false);
     }
-  }
-
-  async function toggleCamera() {
-    if (isCameraOn) {
-      stopCamera();
-      return;
-    }
-
-    await startCamera();
-  }
-
-  async function switchCamera() {
-    setCameraFacingMode((prev) => (prev === "user" ? "environment" : "user"));
-
-    if (isCameraOn) {
-      await startCamera();
-    }
-  }
-
-  function captureFromCamera() {
-    if (!videoRef.current) return;
-
-    const video = videoRef.current;
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
-
-    const context = canvas.getContext("2d");
-    if (!context) return;
-
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
-
-    setForm((prev) => ({
-      ...prev,
-      profilePhotoUrl: dataUrl,
-    }));
-
-    stopCamera();
-  }
-
-  function handleProfilePhotoUpload(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      setForm((prev) => ({
-        ...prev,
-        profilePhotoUrl: String(reader.result || ""),
-      }));
-      stopCamera();
-    };
-    reader.readAsDataURL(file);
   }
 
   useEffect(() => {
-    async function loadProfile() {
-      try {
-        const response = await fetch("/api/auth/me", {
-          cache: "no-store",
-        });
-        const result = await response.json();
-
-        if (!response.ok || !result.user) {
-          alert(result.message || "Gagal memuat profil admin.");
-          return;
-        }
-
-        const user = result.user as ProfilePayload;
-        setForm({
-          name: user.name || "",
-          email: user.email || "",
-          phone: user.phone || "",
-          profilePhotoUrl: user.profile_photo_url || "",
-        });
-      } catch {
-        alert("Terjadi kesalahan saat memuat profil admin.");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    void loadProfile();
-
-    return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-        streamRef.current = null;
-      }
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
-      }
-
-      setIsCameraOn(false);
-    };
+    void loadData();
   }, []);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (!form.name.trim() || !form.email.trim()) {
+  // Update Profile User
+  async function handleUpdateUser(e: React.FormEvent) {
+    e.preventDefault();
+    if (!userForm.name.trim() || !userForm.email.trim()) {
       alert("Nama dan email wajib diisi.");
+      return;
+    }
+
+    if (userForm.name.trim().split(/\s+/).filter(Boolean).length < 2) {
+      alert("Nama lengkap harus terdiri dari minimal 2 kata.");
+      return;
+    }
+
+    if (userForm.phone && (userForm.phone.length !== 12 || !/^\d+$/.test(userForm.phone))) {
+      alert("Nomor telepon harus terdiri dari tepat 12 digit angka dan tidak ada spasi.");
       return;
     }
 
     try {
       setIsSaving(true);
-
       const response = await fetch("/api/auth/me", {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: form.name,
-          email: form.email,
-          phone: form.phone,
-          profilePhotoUrl: form.profilePhotoUrl,
+          name: userForm.name,
+          email: userForm.email,
+          phone: userForm.phone,
         }),
       });
 
       const result = await response.json();
-
       if (!response.ok) {
-        alert(result.message || "Gagal memperbarui profil admin.");
+        alert(result.message || "Gagal memperbarui profil.");
         return;
       }
 
-      const updated = result.user as ProfilePayload;
-      setForm((prev) => ({
-        ...prev,
-        name: updated.name || prev.name,
-        email: updated.email || prev.email,
-        phone: updated.phone || "",
-        profilePhotoUrl: updated.profile_photo_url || prev.profilePhotoUrl,
-      }));
-
+      setAdmin(result.user);
+      setIsEditUserOpen(false);
       alert("Profil admin berhasil diperbarui.");
     } catch {
-      alert("Terjadi kesalahan saat menyimpan profil admin.");
+      alert("Terjadi kesalahan saat menyimpan profil.");
     } finally {
       setIsSaving(false);
     }
   }
 
-  const avatarSrc = form.profilePhotoUrl.trim() || DEFAULT_AVATAR;
+  // Update Profile Perusahaan
+  async function handleUpdateCompany(e: React.FormEvent) {
+    e.preventDefault();
+    if (!companyForm.name.trim() || !companyForm.address.trim()) {
+      alert("Nama perusahaan dan alamat wajib diisi.");
+      return;
+    }
+
+    if (!office?.id) {
+      alert("Gagal mengidentifikasi kantor perusahaan.");
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      const response = await fetch("/api/admin/offices", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: office.id,
+          name: companyForm.name,
+          address: companyForm.address,
+          latitude: companyForm.latitude,
+          longitude: companyForm.longitude,
+          radius_meters: companyForm.radius_meters,
+          status: "active",
+        }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        alert(result.message || "Gagal memperbarui profil perusahaan.");
+        return;
+      }
+
+      setOffice(result.office || { ...office, ...companyForm });
+      setIsEditCompanyOpen(false);
+      alert("Profil perusahaan berhasil diperbarui.");
+    } catch {
+      alert("Terjadi kesalahan saat menyimpan profil perusahaan.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  // Reset Password
+  async function handleResetPassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (!passwordForm.current || !passwordForm.new || !passwordForm.confirm) {
+      alert("Semua field wajib diisi.");
+      return;
+    }
+
+    if (passwordForm.new.length < 8) {
+      alert("Kata sandi baru minimal harus 8 karakter.");
+      return;
+    }
+
+    if (passwordForm.new !== passwordForm.confirm) {
+      alert("Konfirmasi kata sandi baru tidak cocok.");
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      const response = await fetch("/api/profile/change-password", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          current_password: passwordForm.current,
+          new_password: passwordForm.new,
+          confirm_password: passwordForm.confirm,
+        }),
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        alert(result.message || "Gagal memperbarui kata sandi.");
+        return;
+      }
+
+      setPasswordForm({ current: "", new: "", confirm: "" });
+      alert("Kata sandi berhasil diperbarui.");
+    } catch {
+      alert("Terjadi kesalahan saat mengganti kata sandi.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  // Reset Data Perusahaan (Demo Simulation)
+  async function handleResetCompanyData() {
+    const confirm = window.confirm("Apakah Anda yakin ingin mereset seluruh data absensi dan aktivitas perusahaan? Tindakan ini tidak bisa dibatalkan.");
+    if (!confirm) return;
+
+    try {
+      setIsSaving(true);
+      // Simulate clear logs
+      alert("Proses pembersihan data perusahaan berhasil disimulasikan.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  const avatarSrc = admin?.profile_photo || DEFAULT_AVATAR;
+  const percentage = Math.min(Math.round((totalEmployees / maxEmployeesLimit) * 100), 100);
 
   return (
-    <MobileShell>
-      <main className="min-h-screen bg-gradient-to-b from-[#f4f7ff] via-white to-[#eef4ff] pb-24">
+    <MobileShell variant="admin">
+      <main className="min-h-screen bg-[#f8fbff] pb-24">
         <AppHeader
-          title="Profil Admin"
-          subtitle="Kelola data dasar akun admin Creativemu"
+          title="Profile"
+          subtitle="Beranda / Settings / Profile"
           variant="admin"
         />
 
-        <section className="mx-auto mt-5 w-full max-w-3xl px-4 md:px-8">
-          <div className="rounded-3xl border border-blue-100 bg-white/95 p-5 shadow-xl shadow-slate-900/10 backdrop-blur md:p-8">
-            {isLoading ? (
-              <div className="flex items-center justify-center gap-2 py-16 text-sm font-bold text-slate-500">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Memuat profil admin...
+        {isLoading ? (
+          <div className="flex min-h-[300px] items-center justify-center">
+            <Loader2 className="animate-spin text-[#123c8c]" size={36} />
+          </div>
+        ) : (
+          <section className="mx-auto mt-6 max-w-7xl px-5 md:px-10 lg:px-16">
+            <div className="grid gap-6 lg:grid-cols-[1fr_2fr]">
+              
+              {/* LEFT CARD: Avatar & Company Status */}
+              <div className="rounded-[2rem] border border-blue-100 bg-white p-6 shadow-xl shadow-slate-200/50">
+                <div className="flex flex-col items-center text-center">
+                  <div className="relative h-28 w-28 overflow-hidden rounded-[2rem] border-4 border-blue-50 bg-slate-100 shadow-md">
+                    <Image
+                      src={avatarSrc}
+                      alt="Foto profil admin"
+                      fill
+                      sizes="112px"
+                      className="object-cover"
+                    />
+                  </div>
+
+                  <h2 className="mt-4 text-xl font-black text-slate-900">{admin?.name}</h2>
+                  <p className="text-sm font-semibold text-slate-500">{admin?.email}</p>
+                </div>
+
+                <div className="mt-8 border-t border-slate-100 pt-6">
+                  <h3 className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">
+                    Status Perusahaan
+                  </h3>
+
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between text-sm font-bold text-slate-700">
+                      <span>Karyawan</span>
+                      <span>
+                        {totalEmployees} / {maxEmployeesLimit} ({percentage}%)
+                      </span>
+                    </div>
+
+                    <div className="mt-2 h-3.5 w-full overflow-hidden rounded-full bg-slate-100 p-0.5">
+                      <div
+                        className="h-full rounded-full bg-[#123c8c] transition-all duration-500"
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleResetCompanyData}
+                    className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-red-50 py-3.5 text-xs font-black uppercase tracking-[0.16em] text-red-600 border border-red-100 transition hover:bg-red-100/50 active:scale-[0.98]"
+                  >
+                    <Trash2 size={16} />
+                    Reset Data Perusahaan
+                  </button>
+                </div>
               </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="flex flex-col items-center gap-4 rounded-2xl bg-[#f7f9ff] p-4 md:flex-row md:items-end md:justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="relative h-20 w-20 overflow-hidden rounded-2xl border-2 border-white bg-slate-100 shadow-lg shadow-slate-300/30">
-                      <Image
-                        src={avatarSrc}
-                        alt="Foto profil admin"
-                        fill
-                        sizes="80px"
-                        className="object-cover"
+
+              {/* RIGHT CARD: Tabs & Detail Forms */}
+              <div className="rounded-[2rem] border border-blue-100 bg-white p-6 shadow-xl shadow-slate-200/50">
+                <div className="flex border-b border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("user")}
+                    className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-black transition-all ${
+                      activeTab === "user"
+                        ? "border-[#123c8c] text-[#123c8c]"
+                        : "border-transparent text-slate-400 hover:text-slate-700"
+                    }`}
+                  >
+                    <User size={16} />
+                    Profile User
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("company")}
+                    className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-black transition-all ${
+                      activeTab === "company"
+                        ? "border-[#123c8c] text-[#123c8c]"
+                        : "border-transparent text-slate-400 hover:text-slate-700"
+                    }`}
+                  >
+                    <Building2 size={16} />
+                    Profile Perusahaan
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("password")}
+                    className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-black transition-all ${
+                      activeTab === "password"
+                        ? "border-[#123c8c] text-[#123c8c]"
+                        : "border-transparent text-slate-400 hover:text-slate-700"
+                    }`}
+                  >
+                    <KeyRound size={16} />
+                    Reset Password
+                  </button>
+                </div>
+
+                {/* TAB CONTENT: PROFILE USER */}
+                {activeTab === "user" && (
+                  <div className="mt-6 space-y-6">
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setIsEditUserOpen(true)}
+                        className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-xs font-black text-white hover:bg-amber-600 transition active:scale-[0.98]"
+                      >
+                        <Pencil size={14} />
+                        EDIT PROFILE
+                      </button>
+                    </div>
+
+                    <div className="grid gap-6 md:grid-cols-2">
+                      <div className="space-y-1">
+                        <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Nama</p>
+                        <p className="text-sm font-bold text-slate-800">{admin?.name || "-"}</p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Email</p>
+                        <p className="text-sm font-bold text-slate-800">{admin?.email || "-"}</p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Telepon</p>
+                        <p className="text-sm font-bold text-slate-800">{admin?.phone || "-"}</p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Timezone</p>
+                        <div className="flex items-center gap-2 text-sm font-bold text-slate-800">
+                          <Globe size={16} className="text-[#123c8c]" />
+                          <span>WIB (Asia/Jakarta)</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB CONTENT: PROFILE PERUSAHAAN */}
+                {activeTab === "company" && (
+                  <div className="mt-6 space-y-6">
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setIsEditCompanyOpen(true)}
+                        className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-xs font-black text-white hover:bg-amber-600 transition active:scale-[0.98]"
+                      >
+                        <Pencil size={14} />
+                        EDIT KANTOR
+                      </button>
+                    </div>
+
+                    <div className="grid gap-6 md:grid-cols-2">
+                      <div className="space-y-1">
+                        <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Nama Kantor</p>
+                        <p className="text-sm font-bold text-slate-800">{office?.name || "-"}</p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Radius Absensi</p>
+                        <p className="text-sm font-bold text-slate-800">{office?.radius_meters || 100} Meter</p>
+                      </div>
+
+                      <div className="space-y-1 md:col-span-2">
+                        <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Alamat Perusahaan</p>
+                        <div className="flex items-start gap-2 text-sm font-bold text-slate-800">
+                          <MapPin size={16} className="mt-0.5 shrink-0 text-[#123c8c]" />
+                          <span>{office?.address || "-"}</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Latitude</p>
+                        <p className="text-sm font-bold text-slate-800">{office?.latitude || "-"}</p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Longitude</p>
+                        <p className="text-sm font-bold text-slate-800">{office?.longitude || "-"}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB CONTENT: RESET PASSWORD */}
+                {activeTab === "password" && (
+                  <form onSubmit={handleResetPassword} className="mt-6 space-y-4 max-w-md">
+                    <div className="space-y-1">
+                      <label className="text-xs font-black text-slate-400 uppercase">Kata Sandi Lama</label>
+                      <input
+                        type="password"
+                        value={passwordForm.current}
+                        onChange={(e) => setPasswordForm({ ...passwordForm, current: e.target.value })}
+                        className="mt-1 h-12 w-full rounded-2xl border border-blue-100 bg-[#f7f9ff] px-4 text-sm font-bold text-slate-800 outline-none focus:border-[#123c8c]"
+                        placeholder="Masukkan kata sandi lama"
                       />
                     </div>
 
-                    <div>
-                      <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#123c8c]">
-                        Update Foto
-                      </p>
-                      <p className="mt-1 text-xs font-semibold text-slate-500">
-                        Gunakan kamera atau pilih file gambar dari perangkat.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="w-full space-y-2 md:w-[420px]">
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      <button
-                        type="button"
-                        onClick={toggleCamera}
-                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-blue-100 bg-white px-3 py-2.5 text-xs font-black uppercase tracking-[0.12em] text-[#123c8c] transition hover:bg-[#f0f5ff]"
-                      >
-                        {isCameraOn ? (
-                          <CameraOff className="h-4 w-4" />
-                        ) : (
-                          <Camera className="h-4 w-4" />
-                        )}
-                        {isCameraOn ? "Matikan Kamera" : "Buka Kamera"}
-                      </button>
-
-                      <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-blue-100 bg-white px-3 py-2.5 text-xs font-black uppercase tracking-[0.12em] text-[#123c8c] transition hover:bg-[#f0f5ff]">
-                        <Upload className="h-4 w-4" />
-                        Pilih File
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleProfilePhotoUpload}
-                          className="hidden"
-                        />
-                      </label>
+                    <div className="space-y-1">
+                      <label className="text-xs font-black text-slate-400 uppercase">Kata Sandi Baru</label>
+                      <input
+                        type="password"
+                        value={passwordForm.new}
+                        onChange={(e) => setPasswordForm({ ...passwordForm, new: e.target.value })}
+                        className="mt-1 h-12 w-full rounded-2xl border border-blue-100 bg-[#f7f9ff] px-4 text-sm font-bold text-slate-800 outline-none focus:border-[#123c8c]"
+                        placeholder="Minimal 8 karakter"
+                      />
                     </div>
 
-                    {isCameraOn && (
-                      <div className="space-y-2 rounded-2xl border border-blue-100 bg-white p-3">
-                        <video
-                          ref={videoRef}
-                          autoPlay
-                          playsInline
-                          muted
-                          className="h-44 w-full rounded-xl bg-slate-900 object-cover"
-                        />
+                    <div className="space-y-1">
+                      <label className="text-xs font-black text-slate-400 uppercase">Konfirmasi Kata Sandi Baru</label>
+                      <input
+                        type="password"
+                        value={passwordForm.confirm}
+                        onChange={(e) => setPasswordForm({ ...passwordForm, confirm: e.target.value })}
+                        className="mt-1 h-12 w-full rounded-2xl border border-blue-100 bg-[#f7f9ff] px-4 text-sm font-bold text-slate-800 outline-none focus:border-[#123c8c]"
+                        placeholder="Ulangi kata sandi baru"
+                      />
+                    </div>
 
-                        <div className="grid gap-2 sm:grid-cols-2">
-                          <button
-                            type="button"
-                            onClick={captureFromCamera}
-                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#123c8c] px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-white transition hover:bg-[#0f3377]"
-                          >
-                            <Camera className="h-4 w-4" />
-                            Ambil Foto
-                          </button>
+                    <button
+                      type="submit"
+                      disabled={isSaving}
+                      className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#123c8c] py-3.5 text-sm font-black text-white hover:bg-[#0f3274] transition active:scale-[0.98]"
+                    >
+                      {isSaving ? <Loader2 className="animate-spin" size={18} /> : "RESET PASSWORD"}
+                    </button>
+                  </form>
+                )}
 
-                          <button
-                            type="button"
-                            onClick={switchCamera}
-                            className="inline-flex items-center justify-center gap-2 rounded-xl border border-blue-100 bg-[#f6f8ff] px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-[#123c8c] transition hover:bg-[#eaf1ff]"
-                          >
-                            <RefreshCw className="h-4 w-4" />
-                            Ganti Kamera
-                          </button>
-                        </div>
-                      </div>
-                    )}
+              </div>
+            </div>
+          </section>
+        )}
 
-                    {cameraError && (
-                      <p className="text-xs font-bold text-rose-600">
-                        {cameraError}
-                      </p>
-                    )}
-                  </div>
+        {/* MODAL EDIT USER */}
+        {isEditUserOpen && (
+          <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-md rounded-[2.5rem] border border-blue-100 bg-white p-6 shadow-2xl">
+              <h3 className="text-xl font-black text-slate-900">Ubah Profil</h3>
+              
+              <form onSubmit={handleUpdateUser} className="mt-4 space-y-4">
+                <div>
+                  <label className="text-xs font-black text-slate-500 uppercase">Nama Lengkap</label>
+                  <input
+                    type="text"
+                    value={userForm.name}
+                    onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
+                    className="mt-1 h-12 w-full rounded-2xl border border-blue-100 bg-[#f7f9ff] px-4 text-sm font-bold text-slate-800 outline-none focus:border-[#123c8c]"
+                  />
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
-                  <label>
-                    <span className="mb-1.5 inline-flex items-center gap-1 text-xs font-black uppercase tracking-[0.14em] text-slate-500">
-                      <User className="h-3.5 w-3.5" />
-                      Nama
-                    </span>
-                    <input
-                      value={form.name}
-                      onChange={(event) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          name: event.target.value,
-                        }))
-                      }
-                      placeholder="Nama Admin"
-                      className="w-full rounded-xl border border-blue-100 bg-[#f8faff] px-3 py-2.5 text-sm font-semibold text-slate-700 outline-none ring-[#123c8c]/20 transition focus:ring"
-                      required
-                    />
-                  </label>
-
-                  <label>
-                    <span className="mb-1.5 inline-flex items-center gap-1 text-xs font-black uppercase tracking-[0.14em] text-slate-500">
-                      Email
-                    </span>
-                    <input
-                      type="email"
-                      value={form.email}
-                      onChange={(event) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          email: event.target.value,
-                        }))
-                      }
-                      placeholder="admin@creativemu.co.id"
-                      className="w-full rounded-xl border border-blue-100 bg-[#f8faff] px-3 py-2.5 text-sm font-semibold text-slate-700 outline-none ring-[#123c8c]/20 transition focus:ring"
-                      required
-                    />
-                  </label>
-
-                  <label className="md:col-span-2">
-                    <span className="mb-1.5 inline-flex items-center gap-1 text-xs font-black uppercase tracking-[0.14em] text-slate-500">
-                      <Phone className="h-3.5 w-3.5" />
-                      No Telp
-                    </span>
-                    <input
-                      value={form.phone}
-                      onChange={(event) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          phone: event.target.value,
-                        }))
-                      }
-                      placeholder="08xxxxxxxxxx"
-                      className="w-full rounded-xl border border-blue-100 bg-[#f8faff] px-3 py-2.5 text-sm font-semibold text-slate-700 outline-none ring-[#123c8c]/20 transition focus:ring"
-                    />
-                  </label>
+                <div>
+                  <label className="text-xs font-black text-slate-500 uppercase">Email</label>
+                  <input
+                    type="email"
+                    value={userForm.email}
+                    onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
+                    className="mt-1 h-12 w-full rounded-2xl border border-blue-100 bg-[#f7f9ff] px-4 text-sm font-bold text-slate-800 outline-none focus:border-[#123c8c]"
+                  />
                 </div>
 
-                <div className="flex justify-end">
+                <div>
+                  <label className="text-xs font-black text-slate-500 uppercase">Telepon (12 Digit)</label>
+                  <input
+                    type="text"
+                    value={userForm.phone}
+                    onChange={(e) => setUserForm({ ...userForm, phone: e.target.value })}
+                    className="mt-1 h-12 w-full rounded-2xl border border-blue-100 bg-[#f7f9ff] px-4 text-sm font-bold text-slate-800 outline-none focus:border-[#123c8c]"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditUserOpen(false)}
+                    className="w-1/2 rounded-2xl bg-slate-100 py-3.5 text-sm font-black text-slate-600 hover:bg-slate-200 transition"
+                  >
+                    Batal
+                  </button>
                   <button
                     type="submit"
                     disabled={isSaving}
-                    className="inline-flex items-center gap-2 rounded-xl bg-[#123c8c] px-5 py-2.5 text-sm font-black text-white transition hover:bg-[#0f3377] disabled:cursor-not-allowed disabled:opacity-70"
+                    className="w-1/2 rounded-2xl bg-[#123c8c] py-3.5 text-sm font-black text-white hover:bg-[#0f3274] transition"
                   >
-                    {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
-                    {isSaving ? "Menyimpan..." : "Simpan Profil"}
+                    Simpan
                   </button>
                 </div>
               </form>
-            )}
+            </div>
           </div>
-        </section>
+        )}
+
+        {/* MODAL EDIT COMPANY OFFICE */}
+        {isEditCompanyOpen && (
+          <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-lg rounded-[2.5rem] border border-blue-100 bg-white p-6 shadow-2xl">
+              <h3 className="text-xl font-black text-slate-900">Ubah Profil Perusahaan</h3>
+              
+              <form onSubmit={handleUpdateCompany} className="mt-4 space-y-4">
+                <div>
+                  <label className="text-xs font-black text-slate-500 uppercase">Nama Kantor</label>
+                  <input
+                    type="text"
+                    value={companyForm.name}
+                    onChange={(e) => setCompanyForm({ ...companyForm, name: e.target.value })}
+                    className="mt-1 h-12 w-full rounded-2xl border border-blue-100 bg-[#f7f9ff] px-4 text-sm font-bold text-slate-800 outline-none focus:border-[#123c8c]"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-black text-slate-500 uppercase">Alamat Kantor</label>
+                  <textarea
+                    value={companyForm.address}
+                    onChange={(e) => setCompanyForm({ ...companyForm, address: e.target.value })}
+                    className="mt-1 h-20 w-full rounded-2xl border border-blue-100 bg-[#f7f9ff] p-4 text-sm font-bold text-slate-800 outline-none focus:border-[#123c8c] resize-none"
+                  />
+                </div>
+
+                <div className="grid gap-4 grid-cols-3">
+                  <div>
+                    <label className="text-xs font-black text-slate-500 uppercase">Latitude</label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={companyForm.latitude}
+                      onChange={(e) => setCompanyForm({ ...companyForm, latitude: Number(e.target.value) })}
+                      className="mt-1 h-12 w-full rounded-2xl border border-blue-100 bg-[#f7f9ff] px-4 text-sm font-bold text-slate-800 outline-none focus:border-[#123c8c]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-black text-slate-500 uppercase">Longitude</label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={companyForm.longitude}
+                      onChange={(e) => setCompanyForm({ ...companyForm, longitude: Number(e.target.value) })}
+                      className="mt-1 h-12 w-full rounded-2xl border border-blue-100 bg-[#f7f9ff] px-4 text-sm font-bold text-slate-800 outline-none focus:border-[#123c8c]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-black text-slate-500 uppercase">Radius (Meter)</label>
+                    <input
+                      type="number"
+                      value={companyForm.radius_meters}
+                      onChange={(e) => setCompanyForm({ ...companyForm, radius_meters: Number(e.target.value) })}
+                      className="mt-1 h-12 w-full rounded-2xl border border-blue-100 bg-[#f7f9ff] px-4 text-sm font-bold text-slate-800 outline-none focus:border-[#123c8c]"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditCompanyOpen(false)}
+                    className="w-1/2 rounded-2xl bg-slate-100 py-3.5 text-sm font-black text-slate-600 hover:bg-slate-200 transition"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSaving}
+                    className="w-1/2 rounded-2xl bg-[#123c8c] py-3.5 text-sm font-black text-white hover:bg-[#0f3274] transition"
+                  >
+                    Simpan
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        <BottomNav variant="admin" />
       </main>
     </MobileShell>
   );
