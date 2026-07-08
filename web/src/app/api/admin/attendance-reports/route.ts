@@ -12,6 +12,7 @@ type AttendanceRow = {
   userId: string | null;
   employeeCode: string | null;
   employeeName: string | null;
+  profilePhoto: string | null;
   attendanceDate: Date | string | null;
   checkInTime: Date | string | null;
   checkOutTime: Date | string | null;
@@ -58,6 +59,16 @@ const attendanceImageColumns = {
   ],
 };
 
+const profilePhotoColumns = [
+  "profile_photo",
+  "profilePhoto",
+  "profile_photo_url",
+  "photo_url",
+  "avatar_url",
+  "image",
+  "image_url",
+];
+
 async function getTableColumns(tableName: string) {
   const rows = await prisma.$queryRawUnsafe<ColumnInfo[]>(
     `
@@ -66,7 +77,7 @@ async function getTableColumns(tableName: string) {
       WHERE TABLE_SCHEMA = DATABASE()
         AND TABLE_NAME = ?
     `,
-    tableName
+    tableName,
   );
 
   return new Set(rows.map((row) => row.COLUMN_NAME));
@@ -79,7 +90,7 @@ function pickColumn(columns: Set<string>, candidates: string[]) {
 function columnSelect(
   tableAlias: string,
   column: string | null,
-  alias: string
+  alias: string,
 ) {
   if (!column) return `NULL AS \`${alias}\``;
 
@@ -113,6 +124,39 @@ function normalizeImageUrl(value: string | null) {
   }
 
   return `/${cleanText}`;
+}
+
+function normalizeProfilePhotoUrl(value: string | null) {
+  if (!value) return null;
+
+  const text = String(value).trim();
+
+  if (!text) return null;
+
+  if (
+    text.startsWith("http://") ||
+    text.startsWith("https://") ||
+    text.startsWith("data:image") ||
+    text.startsWith("blob:")
+  ) {
+    return text;
+  }
+
+  const cleanText = text
+    .replaceAll("\\", "/")
+    .replace(/^public\//, "")
+    .replace(/^\.\/public\//, "")
+    .replace(/^\/public\//, "/");
+
+  if (cleanText.startsWith("/")) {
+    return cleanText;
+  }
+
+  if (cleanText.startsWith("uploads/")) {
+    return `/${cleanText}`;
+  }
+
+  return `/uploads/profiles/${cleanText}`;
 }
 
 function formatDate(value: Date | string | null) {
@@ -182,7 +226,9 @@ function formatWorkMode(mode: string | null) {
 
   if (normalized === "office") return "Kantor";
   if (normalized === "wfh") return "WFH";
+  if (normalized === "wfc") return "WFC";
   if (normalized === "visit") return "Kunjungan";
+  if (normalized === "kunjungan") return "Kunjungan";
 
   return mode || "Kantor";
 }
@@ -199,7 +245,7 @@ function toNumber(value: number | string | null) {
 
 function calculateDuration(
   checkInValue: Date | string | null,
-  checkOutValue: Date | string | null
+  checkOutValue: Date | string | null,
 ) {
   if (!checkInValue || !checkOutValue) return "-";
 
@@ -237,10 +283,13 @@ export async function GET(req: NextRequest) {
       .trim()
       .toLowerCase();
 
-    const month = Number(searchParams.get("month") || new Date().getMonth() + 1);
+    const month = Number(
+      searchParams.get("month") || new Date().getMonth() + 1,
+    );
     const year = Number(searchParams.get("year") || new Date().getFullYear());
 
     const attendanceColumns = await getTableColumns("Attendance");
+    const userColumns = await getTableColumns("users");
 
     const userColumn = pickColumn(attendanceColumns, [
       "user_id",
@@ -282,17 +331,17 @@ export async function GET(req: NextRequest) {
 
     const checkInPhotoColumn = pickColumn(
       attendanceColumns,
-      attendanceImageColumns.checkIn
+      attendanceImageColumns.checkIn,
     );
 
     const checkOutPhotoColumn = pickColumn(
       attendanceColumns,
-      attendanceImageColumns.checkOut
+      attendanceImageColumns.checkOut,
     );
 
     const proofPhotoColumn = pickColumn(
       attendanceColumns,
-      attendanceImageColumns.proof
+      attendanceImageColumns.proof,
     );
 
     const latitudeColumn = pickColumn(attendanceColumns, [
@@ -320,6 +369,8 @@ export async function GET(req: NextRequest) {
       "createdAt",
     ]);
 
+    const profilePhotoColumn = pickColumn(userColumns, profilePhotoColumns);
+
     const whereClauses: string[] = [];
     const queryValues: unknown[] = [];
 
@@ -340,7 +391,7 @@ export async function GET(req: NextRequest) {
 
     if (search) {
       whereClauses.push(
-        `(LOWER(u.\`name\`) LIKE ? OR LOWER(u.\`employee_code\`) LIKE ?)`
+        `(LOWER(u.\`name\`) LIKE ? OR LOWER(u.\`employee_code\`) LIKE ?)`,
       );
 
       const keyword = `%${search.toLowerCase()}%`;
@@ -366,6 +417,7 @@ export async function GET(req: NextRequest) {
           ${columnSelect("a", userColumn, "userId")},
           u.\`employee_code\` AS \`employeeCode\`,
           u.\`name\` AS \`employeeName\`,
+          ${columnSelect("u", profilePhotoColumn, "profilePhoto")},
           ${columnSelect("a", dateColumn, "attendanceDate")},
           ${columnSelect("a", checkInColumn, "checkInTime")},
           ${columnSelect("a", checkOutColumn, "checkOutTime")},
@@ -384,7 +436,7 @@ export async function GET(req: NextRequest) {
         ORDER BY a.\`${orderColumn}\` DESC
         LIMIT 500
       `,
-      ...queryValues
+      ...queryValues,
     );
 
     const reports = rows.map((row) => {
@@ -394,6 +446,7 @@ export async function GET(req: NextRequest) {
       const checkInPhoto = normalizeImageUrl(row.checkInPhoto);
       const checkOutPhoto = normalizeImageUrl(row.checkOutPhoto);
       const proofPhoto = normalizeImageUrl(row.proofPhoto);
+      const profilePhoto = normalizeProfilePhotoUrl(row.profilePhoto);
 
       const latitude = toNumber(row.latitude);
       const longitude = toNumber(row.longitude);
@@ -402,6 +455,13 @@ export async function GET(req: NextRequest) {
         id: String(row.attendanceId || ""),
         employeeName: row.employeeName || "Tanpa Nama",
         employeeCode: row.employeeCode || null,
+
+        profilePhoto,
+        profile_photo: profilePhoto,
+        profile_photo_url: profilePhoto,
+        photo_url: profilePhoto,
+        avatar_url: profilePhoto,
+
         date: toDateInput(dateSource),
         dateLabel: formatDate(dateSource),
         checkIn: formatTime(row.checkInTime),
@@ -434,7 +494,7 @@ export async function GET(req: NextRequest) {
       },
       {
         status: 500,
-      }
+      },
     );
   }
 }

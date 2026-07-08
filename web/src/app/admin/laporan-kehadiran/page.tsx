@@ -20,6 +20,11 @@ type AttendanceReport = {
   id: string;
   employeeName: string;
   employeeCode: string | null;
+  profilePhoto?: string | null;
+  profile_photo?: string | null;
+  profile_photo_url?: string | null;
+  photo_url?: string | null;
+  avatar_url?: string | null;
   date: string;
   dateLabel: string;
   checkIn: string;
@@ -83,6 +88,64 @@ async function readJsonResponse(response: Response) {
   } catch {
     throw new Error("Response API bukan JSON.");
   }
+}
+
+function normalizeProfilePhotoUrl(photo?: string | null) {
+  if (!photo) return "";
+
+  const cleanPhoto = photo.trim();
+
+  if (!cleanPhoto) return "";
+
+  if (
+    cleanPhoto.startsWith("http://") ||
+    cleanPhoto.startsWith("https://") ||
+    cleanPhoto.startsWith("data:") ||
+    cleanPhoto.startsWith("/")
+  ) {
+    return cleanPhoto;
+  }
+
+  if (cleanPhoto.startsWith("uploads/")) {
+    return `/${cleanPhoto}`;
+  }
+
+  return `/uploads/profiles/${cleanPhoto}`;
+}
+
+function getAttendanceReportProfilePhoto(item: AttendanceReport) {
+  return normalizeProfilePhotoUrl(
+    item.profilePhoto ||
+      item.profile_photo ||
+      item.profile_photo_url ||
+      item.photo_url ||
+      item.avatar_url ||
+      "",
+  );
+}
+
+function EmployeeProfileAvatar({ item }: { item: AttendanceReport }) {
+  const [imageError, setImageError] = useState(false);
+  const profilePhoto = getAttendanceReportProfilePhoto(item);
+
+  if (profilePhoto && !imageError) {
+    return (
+      <div className="h-12 w-12 shrink-0 overflow-hidden rounded-2xl bg-[#eaf1ff] ring-1 ring-blue-100">
+        <img
+          src={profilePhoto}
+          alt={`Foto profil ${item.employeeName}`}
+          className="h-full w-full object-cover"
+          onError={() => setImageError(true)}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
+      <UserRound size={23} strokeWidth={2.6} />
+    </div>
+  );
 }
 
 export default function AdminAttendanceReportPage() {
@@ -194,11 +257,7 @@ export default function AdminAttendanceReportPage() {
 
   return (
     <MobileShell variant="admin" withBottomPadding={false}>
-      <AppHeader
-        title="Laporan Kehadiran"
-        subtitle="Rekap absensi karyawan berdasarkan tanggal"
-        variant="admin"
-      />
+      <AppHeader title="Laporan Kehadiran" variant="admin" />
 
       <main className="min-h-dvh bg-gradient-to-br from-[#f6f8ff] via-white to-[#eef4ff]">
         <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 md:px-10 lg:px-16">
@@ -220,26 +279,6 @@ export default function AdminAttendanceReportPage() {
                     </h2>
                   </div>
                 </div>
-
-                <p className="mt-5 max-w-2xl text-sm leading-7 text-blue-100">
-                  Admin dapat melihat daftar karyawan berdasarkan tanggal
-                  absensi. Klik nama karyawan untuk membuka detail foto bukti
-                  absen dan lokasi kehadiran.
-                </p>
-
-                <button
-                  type="button"
-                  onClick={getAttendanceReports}
-                  disabled={isLoading}
-                  className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-black text-[#123c8c] shadow-lg shadow-blue-950/20 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {isLoading ? (
-                    <Loader2 size={16} className="animate-spin" />
-                  ) : (
-                    <RefreshCcw size={16} />
-                  )}
-                  Refresh Data
-                </button>
               </div>
 
               <div className="grid grid-cols-2 gap-3 p-5 md:grid-cols-4 md:p-6">
@@ -299,10 +338,6 @@ export default function AdminAttendanceReportPage() {
                   Cari Rekap Kehadiran
                 </h2>
               </div>
-
-              <p className="max-w-md text-sm leading-6 text-slate-500">
-                Kosongkan tanggal jika ingin melihat rekap dalam satu bulan.
-              </p>
             </div>
 
             <form
@@ -447,9 +482,7 @@ export default function AdminAttendanceReportPage() {
                           >
                             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                               <div className="flex min-w-0 items-center gap-3 md:w-[260px]">
-                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
-                                  <UserRound size={23} strokeWidth={2.6} />
-                                </div>
+                                <EmployeeProfileAvatar item={item} />
 
                                 <div className="min-w-0">
                                   <h4 className="truncate text-base font-black text-slate-950">

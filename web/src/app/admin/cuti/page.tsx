@@ -187,7 +187,7 @@ export default function AdminLeaveReportPage() {
       if (!response.ok || !data.success) {
         setRequests([]);
         setErrorMessage(
-          data.message || data.error || "Gagal mengambil laporan cuti."
+          data.message || data.error || "Gagal mengambil laporan cuti.",
         );
         return;
       }
@@ -204,7 +204,7 @@ export default function AdminLeaveReportPage() {
 
   function openAnswerModal(
     item: AdminLeaveRequest,
-    status: "approved" | "rejected"
+    status: "approved" | "rejected",
   ) {
     const defaultAnswer = getDefaultAnswer(status);
 
@@ -277,13 +277,13 @@ export default function AdminLeaveReportPage() {
   const stats = useMemo(() => {
     const total = requests.length;
     const pending = requests.filter(
-      (item) => item.status.toLowerCase() === "pending"
+      (item) => item.status.toLowerCase() === "pending",
     ).length;
     const approved = requests.filter(
-      (item) => item.status.toLowerCase() === "approved"
+      (item) => item.status.toLowerCase() === "approved",
     ).length;
     const rejected = requests.filter(
-      (item) => item.status.toLowerCase() === "rejected"
+      (item) => item.status.toLowerCase() === "rejected",
     ).length;
 
     return {
@@ -336,11 +336,7 @@ export default function AdminLeaveReportPage() {
 
   return (
     <MobileShell variant="admin" withBottomPadding={false}>
-      <AppHeader
-        title="Laporan Cuti"
-        subtitle="Menerima dan memantau pengajuan cuti karyawan"
-        variant="admin"
-      />
+      <AppHeader title="Laporan Cuti" variant="admin" />
 
       <main className="min-h-dvh bg-gradient-to-br from-[#f6f8ff] via-white to-[#eef4ff]">
         <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 md:px-10 lg:px-16">
@@ -353,35 +349,11 @@ export default function AdminLeaveReportPage() {
                   </div>
 
                   <div>
-                    <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-100">
-                      Admin Report
-                    </p>
-
                     <h2 className="mt-1 text-3xl font-black tracking-tight md:text-4xl">
                       Laporan Pengajuan Cuti
                     </h2>
                   </div>
                 </div>
-
-                <p className="mt-5 max-w-2xl text-sm leading-7 text-blue-100">
-                  Halaman ini khusus admin untuk menerima laporan pengajuan cuti,
-                  izin, sakit, atau keperluan lain dari karyawan. Admin dapat
-                  memilih jawaban sebelum menyetujui atau menolak pengajuan.
-                </p>
-
-                <button
-                  type="button"
-                  onClick={getLeaveRequests}
-                  disabled={isLoading}
-                  className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-black text-[#123c8c] shadow-lg shadow-blue-950/20 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {isLoading ? (
-                    <Loader2 size={16} className="animate-spin" />
-                  ) : (
-                    <RefreshCcw size={16} />
-                  )}
-                  Refresh Laporan
-                </button>
               </div>
 
               <div className="grid grid-cols-2 gap-3 p-5 md:grid-cols-4 md:p-6">
@@ -447,11 +419,6 @@ export default function AdminLeaveReportPage() {
                   Daftar Pengajuan Cuti
                 </h2>
               </div>
-
-              <p className="max-w-md text-sm leading-6 text-slate-500">
-                Laporan ini berasal dari pengajuan cuti karyawan pada halaman
-                cuti karyawan.
-              </p>
             </div>
 
             <div className="mt-6 grid gap-3 md:grid-cols-[1fr_220px]">
@@ -520,7 +487,7 @@ export default function AdminLeaveReportPage() {
 
                               <span
                                 className={`inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-xs font-black ring-1 ${getStatusStyle(
-                                  item.status
+                                  item.status,
                                 )}`}
                               >
                                 <StatusIcon size={14} strokeWidth={2.6} />

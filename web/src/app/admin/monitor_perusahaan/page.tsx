@@ -437,10 +437,6 @@ function AnimatedHistogram({
               <h4 className="mt-1 truncate text-xl font-black tracking-tight text-white md:text-2xl">
                 {metricLabel} per Tanggal
               </h4>
-
-              <p className="mt-1 max-w-xl text-xs font-semibold leading-5 text-blue-100/80 md:text-sm">
-                Hover / tap batang untuk melihat detail jumlah data.
-              </p>
             </div>
 
             <div className="w-fit rounded-2xl bg-white/10 px-3 py-2 text-xs font-black text-blue-50 ring-1 ring-white/10 md:px-4 md:py-3 md:text-sm">
@@ -882,11 +878,7 @@ export default function AdminCompanyMonitorPage() {
 
   return (
     <MobileShell variant="admin" withBottomPadding={false}>
-      <AppHeader
-        title="Monitor Perusahaan"
-        subtitle="Pantau kehadiran, cuti, keterlambatan, WFH, WFC, dan kunjungan"
-        variant="admin"
-      />
+      <AppHeader title="Monitor Perusahaan" variant="admin" />
 
       <main className="min-h-dvh bg-gradient-to-br from-[#f6f8ff] via-white to-[#eef4ff]">
         <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 md:px-10 lg:px-16">
@@ -979,12 +971,6 @@ export default function AdminCompanyMonitorPage() {
                   <p className="mt-2 text-2xl font-black text-slate-950">
                     {getMetricLabel(selectedMetric)}
                   </p>
-
-                  <p className="mt-1 text-sm font-semibold text-slate-500">
-                    Untuk cuti, grafik menampilkan jumlah pengajuan yang dibuat
-                    pada tanggal tersebut. Untuk WFH, WFC, dan kunjungan, grafik
-                    menampilkan intensitas absensi per hari.
-                  </p>
                 </div>
               </div>
             </div>
@@ -1046,11 +1032,6 @@ export default function AdminCompanyMonitorPage() {
                     <h3 className="mt-2 text-2xl font-black text-slate-950">
                       Ringkasan WFH, WFC, dan Kunjungan
                     </h3>
-
-                    <p className="mt-1 text-sm font-semibold text-slate-500">
-                      Pantau jumlah absensi kerja fleksibel dalam periode yang
-                      dipilih.
-                    </p>
                   </div>
 
                   <div className="rounded-2xl bg-[#f8fbff] px-4 py-3 text-sm font-black text-[#123c8c] ring-1 ring-blue-100">
@@ -1218,11 +1199,6 @@ export default function AdminCompanyMonitorPage() {
                     <h3 className="mt-2 text-2xl font-black text-slate-950">
                       Pie Chart Terpisah per Kategori
                     </h3>
-
-                    <p className="mt-1 text-sm font-semibold text-slate-500">
-                      Setiap kategori dipisah agar admin lebih mudah membaca
-                      proporsi WFH, WFC, dan kunjungan.
-                    </p>
                   </div>
                 </div>
 

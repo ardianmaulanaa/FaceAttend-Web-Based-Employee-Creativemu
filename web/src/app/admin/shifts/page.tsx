@@ -168,7 +168,9 @@ export default function ShiftsPage() {
       console.error("LOAD_SHIFTS_ERROR:", error);
 
       setShifts(presetShifts);
-      setErrorMessage("Data API shift belum terbaca. Menampilkan data default.");
+      setErrorMessage(
+        "Data API shift belum terbaca. Menampilkan data default.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -292,11 +294,7 @@ export default function ShiftsPage() {
 
   return (
     <MobileShell variant="admin">
-      <AppHeader
-        title="Daftar Shift"
-        subtitle="Kelola master data shift karyawan"
-        variant="admin"
-      />
+      <AppHeader title="Daftar Shift" variant="admin" />
 
       <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 pb-28 md:px-10 lg:px-16">
         <div className="rounded-[2rem] border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-8">
@@ -309,7 +307,6 @@ export default function ShiftsPage() {
               <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
                 DAFTAR SHIFT
               </h1>
-
             </div>
 
             <div className="w-full md:w-72">
@@ -331,7 +328,6 @@ export default function ShiftsPage() {
             </div>
           </div>
 
-      
           <div className="mt-8">
             <label className="text-sm font-black text-slate-500">
               Nama Shift

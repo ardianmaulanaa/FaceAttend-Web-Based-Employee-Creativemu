@@ -96,8 +96,9 @@ export default function DepartmentsPage() {
   const [errorMessage, setErrorMessage] = useState("");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingDepartment, setEditingDepartment] =
-    useState<Department | null>(null);
+  const [editingDepartment, setEditingDepartment] = useState<Department | null>(
+    null,
+  );
 
   const activeOffices = useMemo(() => {
     return offices.filter((office) => office.status !== "inactive");
@@ -154,14 +155,14 @@ export default function DepartmentsPage() {
         `/api/admin/departments?${params.toString()}`,
         {
           cache: "no-store",
-        }
+        },
       );
 
       const data = await readJsonResponse(response);
 
       if (!response.ok) {
         throw new Error(
-          data.error || data.message || "Gagal mengambil divisi."
+          data.error || data.message || "Gagal mengambil divisi.",
         );
       }
 
@@ -171,9 +172,7 @@ export default function DepartmentsPage() {
       console.error("LOAD_DEPARTMENTS_ERROR:", error);
 
       setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Gagal mengambil data divisi."
+        error instanceof Error ? error.message : "Gagal mengambil data divisi.",
       );
     } finally {
       setIsLoading(false);
@@ -253,7 +252,7 @@ export default function DepartmentsPage() {
 
       if (!response.ok) {
         throw new Error(
-          data.error || data.message || "Gagal menyimpan divisi."
+          data.error || data.message || "Gagal menyimpan divisi.",
         );
       }
 
@@ -274,13 +273,13 @@ export default function DepartmentsPage() {
 
     if (totalUsers > 0 || totalUnits > 0) {
       alert(
-        "Divisi ini masih memiliki unit atau digunakan oleh karyawan. Ubah status menjadi Nonaktif jika tidak ingin digunakan."
+        "Divisi ini masih memiliki unit atau digunakan oleh karyawan. Ubah status menjadi Nonaktif jika tidak ingin digunakan.",
       );
       return;
     }
 
     const confirmDelete = window.confirm(
-      `Yakin ingin menghapus divisi "${department.name}"? Data yang dihapus tidak bisa dikembalikan.`
+      `Yakin ingin menghapus divisi "${department.name}"? Data yang dihapus tidak bisa dikembalikan.`,
     );
 
     if (!confirmDelete) return;
@@ -292,13 +291,15 @@ export default function DepartmentsPage() {
         `/api/admin/departments?id=${department.id}`,
         {
           method: "DELETE",
-        }
+        },
       );
 
       const data = await readJsonResponse(response);
 
       if (!response.ok) {
-        throw new Error(data.error || data.message || "Gagal menghapus divisi.");
+        throw new Error(
+          data.error || data.message || "Gagal menghapus divisi.",
+        );
       }
 
       alert("Divisi berhasil dihapus.");
@@ -314,29 +315,16 @@ export default function DepartmentsPage() {
 
   return (
     <MobileShell variant="admin">
-      <AppHeader
-        title="Daftar Divisi"
-        subtitle="Kelola master data divisi berdasarkan kantor"
-        variant="admin"
-      />
+      <AppHeader title="Daftar Divisi" variant="admin" />
 
       <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 pb-28 md:px-10 lg:px-16">
         <div className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-xl shadow-slate-300/30">
           <div className="bg-[#123c8c] p-6 text-white md:p-8">
             <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.24em] text-blue-100">
-                  Presensi Admin Panel
-                </p>
-
                 <h1 className="mt-3 text-3xl font-black tracking-tight md:text-4xl">
                   Daftar Divisi
                 </h1>
-
-                <p className="mt-3 max-w-2xl text-sm font-semibold leading-7 text-blue-100">
-                  Divisi berada langsung di bawah kantor. Setelah divisi dibuat,
-                  unit bisa ditambahkan di bawah divisi tersebut.
-                </p>
               </div>
 
               <button
