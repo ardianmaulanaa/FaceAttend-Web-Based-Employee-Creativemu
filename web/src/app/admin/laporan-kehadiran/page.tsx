@@ -123,7 +123,7 @@ export default function AdminAttendanceReportPage() {
         {
           method: "GET",
           cache: "no-store",
-        }
+        },
       );
 
       const data: AttendanceReportResponse = await readJsonResponse(response);
@@ -142,7 +142,7 @@ export default function AdminAttendanceReportPage() {
       setErrorMessage(
         error instanceof Error
           ? error.message
-          : "Gagal mengambil laporan kehadiran."
+          : "Gagal mengambil laporan kehadiran.",
       );
     } finally {
       setIsLoading(false);
@@ -266,9 +266,7 @@ export default function AdminAttendanceReportPage() {
                 </div>
 
                 <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
-                  <p className="text-xs font-bold text-emerald-700">
-                    Ada Foto
-                  </p>
+                  <p className="text-xs font-bold text-emerald-700">Ada Foto</p>
                   <h3 className="mt-3 text-3xl font-black text-emerald-700">
                     {stats.withPhoto}
                   </h3>
@@ -278,9 +276,7 @@ export default function AdminAttendanceReportPage() {
                 </div>
 
                 <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
-                  <p className="text-xs font-bold text-amber-700">
-                    Ada Lokasi
-                  </p>
+                  <p className="text-xs font-bold text-amber-700">Ada Lokasi</p>
                   <h3 className="mt-3 text-3xl font-black text-amber-700">
                     {stats.withLocation}
                   </h3>
@@ -442,15 +438,15 @@ export default function AdminAttendanceReportPage() {
                         </div>
                       </div>
 
-                      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                      <div className="mt-4 space-y-3">
                         {group.items.map((item) => (
                           <Link
                             key={item.id}
                             href={`/admin/laporan-kehadiran/${item.id}`}
-                            className="group rounded-3xl border border-blue-100 bg-white p-4 shadow-sm shadow-slate-200/60 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-slate-300/40 active:scale-[0.99]"
+                            className="group block rounded-[1.6rem] border border-blue-100 bg-white px-4 py-4 shadow-sm shadow-slate-200/60 transition hover:-translate-y-0.5 hover:border-[#123c8c]/30 hover:bg-[#fbfdff] hover:shadow-xl hover:shadow-slate-300/40 active:scale-[0.99] md:px-5"
                           >
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="flex min-w-0 items-start gap-3">
+                            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                              <div className="flex min-w-0 items-center gap-3 md:w-[260px]">
                                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
                                   <UserRound size={23} strokeWidth={2.6} />
                                 </div>
@@ -460,62 +456,64 @@ export default function AdminAttendanceReportPage() {
                                     {item.employeeName}
                                   </h4>
 
-                                  <p className="mt-1 text-xs font-bold text-slate-500">
-                                    {item.employeeCode || "-"}
+                                  <p className="mt-1 truncate text-xs font-bold text-slate-400">
+                                    {item.employeeCode || item.workModeLabel}
                                   </p>
                                 </div>
                               </div>
 
-                              <span
-                                className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-black ring-1 ${getStatusStyle(
-                                  item.status
-                                )}`}
-                              >
-                                {item.statusLabel}
-                              </span>
-                            </div>
+                              <div className="grid grid-cols-2 gap-2 text-xs font-bold text-slate-500 md:w-[260px]">
+                                <div className="rounded-2xl bg-[#f8fbff] px-4 py-3">
+                                  <p className="text-slate-400">Masuk</p>
+                                  <p className="mt-1 font-black text-slate-800">
+                                    {item.checkIn}
+                                  </p>
+                                </div>
 
-                            <div className="mt-4 grid grid-cols-2 gap-2 text-xs font-bold text-slate-500">
-                              <div className="rounded-2xl bg-[#f8fbff] p-3">
-                                <p className="text-slate-400">Masuk</p>
-                                <p className="mt-1 font-black text-slate-800">
-                                  {item.checkIn}
-                                </p>
+                                <div className="rounded-2xl bg-[#f8fbff] px-4 py-3">
+                                  <p className="text-slate-400">Keluar</p>
+                                  <p className="mt-1 font-black text-slate-800">
+                                    {item.checkOut}
+                                  </p>
+                                </div>
                               </div>
 
-                              <div className="rounded-2xl bg-[#f8fbff] p-3">
-                                <p className="text-slate-400">Keluar</p>
-                                <p className="mt-1 font-black text-slate-800">
-                                  {item.checkOut}
-                                </p>
+                              <div className="flex flex-1 flex-wrap items-center gap-2">
+                                <span
+                                  className={`rounded-full px-3 py-1 text-[11px] font-black ring-1 ${getStatusStyle(
+                                    item.status,
+                                  )}`}
+                                >
+                                  {item.statusLabel}
+                                </span>
+
+                                <span className="rounded-full bg-blue-50 px-3 py-1 text-[11px] font-black text-[#123c8c]">
+                                  {item.workModeLabel}
+                                </span>
+
+                                {item.hasPhoto ? (
+                                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-black text-emerald-700">
+                                    Ada Foto
+                                  </span>
+                                ) : (
+                                  <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-black text-slate-500">
+                                    Tanpa Foto
+                                  </span>
+                                )}
+
+                                {item.hasLocation ? (
+                                  <span className="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-black text-amber-700">
+                                    Ada Lokasi
+                                  </span>
+                                ) : null}
                               </div>
-                            </div>
 
-                            <div className="mt-4 flex flex-wrap items-center gap-2">
-                              <span className="rounded-full bg-blue-50 px-3 py-1 text-[11px] font-black text-[#123c8c]">
-                                {item.workModeLabel}
-                              </span>
-
-                              {item.hasPhoto ? (
-                                <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-black text-emerald-700">
-                                  Ada Foto
+                              <div className="flex shrink-0 items-center justify-start md:w-[220px] md:justify-end">
+                                <span className="inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-blue-100 bg-white px-4 text-xs font-black text-[#123c8c] transition group-hover:bg-[#eaf1ff]">
+                                  <Eye size={15} />
+                                  Lihat detail
                                 </span>
-                              ) : (
-                                <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-black text-slate-500">
-                                  Tanpa Foto
-                                </span>
-                              )}
-
-                              {item.hasLocation ? (
-                                <span className="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-black text-amber-700">
-                                  Ada Lokasi
-                                </span>
-                              ) : null}
-                            </div>
-
-                            <div className="mt-4 inline-flex items-center gap-2 text-xs font-black text-[#123c8c]">
-                              <Eye size={15} />
-                              Lihat detail foto dan lokasi
+                              </div>
                             </div>
                           </Link>
                         ))}

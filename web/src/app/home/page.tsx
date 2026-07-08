@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   Bell,
+  PhoneCall,
   FileText,
   History,
   Megaphone,
@@ -51,6 +52,7 @@ type Announcement = {
 };
 
 const READ_ANNOUNCEMENT_KEY = "faceattend_read_announcement_id";
+const WHATSAPP_LINK = "https://wa.me/6281234567890";
 
 const defaultUser: CurrentUser = {
   name: "",
@@ -224,6 +226,20 @@ function AnnouncementButton({
   );
 }
 
+function WhatsAppButton() {
+  return (
+    <a
+      href={WHATSAPP_LINK}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Hubungi WhatsApp"
+      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 shadow-sm ring-1 ring-emerald-200 transition hover:bg-emerald-100 active:scale-[0.96]"
+    >
+      <PhoneCall size={24} strokeWidth={2.7} />
+    </a>
+  );
+}
+
 function RoleBadges({ items }: { items: Array<string | undefined | null> }) {
   return (
     <div className="mt-4 flex flex-wrap gap-2">
@@ -350,7 +366,7 @@ export default function HomePage() {
     useState<AttendanceToday>(defaultAttendance);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [readAnnouncementId, setReadAnnouncementId] = useState<string | null>(
-    null
+    null,
   );
 
   useEffect(() => {
@@ -365,7 +381,7 @@ export default function HomePage() {
           hour12: false,
         })
           .format(now)
-          .replace(".", ":")} WIB`
+          .replace(".", ":")} WIB`,
       );
 
       setCurrentDate(
@@ -375,7 +391,7 @@ export default function HomePage() {
           day: "2-digit",
           month: "long",
           year: "numeric",
-        }).format(now)
+        }).format(now),
       );
     }
 
@@ -386,9 +402,7 @@ export default function HomePage() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setReadAnnouncementId(
-        window.localStorage.getItem(READ_ANNOUNCEMENT_KEY)
-      );
+      setReadAnnouncementId(window.localStorage.getItem(READ_ANNOUNCEMENT_KEY));
     }
   }, []);
 
@@ -437,16 +451,18 @@ export default function HomePage() {
   const hasAnnouncement = announcements.length > 0;
   const latestAnnouncementId = announcements[0]?.id || "";
   const hasUnreadAnnouncement =
-    Boolean(latestAnnouncementId) && latestAnnouncementId !== readAnnouncementId;
+    Boolean(latestAnnouncementId) &&
+    latestAnnouncementId !== readAnnouncementId;
 
   const employeeTitle = useMemo(
     () => user.position?.name || user.department?.name || "",
-    [user.position?.name, user.department?.name]
+    [user.position?.name, user.department?.name],
   );
 
   const mainRoleLabel = useMemo(
-    () => user.shift?.name || user.position?.name || user.department?.name || "",
-    [user.shift?.name, user.position?.name, user.department?.name]
+    () =>
+      user.shift?.name || user.position?.name || user.department?.name || "",
+    [user.shift?.name, user.position?.name, user.department?.name],
   );
 
   const workScheduleText = useMemo(() => {
@@ -524,10 +540,14 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                <AnnouncementButton
-                  unread={hasUnreadAnnouncement}
-                  onClick={markAnnouncementsAsRead}
-                />
+                <div className="flex shrink-0 items-center gap-3">
+                  <WhatsAppButton />
+
+                  <AnnouncementButton
+                    unread={hasUnreadAnnouncement}
+                    onClick={markAnnouncementsAsRead}
+                  />
+                </div>
               </div>
 
               <div className="py-7 text-center">

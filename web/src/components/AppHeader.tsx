@@ -131,6 +131,8 @@ const operationalMenus = [
   },
 ];
 
+const WHATSAPP_LINK = "https://wa.me/6282123459565";
+
 function isActivePath(pathname: string, href: string) {
   if (href === "/history") {
     return pathname === "/history" || pathname.startsWith("/history/");
@@ -169,21 +171,6 @@ function formatNotificationCount(count: number) {
   if (count > 99) return "99+";
 
   return String(count);
-}
-
-const WHATSAPP_LINK = "https://wa.me/6282123459565";
-
-function WhatsAppIcon({ className = "" }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 32 32"
-      aria-hidden="true"
-      className={className}
-      fill="currentColor"
-    >
-      <path d="M16.01 3.2A12.7 12.7 0 0 0 5.02 22.25L3.2 28.8l6.72-1.76A12.74 12.74 0 1 0 16.01 3.2Zm0 2.34a10.38 10.38 0 1 1-5.28 19.31l-.38-.22-3.99 1.04 1.07-3.86-.25-.4A10.37 10.37 0 0 1 16.01 5.54Zm-5.15 5.68c-.23 0-.6.08-.92.43-.32.35-1.21 1.18-1.21 2.88s1.24 3.34 1.41 3.57c.17.23 2.4 3.84 5.92 5.23 2.93 1.16 3.53.93 4.17.87.64-.06 2.05-.84 2.34-1.65.29-.81.29-1.5.2-1.65-.08-.15-.32-.23-.67-.4-.35-.17-2.05-1.01-2.37-1.12-.32-.12-.55-.17-.78.17-.23.35-.9 1.12-1.1 1.35-.2.23-.4.26-.75.09-.35-.17-1.47-.54-2.8-1.72-1.03-.92-1.73-2.06-1.93-2.4-.2-.35-.02-.54.15-.71.15-.15.35-.4.52-.6.17-.2.23-.35.35-.58.12-.23.06-.43-.03-.6-.09-.17-.78-1.88-1.07-2.57-.28-.68-.57-.58-.78-.59h-.65Z" />
-    </svg>
-  );
 }
 
 export default function AppHeader({
@@ -287,13 +274,21 @@ export default function AppHeader({
   return (
     <>
       <header
-        className={`fixed inset-x-0 top-0 z-40 border-b px-5 py-4 backdrop-blur-2xl transition-all duration-300 md:px-10 lg:px-16 ${
+        className={`fixed inset-x-0 top-0 z-40 overflow-hidden border-b px-5 py-4 backdrop-blur-2xl transition-all duration-300 md:px-10 lg:px-16 ${
           hasScrolled
             ? "border-blue-100/80 bg-white/95 shadow-lg shadow-slate-300/30"
             : "border-white/60 bg-white/90 shadow-sm shadow-slate-200/40"
         }`}
       >
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute right-16 top-1/2 hidden h-64 w-64 -translate-y-1/2 bg-contain bg-center bg-no-repeat opacity-[0.11] blur-[0.5px] md:block"
+          style={{
+            backgroundImage: "url('/images/creativemu-logo/creativemu.png')",
+          }}
+        />
+
+        <div className="relative z-10 mx-auto flex max-w-7xl items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-4">
             <button
               type="button"
@@ -327,9 +322,9 @@ export default function AppHeader({
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Hubungi via WhatsApp"
-              className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 shadow-sm ring-1 ring-emerald-100 transition hover:bg-emerald-100 active:scale-[0.96]"
+              className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-[#ecfff5] text-[#00a884] shadow-sm ring-1 ring-[#baf7dc] transition hover:bg-[#dcfce7] active:scale-[0.96]"
             >
-              <PhoneCall className="h-5 w-5" />
+              <PhoneCall className="h-5 w-5" strokeWidth={2.7} />
             </a>
 
             <Link

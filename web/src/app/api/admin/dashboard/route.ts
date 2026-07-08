@@ -30,7 +30,7 @@ function toIsoDate(value: Date | string | null | undefined) {
 function calculateWorkMinutes(
   workMinutes: number | null | undefined,
   checkInTime: Date | null | undefined,
-  checkOutTime: Date | null | undefined
+  checkOutTime: Date | null | undefined,
 ) {
   const savedWorkMinutes = Number(workMinutes || 0);
 
@@ -71,10 +71,6 @@ function getActivityTime(attendance: {
   );
 }
 
-function getFallbackEmployeeCode(index: number) {
-  return `EMP${String(index + 1).padStart(4, "0")}`;
-}
-
 export async function GET() {
   try {
     const { start, end } = getTodayRangeWIB();
@@ -90,7 +86,6 @@ export async function GET() {
       },
       select: {
         id: true,
-        employee_code: true,
         name: true,
         department: {
           select: {
@@ -169,20 +164,19 @@ export async function GET() {
       }
     }
 
-    const recentAttendance = employees.map((employee, index) => {
+    const recentAttendance = employees.map((employee) => {
       const attendance = attendanceByUserId.get(employee.id);
 
       const workMinutes = calculateWorkMinutes(
         Number(attendance?.work_minutes || 0),
         attendance?.check_in_time || null,
-        attendance?.check_out_time || null
+        attendance?.check_out_time || null,
       );
 
       return {
         id: employee.id,
         attendanceId: attendance?.id || "",
         name: employee.name,
-        employeeCode: employee.employee_code || getFallbackEmployeeCode(index),
         position: employee.position?.name || null,
         department: employee.department?.name || null,
         checkInTime: toIsoDate(attendance?.check_in_time),
@@ -194,11 +188,11 @@ export async function GET() {
     });
 
     const checkInToday = recentAttendance.filter(
-      (attendance) => attendance.checkInTime
+      (attendance) => attendance.checkInTime,
     ).length;
 
     const checkOutToday = recentAttendance.filter(
-      (attendance) => attendance.checkOutTime
+      (attendance) => attendance.checkOutTime,
     ).length;
 
     const lateToday = recentAttendance.filter((attendance) => {
@@ -206,7 +200,7 @@ export async function GET() {
     }).length;
 
     const absentToday = recentAttendance.filter(
-      (attendance) => !attendance.checkInTime
+      (attendance) => !attendance.checkInTime,
     ).length;
 
     return NextResponse.json({
@@ -228,7 +222,7 @@ export async function GET() {
       },
       {
         status: 500,
-      }
+      },
     );
   }
 }
