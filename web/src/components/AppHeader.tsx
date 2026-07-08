@@ -490,7 +490,7 @@ export default function AppHeader({
             ) : (
               <>
                 <a
-                  href="https://wa.me/6289618472759"
+                  href={WHATSAPP_LINK}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Hubungi Customer Service"
