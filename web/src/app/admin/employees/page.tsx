@@ -1348,7 +1348,7 @@ export default function AdminEmployeesPage() {
 
       {employeeAlert && alertTheme ? (
         <div
-          className={`fixed right-4 top-4 z-[140] w-[calc(100vw-2rem)] max-w-md transition-all duration-300 ease-out md:right-7 md:top-7 ${
+          className={`fixed right-4 top-4 z-[9999] w-[calc(100vw-2rem)] max-w-md transition-all duration-300 ease-out md:right-7 md:top-7 ${
             isAlertClosing
               ? "translate-x-8 scale-95 opacity-0"
               : "translate-x-0 scale-100 opacity-100"

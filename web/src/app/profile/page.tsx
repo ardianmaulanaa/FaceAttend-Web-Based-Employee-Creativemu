@@ -1246,7 +1246,7 @@ export default function ProfilePage() {
 
       {profileAlert ? (
         <div
-          className={`fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm transition-all duration-300 ${
+          className={`fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm transition-all duration-300 ${
             isAlertClosing ? "animate-fadeOut" : "animate-fadeIn"
           }`}
         >
