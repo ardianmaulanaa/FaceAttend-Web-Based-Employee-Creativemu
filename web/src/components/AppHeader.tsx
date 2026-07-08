@@ -128,6 +128,11 @@ const operationalMenus = [
     label: "Laporan Cuti",
     icon: CalendarDays,
   },
+  {
+    href: "/admin/profil-karyawan",
+    label: "Profil Karyawan",
+    icon: UserRound,
+  },
 ];
 
 function isActivePath(pathname: string, href: string) {
