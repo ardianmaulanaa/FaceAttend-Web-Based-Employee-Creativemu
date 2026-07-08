@@ -5,6 +5,7 @@ import "./globals.css";
 import { AppDataProvider } from "@/context/AppDataContext";
 import ScrollReloadGuard from "@/components/ScrollReloadGuard";
 import LateGuard from "@/components/LateGuard";
+import GlobalAlert from "@/components/GlobalAlert";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,6 +37,7 @@ export default function RootLayout({
         <AppDataProvider>
           <ScrollReloadGuard />
           <LateGuard />
+          <GlobalAlert />
           {children}
         </AppDataProvider>
       </body>
