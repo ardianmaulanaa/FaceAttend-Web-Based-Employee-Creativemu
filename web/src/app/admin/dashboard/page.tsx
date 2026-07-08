@@ -56,7 +56,7 @@ function getStatusClass(item: RecentAttendance) {
   }
 
   if (item.lateMinutes > 0 || item.status?.toUpperCase() === "LATE") {
-    return "bg-amber-50 text-amber-700";
+    return "bg-red-50 text-red-700";
   }
 
   if (item.checkInTime) {

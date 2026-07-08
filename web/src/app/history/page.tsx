@@ -88,10 +88,17 @@ function formatWorkDuration(minutes: number) {
 function getStatusVariant(status: string): "green" | "yellow" | "red" | "gray" | "blue" {
   const value = status.toLowerCase();
 
-  if (value.includes("terlambat")) return "yellow";
-  if (value.includes("cuti")) return "blue";
-  if (value.includes("sakit")) return "red";
-  if (value.includes("tidak")) return "red";
+  if (
+    value.includes("terlambat") ||
+    value.includes("cuti") ||
+    value.includes("sakit") ||
+    value.includes("izin") ||
+    value.includes("tidak") ||
+    value.includes("mangkir")
+  ) {
+    return "red";
+  }
+
   if (value.includes("pulang cepat")) return "yellow";
 
   return "green";
@@ -307,7 +314,7 @@ function AttendanceRecordCard({ item }: { item: AttendanceRecord }) {
   const shortDate = formatShortDate(item.date).split(" ");
   const note =
     item.lateMinutes > 0
-      ? { text: `Terlambat ${item.lateMinutes} menit`, className: "text-orange-600" }
+      ? { text: `Terlambat ${item.lateMinutes} menit`, className: "text-red-600" }
       : item.earlyLeaveMinutes > 0
         ? {
             text: `Pulang cepat ${item.earlyLeaveMinutes} menit`,

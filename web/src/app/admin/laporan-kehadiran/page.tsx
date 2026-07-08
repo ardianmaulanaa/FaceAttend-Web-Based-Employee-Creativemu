@@ -52,16 +52,23 @@ const statusOptions: { value: StatusFilter; label: string }[] = [
 function getStatusStyle(status: string) {
   const normalized = String(status || "").toLowerCase();
 
-  if (normalized === "present" || normalized === "hadir") {
+  if (
+    normalized === "present" ||
+    normalized === "hadir" ||
+    normalized.includes("masuk kerja")
+  ) {
     return "bg-emerald-50 text-emerald-700 ring-emerald-100";
   }
 
-  if (normalized === "late" || normalized === "terlambat") {
-    return "bg-amber-50 text-amber-700 ring-amber-100";
-  }
-
-  if (normalized === "cuti") {
-    return "bg-blue-50 text-[#123c8c] ring-blue-100";
+  if (
+    normalized === "late" ||
+    normalized === "terlambat" ||
+    normalized.includes("cuti") ||
+    normalized.includes("sakit") ||
+    normalized.includes("izin") ||
+    normalized.includes("tidak")
+  ) {
+    return "bg-red-50 text-red-700 ring-red-100";
   }
 
   return "bg-slate-100 text-slate-600 ring-slate-200";
