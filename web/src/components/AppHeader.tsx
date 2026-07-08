@@ -300,10 +300,6 @@ export default function AppHeader({
             </button>
 
             <div className="min-w-0">
-              <p className="text-[11px] font-black uppercase tracking-[0.3em] text-[#123c8c]">
-                FaceAttend
-              </p>
-
               <h1 className="mt-1 truncate text-2xl font-black tracking-tight text-slate-950 md:text-2xl lg:text-3xl">
                 {title}
               </h1>

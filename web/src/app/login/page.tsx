@@ -311,10 +311,6 @@ export default function LoginPage() {
                   <h1 className="text-xl font-black tracking-tight text-slate-950 md:text-2xl">
                     Creativemu
                   </h1>
-
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500 md:text-xs">
-                    Employee Attendance System
-                  </p>
                 </div>
               </div>
 
@@ -326,13 +322,6 @@ export default function LoginPage() {
                 <h2 className="mt-4 text-4xl font-black leading-[1.05] tracking-tight text-slate-950 md:mt-5 md:text-6xl">
                   <span className="typewriter-title">Creativemu Presence</span>
                 </h2>
-
-                <p className="mt-5 max-w-xl text-sm leading-7 text-slate-600 md:mt-6 md:text-base md:leading-8">
-                  Sistem absensi digital untuk karyawan Creativemu dengan kamera
-                  sebagai bukti kehadiran, validasi lokasi kantor, riwayat
-                  absensi, dan pengelolaan data karyawan yang lebih cepat dan
-                  terintegrasi.
-                </p>
               </div>
             </div>
 
@@ -348,17 +337,9 @@ export default function LoginPage() {
             >
               <form suppressHydrationWarning noValidate onSubmit={handleSubmit}>
                 <div className="mb-7 md:mb-8">
-                  <p className="text-xs font-black uppercase tracking-[0.24em] text-[#123c8c]">
-                    FaceAttend
-                  </p>
-
                   <h3 className="mt-2 text-3xl font-black tracking-tight text-slate-950">
                     Sign In
                   </h3>
-
-                  <p className="mt-2 text-sm leading-6 text-slate-500">
-                    Gunakan akun karyawan atau admin untuk masuk ke sistem.
-                  </p>
                 </div>
 
                 <div className="space-y-5">
@@ -374,14 +355,6 @@ export default function LoginPage() {
                       autoComplete="email"
                       disabled={formIsBusy}
                     />
-
-                    <p className="mt-2 text-xs font-semibold leading-5 text-slate-400">
-                      Login hanya dapat menggunakan email resmi{" "}
-                      <span className="font-black text-[#123c8c]">
-                        @creativemu.com
-                      </span>
-                      .
-                    </p>
                   </div>
 
                   <AppInput
