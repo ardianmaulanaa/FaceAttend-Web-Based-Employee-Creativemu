@@ -301,11 +301,7 @@ export default function AdminAnnouncementsPage() {
 
   return (
     <MobileShell variant="admin">
-      <AppHeader
-        title="Pengumuman"
-        subtitle="Kelola pemberitahuan untuk semua pengguna"
-        variant="admin"
-      />
+      <AppHeader title="Pengumuman" variant="admin" />
 
       <main className="mx-auto max-w-7xl px-5 py-6 pb-28 md:px-10 lg:px-16">
         <section className="relative overflow-hidden rounded-[2.2rem] bg-[#123c8c] p-6 text-white shadow-2xl shadow-blue-900/25 md:p-8">
@@ -322,10 +318,6 @@ export default function AdminAnnouncementsPage() {
               <h1 className="mt-5 text-3xl font-black tracking-tight md:text-4xl">
                 Pengumuman Admin
               </h1>
-
-              <p className="mt-3 max-w-2xl text-sm leading-7 text-blue-100">
-                Buat dan kelola pemberitahuan
-              </p>
             </div>
 
             <button

@@ -812,11 +812,7 @@ export default function AdminEmployeesPage() {
 
   return (
     <MobileShell variant="admin">
-      <AppHeader
-        title="Employees"
-        subtitle="Kelola data karyawan dan akun login"
-        variant="admin"
-      />
+      <AppHeader title="Employees" variant="admin" />
 
       <main className="mx-auto max-w-7xl px-5 py-6 pb-28 md:px-10 lg:px-16">
         <section className="relative overflow-hidden rounded-[2.2rem] bg-[#123c8c] p-6 text-white shadow-2xl shadow-blue-900/25 md:p-8">
@@ -833,11 +829,6 @@ export default function AdminEmployeesPage() {
               <h2 className="mt-5 text-3xl font-black tracking-tight md:text-4xl">
                 Data Karyawan
               </h2>
-
-              <p className="mt-3 max-w-2xl text-sm leading-7 text-blue-100">
-                Admin dapat menambahkan akun karyawan dengan alur Kantor →
-                Divisi → Unit → Jabatan → Shift.
-              </p>
             </div>
 
             <button
@@ -852,9 +843,6 @@ export default function AdminEmployeesPage() {
               <span className="text-left">
                 <span className="block text-xl font-black leading-none tracking-tight">
                   Register Employee
-                </span>
-                <span className="mt-2 block text-sm font-bold text-slate-400">
-                  Add new employee account
                 </span>
               </span>
             </button>

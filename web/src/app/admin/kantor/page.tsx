@@ -153,7 +153,7 @@ function StatusBadge({ status }: { status: OfficeStatus }) {
         "inline-flex shrink-0 rounded-full px-3 py-1.5 text-xs font-black ring-1",
         active
           ? "bg-emerald-50 text-emerald-700 ring-emerald-100"
-          : "bg-slate-100 text-slate-600 ring-slate-200"
+          : "bg-slate-100 text-slate-600 ring-slate-200",
       )}
     >
       {active ? "Aktif" : "Nonaktif"}
@@ -287,11 +287,6 @@ function OfficeFormPanel({
           <h2 className="mt-2 break-words text-3xl font-black tracking-tight text-slate-950 md:text-2xl">
             Lokasi Kantor
           </h2>
-
-          <p className="mt-3 break-words text-base font-semibold leading-7 text-slate-500 md:text-sm md:leading-6">
-            Data ini dipakai untuk validasi GPS saat karyawan check-in dan
-            check-out.
-          </p>
         </div>
 
         {editingOffice ? (
@@ -447,7 +442,7 @@ export default function AdminOfficePage() {
   const [offices, setOffices] = useState<OfficeLocation[]>([]);
   const [form, setForm] = useState<OfficeForm>(emptyForm);
   const [editingOffice, setEditingOffice] = useState<OfficeLocation | null>(
-    null
+    null,
   );
 
   const [isLoading, setIsLoading] = useState(true);
@@ -455,10 +450,13 @@ export default function AdminOfficePage() {
 
   const activeOffices = useMemo(
     () => offices.filter((office) => office.status === "active").length,
-    [offices]
+    [offices],
   );
 
-  function updateForm<K extends keyof OfficeForm>(key: K, value: OfficeForm[K]) {
+  function updateForm<K extends keyof OfficeForm>(
+    key: K,
+    value: OfficeForm[K],
+  ) {
     setForm((current) => ({
       ...current,
       [key]: value,
@@ -475,7 +473,7 @@ export default function AdminOfficePage() {
 
     if (!parsed) {
       alert(
-        "Koordinat tidak valid. Gunakan format seperti: -7.812201, 110.2685415 atau link Google Maps."
+        "Koordinat tidak valid. Gunakan format seperti: -7.812201, 110.2685415 atau link Google Maps.",
       );
       return;
     }
@@ -508,9 +506,7 @@ export default function AdminOfficePage() {
       console.error("LOAD_OFFICES_ERROR:", error);
 
       alert(
-        error instanceof Error
-          ? error.message
-          : "Gagal mengambil data kantor."
+        error instanceof Error ? error.message : "Gagal mengambil data kantor.",
       );
     } finally {
       setIsLoading(false);
@@ -526,7 +522,7 @@ export default function AdminOfficePage() {
 
       if (!isValidLatLng(parsedLatitude, parsedLongitude)) {
         throw new Error(
-          "Latitude atau longitude tidak valid. Coba isi lewat kolom koordinat lalu klik Ambil Latitude Longitude."
+          "Latitude atau longitude tidak valid. Coba isi lewat kolom koordinat lalu klik Ambil Latitude Longitude.",
         );
       }
 
@@ -564,9 +560,7 @@ export default function AdminOfficePage() {
       console.error("SAVE_OFFICE_ERROR:", error);
 
       alert(
-        error instanceof Error
-          ? error.message
-          : "Gagal menyimpan data kantor."
+        error instanceof Error ? error.message : "Gagal menyimpan data kantor.",
       );
     } finally {
       setIsSaving(false);
@@ -575,7 +569,7 @@ export default function AdminOfficePage() {
 
   async function deleteOffice(office: OfficeLocation) {
     const confirmed = window.confirm(
-      `Hapus kantor "${office.name}"? Data akan dinonaktifkan.`
+      `Hapus kantor "${office.name}"? Data akan dinonaktifkan.`,
     );
 
     if (!confirmed) return;
@@ -616,11 +610,7 @@ export default function AdminOfficePage() {
   return (
     <MobileShell variant="admin" withBottomPadding={false}>
       <div className="min-h-dvh w-full max-w-full overflow-x-hidden bg-white md:bg-[#f6f8ff]">
-        <AppHeader
-          title="Kantor"
-          subtitle="Kelola lokasi kantor dan radius validasi absensi"
-          variant="admin"
-        />
+        <AppHeader title="Kantor" variant="admin" />
 
         <main className="min-h-dvh w-full max-w-full overflow-x-hidden bg-white text-slate-950 md:bg-gradient-to-br md:from-[#f6f8ff] md:via-white md:to-[#eef4ff]">
           <section
@@ -656,20 +646,6 @@ export default function AdminOfficePage() {
                       karyawan berada di dalam radius saat absensi.
                     </p>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={loadOffices}
-                    disabled={isLoading}
-                    className="inline-flex h-12 w-full shrink-0 items-center justify-center gap-2 rounded-2xl bg-white px-5 text-sm font-black text-[#123c8c] shadow-lg shadow-blue-950/20 transition active:scale-[0.98] disabled:opacity-60 md:w-auto"
-                  >
-                    {isLoading ? (
-                      <Loader2 size={18} className="animate-spin" />
-                    ) : (
-                      <RefreshCcw size={18} />
-                    )}
-                    Refresh
-                  </button>
                 </div>
 
                 <div className="mt-6 grid w-full max-w-full gap-3 md:grid-cols-3">

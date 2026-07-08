@@ -208,11 +208,7 @@ export default function AdminDashboardPage() {
 
   return (
     <MobileShell variant="admin">
-      <AppHeader
-        title="Admin Dashboard"
-        subtitle="Monitoring absensi karyawan Creativemu"
-        variant="admin"
-      />
+      <AppHeader title="Admin Dashboard" variant="admin" />
 
       <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 pb-28 md:px-10 lg:px-16">
         <div className="overflow-hidden rounded-3xl border border-blue-100 bg-white shadow-xl shadow-slate-300/30">

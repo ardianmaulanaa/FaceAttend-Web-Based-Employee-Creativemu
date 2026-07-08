@@ -136,7 +136,9 @@ async function readJsonResponse(response: Response) {
 }
 
 function FieldLabel({ children }: { children: ReactNode }) {
-  return <label className="text-sm font-black text-slate-500">{children}</label>;
+  return (
+    <label className="text-sm font-black text-slate-500">{children}</label>
+  );
 }
 
 function SelectField(props: {
@@ -148,8 +150,15 @@ function SelectField(props: {
   icon?: ReactNode;
   className?: string;
 }) {
-  const { label, value, onChange, children, disabled, icon, className = "" } =
-    props;
+  const {
+    label,
+    value,
+    onChange,
+    children,
+    disabled,
+    icon,
+    className = "",
+  } = props;
 
   return (
     <div className={className}>
@@ -305,7 +314,8 @@ export default function AdminPositionsPage() {
     return positions.filter((position) => {
       const positionName = position.name.toLowerCase();
       const unitName = position.unit?.name?.toLowerCase() || "";
-      const departmentName = position.unit?.department?.name?.toLowerCase() || "";
+      const departmentName =
+        position.unit?.department?.name?.toLowerCase() || "";
       const officeName =
         position.unit?.department?.office?.name?.toLowerCase() || "";
       const officeAddress =
@@ -349,7 +359,7 @@ export default function AdminPositionsPage() {
 
       if (!response.ok) {
         throw new Error(
-          data.error || data.message || "Gagal mengambil jabatan."
+          data.error || data.message || "Gagal mengambil jabatan.",
         );
       }
 
@@ -363,7 +373,7 @@ export default function AdminPositionsPage() {
       setErrorMessage(
         error instanceof Error
           ? error.message
-          : "Gagal mengambil data jabatan."
+          : "Gagal mengambil data jabatan.",
       );
     } finally {
       setIsLoading(false);
@@ -458,7 +468,7 @@ export default function AdminPositionsPage() {
 
       if (!response.ok) {
         throw new Error(
-          data.error || data.message || "Gagal menyimpan jabatan."
+          data.error || data.message || "Gagal menyimpan jabatan.",
         );
       }
 
@@ -467,7 +477,9 @@ export default function AdminPositionsPage() {
     } catch (error) {
       console.error("SAVE_POSITION_ERROR:", error);
 
-      alert(error instanceof Error ? error.message : "Gagal menyimpan jabatan.");
+      alert(
+        error instanceof Error ? error.message : "Gagal menyimpan jabatan.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -478,13 +490,13 @@ export default function AdminPositionsPage() {
 
     if (totalUsers > 0) {
       alert(
-        "Jabatan ini masih digunakan oleh karyawan. Ubah status menjadi Nonaktif jika tidak ingin digunakan."
+        "Jabatan ini masih digunakan oleh karyawan. Ubah status menjadi Nonaktif jika tidak ingin digunakan.",
       );
       return;
     }
 
     const confirmDelete = window.confirm(
-      `Yakin ingin menghapus jabatan "${position.name}"? Data yang dihapus tidak bisa dikembalikan.`
+      `Yakin ingin menghapus jabatan "${position.name}"? Data yang dihapus tidak bisa dikembalikan.`,
     );
 
     if (!confirmDelete) return;
@@ -499,7 +511,9 @@ export default function AdminPositionsPage() {
       const data = await readJsonResponse(response);
 
       if (!response.ok) {
-        throw new Error(data.error || data.message || "Gagal menghapus jabatan.");
+        throw new Error(
+          data.error || data.message || "Gagal menghapus jabatan.",
+        );
       }
 
       alert("Jabatan berhasil dihapus.");
@@ -507,7 +521,9 @@ export default function AdminPositionsPage() {
     } catch (error) {
       console.error("DELETE_POSITION_ERROR:", error);
 
-      alert(error instanceof Error ? error.message : "Gagal menghapus jabatan.");
+      alert(
+        error instanceof Error ? error.message : "Gagal menghapus jabatan.",
+      );
     } finally {
       setIsDeleting(false);
     }
@@ -515,29 +531,16 @@ export default function AdminPositionsPage() {
 
   return (
     <MobileShell variant="admin">
-      <AppHeader
-        title="Daftar Jabatan"
-        subtitle="Kelola master data jabatan berdasarkan kantor, divisi, dan unit"
-        variant="admin"
-      />
+      <AppHeader title="Daftar Jabatan" variant="admin" />
 
       <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 pb-28 md:px-10 lg:px-16">
         <div className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-xl shadow-slate-300/30">
           <div className="bg-[#123c8c] p-6 text-white md:p-8">
             <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.24em] text-blue-100">
-                  Presensi Admin Panel
-                </p>
-
                 <h1 className="mt-3 text-3xl font-black tracking-tight md:text-4xl">
                   Daftar Jabatan
                 </h1>
-
-                <p className="mt-3 max-w-2xl text-sm font-semibold leading-7 text-blue-100">
-                  Jabatan berada di bawah unit. Contoh: Kantor Pusat Bandung →
-                  Technology → Backend Development → Backend Developer.
-                </p>
               </div>
 
               <button
@@ -606,7 +609,9 @@ export default function AdminPositionsPage() {
                   {filteredUnitsForFilter.map((unit) => (
                     <option key={unit.id} value={unit.id}>
                       {unit.name}
-                      {unit.department?.name ? ` - ${unit.department.name}` : ""}
+                      {unit.department?.name
+                        ? ` - ${unit.department.name}`
+                        : ""}
                     </option>
                   ))}
                 </SelectField>
@@ -714,7 +719,7 @@ export default function AdminPositionsPage() {
 
                           <span
                             className={`shrink-0 rounded-full px-3 py-1.5 text-[11px] font-black md:hidden ${statusClass(
-                              position.status
+                              position.status,
                             )}`}
                           >
                             {formatStatus(position.status)}
@@ -742,12 +747,15 @@ export default function AdminPositionsPage() {
                           value={department?.name || "Tanpa Divisi"}
                         />
 
-                        <InfoCell label="Unit" value={unit?.name || "Tanpa Unit"} />
+                        <InfoCell
+                          label="Unit"
+                          value={unit?.name || "Tanpa Unit"}
+                        />
 
                         <div className="hidden md:block">
                           <span
                             className={`w-fit rounded-full px-4 py-2 text-xs font-black ${statusClass(
-                              position.status
+                              position.status,
                             )}`}
                           >
                             {formatStatus(position.status)}

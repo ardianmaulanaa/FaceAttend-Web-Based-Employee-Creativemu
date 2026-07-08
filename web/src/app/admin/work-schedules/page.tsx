@@ -434,21 +434,13 @@ export default function WorkSchedulesPage() {
 
   return (
     <MobileShell variant="admin">
-      <AppHeader
-        title="Daftar Jam Kerja"
-        subtitle="Kelola jadwal masuk dan pulang setiap shift"
-        variant="admin"
-      />
+      <AppHeader title="Daftar Jam Kerja" variant="admin" />
 
       <section className="mx-auto max-w-6xl space-y-5 px-5 py-6 pb-28 md:px-10 lg:px-16">
         <div className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-xl shadow-slate-300/30">
           <div className="bg-[#123c8c] p-6 text-white md:p-8">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-100">
-                  Presensi Admin Panel
-                </p>
-
                 <h1 className="mt-3 text-3xl font-black tracking-tight md:text-4xl">
                   Daftar Jam Kerja
                 </h1>
@@ -567,9 +559,7 @@ export default function WorkSchedulesPage() {
                   <div className="rounded-3xl border border-blue-100 bg-[#f8fbff] p-4">
                     <div className="flex items-center gap-2 text-[#123c8c]">
                       <Power size={18} />
-                      <p className="text-sm font-bold text-slate-500">
-                        Status
-                      </p>
+                      <p className="text-sm font-bold text-slate-500">Status</p>
                     </div>
                     <p
                       className={`mt-2 text-2xl font-black ${

@@ -153,8 +153,7 @@ export default function UnitsPage() {
 
       const unitOfficeId =
         unit.department?.office_id || unit.department?.office?.id || "";
-      const unitDepartmentId =
-        unit.department_id || unit.department?.id || "";
+      const unitDepartmentId = unit.department_id || unit.department?.id || "";
 
       if (
         keyword &&
@@ -221,7 +220,7 @@ export default function UnitsPage() {
       console.error("LOAD_UNITS_ERROR:", error);
 
       setErrorMessage(
-        error instanceof Error ? error.message : "Gagal mengambil data unit."
+        error instanceof Error ? error.message : "Gagal mengambil data unit.",
       );
     } finally {
       setIsLoading(false);
@@ -331,13 +330,13 @@ export default function UnitsPage() {
 
     if (totalUsers > 0 || totalPositions > 0) {
       alert(
-        "Unit ini masih memiliki jabatan atau digunakan oleh karyawan. Ubah status menjadi Nonaktif jika tidak ingin digunakan."
+        "Unit ini masih memiliki jabatan atau digunakan oleh karyawan. Ubah status menjadi Nonaktif jika tidak ingin digunakan.",
       );
       return;
     }
 
     const confirmDelete = window.confirm(
-      `Yakin ingin menghapus unit "${unit.name}"? Data yang dihapus tidak bisa dikembalikan.`
+      `Yakin ingin menghapus unit "${unit.name}"? Data yang dihapus tidak bisa dikembalikan.`,
     );
 
     if (!confirmDelete) return;
@@ -368,29 +367,16 @@ export default function UnitsPage() {
 
   return (
     <MobileShell variant="admin">
-      <AppHeader
-        title="Daftar Unit"
-        subtitle="Kelola master data unit berdasarkan kantor dan divisi"
-        variant="admin"
-      />
+      <AppHeader title="Daftar Unit" variant="admin" />
 
       <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 pb-28 md:px-10 lg:px-16">
         <div className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-xl shadow-slate-300/30">
           <div className="bg-[#123c8c] p-6 text-white md:p-8">
             <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.24em] text-blue-100">
-                  Presensi Admin Panel
-                </p>
-
                 <h1 className="mt-3 text-3xl font-black tracking-tight md:text-4xl">
                   Daftar Unit
                 </h1>
-
-                <p className="mt-3 max-w-2xl text-sm font-semibold leading-7 text-blue-100">
-                  Unit berada di bawah divisi. Contoh: Kantor Pusat Bandung →
-                  Technology → Backend Development.
-                </p>
               </div>
 
               <button
@@ -833,9 +819,7 @@ export default function UnitsPage() {
               </div>
 
               <div className="rounded-2xl border border-blue-100 bg-[#f6f8ff] p-4">
-                <p className="text-sm font-black text-[#123c8c]">
-                  Relasi Unit
-                </p>
+                <p className="text-sm font-black text-[#123c8c]">Relasi Unit</p>
                 <p className="mt-1 text-sm leading-6 text-slate-500">
                   Unit berada di bawah divisi. Contoh: Kantor Pusat Bandung →
                   Technology → Backend Development → Backend Developer.
