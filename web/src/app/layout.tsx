@@ -45,6 +45,14 @@ export default function RootLayout({
           <ScrollReloadGuard />
           <LateGuard />
           <GlobalAlert />
+          {/* Watermark Background Logo */}
+          <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-[-1] select-none overflow-hidden">
+            <img
+              src="/images/creativemu-logo/creativemu.png"
+              alt="Creativemu Watermark"
+              className="w-[280px] h-[280px] sm:w-[400px] sm:h-[400px] md:w-[550px] md:h-[550px] object-contain opacity-[0.04] blur-[2px]"
+            />
+          </div>
           {children}
         </AppDataProvider>
       </body>
