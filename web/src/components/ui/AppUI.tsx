@@ -14,12 +14,9 @@ const buttonVariantClass: Record<Variant, string> = {
     "bg-[#123c8c] text-white shadow-lg shadow-blue-900/20 hover:bg-[#0f347a]",
   secondary:
     "border border-blue-100 bg-white text-[#123c8c] shadow-sm hover:bg-blue-50",
-  danger:
-    "bg-rose-50 text-rose-600 ring-1 ring-rose-100 hover:bg-rose-100",
-  ghost:
-    "bg-transparent text-[#123c8c] hover:bg-blue-50",
-  soft:
-    "bg-[#eaf1ff] text-[#123c8c] ring-1 ring-blue-100 hover:bg-blue-100",
+  danger: "bg-rose-50 text-rose-600 ring-1 ring-rose-100 hover:bg-rose-100",
+  ghost: "bg-transparent text-[#123c8c] hover:bg-blue-50",
+  soft: "bg-[#eaf1ff] text-[#123c8c] ring-1 ring-blue-100 hover:bg-blue-100",
 };
 
 const buttonSizeClass: Record<Size, string> = {
@@ -34,6 +31,8 @@ type AppButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   full?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
+  loading?: boolean;
+  loadingText?: string;
 };
 
 export function AppButton({
@@ -45,23 +44,34 @@ export function AppButton({
   leftIcon,
   rightIcon,
   disabled,
+  loading = false,
+  loadingText = "Memuat...",
   ...props
 }: AppButtonProps) {
+  const isDisabled = disabled || loading;
+
   return (
     <button
-      disabled={disabled}
+      disabled={isDisabled}
       className={cn(
-        "inline-flex items-center justify-center gap-2 font-black transition active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60",
+        "inline-flex items-center justify-center gap-2 font-black transition duration-200 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60",
         buttonVariantClass[variant],
         buttonSizeClass[size],
         full && "w-full",
-        className
+        loading && "scale-[0.99]",
+        className,
       )}
       {...props}
     >
-      {leftIcon}
-      {children}
-      {rightIcon}
+      {loading ? (
+        <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+      ) : (
+        leftIcon
+      )}
+
+      <span>{loading ? loadingText : children}</span>
+
+      {!loading ? rightIcon : null}
     </button>
   );
 }
@@ -86,7 +96,7 @@ export function AppIconButton({
         "inline-flex shrink-0 items-center justify-center font-black transition active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-60",
         buttonVariantClass[variant],
         size === "lg" ? "h-14 w-14 rounded-2xl" : "h-12 w-12 rounded-2xl",
-        className
+        className,
       )}
       {...props}
     >
@@ -100,12 +110,7 @@ type AppInputProps = React.InputHTMLAttributes<HTMLInputElement> & {
   error?: string;
 };
 
-export function AppInput({
-  label,
-  error,
-  className,
-  ...props
-}: AppInputProps) {
+export function AppInput({ label, error, className, ...props }: AppInputProps) {
   return (
     <label className="block">
       {label ? (
@@ -115,8 +120,9 @@ export function AppInput({
       <input
         className={cn(
           "mt-2 min-h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-60",
-          error && "border-red-200 bg-red-50 focus:border-red-400 focus:ring-red-100",
-          className
+          error &&
+            "border-red-200 bg-red-50 focus:border-red-400 focus:ring-red-100",
+          className,
         )}
         {...props}
       />
@@ -150,8 +156,9 @@ export function AppTextarea({
       <textarea
         className={cn(
           "mt-2 min-h-28 w-full resize-none rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-4 text-sm font-bold leading-6 text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-60",
-          error && "border-red-200 bg-red-50 focus:border-red-400 focus:ring-red-100",
-          className
+          error &&
+            "border-red-200 bg-red-50 focus:border-red-400 focus:ring-red-100",
+          className,
         )}
         {...props}
       />
@@ -175,6 +182,7 @@ export function AppSelect({
   error,
   className,
   children,
+  value,
   ...props
 }: AppSelectProps) {
   return (
@@ -184,13 +192,13 @@ export function AppSelect({
       ) : null}
 
       <select
-      suppressHydrationWarning
-      {...props}
-      value={props.value ?? ""}
+        suppressHydrationWarning
+        value={value ?? ""}
         className={cn(
           "mt-2 min-h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-60",
-          error && "border-red-200 bg-red-50 focus:border-red-400 focus:ring-red-100",
-          className
+          error &&
+            "border-red-200 bg-red-50 focus:border-red-400 focus:ring-red-100",
+          className,
         )}
         {...props}
       >
@@ -223,7 +231,7 @@ export function AppCard({
         padding === "sm" && "p-4",
         padding === "md" && "p-5",
         padding === "lg" && "p-6 md:p-8",
-        className
+        className,
       )}
       {...props}
     >
@@ -232,10 +240,9 @@ export function AppCard({
   );
 }
 
-type AppClickableCardProps =
-  React.ButtonHTMLAttributes<HTMLButtonElement> & {
-    padding?: "sm" | "md" | "lg";
-  };
+type AppClickableCardProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  padding?: "sm" | "md" | "lg";
+};
 
 export function AppClickableCard({
   children,
@@ -252,7 +259,7 @@ export function AppClickableCard({
         padding === "sm" && "p-4",
         padding === "md" && "p-5",
         padding === "lg" && "p-6 md:p-8",
-        className
+        className,
       )}
       {...props}
     >
@@ -284,7 +291,7 @@ export function AppBadge({
       className={cn(
         "inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black ring-1",
         variantClass[variant],
-        className
+        className,
       )}
       {...props}
     >
