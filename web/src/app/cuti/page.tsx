@@ -1,13 +1,15 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
+  AlertTriangle,
   CalendarDays,
   CheckCircle2,
   Clock3,
   FileText,
   Loader2,
   Send,
+  X,
   XCircle,
 } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
@@ -19,7 +21,9 @@ type LeaveRequest = {
   leaveType: string;
   leaveTypeLabel: string;
   startDate: string;
+  startDateIso?: string | null;
   endDate: string;
+  endDateIso?: string | null;
   totalDays: number;
   reason: string;
   status: string;
@@ -32,11 +36,54 @@ type LeaveRequest = {
   visitAddress: string | null;
   visitLatitude: number | null;
   visitLongitude: number | null;
-  createdAt: string;
+  createdAt: string | null;
 };
 
-async function readJsonResponse(response: Response) {
+type LeaveStats = {
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+};
+
+type LeaveResponse = {
+  success: boolean;
+  message?: string;
+  error?: string;
+  requests?: LeaveRequest[];
+  leaveRequests?: LeaveRequest[];
+  request?: LeaveRequest;
+  leaveRequest?: LeaveRequest;
+  stats?: LeaveStats;
+};
+
+type PageAlert = {
+  type: "success" | "error" | "warning";
+  title: string;
+  message: string;
+} | null;
+
+const emptyStats: LeaveStats = {
+  total: 0,
+  pending: 0,
+  approved: 0,
+  rejected: 0,
+};
+
+async function readJsonResponse(response: Response): Promise<LeaveResponse> {
   const text = await response.text();
+
+  if (!text) {
+    return {
+      success: false,
+      message:
+        "Response API kosong. Restart server dan pastikan route /api/leave-requests mengembalikan NextResponse.json.",
+      error:
+        "Response API kosong. Restart server dan pastikan route /api/leave-requests mengembalikan NextResponse.json.",
+      requests: [],
+      leaveRequests: [],
+    };
+  }
 
   try {
     return JSON.parse(text);
@@ -45,9 +92,12 @@ async function readJsonResponse(response: Response) {
 
     return {
       success: false,
+      message:
+        "API mengembalikan HTML/error page. Cek terminal Next.js untuk detail error.",
       error:
-        "API mengembalikan HTML/error page. Cek src/app/api/leave-requests/route.ts dan pastikan tabel LeaveRequest sudah ada.",
+        "API mengembalikan HTML/error page. Cek terminal Next.js untuk detail error.",
       requests: [],
+      leaveRequests: [],
     };
   }
 }
@@ -75,6 +125,40 @@ function getStatusIcon(status: string) {
   return Clock3;
 }
 
+function countDays(startDate: string, endDate: string) {
+  if (!startDate || !endDate) return 0;
+
+  const start = new Date(`${startDate}T00:00:00`);
+  const end = new Date(`${endDate}T00:00:00`);
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 0;
+
+  const diffMs = end.getTime() - start.getTime();
+
+  if (diffMs < 0) return 0;
+
+  return Math.floor(diffMs / 86400000) + 1;
+}
+
+function getAlertClass(type: "success" | "error" | "warning") {
+  if (type === "success") {
+    return "border-emerald-100 bg-emerald-50 text-emerald-700";
+  }
+
+  if (type === "error") {
+    return "border-red-100 bg-red-50 text-red-700";
+  }
+
+  return "border-amber-100 bg-amber-50 text-amber-700";
+}
+
+function getAlertIcon(type: "success" | "error" | "warning") {
+  if (type === "success") return CheckCircle2;
+  if (type === "error") return XCircle;
+
+  return AlertTriangle;
+}
+
 export default function LeaveRequestPage() {
   const [leaveType, setLeaveType] = useState("annual");
   const [startDate, setStartDate] = useState("");
@@ -88,14 +172,20 @@ export default function LeaveRequestPage() {
   const [visitLongitude, setVisitLongitude] = useState("");
 
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
+  const [stats, setStats] = useState<LeaveStats>(emptyStats);
+
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+
+  const [pageAlert, setPageAlert] = useState<PageAlert>(null);
+
+  const totalDays = useMemo(() => {
+    return countDays(startDate, endDate);
+  }, [startDate, endDate]);
 
   async function getLeaveRequests() {
     try {
       setIsLoading(true);
-      setErrorMessage("");
 
       const response = await fetch("/api/leave-requests", {
         method: "GET",
@@ -106,15 +196,30 @@ export default function LeaveRequestPage() {
 
       if (!response.ok || !data.success) {
         setRequests([]);
-        setErrorMessage(data.error || "Gagal mengambil pengajuan cuti.");
+        setStats(emptyStats);
+        setPageAlert({
+          type: "error",
+          title: "Gagal mengambil pengajuan",
+          message:
+            data.message ||
+            data.error ||
+            "Gagal mengambil data pengajuan cuti.",
+        });
         return;
       }
 
-      setRequests(data.requests || []);
+      setRequests(data.requests || data.leaveRequests || []);
+      setStats(data.stats || emptyStats);
     } catch (error) {
       console.error("GET_LEAVE_REQUESTS_ERROR:", error);
+
       setRequests([]);
-      setErrorMessage("Gagal mengambil pengajuan cuti.");
+      setStats(emptyStats);
+      setPageAlert({
+        type: "error",
+        title: "Terjadi kesalahan",
+        message: "Gagal mengambil pengajuan cuti.",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -122,6 +227,25 @@ export default function LeaveRequestPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (!leaveType || !startDate || !endDate || !reason.trim()) {
+      setPageAlert({
+        type: "warning",
+        title: "Data belum lengkap",
+        message:
+          "Jenis pengajuan, tanggal mulai, tanggal selesai, dan alasan wajib diisi.",
+      });
+      return;
+    }
+
+    if (totalDays <= 0) {
+      setPageAlert({
+        type: "warning",
+        title: "Tanggal tidak valid",
+        message: "Tanggal selesai tidak boleh lebih awal dari tanggal mulai.",
+      });
+      return;
+    }
 
     try {
       setIsSubmitting(true);
@@ -135,7 +259,7 @@ export default function LeaveRequestPage() {
           leaveType,
           startDate,
           endDate,
-          reason,
+          reason: reason.trim(),
           requestedWorkMode,
           locationUnlockRequested,
           visitLocationName,
@@ -148,11 +272,14 @@ export default function LeaveRequestPage() {
       const data = await readJsonResponse(response);
 
       if (!response.ok || !data.success) {
-        alert(data.error || "Gagal mengirim pengajuan cuti.");
+        setPageAlert({
+          type: "error",
+          title: "Gagal mengirim pengajuan",
+          message:
+            data.message || data.error || "Gagal mengirim pengajuan cuti.",
+        });
         return;
       }
-
-      alert("Pengajuan cuti berhasil dikirim.");
 
       setLeaveType("annual");
       setStartDate("");
@@ -165,17 +292,30 @@ export default function LeaveRequestPage() {
       setVisitLatitude("");
       setVisitLongitude("");
 
+      setPageAlert({
+        type: "success",
+        title: "Pengajuan terkirim",
+        message:
+          data.message ||
+          "Pengajuan berhasil dikirim dan menunggu persetujuan admin.",
+      });
+
       await getLeaveRequests();
     } catch (error) {
       console.error("SUBMIT_LEAVE_REQUEST_ERROR:", error);
-      alert("Gagal mengirim pengajuan cuti.");
+
+      setPageAlert({
+        type: "error",
+        title: "Terjadi kesalahan",
+        message: "Gagal mengirim pengajuan cuti.",
+      });
     } finally {
       setIsSubmitting(false);
     }
   }
 
   useEffect(() => {
-    getLeaveRequests();
+    void getLeaveRequests();
   }, []);
 
   return (
@@ -186,9 +326,10 @@ export default function LeaveRequestPage() {
         rightLabel="Cuti"
       />
 
-      <section className="mx-auto grid max-w-7xl items-start gap-6 px-5 py-6 md:px-10 lg:grid-cols-[0.85fr_1.15fr] lg:px-16">
+      <section className="mx-auto grid max-w-7xl items-start gap-6 px-5 py-6 pb-28 md:px-10 lg:grid-cols-[0.85fr_1.15fr] lg:px-16">
         <form
           onSubmit={handleSubmit}
+          noValidate
           className="h-fit self-start rounded-[2rem] border border-blue-100 bg-white p-5 shadow-xl shadow-slate-200/60"
         >
           <div className="flex items-center gap-3">
@@ -207,6 +348,43 @@ export default function LeaveRequestPage() {
             </div>
           </div>
 
+          {pageAlert ? (
+            <div
+              className={`mt-5 flex items-start justify-between gap-3 rounded-2xl border p-4 ${getAlertClass(
+                pageAlert.type
+              )}`}
+            >
+              <div className="flex gap-3">
+                {(() => {
+                  const AlertIcon = getAlertIcon(pageAlert.type);
+
+                  return (
+                    <AlertIcon
+                      size={21}
+                      strokeWidth={2.7}
+                      className="mt-0.5 shrink-0"
+                    />
+                  );
+                })()}
+
+                <div>
+                  <p className="text-sm font-black">{pageAlert.title}</p>
+                  <p className="mt-1 text-sm font-semibold leading-6">
+                    {pageAlert.message}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setPageAlert(null)}
+                className="rounded-xl bg-white/70 p-2 transition hover:bg-white active:scale-[0.96]"
+              >
+                <X size={17} />
+              </button>
+            </div>
+          ) : null}
+
           <div className="mt-5 space-y-4">
             <div>
               <label className="text-sm font-black text-slate-700">
@@ -216,7 +394,7 @@ export default function LeaveRequestPage() {
               <select
                 value={leaveType}
                 onChange={(event) => setLeaveType(event.target.value)}
-                className="mt-2 h-13 min-h-13 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                className="mt-2 min-h-[52px] w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
               >
                 <option value="annual">Cuti Tahunan</option>
                 <option value="permission">Izin</option>
@@ -309,9 +487,16 @@ export default function LeaveRequestPage() {
                 <input
                   type="date"
                   value={startDate}
-                  onChange={(event) => setStartDate(event.target.value)}
-                  className="mt-2 h-13 min-h-13 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
-                  required
+                  onChange={(event) => {
+                    const nextStartDate = event.target.value;
+
+                    setStartDate(nextStartDate);
+
+                    if (endDate && nextStartDate > endDate) {
+                      setEndDate(nextStartDate);
+                    }
+                  }}
+                  className="mt-2 min-h-[52px] w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
                 />
               </div>
 
@@ -323,11 +508,18 @@ export default function LeaveRequestPage() {
                 <input
                   type="date"
                   value={endDate}
+                  min={startDate || undefined}
                   onChange={(event) => setEndDate(event.target.value)}
-                  className="mt-2 h-13 min-h-13 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
-                  required
+                  className="mt-2 min-h-[52px] w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
                 />
               </div>
+            </div>
+
+            <div className="rounded-2xl border border-blue-100 bg-[#f8fbff] p-4">
+              <p className="text-sm font-black text-[#123c8c]">Total Hari</p>
+              <p className="mt-1 text-2xl font-black text-slate-950">
+                {totalDays} hari
+              </p>
             </div>
 
             <div>
@@ -340,14 +532,13 @@ export default function LeaveRequestPage() {
                 onChange={(event) => setReason(event.target.value)}
                 placeholder="Contoh: Mengajukan cuti karena keperluan keluarga."
                 className="mt-2 min-h-28 w-full resize-none rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-4 text-sm font-bold leading-6 text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
-                required
               />
             </div>
 
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex h-13 min-h-13 w-full items-center justify-center gap-2 rounded-2xl bg-[#123c8c] px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-[#123c8c] px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting ? (
                 <>
@@ -385,14 +576,38 @@ export default function LeaveRequestPage() {
             </p>
           </div>
 
-          {errorMessage ? (
-            <div className="rounded-[2rem] border border-red-100 bg-red-50 p-5 text-sm font-black text-red-700 shadow-lg shadow-slate-200/60">
-              {errorMessage}
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">
+                Total
+              </p>
+              <p className="mt-1 text-2xl font-black text-slate-950">
+                {stats.total}
+              </p>
             </div>
-          ) : null}
+
+            <div className="rounded-2xl border border-amber-100 bg-white p-4 shadow-sm">
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">
+                Pending
+              </p>
+              <p className="mt-1 text-2xl font-black text-amber-700">
+                {stats.pending}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm">
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">
+                Disetujui
+              </p>
+              <p className="mt-1 text-2xl font-black text-emerald-700">
+                {stats.approved}
+              </p>
+            </div>
+          </div>
 
           {isLoading ? (
-            <div className="rounded-[2rem] border border-blue-100 bg-white p-5 text-sm font-black text-slate-500 shadow-lg shadow-slate-200/60">
+            <div className="flex items-center gap-3 rounded-[2rem] border border-blue-100 bg-white p-5 text-sm font-black text-slate-500 shadow-lg shadow-slate-200/60">
+              <Loader2 size={18} className="animate-spin text-[#123c8c]" />
               Memuat pengajuan cuti...
             </div>
           ) : requests.length === 0 ? (

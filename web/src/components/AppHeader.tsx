@@ -34,6 +34,24 @@ type AppHeaderProps = {
   variant?: "employee" | "admin";
 };
 
+type NotificationStats = {
+  total?: number;
+  unread?: number;
+  pending?: number;
+  sick?: number;
+  leave?: number;
+  permission?: number;
+  wfh?: number;
+  wfc?: number;
+  visit?: number;
+};
+
+type NotificationResponse = {
+  success?: boolean;
+  stats?: NotificationStats;
+  message?: string;
+};
+
 const employeeNav = [
   { href: "/home", label: "Home", icon: Home },
   { href: "/attendance", label: "Attendance", icon: ScanFace },
@@ -73,9 +91,9 @@ const masterDataMenus = [
     icon: CalendarClock,
   },
   {
-  href: "/admin/kantor",
-  label: "Kantor",
-  icon: Building2,
+    href: "/admin/kantor",
+    label: "Kantor",
+    icon: Building2,
   },
   {
     href: "/admin/departments",
@@ -120,6 +138,38 @@ function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+async function readJsonResponse(response: Response) {
+  const text = await response.text();
+
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch {
+    return {};
+  }
+}
+
+function getAdminNotificationCount(stats?: NotificationStats) {
+  if (!stats) return 0;
+
+  const unread = Number(stats.unread || 0);
+  const pending = Number(stats.pending || 0);
+
+  return unread + pending;
+}
+
+function getEmployeeNotificationCount(stats?: NotificationStats) {
+  if (!stats) return 0;
+
+  return Number(stats.unread || 0);
+}
+
+function formatNotificationCount(count: number) {
+  if (count <= 0) return "";
+  if (count > 99) return "99+";
+
+  return String(count);
+}
+
 export default function AppHeader({
   title,
   subtitle,
@@ -134,6 +184,7 @@ export default function AppHeader({
   const [attendanceNotifications, setAttendanceNotifications] = useState<any[]>([]);
   const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
   const bellMenuRef = useRef<HTMLDivElement | null>(null);
+  const [notificationCount, setNotificationCount] = useState(0);
 
   const resolvedVariant = useMemo(() => {
     if (pathname === "/admin" || pathname.startsWith("/admin/")) {
@@ -143,6 +194,7 @@ export default function AppHeader({
   }, [pathname, variant]);
 
   const isAdmin = resolvedVariant === "admin";
+
   const [readNotifIds, setReadNotifIds] = useState<string[]>([]);
 
   useEffect(() => {
@@ -199,6 +251,10 @@ export default function AppHeader({
     };
   }, []);
 
+  const notificationHref = isAdmin ? "/admin/notifikasi" : "/notifikasi";
+  const isNotificationPage = isActivePath(pathname, notificationHref);
+  const hasNewNotification = notificationCount > 0;
+
   useEffect(() => {
     setIsSidebarOpen(false);
   }, [pathname]);
@@ -218,6 +274,53 @@ export default function AppHeader({
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadNotificationCount() {
+      try {
+        const endpoint = isAdmin
+          ? "/api/admin/notifications"
+          : "/api/notifications";
+
+        const response = await fetch(endpoint, {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          if (isMounted) setNotificationCount(0);
+          return;
+        }
+
+        const data = (await readJsonResponse(response)) as NotificationResponse;
+
+        const count = isAdmin
+          ? getAdminNotificationCount(data.stats)
+          : getEmployeeNotificationCount(data.stats);
+
+        if (isMounted) {
+          setNotificationCount(count);
+        }
+      } catch {
+        if (isMounted) {
+          setNotificationCount(0);
+        }
+      }
+    }
+
+    void loadNotificationCount();
+
+    const intervalId = window.setInterval(() => {
+      void loadNotificationCount();
+    }, 30000);
+
+    return () => {
+      isMounted = false;
+      window.clearInterval(intervalId);
+    };
+  }, [isAdmin, pathname]);
 
   function handleNavigate(href: string) {
     setIsSidebarOpen(false);
@@ -261,8 +364,8 @@ export default function AppHeader({
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {isAdmin && (
+          <div className="flex shrink-0 items-center justify-end gap-3">
+            {isAdmin ? (
               <div ref={bellMenuRef} className="relative">
                 <button
                   type="button"
@@ -289,69 +392,119 @@ export default function AppHeader({
                     ) : attendanceNotifications.length === 0 ? (
                       <p className="mt-3 text-sm font-semibold text-slate-400">Tidak ada notifikasi baru.</p>
                     ) : (
-                      <div className="mt-3 max-h-64 space-y-2 overflow-y-auto">
-                        {attendanceNotifications.map((notif) => {
-                          const isRead = readNotifIds.includes(notif.id);
-                          return (
-                            <div
-                              key={notif.id}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
+                      <>
+                        <div className="mt-3 max-h-64 space-y-2 overflow-y-auto">
+                          {attendanceNotifications.map((notif) => {
+                            const isRead = readNotifIds.includes(notif.id);
+                            return (
+                              <div
+                                key={notif.id}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
 
-                                if (!isRead) {
-                                  const nextIds = [...readNotifIds, notif.id];
-                                  setReadNotifIds(nextIds);
-                                  localStorage.setItem("read_notification_ids", JSON.stringify(nextIds));
-                                }
+                                  if (!isRead) {
+                                    const nextIds = [...readNotifIds, notif.id];
+                                    setReadNotifIds(nextIds);
+                                    localStorage.setItem("read_notification_ids", JSON.stringify(nextIds));
+                                  }
 
-                                if (notif.type === "leave-request") {
-                                  setIsBellMenuOpen(false);
-                                  router.push("/admin/cuti");
-                                }
-                              }}
-                              className={`relative rounded-xl p-3 transition text-left ${
-                                notif.type === "leave-request"
-                                  ? "bg-red-50 hover:bg-red-100/70 cursor-pointer border border-red-100"
-                                  : "bg-[#f6f8ff]"
-                              }`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <p className="text-xs font-black text-[#123c8c]">{notif.employeeName}</p>
-                                <div className="flex items-center gap-1.5">
-                                  {!isRead && (
-                                    <span className="h-2 w-2 rounded-full bg-red-500" />
-                                  )}
-                                  {notif.type === "leave-request" && (
-                                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-[9px] font-black text-red-600 uppercase">
-                                      Pengajuan
-                                    </span>
-                                  )}
+                                  if (notif.type === "leave-request") {
+                                    setIsBellMenuOpen(false);
+                                    router.push("/admin/cuti");
+                                  }
+                                }}
+                                className={`relative rounded-xl p-3 transition text-left ${
+                                  notif.type === "leave-request"
+                                    ? "bg-red-50 hover:bg-red-100/70 cursor-pointer border border-red-100"
+                                    : "bg-[#f6f8ff]"
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <p className="text-xs font-black text-[#123c8c]">{notif.employeeName}</p>
+                                  <div className="flex items-center gap-1.5">
+                                    {!isRead && (
+                                      <span className="h-2 w-2 rounded-full bg-red-500" />
+                                    )}
+                                    {notif.type === "leave-request" && (
+                                      <span className="rounded-full bg-red-100 px-2 py-0.5 text-[9px] font-black text-red-600 uppercase">
+                                        Pengajuan
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
+                                <p className="mt-1 text-xs font-semibold text-slate-600 leading-snug">{notif.message}</p>
+                                <p className="mt-1 text-[10px] font-semibold text-slate-400">
+                                  {new Date(notif.happenedAt).toLocaleTimeString("id-ID", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </p>
                               </div>
-                              <p className="mt-1 text-xs font-semibold text-slate-600 leading-snug">{notif.message}</p>
-                              <p className="mt-1 text-[10px] font-semibold text-slate-400">
-                                {new Date(notif.happenedAt).toLocaleTimeString("id-ID", {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })}
-                              </p>
-                            </div>
-                          );
-                        })}
-                      </div>
+                            );
+                          })}
+                        </div>
+                        <div className="mt-3 border-t pt-2 text-center">
+                          <Link
+                            href="/admin/notifikasi"
+                            onClick={() => setIsBellMenuOpen(false)}
+                            className="text-xs font-bold text-[#123c8c] hover:underline"
+                          >
+                            Lihat Semua Notifikasi
+                          </Link>
+                        </div>
+                      </>
                     )}
                   </div>
                 )}
               </div>
+            ) : (
+              <>
+                <Link
+                  href={notificationHref}
+                  className={`relative hidden h-12 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-black shadow-sm ring-1 transition active:scale-[0.96] sm:inline-flex ${
+                    isNotificationPage
+                      ? "bg-[#123c8c] text-white ring-[#123c8c] shadow-lg shadow-blue-900/20"
+                      : "bg-white text-[#123c8c] ring-blue-100 hover:bg-[#eaf1ff]"
+                  }`}
+                >
+                  <span className="relative">
+                    <Bell size={20} strokeWidth={2.7} />
+
+                    {hasNewNotification ? (
+                      <span className="absolute -right-2 -top-2 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-orange-500 px-1 text-[10px] font-black leading-none text-white ring-2 ring-white">
+                        {formatNotificationCount(notificationCount)}
+                      </span>
+                    ) : null}
+                  </span>
+
+                  <span className="hidden lg:inline">Notifikasi</span>
+                </Link>
+
+                <Link
+                  href={notificationHref}
+                  aria-label="Buka notifikasi"
+                  className={`relative flex h-12 w-12 items-center justify-center rounded-2xl shadow-sm ring-1 transition active:scale-[0.96] sm:hidden ${
+                    isNotificationPage
+                      ? "bg-[#123c8c] text-white ring-[#123c8c]"
+                      : "bg-white text-[#123c8c] ring-blue-100 hover:bg-[#eaf1ff]"
+                  }`}
+                >
+                  <Bell size={21} strokeWidth={2.7} />
+
+                  {hasNewNotification ? (
+                    <span className="absolute right-1.5 top-1.5 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-orange-500 px-1 text-[10px] font-black leading-none text-white ring-2 ring-white">
+                      {formatNotificationCount(notificationCount)}
+                    </span>
+                  ) : null}
+                </Link>
+              </>
             )}
 
             {rightLabel ? (
-              <div className="hidden items-center justify-end gap-3 md:flex">
-                <span className="rounded-2xl bg-white px-4 py-2 text-xs font-black text-slate-600 shadow-sm ring-1 ring-blue-100">
-                  {rightLabel}
-                </span>
-              </div>
+              <span className="hidden rounded-2xl bg-white px-4 py-2 text-xs font-black text-slate-600 shadow-sm ring-1 ring-blue-100 md:inline-flex">
+                {rightLabel}
+              </span>
             ) : null}
           </div>
         </div>

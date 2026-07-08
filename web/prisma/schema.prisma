@@ -68,34 +68,13 @@ model User {
   @@map("users")
 }
 
-model Unit {
-  id String @id @default(uuid()) @db.Char(36)
-
-  name String @db.VarChar(100)
-
-  // Kantor pemilik unit
-  office_id String?         @db.Char(36)
-  office    OfficeLocation? @relation(fields: [office_id], references: [id], onDelete: SetNull)
-
-  // active, inactive
-  status String @default("active") @db.VarChar(20)
-
-  users       User[]
-  departments Department[]
-
-  created_at DateTime @default(now())
-  updated_at DateTime @default(now()) @updatedAt
-
-  @@unique([office_id, name])
-  @@index([office_id])
-}
-
 model Department {
   id   String @id @default(uuid()) @db.Char(36)
   name String @db.VarChar(100)
 
-  unit_id String? @db.Char(36)
-  unit    Unit?   @relation(fields: [unit_id], references: [id], onDelete: SetNull)
+  // Kantor pemilik divisi
+  office_id String?         @db.Char(36)
+  office    OfficeLocation? @relation(fields: [office_id], references: [id], onDelete: SetNull)
 
   shift_id String? @db.Char(36)
   shift    Shift?  @relation(fields: [shift_id], references: [id], onDelete: SetNull)
@@ -106,13 +85,36 @@ model Department {
   // active, inactive
   status String @default("active") @db.VarChar(20)
 
+  users User[]
+  units Unit[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
+
+  @@unique([office_id, name])
+  @@index([office_id])
+}
+
+model Unit {
+  id String @id @default(uuid()) @db.Char(36)
+
+  name String @db.VarChar(100)
+
+  // Divisi pemilik unit
+  department_id String?     @db.Char(36)
+  department    Department? @relation(fields: [department_id], references: [id], onDelete: SetNull)
+
+  // active, inactive
+  status String @default("active") @db.VarChar(20)
+
   users     User[]
   positions Position[]
 
   created_at DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
 
-  @@unique([unit_id, name])
+  @@unique([department_id, name])
+  @@index([department_id])
 }
 
 model Position {
@@ -120,8 +122,9 @@ model Position {
 
   name String @db.VarChar(100)
 
-  department_id String?     @db.Char(36)
-  department    Department? @relation(fields: [department_id], references: [id], onDelete: SetNull)
+  // Unit pemilik jabatan
+  unit_id String? @db.Char(36)
+  unit    Unit?   @relation(fields: [unit_id], references: [id], onDelete: SetNull)
 
   // active, inactive
   status String @default("active") @db.VarChar(20)
@@ -131,7 +134,8 @@ model Position {
   created_at DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
 
-  @@unique([department_id, name])
+  @@unique([unit_id, name])
+  @@index([unit_id])
 }
 
 model Shift {
@@ -186,8 +190,8 @@ model OfficeLocation {
 
   users User[] @relation("EmployeeRegisteredOffice")
 
-  // Unit yang berada di kantor ini
-  units Unit[]
+  // Divisi yang berada di kantor ini
+  departments Department[]
 
   registered_attendances Attendance[] @relation("RegisteredOfficeAttendance")
   check_in_attendances   Attendance[] @relation("CheckInOfficeAttendance")

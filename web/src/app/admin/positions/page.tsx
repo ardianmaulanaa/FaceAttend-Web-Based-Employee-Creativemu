@@ -1,11 +1,13 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
 import {
   BriefcaseBusiness,
+  Building2,
   Edit,
   Loader2,
   MapPin,
+  Network,
   Plus,
   RefreshCw,
   Search,
@@ -23,30 +25,30 @@ type Office = {
   status?: string;
 };
 
-type Unit = {
-  id: string;
-  name: string;
-  office_id?: string | null;
-  office?: Office | null;
-  status?: string;
-};
-
 type Department = {
   id: string;
   name: string;
-  unit_id: string | null;
+  office_id: string | null;
   status: string;
-  unit?: Unit | null;
+  office?: Office | null;
+};
+
+type Unit = {
+  id: string;
+  name: string;
+  department_id: string | null;
+  status: string;
+  department?: Department | null;
 };
 
 type Position = {
   id: string;
   name: string;
-  department_id: string | null;
+  unit_id: string | null;
   status: string;
   created_at?: string;
   updated_at?: string;
-  department?: Department | null;
+  unit?: Unit | null;
   _count?: {
     users: number;
   };
@@ -55,16 +57,16 @@ type Position = {
 type PositionForm = {
   name: string;
   office_id: string;
-  unit_id: string;
   department_id: string;
+  unit_id: string;
   status: string;
 };
 
 const initialForm: PositionForm = {
   name: "",
   office_id: "",
-  unit_id: "",
   department_id: "",
+  unit_id: "",
   status: "active",
 };
 
@@ -90,6 +92,39 @@ function formatStatus(status: string) {
   return status;
 }
 
+function matchesFilter(value: string, filter: string) {
+  if (filter === "all") return true;
+  if (filter === "none") return !value;
+
+  return value === filter;
+}
+
+function getOfficeIdFromUnit(unit?: Unit | null) {
+  return unit?.department?.office_id || unit?.department?.office?.id || "";
+}
+
+function getDepartmentIdFromUnit(unit?: Unit | null) {
+  return unit?.department_id || unit?.department?.id || "";
+}
+
+function getUnitId(position: Position) {
+  return position.unit_id || position.unit?.id || "";
+}
+
+function getPositionOfficeId(position: Position) {
+  return getOfficeIdFromUnit(position.unit);
+}
+
+function getPositionDepartmentId(position: Position) {
+  return getDepartmentIdFromUnit(position.unit);
+}
+
+function statusClass(status: string) {
+  return status === "active"
+    ? "bg-blue-50 text-[#123c8c]"
+    : "bg-slate-100 text-slate-600";
+}
+
 async function readJsonResponse(response: Response) {
   const text = await response.text();
 
@@ -100,15 +135,110 @@ async function readJsonResponse(response: Response) {
   }
 }
 
+function FieldLabel({ children }: { children: ReactNode }) {
+  return <label className="text-sm font-black text-slate-500">{children}</label>;
+}
+
+function SelectField(props: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  children: ReactNode;
+  disabled?: boolean;
+  icon?: ReactNode;
+  className?: string;
+}) {
+  const { label, value, onChange, children, disabled, icon, className = "" } =
+    props;
+
+  return (
+    <div className={className}>
+      <FieldLabel>{label}</FieldLabel>
+
+      <div className="relative mt-3">
+        {icon ? (
+          <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+            {icon}
+          </div>
+        ) : null}
+
+        <select
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          disabled={disabled}
+          className={`h-[58px] w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] pr-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 ${
+            icon ? "pl-11" : "px-4"
+          }`}
+        >
+          {children}
+        </select>
+      </div>
+    </div>
+  );
+}
+
+function SearchField(props: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const { value, onChange } = props;
+
+  return (
+    <div>
+      <FieldLabel>Nama Jabatan / Unit / Divisi / Kantor</FieldLabel>
+
+      <div className="relative mt-3">
+        <Search
+          size={20}
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+        />
+
+        <input
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder="Cari jabatan, unit, divisi, atau kantor..."
+          className="h-[58px] w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] pl-12 pr-4 text-sm font-semibold text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#123c8c] focus:bg-white"
+        />
+      </div>
+    </div>
+  );
+}
+
+function InfoCell(props: {
+  label: string;
+  value: ReactNode;
+  subvalue?: ReactNode;
+}) {
+  const { label, value, subvalue } = props;
+
+  return (
+    <div className="rounded-2xl border border-blue-100 bg-[#f8fbff] p-3 md:border-0 md:bg-transparent md:p-0">
+      <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-400 md:hidden">
+        {label}
+      </p>
+
+      <p className="mt-1 font-black text-slate-600 md:mt-0">{value}</p>
+
+      {subvalue ? (
+        <p className="mt-1 line-clamp-1 text-xs font-semibold text-slate-400">
+          {subvalue}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 export default function AdminPositionsPage() {
   const [positions, setPositions] = useState<Position[]>([]);
+  const [offices, setOffices] = useState<Office[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [units, setUnits] = useState<Unit[]>([]);
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [officeFilter, setOfficeFilter] = useState("all");
-  const [unitFilter, setUnitFilter] = useState("all");
   const [departmentFilter, setDepartmentFilter] = useState("all");
+  const [unitFilter, setUnitFilter] = useState("all");
   const [form, setForm] = useState<PositionForm>(initialForm);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -119,146 +249,91 @@ export default function AdminPositionsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPosition, setEditingPosition] = useState<Position | null>(null);
 
-  const units = useMemo(() => {
-    const unitMap = new Map<string, Unit>();
-
-    departments.forEach((department) => {
-      const unit = department.unit;
-
-      if (unit?.id) {
-        unitMap.set(unit.id, unit);
-      }
-    });
-
-    return Array.from(unitMap.values()).sort((a, b) =>
-      a.name.localeCompare(b.name)
-    );
-  }, [departments]);
-
-  const offices = useMemo(() => {
-    const officeMap = new Map<string, Office>();
-
-    units.forEach((unit) => {
-      const office = unit.office;
-
-      if (office?.id) {
-        officeMap.set(office.id, office);
-      }
-    });
-
-    return Array.from(officeMap.values()).sort((a, b) =>
-      a.name.localeCompare(b.name)
-    );
-  }, [units]);
-
   const activeOffices = useMemo(() => {
     return offices.filter((office) => office.status !== "inactive");
   }, [offices]);
 
-  const activeUnits = useMemo(() => {
-    return units.filter((unit) => unit.status !== "inactive");
-  }, [units]);
-
   const activeDepartments = useMemo(() => {
-    return departments.filter((department) => {
-      return department.status === "active";
-    });
+    return departments.filter((department) => department.status === "active");
   }, [departments]);
 
-  const formUnits = useMemo(() => {
+  const activeUnits = useMemo(() => {
+    return units.filter((unit) => unit.status === "active");
+  }, [units]);
+
+  const formDepartments = useMemo(() => {
     if (!form.office_id) return [];
 
-    return activeUnits.filter((unit) => {
-      const officeId = unit.office_id || unit.office?.id || "";
+    return activeDepartments.filter((department) => {
+      const officeId = department.office_id || department.office?.id || "";
 
       return officeId === form.office_id;
     });
-  }, [activeUnits, form.office_id]);
+  }, [activeDepartments, form.office_id]);
 
-  const formDepartments = useMemo(() => {
-    if (!form.unit_id) return [];
+  const formUnits = useMemo(() => {
+    if (!form.department_id) return [];
 
-    return activeDepartments.filter((department) => {
-      return department.unit_id === form.unit_id;
+    return activeUnits.filter((unit) => {
+      return getDepartmentIdFromUnit(unit) === form.department_id;
     });
-  }, [activeDepartments, form.unit_id]);
+  }, [activeUnits, form.department_id]);
+
+  const filteredDepartmentsForFilter = useMemo(() => {
+    return departments.filter((department) => {
+      const officeId = department.office_id || department.office?.id || "";
+
+      return matchesFilter(officeId, officeFilter);
+    });
+  }, [departments, officeFilter]);
+
+  const filteredUnitsForFilter = useMemo(() => {
+    return units.filter((unit) => {
+      const officeId = getOfficeIdFromUnit(unit);
+      const departmentId = getDepartmentIdFromUnit(unit);
+
+      return (
+        matchesFilter(officeId, officeFilter) &&
+        matchesFilter(departmentId, departmentFilter)
+      );
+    });
+  }, [units, officeFilter, departmentFilter]);
 
   const filteredPositions = useMemo(() => {
     const keyword = search.toLowerCase().trim();
 
     return positions.filter((position) => {
       const positionName = position.name.toLowerCase();
-      const positionStatus = position.status.toLowerCase();
-      const departmentName = position.department?.name?.toLowerCase() || "";
-      const unitName = position.department?.unit?.name?.toLowerCase() || "";
+      const unitName = position.unit?.name?.toLowerCase() || "";
+      const departmentName = position.unit?.department?.name?.toLowerCase() || "";
       const officeName =
-        position.department?.unit?.office?.name?.toLowerCase() || "";
+        position.unit?.department?.office?.name?.toLowerCase() || "";
       const officeAddress =
-        position.department?.unit?.office?.address?.toLowerCase() || "";
-      const positionOfficeId =
-        position.department?.unit?.office_id ||
-        position.department?.unit?.office?.id ||
-        "";
-      const positionUnitId =
-        position.department?.unit_id || position.department?.unit?.id || "";
+        position.unit?.department?.office?.address?.toLowerCase() || "";
 
-      if (
-        keyword &&
-        !positionName.includes(keyword) &&
-        !departmentName.includes(keyword) &&
-        !unitName.includes(keyword) &&
-        !officeName.includes(keyword) &&
-        !officeAddress.includes(keyword)
-      ) {
-        return false;
-      }
+      const searchableText = [
+        positionName,
+        unitName,
+        departmentName,
+        officeName,
+        officeAddress,
+      ].join(" ");
 
-      if (statusFilter !== "all" && positionStatus !== statusFilter) {
-        return false;
-      }
-
-      if (officeFilter !== "all") {
-        if (officeFilter === "none" && positionOfficeId) {
-          return false;
-        }
-
-        if (officeFilter !== "none" && positionOfficeId !== officeFilter) {
-          return false;
-        }
-      }
-
-      if (unitFilter !== "all") {
-        if (unitFilter === "none" && positionUnitId) {
-          return false;
-        }
-
-        if (unitFilter !== "none" && positionUnitId !== unitFilter) {
-          return false;
-        }
-      }
-
-      if (departmentFilter !== "all") {
-        if (departmentFilter === "none" && position.department_id) {
-          return false;
-        }
-
-        if (
-          departmentFilter !== "none" &&
-          position.department_id !== departmentFilter
-        ) {
-          return false;
-        }
-      }
-
-      return true;
+      return (
+        (!keyword || searchableText.includes(keyword)) &&
+        matchesFilter(position.status, statusFilter) &&
+        matchesFilter(getPositionOfficeId(position), officeFilter) &&
+        matchesFilter(getPositionDepartmentId(position), departmentFilter) &&
+        matchesFilter(getUnitId(position), unitFilter)
+      );
     });
   }, [
     positions,
     search,
     statusFilter,
     officeFilter,
-    unitFilter,
     departmentFilter,
+    unitFilter,
   ]);
 
   async function loadPositions() {
@@ -279,7 +354,9 @@ export default function AdminPositionsPage() {
       }
 
       setPositions(data.positions || data.data || []);
+      setOffices(data.offices || []);
       setDepartments(data.departments || []);
+      setUnits(data.units || []);
     } catch (error) {
       console.error("LOAD_POSITIONS_ERROR:", error);
 
@@ -304,19 +381,12 @@ export default function AdminPositionsPage() {
   }
 
   function openEditModal(position: Position) {
-    const officeId =
-      position.department?.unit?.office_id ||
-      position.department?.unit?.office?.id ||
-      "";
-    const unitId =
-      position.department?.unit_id || position.department?.unit?.id || "";
-
     setEditingPosition(position);
     setForm({
       name: position.name,
-      office_id: officeId,
-      unit_id: unitId,
-      department_id: position.department_id || "",
+      office_id: getPositionOfficeId(position),
+      department_id: getPositionDepartmentId(position),
+      unit_id: getUnitId(position),
       status: position.status || "active",
     });
     setIsModalOpen(true);
@@ -332,8 +402,8 @@ export default function AdminPositionsPage() {
     setSearch("");
     setStatusFilter("all");
     setOfficeFilter("all");
-    setUnitFilter("all");
     setDepartmentFilter("all");
+    setUnitFilter("all");
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -346,13 +416,13 @@ export default function AdminPositionsPage() {
       return;
     }
 
-    if (!form.unit_id) {
-      alert("Unit wajib dipilih.");
+    if (!form.department_id) {
+      alert("Divisi wajib dipilih.");
       return;
     }
 
-    if (!form.department_id) {
-      alert("Divisi jabatan wajib dipilih.");
+    if (!form.unit_id) {
+      alert("Unit wajib dipilih.");
       return;
     }
 
@@ -377,7 +447,9 @@ export default function AdminPositionsPage() {
         body: JSON.stringify({
           id: editingPosition?.id,
           name,
+          office_id: form.office_id,
           department_id: form.department_id,
+          unit_id: form.unit_id,
           status: form.status,
         }),
       });
@@ -402,7 +474,9 @@ export default function AdminPositionsPage() {
   }
 
   async function handleDeletePosition(position: Position) {
-    if ((position._count?.users || 0) > 0) {
+    const totalUsers = position._count?.users || 0;
+
+    if (totalUsers > 0) {
       alert(
         "Jabatan ini masih digunakan oleh karyawan. Ubah status menjadi Nonaktif jika tidak ingin digunakan."
       );
@@ -443,7 +517,7 @@ export default function AdminPositionsPage() {
     <MobileShell variant="admin">
       <AppHeader
         title="Daftar Jabatan"
-        subtitle="Kelola master data jabatan berdasarkan kantor, unit, dan divisi"
+        subtitle="Kelola master data jabatan berdasarkan kantor, divisi, dan unit"
         variant="admin"
       />
 
@@ -461,8 +535,8 @@ export default function AdminPositionsPage() {
                 </h1>
 
                 <p className="mt-3 max-w-2xl text-sm font-semibold leading-7 text-blue-100">
-                  Jabatan sekarang mengikuti relasi Kantor → Unit → Divisi,
-                  sehingga pilihan jabatan di employee lebih akurat.
+                  Jabatan berada di bawah unit. Contoh: Kantor Pusat Bandung →
+                  Technology → Backend Development → Backend Developer.
                 </p>
               </div>
 
@@ -478,40 +552,18 @@ export default function AdminPositionsPage() {
           </div>
 
           <div className="p-5 md:p-8">
-            <div className="grid gap-3 md:grid-cols-[1fr_200px_200px_200px_200px_auto]">
-              <div>
-                <label className="text-sm font-black text-slate-500">
-                  Nama Jabatan / Divisi / Unit / Kantor
-                </label>
+            <div className="space-y-4">
+              <div className="grid gap-4 xl:grid-cols-[minmax(320px,1.2fr)_minmax(230px,0.8fr)_minmax(230px,0.8fr)]">
+                <SearchField value={search} onChange={setSearch} />
 
-                <div className="relative mt-3">
-                  <Search
-                    size={20}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                  />
-
-                  <input
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Cari jabatan, divisi, unit, atau kantor..."
-                    className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-4 pl-12 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-black text-slate-500">
-                  Filter Kantor
-                </label>
-
-                <select
+                <SelectField
+                  label="Filter Kantor"
                   value={officeFilter}
-                  onChange={(event) => {
-                    setOfficeFilter(event.target.value);
-                    setUnitFilter("all");
+                  onChange={(value) => {
+                    setOfficeFilter(value);
                     setDepartmentFilter("all");
+                    setUnitFilter("all");
                   }}
-                  className="mt-3 w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
                 >
                   <option value="all">Semua Kantor</option>
                   <option value="none">Tanpa Kantor</option>
@@ -520,123 +572,75 @@ export default function AdminPositionsPage() {
                       {office.name}
                     </option>
                   ))}
-                </select>
-              </div>
+                </SelectField>
 
-              <div>
-                <label className="text-sm font-black text-slate-500">
-                  Filter Unit
-                </label>
-
-                <select
-                  value={unitFilter}
-                  onChange={(event) => {
-                    setUnitFilter(event.target.value);
-                    setDepartmentFilter("all");
-                  }}
-                  className="mt-3 w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
-                >
-                  <option value="all">Semua Unit</option>
-                  <option value="none">Tanpa Unit</option>
-                  {units
-                    .filter((unit) => {
-                      if (officeFilter === "all") return true;
-                      if (officeFilter === "none") return !unit.office_id;
-                      return (
-                        (unit.office_id || unit.office?.id || "") ===
-                        officeFilter
-                      );
-                    })
-                    .map((unit) => (
-                      <option key={unit.id} value={unit.id}>
-                        {unit.name}
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-sm font-black text-slate-500">
-                  Filter Divisi
-                </label>
-
-                <select
+                <SelectField
+                  label="Filter Divisi"
                   value={departmentFilter}
-                  onChange={(event) => setDepartmentFilter(event.target.value)}
-                  className="mt-3 w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                  onChange={(value) => {
+                    setDepartmentFilter(value);
+                    setUnitFilter("all");
+                  }}
                 >
                   <option value="all">Semua Divisi</option>
                   <option value="none">Tanpa Divisi</option>
-                  {departments
-                    .filter((department) => {
-                      const departmentOfficeId =
-                        department.unit?.office_id ||
-                        department.unit?.office?.id ||
-                        "";
-                      const departmentUnitId =
-                        department.unit_id || department.unit?.id || "";
-
-                      if (
-                        officeFilter !== "all" &&
-                        officeFilter !== "none" &&
-                        departmentOfficeId !== officeFilter
-                      ) {
-                        return false;
-                      }
-
-                      if (
-                        unitFilter !== "all" &&
-                        unitFilter !== "none" &&
-                        departmentUnitId !== unitFilter
-                      ) {
-                        return false;
-                      }
-
-                      return true;
-                    })
-                    .map((department) => (
-                      <option key={department.id} value={department.id}>
-                        {department.name}
-                      </option>
-                    ))}
-                </select>
+                  {filteredDepartmentsForFilter.map((department) => (
+                    <option key={department.id} value={department.id}>
+                      {department.name}
+                      {department.office?.name
+                        ? ` - ${department.office.name}`
+                        : ""}
+                    </option>
+                  ))}
+                </SelectField>
               </div>
 
-              <div>
-                <label className="text-sm font-black text-slate-500">
-                  Filter Status
-                </label>
+              <div className="grid gap-4 xl:grid-cols-[minmax(230px,1fr)_minmax(230px,1fr)_auto]">
+                <SelectField
+                  label="Filter Unit"
+                  value={unitFilter}
+                  onChange={setUnitFilter}
+                >
+                  <option value="all">Semua Unit</option>
+                  <option value="none">Tanpa Unit</option>
+                  {filteredUnitsForFilter.map((unit) => (
+                    <option key={unit.id} value={unit.id}>
+                      {unit.name}
+                      {unit.department?.name ? ` - ${unit.department.name}` : ""}
+                    </option>
+                  ))}
+                </SelectField>
 
-                <select
+                <SelectField
+                  label="Filter Status"
                   value={statusFilter}
-                  onChange={(event) => setStatusFilter(event.target.value)}
-                  className="mt-3 w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                  onChange={setStatusFilter}
                 >
                   {statusOptions.map((item) => (
                     <option key={item.value} value={item.value}>
                       {item.label}
                     </option>
                   ))}
-                </select>
-              </div>
+                </SelectField>
 
-              <div className="flex items-end gap-2">
-                <button
-                  type="button"
-                  onClick={loadPositions}
-                  className="flex h-[54px] flex-1 items-center justify-center gap-2 rounded-2xl bg-[#123c8c] px-5 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#0f3274] active:scale-[0.96] md:flex-none"
-                >
-                  <RefreshCw size={20} strokeWidth={2.6} />
-                  <span className="md:hidden">Refresh</span>
-                </button>
+                <div className="flex items-end gap-2">
+                  <button
+                    type="button"
+                    onClick={loadPositions}
+                    className="flex h-[58px] flex-1 items-center justify-center gap-2 rounded-2xl bg-[#123c8c] px-5 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#0f3274] active:scale-[0.96] xl:flex-none"
+                  >
+                    <RefreshCw size={20} strokeWidth={2.6} />
+                    <span className="xl:hidden">Refresh</span>
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={resetFilter}
-                  className="flex h-[54px] flex-1 items-center justify-center rounded-2xl border border-blue-100 bg-white px-5 text-sm font-black text-[#123c8c] shadow-sm transition hover:bg-blue-50 active:scale-[0.96] md:flex-none"
-                >
-                  Reset
-                </button>
+                  <button
+                    type="button"
+                    onClick={resetFilter}
+                    className="flex h-[58px] flex-1 items-center justify-center rounded-2xl border border-blue-100 bg-white px-5 text-sm font-black text-[#123c8c] shadow-sm transition hover:bg-blue-50 active:scale-[0.96] xl:flex-none"
+                  >
+                    Reset
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -647,12 +651,12 @@ export default function AdminPositionsPage() {
             ) : null}
 
             <div className="mt-8 overflow-hidden rounded-2xl border border-blue-100">
-              <div className="hidden grid-cols-[0.25fr_1.05fr_0.95fr_0.95fr_0.95fr_0.7fr_1fr] bg-[#f6f8ff] px-5 py-4 text-xs font-black uppercase tracking-[0.18em] text-[#123c8c] md:grid">
+              <div className="hidden grid-cols-[0.3fr_1.15fr_1fr_1fr_1fr_0.75fr_1fr] bg-[#f6f8ff] px-5 py-4 text-xs font-black uppercase tracking-[0.18em] text-[#123c8c] md:grid">
                 <p>#</p>
                 <p>Jabatan</p>
                 <p>Kantor</p>
-                <p>Unit</p>
                 <p>Divisi</p>
+                <p>Unit</p>
                 <p>Status</p>
                 <p className="text-center">Aksi</p>
               </div>
@@ -679,133 +683,109 @@ export default function AdminPositionsPage() {
                     </p>
                   </div>
                 ) : (
-                  filteredPositions.map((position, index) => (
-                    <div
-                      key={position.id}
-                      className="grid gap-4 px-4 py-4 text-sm transition hover:bg-[#f8fbff] md:grid-cols-[0.25fr_1.05fr_0.95fr_0.95fr_0.95fr_0.7fr_1fr] md:items-center md:px-5 md:py-6"
-                    >
-                      <div className="flex items-start justify-between gap-3 md:block">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-xs font-black text-[#123c8c] md:h-auto md:w-auto md:bg-transparent md:text-sm md:text-slate-500">
-                            {index + 1}
+                  filteredPositions.map((position, index) => {
+                    const office = position.unit?.department?.office;
+                    const department = position.unit?.department;
+                    const unit = position.unit;
+
+                    return (
+                      <div
+                        key={position.id}
+                        className="grid gap-4 px-4 py-4 text-sm transition hover:bg-[#f8fbff] md:grid-cols-[0.3fr_1.15fr_1fr_1fr_1fr_0.75fr_1fr] md:items-center md:px-5 md:py-6"
+                      >
+                        <div className="flex items-start justify-between gap-3 md:block">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-xs font-black text-[#123c8c] md:h-auto md:w-auto md:bg-transparent md:text-sm md:text-slate-500">
+                              {index + 1}
+                            </div>
+
+                            <div className="md:hidden">
+                              <p className="font-black uppercase text-slate-950">
+                                {position.name}
+                              </p>
+
+                              <p className="mt-1 text-xs font-semibold text-slate-400">
+                                {office?.name || "Tanpa Kantor"} •{" "}
+                                {department?.name || "Tanpa Divisi"} •{" "}
+                                {unit?.name || "Tanpa Unit"}
+                              </p>
+                            </div>
                           </div>
 
-                          <div className="md:hidden">
-                            <p className="font-black uppercase text-slate-950">
-                              {position.name}
-                            </p>
-
-                            <p className="mt-1 text-xs font-semibold text-slate-400">
-                              {position.department?.unit?.office?.name ||
-                                "Tanpa Kantor"}{" "}
-                              • {position.department?.unit?.name || "Tanpa Unit"}{" "}
-                              • {position.department?.name || "Tanpa Divisi"}
-                            </p>
-
-                            <p className="mt-1 text-xs font-semibold text-slate-400">
-                              {position._count?.users || 0} karyawan
-                            </p>
-                          </div>
+                          <span
+                            className={`shrink-0 rounded-full px-3 py-1.5 text-[11px] font-black md:hidden ${statusClass(
+                              position.status
+                            )}`}
+                          >
+                            {formatStatus(position.status)}
+                          </span>
                         </div>
 
-                        <span
-                          className={`shrink-0 rounded-full px-3 py-1.5 text-[11px] font-black md:hidden ${
-                            position.status === "active"
-                              ? "bg-blue-50 text-[#123c8c]"
-                              : "bg-slate-100 text-slate-600"
-                          }`}
-                        >
-                          {formatStatus(position.status)}
-                        </span>
+                        <div className="hidden md:block">
+                          <p className="font-black uppercase text-slate-950">
+                            {position.name}
+                          </p>
+
+                          <p className="mt-1 text-xs font-semibold text-slate-400">
+                            {position._count?.users || 0} karyawan
+                          </p>
+                        </div>
+
+                        <InfoCell
+                          label="Kantor"
+                          value={office?.name || "Tanpa Kantor"}
+                          subvalue={office?.address || ""}
+                        />
+
+                        <InfoCell
+                          label="Divisi"
+                          value={department?.name || "Tanpa Divisi"}
+                        />
+
+                        <InfoCell label="Unit" value={unit?.name || "Tanpa Unit"} />
+
+                        <div className="hidden md:block">
+                          <span
+                            className={`w-fit rounded-full px-4 py-2 text-xs font-black ${statusClass(
+                              position.status
+                            )}`}
+                          >
+                            {formatStatus(position.status)}
+                          </span>
+                        </div>
+
+                        <div className="grid gap-2 md:flex md:justify-center">
+                          <button
+                            type="button"
+                            onClick={() => openEditModal(position)}
+                            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#123c8c] px-4 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#0f3274] active:scale-[0.97] md:h-auto md:w-fit md:rounded-xl md:border md:border-blue-100 md:bg-white md:px-4 md:py-2 md:text-xs md:text-[#123c8c] md:shadow-none md:hover:bg-[#eaf1ff]"
+                          >
+                            <Edit size={16} className="md:h-3.5 md:w-3.5" />
+                            Edit
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeletePosition(position)}
+                            disabled={
+                              isDeleting || (position._count?.users || 0) > 0
+                            }
+                            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-red-100 bg-red-50 px-4 text-sm font-black text-red-600 transition hover:bg-red-100 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 md:h-auto md:w-fit md:rounded-xl md:px-4 md:py-2 md:text-xs"
+                          >
+                            {isDeleting ? (
+                              <Loader2
+                                size={16}
+                                className="animate-spin md:h-3.5 md:w-3.5"
+                              />
+                            ) : (
+                              <Trash2 size={16} className="md:h-3.5 md:w-3.5" />
+                            )}
+                            Hapus
+                          </button>
+                        </div>
                       </div>
-
-                      <div className="hidden md:block">
-                        <p className="font-black uppercase text-slate-950">
-                          {position.name}
-                        </p>
-
-                        <p className="mt-1 text-xs font-semibold text-slate-400">
-                          {position._count?.users || 0} karyawan
-                        </p>
-                      </div>
-
-                      <div className="rounded-2xl border border-blue-100 bg-[#f8fbff] p-3 md:border-0 md:bg-transparent md:p-0">
-                        <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-400 md:hidden">
-                          Kantor
-                        </p>
-
-                        <p className="mt-1 font-black text-slate-600 md:mt-0">
-                          {position.department?.unit?.office?.name ||
-                            "Tanpa Kantor"}
-                        </p>
-                      </div>
-
-                      <div className="rounded-2xl border border-blue-100 bg-[#f8fbff] p-3 md:border-0 md:bg-transparent md:p-0">
-                        <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-400 md:hidden">
-                          Unit
-                        </p>
-
-                        <p className="mt-1 font-black text-slate-600 md:mt-0">
-                          {position.department?.unit?.name || "Tanpa Unit"}
-                        </p>
-                      </div>
-
-                      <div className="rounded-2xl border border-blue-100 bg-[#f8fbff] p-3 md:border-0 md:bg-transparent md:p-0">
-                        <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-400 md:hidden">
-                          Divisi
-                        </p>
-
-                        <p className="mt-1 font-black text-slate-600 md:mt-0">
-                          {position.department?.name || "Tanpa Divisi"}
-                        </p>
-                      </div>
-
-                      <div className="hidden md:block">
-                        <span
-                          className={`w-fit rounded-full px-4 py-2 text-xs font-black ${
-                            position.status === "active"
-                              ? "bg-blue-50 text-[#123c8c]"
-                              : "bg-slate-100 text-slate-600"
-                          }`}
-                        >
-                          {formatStatus(position.status)}
-                        </span>
-                      </div>
-
-                      <div className="grid gap-2 md:flex md:justify-center">
-                        <button
-                          type="button"
-                          onClick={() => openEditModal(position)}
-                          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#123c8c] px-4 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#0f3274] active:scale-[0.97] md:h-auto md:w-fit md:rounded-xl md:border md:border-blue-100 md:bg-white md:px-4 md:py-2 md:text-xs md:text-[#123c8c] md:shadow-none md:hover:bg-[#eaf1ff]"
-                        >
-                          <Edit size={16} className="md:h-3.5 md:w-3.5" />
-                          Edit
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleDeletePosition(position)}
-                          disabled={isDeleting || (position._count?.users || 0) > 0}
-                          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-red-100 bg-red-50 px-4 text-sm font-black text-red-600 transition hover:bg-red-100 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 md:h-auto md:w-fit md:rounded-xl md:px-4 md:py-2 md:text-xs"
-                          title={
-                            (position._count?.users || 0) > 0
-                              ? "Jabatan masih digunakan karyawan"
-                              : "Hapus jabatan"
-                          }
-                        >
-                          {isDeleting ? (
-                            <Loader2
-                              size={16}
-                              className="animate-spin md:h-3.5 md:w-3.5"
-                            />
-                          ) : (
-                            <Trash2 size={16} className="md:h-3.5 md:w-3.5" />
-                          )}
-                          Hapus
-                        </button>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>
@@ -815,7 +795,7 @@ export default function AdminPositionsPage() {
 
       {isModalOpen ? (
         <div className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/50 px-4 pb-4 backdrop-blur-sm md:items-center md:pb-0">
-          <div className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-[2rem] bg-white p-5 shadow-2xl shadow-slate-950/30 md:p-7">
+          <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] bg-white p-5 shadow-2xl shadow-slate-950/30 md:p-7">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.22em] text-[#123c8c]">
@@ -823,14 +803,11 @@ export default function AdminPositionsPage() {
                 </p>
 
                 <h2 className="mt-2 text-2xl font-black text-slate-950">
-                  {editingPosition
-                    ? "Update Data Jabatan"
-                    : "Jabatan Baru"}
+                  {editingPosition ? "Update Data Jabatan" : "Jabatan Baru"}
                 </h2>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Pilih kantor, unit, dan divisi terlebih dahulu, lalu isi nama
-                  jabatan.
+                  Pilih kantor, divisi, dan unit secara berurutan.
                 </p>
               </div>
 
@@ -844,28 +821,20 @@ export default function AdminPositionsPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-              <div>
-                <label className="mb-2 block text-sm font-black text-slate-700">
-                  Kantor
-                </label>
-
-                <div className="relative">
-                  <MapPin
-                    size={18}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                  />
-
-                  <select
+              <div className="rounded-[1.6rem] border border-blue-100 bg-[#f8fbff] p-4">
+                <div className="grid gap-4 md:grid-cols-3">
+                  <SelectField
+                    label="Kantor"
                     value={form.office_id}
-                    onChange={(event) =>
+                    icon={<MapPin size={18} />}
+                    onChange={(value) =>
                       setForm((prev) => ({
                         ...prev,
-                        office_id: event.target.value,
-                        unit_id: "",
+                        office_id: value,
                         department_id: "",
+                        unit_id: "",
                       }))
                     }
-                    className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
                   >
                     <option value="">Pilih Kantor</option>
                     {activeOffices.map((office) => (
@@ -874,84 +843,79 @@ export default function AdminPositionsPage() {
                         {office.address ? ` - ${office.address}` : ""}
                       </option>
                     ))}
-                  </select>
-                </div>
-              </div>
+                  </SelectField>
 
-              <div>
-                <label className="mb-2 block text-sm font-black text-slate-700">
-                  Unit
-                </label>
-
-                <select
-                  value={form.unit_id}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      unit_id: event.target.value,
-                      department_id: "",
-                    }))
-                  }
-                  disabled={!form.office_id}
-                  className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
-                >
-                  <option value="">
-                    {form.office_id ? "Pilih Unit" : "Pilih Kantor dulu"}
-                  </option>
-                  {formUnits.map((unit) => (
-                    <option key={unit.id} value={unit.id}>
-                      {unit.name}
+                  <SelectField
+                    label="Divisi"
+                    value={form.department_id}
+                    icon={<Network size={18} />}
+                    disabled={!form.office_id}
+                    onChange={(value) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        department_id: value,
+                        unit_id: "",
+                      }))
+                    }
+                  >
+                    <option value="">
+                      {form.office_id ? "Pilih Divisi" : "Pilih Kantor dulu"}
                     </option>
-                  ))}
-                </select>
-              </div>
+                    {formDepartments.map((department) => (
+                      <option key={department.id} value={department.id}>
+                        {department.name}
+                      </option>
+                    ))}
+                  </SelectField>
 
-              <div>
-                <label className="mb-2 block text-sm font-black text-slate-700">
-                  Divisi
-                </label>
-
-                <select
-                  value={form.department_id}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      department_id: event.target.value,
-                    }))
-                  }
-                  disabled={!form.unit_id}
-                  className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
-                >
-                  <option value="">
-                    {form.unit_id ? "Pilih Divisi" : "Pilih Unit dulu"}
-                  </option>
-                  {formDepartments.map((department) => (
-                    <option key={department.id} value={department.id}>
-                      {department.name}
+                  <SelectField
+                    label="Unit"
+                    value={form.unit_id}
+                    icon={<Building2 size={18} />}
+                    disabled={!form.department_id}
+                    onChange={(value) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        unit_id: value,
+                      }))
+                    }
+                  >
+                    <option value="">
+                      {form.department_id ? "Pilih Unit" : "Pilih Divisi dulu"}
                     </option>
-                  ))}
-                </select>
+                    {formUnits.map((unit) => (
+                      <option key={unit.id} value={unit.id}>
+                        {unit.name}
+                      </option>
+                    ))}
+                  </SelectField>
+                </div>
 
-                <p className="mt-2 text-xs font-semibold text-slate-400">
-                  Divisi aktif saja yang bisa dipilih untuk jabatan baru.
-                </p>
+                {form.office_id && formDepartments.length === 0 ? (
+                  <div className="mt-4 rounded-2xl border border-amber-100 bg-amber-50 p-4">
+                    <p className="text-sm font-black text-amber-700">
+                      Divisi belum tersedia untuk kantor ini
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-amber-700/80">
+                      Tambahkan Divisi terlebih dahulu di kantor yang dipilih.
+                    </p>
+                  </div>
+                ) : null}
+
+                {form.department_id && formUnits.length === 0 ? (
+                  <div className="mt-4 rounded-2xl border border-amber-100 bg-amber-50 p-4">
+                    <p className="text-sm font-black text-amber-700">
+                      Unit belum tersedia untuk divisi ini
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-amber-700/80">
+                      Tambahkan Unit terlebih dahulu pada divisi yang dipilih.
+                    </p>
+                  </div>
+                ) : null}
               </div>
 
-              {form.unit_id && formDepartments.length === 0 ? (
-                <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
-                  <p className="text-sm font-black text-amber-700">
-                    Divisi belum tersedia untuk unit ini
-                  </p>
-                  <p className="mt-1 text-sm leading-6 text-amber-700/80">
-                    Tambahkan Divisi terlebih dahulu pada unit yang dipilih.
-                  </p>
-                </div>
-              ) : null}
-
               <div>
-                <label className="mb-2 block text-sm font-black text-slate-700">
-                  Nama Jabatan
-                </label>
+                <FieldLabel>Nama Jabatan</FieldLabel>
 
                 <input
                   value={form.name}
@@ -961,32 +925,32 @@ export default function AdminPositionsPage() {
                       name: event.target.value,
                     }))
                   }
-                  placeholder="Contoh: Akuntansi, Staff Pajak, Finance Manager"
-                  className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                  placeholder="Contoh: Backend Developer, Mobile Developer, Finance Staff"
+                  className="mt-3 h-[58px] w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
                 />
               </div>
 
-              <div>
-                <label className="mb-2 block text-sm font-black text-slate-700">
-                  Status Jabatan
-                </label>
+              <SelectField
+                label="Status Jabatan"
+                value={form.status}
+                onChange={(value) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    status: value,
+                  }))
+                }
+              >
+                <option value="active">Aktif</option>
+                <option value="inactive">Nonaktif</option>
+              </SelectField>
 
-                <select
-                  value={form.status}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      status: event.target.value,
-                    }))
-                  }
-                  className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
-                >
-                  <option value="active">Aktif</option>
-                  <option value="inactive">Nonaktif</option>
-                </select>
-
-                <p className="mt-2 text-xs font-semibold text-slate-400">
-                  Pilih Nonaktif jika jabatan tidak digunakan sementara.
+              <div className="rounded-2xl border border-blue-100 bg-[#f6f8ff] p-4">
+                <p className="text-sm font-black text-[#123c8c]">
+                  Relasi Jabatan
+                </p>
+                <p className="mt-1 text-sm leading-6 text-slate-500">
+                  Jabatan berada di bawah unit. Contoh: Kantor Pusat Bandung →
+                  Technology → Backend Development → Backend Developer.
                 </p>
               </div>
 

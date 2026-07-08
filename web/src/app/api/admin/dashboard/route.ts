@@ -32,8 +32,10 @@ function calculateWorkMinutes(
   checkInTime: Date | null | undefined,
   checkOutTime: Date | null | undefined
 ) {
-  if (workMinutes && workMinutes > 0) {
-    return Number(workMinutes);
+  const savedWorkMinutes = Number(workMinutes || 0);
+
+  if (savedWorkMinutes > 0) {
+    return savedWorkMinutes;
   }
 
   if (!checkInTime || !checkOutTime) {
@@ -42,9 +44,11 @@ function calculateWorkMinutes(
 
   const diffMs = checkOutTime.getTime() - checkInTime.getTime();
 
-  if (diffMs <= 0) return 0;
+  if (diffMs <= 0) {
+    return 0;
+  }
 
-  return Math.floor(diffMs / 60000);
+  return Math.max(1, Math.ceil(diffMs / 60000));
 }
 
 function isLateStatus(status?: string | null) {
@@ -65,6 +69,10 @@ function getActivityTime(attendance: {
     attendance.check_in_time?.getTime() ||
     attendance.attendance_date.getTime()
   );
+}
+
+function getFallbackEmployeeCode(index: number) {
+  return `EMP${String(index + 1).padStart(4, "0")}`;
 }
 
 export async function GET() {
@@ -143,7 +151,10 @@ export async function GET() {
       ],
     });
 
-    const attendanceByUserId = new Map<string, (typeof todayAttendances)[number]>();
+    const attendanceByUserId = new Map<
+      string,
+      (typeof todayAttendances)[number]
+    >();
 
     for (const attendance of todayAttendances) {
       const existingAttendance = attendanceByUserId.get(attendance.user_id);
@@ -158,25 +169,27 @@ export async function GET() {
       }
     }
 
-    const recentAttendance = employees.map((employee) => {
+    const recentAttendance = employees.map((employee, index) => {
       const attendance = attendanceByUserId.get(employee.id);
+
+      const workMinutes = calculateWorkMinutes(
+        Number(attendance?.work_minutes || 0),
+        attendance?.check_in_time || null,
+        attendance?.check_out_time || null
+      );
 
       return {
         id: employee.id,
         attendanceId: attendance?.id || "",
         name: employee.name,
-        employeeCode: employee.employee_code || "-",
+        employeeCode: employee.employee_code || getFallbackEmployeeCode(index),
         position: employee.position?.name || null,
         department: employee.department?.name || null,
         checkInTime: toIsoDate(attendance?.check_in_time),
         checkOutTime: toIsoDate(attendance?.check_out_time),
         status: attendance?.status || "ABSENT",
         lateMinutes: Number(attendance?.late_minutes || 0),
-        workMinutes: calculateWorkMinutes(
-          Number(attendance?.work_minutes || 0),
-          attendance?.check_in_time,
-          attendance?.check_out_time
-        ),
+        workMinutes,
       };
     });
 

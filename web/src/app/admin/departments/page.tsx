@@ -23,38 +23,29 @@ type Office = {
   status?: string;
 };
 
-type Unit = {
-  id: string;
-  name: string;
-  office_id?: string | null;
-  office?: Office | null;
-  status: string;
-};
-
 type Department = {
   id: string;
   name: string;
-  unit_id: string | null;
+  office_id: string | null;
   status: string;
   created_at?: string;
   updated_at?: string;
-  unit?: Unit | null;
+  office?: Office | null;
   _count?: {
     users: number;
+    units: number;
   };
 };
 
 type DepartmentForm = {
   name: string;
   office_id: string;
-  unit_id: string;
   status: string;
 };
 
 const initialForm: DepartmentForm = {
   name: "",
   office_id: "",
-  unit_id: "",
   status: "active",
 };
 
@@ -92,12 +83,11 @@ async function readJsonResponse(response: Response) {
 
 export default function DepartmentsPage() {
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [units, setUnits] = useState<Unit[]>([]);
+  const [offices, setOffices] = useState<Office[]>([]);
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [officeFilter, setOfficeFilter] = useState("all");
-  const [unitFilter, setUnitFilter] = useState("all");
   const [form, setForm] = useState<DepartmentForm>(initialForm);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -109,57 +99,24 @@ export default function DepartmentsPage() {
   const [editingDepartment, setEditingDepartment] =
     useState<Department | null>(null);
 
-  const offices = useMemo(() => {
-    const officeMap = new Map<string, Office>();
-
-    units.forEach((unit) => {
-      const office = unit.office;
-
-      if (office?.id) {
-        officeMap.set(office.id, office);
-      }
-    });
-
-    return Array.from(officeMap.values()).sort((a, b) =>
-      a.name.localeCompare(b.name)
-    );
-  }, [units]);
-
   const activeOffices = useMemo(() => {
     return offices.filter((office) => office.status !== "inactive");
   }, [offices]);
-
-  const activeUnits = useMemo(() => {
-    return units.filter((unit) => unit.status === "active");
-  }, [units]);
-
-  const formUnits = useMemo(() => {
-    if (!form.office_id) return [];
-
-    return activeUnits.filter((unit) => {
-      const officeId = unit.office_id || unit.office?.id || "";
-
-      return officeId === form.office_id;
-    });
-  }, [activeUnits, form.office_id]);
 
   const filteredDepartments = useMemo(() => {
     const keyword = search.toLowerCase().trim();
 
     return departments.filter((department) => {
       const departmentName = department.name.toLowerCase();
-      const unitName = department.unit?.name?.toLowerCase() || "";
-      const officeName = department.unit?.office?.name?.toLowerCase() || "";
-      const officeAddress =
-        department.unit?.office?.address?.toLowerCase() || "";
+      const officeName = department.office?.name?.toLowerCase() || "";
+      const officeAddress = department.office?.address?.toLowerCase() || "";
       const departmentStatus = department.status.toLowerCase();
       const departmentOfficeId =
-        department.unit?.office_id || department.unit?.office?.id || "";
+        department.office_id || department.office?.id || "";
 
       if (
         keyword &&
         !departmentName.includes(keyword) &&
-        !unitName.includes(keyword) &&
         !officeName.includes(keyword) &&
         !officeAddress.includes(keyword)
       ) {
@@ -171,37 +128,34 @@ export default function DepartmentsPage() {
       }
 
       if (officeFilter !== "all") {
-        if (officeFilter === "none" && departmentOfficeId) {
-          return false;
-        }
+        if (officeFilter === "none" && departmentOfficeId) return false;
 
         if (officeFilter !== "none" && departmentOfficeId !== officeFilter) {
           return false;
         }
       }
 
-      if (unitFilter !== "all") {
-        if (unitFilter === "none" && department.unit_id) {
-          return false;
-        }
-
-        if (unitFilter !== "none" && department.unit_id !== unitFilter) {
-          return false;
-        }
-      }
-
       return true;
     });
-  }, [departments, search, statusFilter, officeFilter, unitFilter]);
+  }, [departments, search, statusFilter, officeFilter]);
 
   async function loadDepartments() {
     try {
       setIsLoading(true);
       setErrorMessage("");
 
-      const response = await fetch("/api/admin/departments", {
-        cache: "no-store",
+      const params = new URLSearchParams({
+        search,
+        status: statusFilter,
+        office_id: officeFilter,
       });
+
+      const response = await fetch(
+        `/api/admin/departments?${params.toString()}`,
+        {
+          cache: "no-store",
+        }
+      );
 
       const data = await readJsonResponse(response);
 
@@ -212,7 +166,7 @@ export default function DepartmentsPage() {
       }
 
       setDepartments(data.departments || data.data || []);
-      setUnits(data.units || []);
+      setOffices(data.offices || []);
     } catch (error) {
       console.error("LOAD_DEPARTMENTS_ERROR:", error);
 
@@ -228,6 +182,7 @@ export default function DepartmentsPage() {
 
   useEffect(() => {
     loadDepartments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function openCreateModal() {
@@ -237,14 +192,10 @@ export default function DepartmentsPage() {
   }
 
   function openEditModal(department: Department) {
-    const officeId =
-      department.unit?.office_id || department.unit?.office?.id || "";
-
     setEditingDepartment(department);
     setForm({
       name: department.name,
-      office_id: officeId,
-      unit_id: department.unit_id || "",
+      office_id: department.office_id || department.office?.id || "",
       status: department.status || "active",
     });
     setIsModalOpen(true);
@@ -260,7 +211,6 @@ export default function DepartmentsPage() {
     setSearch("");
     setStatusFilter("all");
     setOfficeFilter("all");
-    setUnitFilter("all");
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -270,11 +220,6 @@ export default function DepartmentsPage() {
 
     if (!form.office_id) {
       alert("Kantor wajib dipilih.");
-      return;
-    }
-
-    if (!form.unit_id) {
-      alert("Unit wajib dipilih.");
       return;
     }
 
@@ -299,7 +244,7 @@ export default function DepartmentsPage() {
         body: JSON.stringify({
           id: editingDepartment?.id,
           name,
-          unit_id: form.unit_id,
+          office_id: form.office_id,
           status: form.status,
         }),
       });
@@ -324,9 +269,12 @@ export default function DepartmentsPage() {
   }
 
   async function handleDeleteDepartment(department: Department) {
-    if ((department._count?.users || 0) > 0) {
+    const totalUsers = department._count?.users || 0;
+    const totalUnits = department._count?.units || 0;
+
+    if (totalUsers > 0 || totalUnits > 0) {
       alert(
-        "Divisi ini masih digunakan oleh karyawan. Ubah status menjadi Nonaktif jika tidak ingin digunakan."
+        "Divisi ini masih memiliki unit atau digunakan oleh karyawan. Ubah status menjadi Nonaktif jika tidak ingin digunakan."
       );
       return;
     }
@@ -340,9 +288,12 @@ export default function DepartmentsPage() {
     try {
       setIsDeleting(true);
 
-      const response = await fetch(`/api/admin/departments?id=${department.id}`, {
-        method: "DELETE",
-      });
+      const response = await fetch(
+        `/api/admin/departments?id=${department.id}`,
+        {
+          method: "DELETE",
+        }
+      );
 
       const data = await readJsonResponse(response);
 
@@ -365,7 +316,7 @@ export default function DepartmentsPage() {
     <MobileShell variant="admin">
       <AppHeader
         title="Daftar Divisi"
-        subtitle="Kelola master data divisi berdasarkan kantor dan unit"
+        subtitle="Kelola master data divisi berdasarkan kantor"
         variant="admin"
       />
 
@@ -383,8 +334,8 @@ export default function DepartmentsPage() {
                 </h1>
 
                 <p className="mt-3 max-w-2xl text-sm font-semibold leading-7 text-blue-100">
-                  Divisi sekarang mengikuti relasi Kantor → Unit. Saat tambah
-                  divisi, pilih kantor dulu agar unit yang muncul sesuai kantor.
+                  Divisi berada langsung di bawah kantor. Setelah divisi dibuat,
+                  unit bisa ditambahkan di bawah divisi tersebut.
                 </p>
               </div>
 
@@ -400,10 +351,10 @@ export default function DepartmentsPage() {
           </div>
 
           <div className="p-5 md:p-8">
-            <div className="grid gap-3 md:grid-cols-[1fr_210px_210px_210px_auto]">
+            <div className="grid gap-3 md:grid-cols-[1fr_230px_210px_auto]">
               <div>
                 <label className="text-sm font-black text-slate-500">
-                  Nama Divisi / Unit / Kantor
+                  Nama Divisi / Kantor
                 </label>
 
                 <div className="relative mt-3">
@@ -415,7 +366,7 @@ export default function DepartmentsPage() {
                   <input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Cari divisi, unit, atau kantor..."
+                    placeholder="Cari divisi atau kantor..."
                     className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-4 pl-12 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
                   />
                 </div>
@@ -428,10 +379,7 @@ export default function DepartmentsPage() {
 
                 <select
                   value={officeFilter}
-                  onChange={(event) => {
-                    setOfficeFilter(event.target.value);
-                    setUnitFilter("all");
-                  }}
+                  onChange={(event) => setOfficeFilter(event.target.value)}
                   className="mt-3 w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
                 >
                   <option value="all">Semua Kantor</option>
@@ -441,35 +389,6 @@ export default function DepartmentsPage() {
                       {office.name}
                     </option>
                   ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-sm font-black text-slate-500">
-                  Filter Unit
-                </label>
-
-                <select
-                  value={unitFilter}
-                  onChange={(event) => setUnitFilter(event.target.value)}
-                  className="mt-3 w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
-                >
-                  <option value="all">Semua Unit</option>
-                  <option value="none">Tanpa Unit</option>
-                  {units
-                    .filter((unit) => {
-                      if (officeFilter === "all") return true;
-                      if (officeFilter === "none") return !unit.office_id;
-                      return (
-                        (unit.office_id || unit.office?.id || "") ===
-                        officeFilter
-                      );
-                    })
-                    .map((unit) => (
-                      <option key={unit.id} value={unit.id}>
-                        {unit.name}
-                      </option>
-                    ))}
                 </select>
               </div>
 
@@ -518,7 +437,7 @@ export default function DepartmentsPage() {
             ) : null}
 
             <div className="mt-8 overflow-hidden rounded-2xl border border-blue-100">
-              <div className="hidden grid-cols-[0.3fr_1.2fr_1fr_1fr_0.75fr_1fr] bg-[#f6f8ff] px-5 py-4 text-xs font-black uppercase tracking-[0.18em] text-[#123c8c] md:grid">
+              <div className="hidden grid-cols-[0.3fr_1.3fr_1.2fr_0.75fr_0.75fr_1fr] bg-[#f6f8ff] px-5 py-4 text-xs font-black uppercase tracking-[0.18em] text-[#123c8c] md:grid">
                 <p>#</p>
                 <p>Divisi</p>
                 <p>Kantor</p>
@@ -549,7 +468,7 @@ export default function DepartmentsPage() {
                   filteredDepartments.map((department, index) => (
                     <div
                       key={department.id}
-                      className="grid gap-4 px-4 py-4 text-sm transition hover:bg-[#f8fbff] md:grid-cols-[0.3fr_1.2fr_1fr_1fr_0.75fr_1fr] md:items-center md:px-5 md:py-6"
+                      className="grid gap-4 px-4 py-4 text-sm transition hover:bg-[#f8fbff] md:grid-cols-[0.3fr_1.3fr_1.2fr_0.75fr_0.75fr_1fr] md:items-center md:px-5 md:py-6"
                     >
                       <div className="flex items-start justify-between gap-3 md:block">
                         <div className="flex items-center gap-3">
@@ -563,8 +482,8 @@ export default function DepartmentsPage() {
                             </p>
 
                             <p className="mt-1 text-xs font-semibold text-slate-400">
-                              {department.unit?.office?.name || "Tanpa Kantor"}{" "}
-                              • {department.unit?.name || "Tanpa Unit"} •{" "}
+                              {department.office?.name || "Tanpa Kantor"} •{" "}
+                              {department._count?.units || 0} unit •{" "}
                               {department._count?.users || 0} karyawan
                             </p>
                           </div>
@@ -597,7 +516,11 @@ export default function DepartmentsPage() {
                         </p>
 
                         <p className="mt-1 font-black text-slate-600 md:mt-0">
-                          {department.unit?.office?.name || "Tanpa Kantor"}
+                          {department.office?.name || "Tanpa Kantor"}
+                        </p>
+
+                        <p className="mt-1 line-clamp-1 text-xs font-semibold text-slate-400">
+                          {department.office?.address || ""}
                         </p>
                       </div>
 
@@ -607,7 +530,7 @@ export default function DepartmentsPage() {
                         </p>
 
                         <p className="mt-1 font-black text-slate-600 md:mt-0">
-                          {department.unit?.name || "Tanpa Unit"}
+                          {department._count?.units || 0}
                         </p>
                       </div>
 
@@ -636,13 +559,12 @@ export default function DepartmentsPage() {
                         <button
                           type="button"
                           onClick={() => handleDeleteDepartment(department)}
-                          disabled={isDeleting || (department._count?.users || 0) > 0}
-                          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-red-100 bg-red-50 px-4 text-sm font-black text-red-600 transition hover:bg-red-100 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 md:h-auto md:w-fit md:rounded-xl md:px-4 md:py-2 md:text-xs"
-                          title={
-                            (department._count?.users || 0) > 0
-                              ? "Divisi masih digunakan karyawan"
-                              : "Hapus divisi"
+                          disabled={
+                            isDeleting ||
+                            (department._count?.users || 0) > 0 ||
+                            (department._count?.units || 0) > 0
                           }
+                          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-red-100 bg-red-50 px-4 text-sm font-black text-red-600 transition hover:bg-red-100 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 md:h-auto md:w-fit md:rounded-xl md:px-4 md:py-2 md:text-xs"
                         >
                           {isDeleting ? (
                             <Loader2
@@ -678,8 +600,7 @@ export default function DepartmentsPage() {
                 </h2>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Pilih kantor terlebih dahulu, lalu pilih unit yang berada di
-                  kantor tersebut.
+                  Pilih kantor pemilik divisi, lalu isi nama divisi.
                 </p>
               </div>
 
@@ -710,7 +631,6 @@ export default function DepartmentsPage() {
                       setForm((prev) => ({
                         ...prev,
                         office_id: event.target.value,
-                        unit_id: "",
                       }))
                     }
                     className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
@@ -728,49 +648,6 @@ export default function DepartmentsPage() {
 
               <div>
                 <label className="mb-2 block text-sm font-black text-slate-700">
-                  Unit
-                </label>
-
-                <select
-                  value={form.unit_id}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      unit_id: event.target.value,
-                    }))
-                  }
-                  disabled={!form.office_id}
-                  className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
-                >
-                  <option value="">
-                    {form.office_id ? "Pilih Unit" : "Pilih Kantor dulu"}
-                  </option>
-                  {formUnits.map((unit) => (
-                    <option key={unit.id} value={unit.id}>
-                      {unit.name}
-                    </option>
-                  ))}
-                </select>
-
-                <p className="mt-2 text-xs font-semibold text-slate-400">
-                  Unit aktif saja yang bisa dipilih untuk divisi baru.
-                </p>
-              </div>
-
-              {form.office_id && formUnits.length === 0 ? (
-                <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
-                  <p className="text-sm font-black text-amber-700">
-                    Unit belum tersedia untuk kantor ini
-                  </p>
-                  <p className="mt-1 text-sm leading-6 text-amber-700/80">
-                    Tambahkan Unit terlebih dahulu dan hubungkan ke kantor yang
-                    dipilih.
-                  </p>
-                </div>
-              ) : null}
-
-              <div>
-                <label className="mb-2 block text-sm font-black text-slate-700">
                   Nama Divisi
                 </label>
 
@@ -782,7 +659,7 @@ export default function DepartmentsPage() {
                       name: event.target.value,
                     }))
                   }
-                  placeholder="Contoh: Customer Service, HRD, Finance"
+                  placeholder="Contoh: Technology, Finance, HRD"
                   className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
                 />
               </div>
@@ -808,6 +685,17 @@ export default function DepartmentsPage() {
 
                 <p className="mt-2 text-xs font-semibold text-slate-400">
                   Pilih Nonaktif jika divisi tidak digunakan sementara.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-blue-100 bg-[#f6f8ff] p-4">
+                <p className="text-sm font-black text-[#123c8c]">
+                  Relasi Divisi
+                </p>
+                <p className="mt-1 text-sm leading-6 text-slate-500">
+                  Divisi berada langsung di bawah kantor. Contoh: Kantor Pusat
+                  Bandung → Technology → Backend Development → Backend
+                  Developer.
                 </p>
               </div>
 

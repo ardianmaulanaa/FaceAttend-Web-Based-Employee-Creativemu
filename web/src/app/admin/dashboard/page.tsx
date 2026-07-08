@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  CalendarCheck,
   Clock3,
   LayoutDashboard,
   Loader2,
@@ -26,7 +25,7 @@ type RecentAttendance = {
   id: string;
   attendanceId: string;
   name: string;
-  employeeCode: string | null;
+  employeeCode?: string | null;
   position: string | null;
   department: string | null;
   checkInTime: string | null;
@@ -40,6 +39,16 @@ type DashboardResponse = {
   stats: DashboardStats;
   recentAttendance: RecentAttendance[];
 };
+
+function getShortId(id: string | null | undefined) {
+  if (!id) return "-";
+
+  return id.slice(0, 8).toUpperCase();
+}
+
+function getDisplayEmployeeCode(item: RecentAttendance) {
+  return getShortId(item.employeeCode || item.id);
+}
 
 function getStatusClass(item: RecentAttendance) {
   if (item.checkOutTime) {
@@ -59,10 +68,13 @@ function getStatusClass(item: RecentAttendance) {
 
 function getStatusLabel(item: RecentAttendance) {
   if (item.checkOutTime) return "Selesai";
+
   if (item.lateMinutes > 0 || item.status?.toUpperCase() === "LATE") {
     return "Terlambat";
   }
+
   if (item.checkInTime) return "Check-in";
+
   return "Belum Absen";
 }
 
@@ -79,11 +91,15 @@ function formatTime(value: string | null) {
   });
 }
 
-function formatMinutes(minutes: number) {
-  if (!minutes || minutes <= 0) return "-";
+function formatMinutes(minutes: number, hasCheckOut = false) {
+  if (!hasCheckOut) return "-";
 
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
+  const safeMinutes = Math.max(0, Number(minutes || 0));
+
+  if (safeMinutes <= 0) return "0m";
+
+  const hours = Math.floor(safeMinutes / 60);
+  const remainingMinutes = safeMinutes % 60;
 
   if (hours > 0 && remainingMinutes > 0) {
     return `${hours}j ${remainingMinutes}m`;
@@ -103,6 +119,23 @@ function getAttendanceKey(item: RecentAttendance, index: number) {
   );
 }
 
+function getEmployeeSubtitle(item: RecentAttendance) {
+  if (item.position) return item.position;
+  if (item.department) return item.department;
+
+  return "-";
+}
+
+async function readJsonResponse(response: Response) {
+  const text = await response.text();
+
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch {
+    throw new Error("Response API bukan JSON.");
+  }
+}
+
 export default function AdminDashboardPage() {
   const [data, setData] = useState<DashboardResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -118,7 +151,7 @@ export default function AdminDashboardPage() {
         cache: "no-store",
       });
 
-      const result = await response.json();
+      const result = await readJsonResponse(response);
 
       if (!response.ok) {
         throw new Error(
@@ -181,7 +214,7 @@ export default function AdminDashboardPage() {
         variant="admin"
       />
 
-      <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 md:px-10 lg:px-16">
+      <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 pb-28 md:px-10 lg:px-16">
         <div className="overflow-hidden rounded-3xl border border-blue-100 bg-white shadow-xl shadow-slate-300/30">
           <div className="grid gap-0 lg:grid-cols-[1fr_1fr]">
             <div className="bg-[#123c8c] p-6 text-white md:p-8">
@@ -206,7 +239,6 @@ export default function AdminDashboardPage() {
                 absensi karyawan hari ini berdasarkan data presensi dari
                 database.
               </p>
-
             </div>
 
             <div className="grid grid-cols-2 gap-3 p-5 md:p-6">
@@ -274,7 +306,7 @@ export default function AdminDashboardPage() {
 
           <div className="mt-6 overflow-hidden rounded-2xl border border-blue-100">
             <div className="hidden grid-cols-[0.9fr_1.4fr_0.8fr_0.8fr_0.8fr_0.8fr] bg-[#eaf1ff] px-5 py-3 text-xs font-black uppercase tracking-wide text-[#123c8c] md:grid">
-              <p>Kode</p>
+              <p>ID</p>
               <p>Employee</p>
               <p>Check-in</p>
               <p>Check-out</p>
@@ -284,10 +316,7 @@ export default function AdminDashboardPage() {
 
             <div className="divide-y divide-blue-100 bg-white">
               {isLoading ? (
-                <div
-                  key="attendance-loading"
-                  className="flex items-center justify-center gap-2 px-5 py-10 text-sm font-bold text-slate-500"
-                >
+                <div className="flex items-center justify-center gap-2 px-5 py-10 text-sm font-bold text-slate-500">
                   <Loader2 size={18} className="animate-spin" />
                   Mengambil data absensi...
                 </div>
@@ -299,17 +328,19 @@ export default function AdminDashboardPage() {
                   >
                     <div>
                       <p className="font-black text-[#123c8c]">
-                        {item.employeeCode || item.id || "-"}
+                        {getDisplayEmployeeCode(item)}
                       </p>
+
                       <p className="mt-1 text-xs font-semibold text-slate-400 md:hidden">
-                        {item.position || item.department || "-"}
+                        {getEmployeeSubtitle(item)}
                       </p>
                     </div>
 
                     <div>
                       <p className="font-bold text-slate-950">{item.name}</p>
+
                       <p className="mt-1 hidden text-xs font-semibold text-slate-400 md:block">
-                        {item.position || item.department || "-"}
+                        {getEmployeeSubtitle(item)}
                       </p>
                     </div>
 
@@ -331,7 +362,10 @@ export default function AdminDashboardPage() {
                       <span className="font-bold text-slate-700 md:hidden">
                         Durasi:{" "}
                       </span>
-                      {formatMinutes(item.workMinutes)}
+                      {formatMinutes(
+                        item.workMinutes,
+                        Boolean(item.checkOutTime)
+                      )}
                     </p>
 
                     <span
@@ -344,10 +378,7 @@ export default function AdminDashboardPage() {
                   </div>
                 ))
               ) : (
-                <div
-                  key="attendance-empty"
-                  className="px-5 py-10 text-center text-sm font-bold text-slate-500"
-                >
+                <div className="px-5 py-10 text-center text-sm font-bold text-slate-500">
                   Belum ada data check-in atau check-out hari ini.
                 </div>
               )}
