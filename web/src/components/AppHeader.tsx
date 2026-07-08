@@ -136,6 +136,7 @@ const operationalMenus = [
   },
 ];
 
+
 function isActivePath(pathname: string, href: string) {
   if (href === "/history") {
     return pathname === "/history" || pathname.startsWith("/history/");
@@ -190,7 +191,6 @@ function WhatsAppIcon({ className = "" }: { className?: string }) {
     </svg>
   );
 }
-
 export default function AppHeader({
   title,
   subtitle,
@@ -351,12 +351,20 @@ export default function AppHeader({
   return (
     <>
       <header
-        className={`fixed inset-x-0 top-0 z-40 border-b px-5 py-4 backdrop-blur-2xl transition-all duration-300 md:px-10 lg:px-16 ${hasScrolled
-          ? "border-blue-100/80 bg-white/95 shadow-lg shadow-slate-300/30"
-          : "border-white/60 bg-white/90 shadow-sm shadow-slate-200/40"
+        className={`fixed inset-x-0 top-0 z-40 overflow-hidden border-b px-5 py-4 backdrop-blur-2xl transition-all duration-300 md:px-10 lg:px-16 ${hasScrolled
+            ? "border-blue-100/80 bg-white/95 shadow-lg shadow-slate-300/30"
+            : "border-white/60 bg-white/90 shadow-sm shadow-slate-200/40"
           }`}
       >
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute right-16 top-1/2 hidden h-64 w-64 -translate-y-1/2 bg-contain bg-center bg-no-repeat opacity-[0.11] blur-[0.5px] md:block"
+          style={{
+            backgroundImage: "url('/images/creativemu-logo/creativemu.png')",
+          }}
+        />
+
+        <div className="relative z-10 mx-auto flex max-w-7xl items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-4">
             <button
               type="button"
@@ -390,9 +398,9 @@ export default function AppHeader({
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Hubungi via WhatsApp"
-              className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 shadow-sm ring-1 ring-emerald-100 transition hover:bg-emerald-100 active:scale-[0.96]"
+              className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-[#ecfff5] text-[#00a884] shadow-sm ring-1 ring-[#baf7dc] transition hover:bg-[#dcfce7] active:scale-[0.96]"
             >
-              <PhoneCall className="h-5 w-5" />
+              <PhoneCall className="h-5 w-5" strokeWidth={2.7} />
             </a>
 
             {isAdmin ? (
