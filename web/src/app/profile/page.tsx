@@ -1200,18 +1200,18 @@ export default function ProfilePage() {
           </section>
         ) : (
           <section className="profile-enter mx-auto max-w-5xl px-5 pt-5 md:px-10 md:pt-8">
-            <div className="rounded-[1.7rem] border border-blue-100 bg-[#f8fbff] p-5 shadow-sm shadow-blue-100/60 transition duration-200 hover:shadow-lg hover:shadow-slate-200/50 md:rounded-[2rem] md:bg-white md:p-6">
+            <div className="rounded-[2rem] bg-white px-1 pt-2 md:px-0 md:pt-0">
               <div className="flex items-center gap-4">
-                <div className="profile-avatar-pop flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#123c8c] text-white">
-                  <UserRound size={24} strokeWidth={2.7} />
+                <div className="profile-avatar-pop flex h-14 w-14 shrink-0 items-center justify-center rounded-[1.35rem] bg-[#123c8c] text-white shadow-lg shadow-blue-900/20">
+                  <UserRound size={27} strokeWidth={2.7} />
                 </div>
 
                 <div className="min-w-0">
-                  <p className="text-xs font-black uppercase tracking-[0.22em] text-[#123c8c]">
+                  <p className="text-xs font-black uppercase tracking-[0.28em] text-[#123c8c]">
                     Profile
                   </p>
 
-                  <h1 className="mt-1 text-2xl font-black tracking-tight text-[#123456] md:text-3xl">
+                  <h1 className="mt-1 text-3xl font-black tracking-tight text-[#123456] md:text-4xl">
                     Akun
                   </h1>
                 </div>
