@@ -42,6 +42,136 @@ function isCreativemuEmail(email: string) {
   return normalized.endsWith("@creativemu.co.id") || normalized.endsWith("@creativemu.com");
 }
 
+function LoginMotionStyles() {
+  return (
+    <style>{`
+      @keyframes loginEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(16px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes loginCardEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(18px) scale(0.985);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @keyframes loginLogoPop {
+        0% {
+          opacity: 0;
+          transform: translateY(10px) scale(0.92);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @keyframes loginTextReveal {
+        0% {
+          opacity: 0;
+          transform: translateY(12px);
+          filter: blur(5px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+          filter: blur(0);
+        }
+      }
+
+      @keyframes loginFieldEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes loginBackgroundFloat {
+        0%,
+        100% {
+          transform: translate3d(0, 0, 0) scale(1);
+        }
+
+        50% {
+          transform: translate3d(10px, -10px, 0) scale(1.04);
+        }
+      }
+
+      .login-enter {
+        animation: loginEnter 360ms ease-out both;
+      }
+
+      .login-card-enter {
+        animation: loginCardEnter 420ms ease-out both;
+      }
+
+      .login-logo-pop {
+        animation: loginLogoPop 320ms ease-out both;
+      }
+
+      .login-text-reveal {
+        animation: loginTextReveal 420ms ease-out both;
+      }
+
+      .login-field-enter {
+        opacity: 0;
+        animation: loginFieldEnter 320ms ease-out both;
+      }
+
+      .login-bg-float {
+        animation: loginBackgroundFloat 6s ease-in-out infinite;
+      }
+
+      .login-field-smooth input {
+        transition:
+          border-color 180ms ease,
+          background-color 180ms ease,
+          box-shadow 180ms ease,
+          transform 180ms ease;
+      }
+
+      .login-field-smooth input:focus {
+        transform: translateY(-1px);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .login-enter,
+        .login-card-enter,
+        .login-logo-pop,
+        .login-text-reveal,
+        .login-field-enter,
+        .login-bg-float {
+          animation: none !important;
+          opacity: 1 !important;
+          transform: none !important;
+          filter: none !important;
+        }
+      }
+    `}</style>
+  );
+}
+
 function FloatingAlert({
   open,
   title,
@@ -272,11 +402,16 @@ export default function LoginPage() {
 
   return (
     <MobileShell variant="auth" withBottomPadding={false}>
+      <LoginMotionStyles />
+
       <section className="relative min-h-dvh w-full overflow-hidden bg-[#f6f8ff]">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,138,0,0.16),transparent_32%),radial-gradient(circle_at_top_right,rgba(18,60,140,0.18),transparent_36%)]" />
 
+        <div className="login-bg-float pointer-events-none absolute -left-28 top-20 h-72 w-72 rounded-full bg-orange-200/20 blur-3xl" />
+        <div className="login-bg-float pointer-events-none absolute -right-28 bottom-20 h-72 w-72 rounded-full bg-blue-300/20 blur-3xl" />
+
         <div className="relative z-10 grid min-h-dvh w-full grid-cols-1 lg:grid-cols-2">
-          <div className="relative flex flex-col px-6 py-7 md:px-12 lg:justify-between lg:px-20 lg:py-14">
+          <div className="login-enter relative flex flex-col px-6 py-7 md:px-12 lg:justify-between lg:px-20 lg:py-14">
             <Image
               src="/images/creativemu-logo/creativemu.png"
               alt="Creativemu Background Logo"
@@ -296,7 +431,7 @@ export default function LoginPage() {
             />
 
             <div className="relative z-10">
-              <div className="flex items-center gap-4">
+              <div className="login-logo-pop flex items-center gap-4">
                 <div className="flex h-12 min-h-12 w-12 min-w-12 items-center justify-center overflow-hidden rounded-2xl bg-white p-2 shadow-xl shadow-slate-300/60 md:h-14 md:w-14">
                   <Image
                     src="/images/creativemu-logo/creativemu.png"
@@ -316,17 +451,32 @@ export default function LoginPage() {
               </div>
 
               <div className="mt-14 max-w-2xl md:mt-16 lg:mt-28">
-                <p className="text-xs font-black uppercase tracking-[0.35em] text-[#ff8a00] md:text-sm">
+                <p
+                  className="login-text-reveal text-xs font-black uppercase tracking-[0.35em] text-[#ff8a00] md:text-sm"
+                  style={{
+                    animationDelay: "120ms",
+                  }}
+                >
                   Welcome Back
                 </p>
 
-                <h2 className="mt-4 text-4xl font-black leading-[1.05] tracking-tight text-slate-950 md:mt-5 md:text-6xl">
+                <h2
+                  className="login-text-reveal mt-4 text-4xl font-black leading-[1.05] tracking-tight text-slate-950 md:mt-5 md:text-6xl"
+                  style={{
+                    animationDelay: "180ms",
+                  }}
+                >
                   <span className="typewriter-title">Creativemu Presence</span>
                 </h2>
               </div>
             </div>
 
-            <div className="relative z-10 mt-10 hidden text-sm font-semibold text-slate-400 lg:block">
+            <div
+              className="login-field-enter relative z-10 mt-10 hidden text-sm font-semibold text-slate-400 lg:block"
+              style={{
+                animationDelay: "280ms",
+              }}
+            >
               © 2026 FaceAttend for Creativemu
             </div>
           </div>
@@ -334,17 +484,22 @@ export default function LoginPage() {
           <div className="flex items-start justify-center px-6 pb-8 pt-2 md:px-12 md:pb-12 lg:items-center lg:bg-white/35 lg:px-20 lg:py-14 lg:backdrop-blur-xl">
             <AppCard
               padding="lg"
-              className="w-full max-w-md border-white/70 bg-white/90 shadow-2xl shadow-slate-300/60 backdrop-blur-2xl"
+              className="login-card-enter w-full max-w-md border-white/70 bg-white/90 shadow-2xl shadow-slate-300/60 backdrop-blur-2xl"
             >
               <form suppressHydrationWarning noValidate onSubmit={handleSubmit}>
-                <div className="mb-7 md:mb-8">
+                <div className="login-field-enter mb-7 md:mb-8">
                   <h3 className="mt-2 text-3xl font-black tracking-tight text-slate-950">
                     Sign In
                   </h3>
                 </div>
 
                 <div className="space-y-5">
-                  <div>
+                  <div
+                    className="login-field-enter login-field-smooth"
+                    style={{
+                      animationDelay: "80ms",
+                    }}
+                  >
                     <AppInput
                       suppressHydrationWarning
                       label="Email"
@@ -358,60 +513,86 @@ export default function LoginPage() {
                     />
                   </div>
 
-                  <AppInput
-                    suppressHydrationWarning
-                    label="Password"
-                    type="password"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    placeholder="••••••••"
-                    autoComplete="current-password"
-                    disabled={formIsBusy}
-                  />
+                  <div
+                    className="login-field-enter login-field-smooth"
+                    style={{
+                      animationDelay: "130ms",
+                    }}
+                  >
+                    <AppInput
+                      suppressHydrationWarning
+                      label="Password"
+                      type="password"
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      placeholder="••••••••"
+                      autoComplete="current-password"
+                      disabled={formIsBusy}
+                    />
+                  </div>
                 </div>
 
                 <div className="mt-6 space-y-3">
-                  <AppButton
-                    type="submit"
-                    full
-                    disabled={isLoading || isAdminDemoLoading}
-                    leftIcon={<LogIn size={18} />}
+                  <div
+                    className="login-field-enter"
+                    style={{
+                      animationDelay: "180ms",
+                    }}
                   >
-                    {isLoading ? (
-                      <>
-                        <Loader2 size={18} className="animate-spin" />
-                        Memproses...
-                      </>
-                    ) : (
-                      "Masuk"
-                    )}
-                  </AppButton>
-
-                  <AppButton
-                    type="button"
-                    full
-                    variant="soft"
-                    disabled={formIsBusy}
-                    onClick={handleAdminDemoLogin}
-                    className="bg-[#fff4e6] text-[#ff8a00] ring-orange-100 hover:bg-[#ffe8cc]"
-                    leftIcon={
-                      isAdminDemoLoading ? (
-                        <Loader2 size={18} className="animate-spin" />
+                    <AppButton
+                      type="submit"
+                      full
+                      disabled={isLoading || isAdminDemoLoading}
+                      leftIcon={<LogIn size={18} />}
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 size={18} className="animate-spin" />
+                          Memproses...
+                        </>
                       ) : (
-                        <ShieldCheck size={18} strokeWidth={2.6} />
-                      )
-                    }
+                        "Masuk"
+                      )}
+                    </AppButton>
+                  </div>
+
+                  <div
+                    className="login-field-enter"
+                    style={{
+                      animationDelay: "230ms",
+                    }}
                   >
-                    {isAdminDemoLoading
-                      ? "Masuk sebagai Admin..."
-                      : "Masuk sebagai Admin Demo"}
-                  </AppButton>
+                    <AppButton
+                      type="button"
+                      full
+                      variant="soft"
+                      disabled={formIsBusy}
+                      onClick={handleAdminDemoLogin}
+                      className="bg-[#fff4e6] text-[#ff8a00] ring-orange-100 hover:bg-[#ffe8cc]"
+                      leftIcon={
+                        isAdminDemoLoading ? (
+                          <Loader2 size={18} className="animate-spin" />
+                        ) : (
+                          <ShieldCheck size={18} strokeWidth={2.6} />
+                        )
+                      }
+                    >
+                      {isAdminDemoLoading
+                        ? "Masuk sebagai Admin..."
+                        : "Masuk sebagai Admin Demo"}
+                    </AppButton>
+                  </div>
                 </div>
               </form>
             </AppCard>
           </div>
 
-          <div className="px-6 pb-6 text-xs font-semibold text-slate-400 lg:hidden">
+          <div
+            className="login-field-enter px-6 pb-6 text-xs font-semibold text-slate-400 lg:hidden"
+            style={{
+              animationDelay: "300ms",
+            }}
+          >
             © 2026 FaceAttend for Creativemu
           </div>
         </div>

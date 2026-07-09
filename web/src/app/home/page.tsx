@@ -144,6 +144,125 @@ async function getJson(url: string) {
   }
 }
 
+function HomeMotionStyles() {
+  return (
+    <style>{`
+      @keyframes homeEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes homeCardEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(12px) scale(0.985);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @keyframes homeIconPop {
+        0% {
+          opacity: 0;
+          transform: translateY(8px) scale(0.92);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @keyframes homeTextReveal {
+        0% {
+          opacity: 0;
+          transform: translateY(10px);
+          filter: blur(4px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+          filter: blur(0);
+        }
+      }
+
+      @keyframes homePulseDot {
+        0%,
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+
+        50% {
+          transform: scale(1.22);
+          opacity: 0.72;
+        }
+      }
+
+      @keyframes homeFloatGlow {
+        0%,
+        100% {
+          transform: translate3d(0, 0, 0) scale(1);
+        }
+
+        50% {
+          transform: translate3d(12px, -10px, 0) scale(1.05);
+        }
+      }
+
+      .home-enter {
+        animation: homeEnter 340ms ease-out both;
+      }
+
+      .home-card-enter {
+        opacity: 0;
+        animation: homeCardEnter 340ms ease-out both;
+      }
+
+      .home-icon-pop {
+        animation: homeIconPop 300ms ease-out both;
+      }
+
+      .home-text-reveal {
+        animation: homeTextReveal 380ms ease-out both;
+      }
+
+      .home-pulse-dot {
+        animation: homePulseDot 1.45s ease-in-out infinite;
+      }
+
+      .home-float-glow {
+        animation: homeFloatGlow 6s ease-in-out infinite;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .home-enter,
+        .home-card-enter,
+        .home-icon-pop,
+        .home-text-reveal,
+        .home-pulse-dot,
+        .home-float-glow {
+          animation: none !important;
+          opacity: 1 !important;
+          transform: none !important;
+          filter: none !important;
+        }
+      }
+    `}</style>
+  );
+}
+
 function ProfileAvatar({
   user,
   size = "mobile",
@@ -161,7 +280,7 @@ function ProfileAvatar({
       <img
         src={user.profile_photo}
         alt={user.name || "Profile"}
-        className={`${sizeClass} shrink-0 rounded-full object-cover ${
+        className={`home-icon-pop ${sizeClass} shrink-0 rounded-full object-cover ${
           size === "desktop" ? "ring-4 ring-white/70" : "ring-4 ring-white"
         }`}
       />
@@ -170,7 +289,7 @@ function ProfileAvatar({
 
   return (
     <div
-      className={`${sizeClass} flex shrink-0 items-center justify-center rounded-full font-black ${
+      className={`home-icon-pop ${sizeClass} flex shrink-0 items-center justify-center rounded-full font-black ${
         variant === "blue"
           ? "bg-white/15 text-white ring-4 ring-white/20"
           : "bg-[#eaf1ff] text-[#123c8c] ring-4 ring-white"
@@ -196,7 +315,7 @@ function AnnouncementButton({
     <Link
       href={href}
       onClick={onClick}
-      className={`relative flex shrink-0 items-center justify-center rounded-2xl ring-1 transition active:scale-[0.96] ${
+      className={`home-icon-pop relative flex shrink-0 items-center justify-center rounded-2xl ring-1 transition hover:-translate-y-0.5 active:scale-[0.96] ${
         desktop ? "h-16 w-16" : "h-12 w-12"
       } ${
         unread
@@ -217,7 +336,7 @@ function AnnouncementButton({
 
       {unread ? (
         <span
-          className={`absolute rounded-full bg-red-500 ring-2 ring-white ${
+          className={`home-pulse-dot absolute rounded-full bg-red-500 ring-2 ring-white ${
             desktop ? "right-3 top-3 h-4 w-4" : "right-2 top-2 h-3 w-3"
           }`}
         />
@@ -233,7 +352,7 @@ function WhatsAppButton() {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Hubungi WhatsApp"
-      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 shadow-sm ring-1 ring-emerald-200 transition hover:bg-emerald-100 active:scale-[0.96]"
+      className="home-icon-pop flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 shadow-sm ring-1 ring-emerald-200 transition hover:-translate-y-0.5 hover:bg-emerald-100 active:scale-[0.96]"
     >
       <PhoneCall size={24} strokeWidth={2.7} />
     </a>
@@ -243,10 +362,13 @@ function WhatsAppButton() {
 function RoleBadges({ items }: { items: Array<string | undefined | null> }) {
   return (
     <div className="mt-4 flex flex-wrap gap-2">
-      {items.filter(Boolean).map((item) => (
+      {items.filter(Boolean).map((item, index) => (
         <span
           key={item}
-          className="rounded-full bg-white/15 px-4 py-2 text-xs font-black text-white ring-1 ring-white/20"
+          className="home-card-enter rounded-full bg-white/15 px-4 py-2 text-xs font-black text-white ring-1 ring-white/20"
+          style={{
+            animationDelay: `${index * 55}ms`,
+          }}
         >
           {item}
         </span>
@@ -258,14 +380,17 @@ function RoleBadges({ items }: { items: Array<string | undefined | null> }) {
 function QuickMenuGrid() {
   return (
     <div className="grid grid-cols-4 gap-x-2 gap-y-3 md:grid-cols-4 md:gap-5">
-      {quickMenus.map(({ href, label, description, icon: Icon }) => (
+      {quickMenus.map(({ href, label, description, icon: Icon }, index) => (
         <Link
           key={href}
           href={href}
-          className="group flex flex-col items-center rounded-3xl text-center transition md:border md:border-blue-100 md:bg-[#f8fbff] md:p-6 md:hover:-translate-y-1"
+          className="home-card-enter group flex flex-col items-center rounded-3xl text-center transition hover:-translate-y-0.5 active:scale-[0.98] md:border md:border-blue-100 md:bg-[#f8fbff] md:p-6 md:hover:-translate-y-1 md:hover:bg-white md:hover:shadow-xl md:hover:shadow-slate-200/60"
+          style={{
+            animationDelay: `${index * 70}ms`,
+          }}
         >
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#eaf1ff] md:h-20 md:w-20">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#123c8c] text-white md:h-14 md:w-14">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#eaf1ff] transition group-hover:scale-105 md:h-20 md:w-20">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#123c8c] text-white shadow-lg shadow-blue-900/20 transition group-hover:rotate-[-2deg] md:h-14 md:w-14">
               <Icon size={22} strokeWidth={2.6} />
             </div>
           </div>
@@ -300,12 +425,12 @@ function AttendanceButton({
       onClick={(event) => {
         if (disabled) event.preventDefault();
       }}
-      className={`flex h-14 items-center justify-center rounded-2xl text-sm font-black transition active:scale-[0.98] md:h-20 md:text-lg ${
+      className={`flex h-14 items-center justify-center rounded-2xl text-sm font-black transition md:h-20 md:text-lg ${
         disabled
           ? "cursor-not-allowed border-slate-100 bg-slate-100 text-slate-300"
           : variant === "primary"
-            ? "bg-[#123c8c] text-white"
-            : "border border-blue-100 bg-white text-[#123c8c]"
+            ? "bg-[#123c8c] text-white shadow-lg shadow-blue-900/20 hover:-translate-y-0.5 hover:bg-[#0f3274] active:scale-[0.98]"
+            : "border border-blue-100 bg-white text-[#123c8c] hover:-translate-y-0.5 hover:bg-[#eaf1ff] active:scale-[0.98]"
       }`}
     >
       {label}
@@ -324,7 +449,7 @@ function AnnouncementList({
 }) {
   if (!hasAnnouncement) {
     return (
-      <div className="rounded-3xl border border-dashed border-blue-100 bg-white px-5 py-6 text-center shadow-sm md:py-14">
+      <div className="home-card-enter rounded-3xl border border-dashed border-blue-100 bg-white px-5 py-6 text-center shadow-sm md:py-14">
         <p className="text-sm font-bold text-slate-400 md:text-base">
           Pengumuman Kosong
         </p>
@@ -338,7 +463,7 @@ function AnnouncementList({
     <Link
       href="/pengumuman"
       onClick={onRead}
-      className="block min-w-0 rounded-3xl border border-blue-100 bg-white p-5 shadow-sm transition hover:bg-[#f8fbff] md:p-5"
+      className="home-card-enter block min-w-0 rounded-3xl border border-blue-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:bg-[#f8fbff] hover:shadow-xl hover:shadow-slate-200/60 active:scale-[0.99] md:p-5"
     >
       <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#eaf1ff] px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-[#123c8c]">
         <Megaphone size={14} />
@@ -444,7 +569,7 @@ export default function HomePage() {
       setAnnouncements(Array.isArray(list) ? list : []);
     }
 
-    loadData();
+    void loadData();
   }, []);
 
   const firstName = user.name ? getFirstName(user.name) : "";
@@ -490,6 +615,8 @@ export default function HomePage() {
       withBottomPadding={false}
       className="bg-white md:bg-[#f6f8ff]"
     >
+      <HomeMotionStyles />
+
       <div className="min-h-dvh bg-white">
         <div className="hidden md:block">
           <AppHeader
@@ -501,8 +628,11 @@ export default function HomePage() {
         </div>
 
         <main className="min-h-dvh overflow-x-hidden bg-white text-slate-950 md:bg-gradient-to-br md:from-[#f6f8ff] md:via-white md:to-[#eef4ff] md:pb-28">
+          <div className="home-float-glow pointer-events-none fixed -left-32 top-24 hidden h-72 w-72 rounded-full bg-orange-200/20 blur-3xl md:block" />
+          <div className="home-float-glow pointer-events-none fixed -right-32 bottom-24 hidden h-72 w-72 rounded-full bg-blue-300/20 blur-3xl md:block" />
+
           <section
-            className="bg-white md:hidden"
+            className="home-enter bg-white md:hidden"
             style={{
               paddingTop: "env(safe-area-inset-top, 0px)",
             }}
@@ -510,7 +640,7 @@ export default function HomePage() {
             <div className="mx-auto w-full max-w-7xl px-5 pt-6">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white p-2 ring-1 ring-blue-100">
+                  <div className="home-icon-pop flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white p-2 ring-1 ring-blue-100">
                     <Image
                       src="/images/creativemu-logo/creativemu.png"
                       alt="Creativemu Logo"
@@ -524,16 +654,26 @@ export default function HomePage() {
                   <ProfileAvatar user={user} />
 
                   <div className="min-w-0">
-                    <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#123c8c]">
+                    <p className="home-text-reveal text-[10px] font-black uppercase tracking-[0.24em] text-[#123c8c]">
                       FaceAttend
                     </p>
 
-                    <h1 className="mt-1 truncate text-base font-black text-[#073456]">
+                    <h1
+                      className="home-text-reveal mt-1 truncate text-base font-black text-[#073456]"
+                      style={{
+                        animationDelay: "60ms",
+                      }}
+                    >
                       {user.name || "Memuat profil..."}
                     </h1>
 
                     {mainRoleLabel ? (
-                      <p className="truncate text-xs font-bold text-slate-500">
+                      <p
+                        className="home-text-reveal truncate text-xs font-bold text-slate-500"
+                        style={{
+                          animationDelay: "100ms",
+                        }}
+                      >
                         {mainRoleLabel}
                       </p>
                     ) : null}
@@ -551,15 +691,30 @@ export default function HomePage() {
               </div>
 
               <div className="py-7 text-center">
-                <p className="text-xs font-black uppercase tracking-[0.24em] text-[#123c8c]">
+                <p
+                  className="home-text-reveal text-xs font-black uppercase tracking-[0.24em] text-[#123c8c]"
+                  style={{
+                    animationDelay: "120ms",
+                  }}
+                >
                   Selamat Datang
                 </p>
 
-                <h2 className="mt-3 text-4xl font-black tracking-tight text-[#073456]">
+                <h2
+                  className="home-text-reveal mt-3 text-4xl font-black tracking-tight text-[#073456]"
+                  style={{
+                    animationDelay: "170ms",
+                  }}
+                >
                   {firstName ? `Halo, ${firstName}` : "Memuat profil..."}
                 </h2>
 
-                <p className="mt-3 text-lg font-bold text-slate-500">
+                <p
+                  className="home-text-reveal mt-3 text-lg font-bold text-slate-500"
+                  style={{
+                    animationDelay: "220ms",
+                  }}
+                >
                   Semoga harimu produktif.
                 </p>
               </div>
@@ -567,7 +722,7 @@ export default function HomePage() {
           </section>
 
           <section className="mx-auto hidden max-w-7xl px-10 pt-8 md:block lg:px-16">
-            <div className="relative overflow-hidden rounded-[2.2rem] bg-[#123c8c] p-8 text-white">
+            <div className="home-enter relative overflow-hidden rounded-[2.2rem] bg-[#123c8c] p-8 text-white shadow-2xl shadow-blue-900/25">
               <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-white/10" />
               <div className="absolute bottom-[-7rem] right-24 h-60 w-60 rounded-full bg-blue-300/10" />
 
@@ -576,11 +731,16 @@ export default function HomePage() {
                   <ProfileAvatar user={user} size="desktop" variant="blue" />
 
                   <div>
-                    <h1 className="text-4xl font-black tracking-tight">
+                    <h1 className="home-text-reveal text-4xl font-black tracking-tight">
                       {firstName ? `Halo, ${firstName}` : "Memuat profil..."}
                     </h1>
 
-                    <p className="mt-3 max-w-2xl text-sm font-semibold leading-7 text-blue-100">
+                    <p
+                      className="home-text-reveal mt-3 max-w-2xl text-sm font-semibold leading-7 text-blue-100"
+                      style={{
+                        animationDelay: "80ms",
+                      }}
+                    >
                       Kelola kehadiran, riwayat presensi, profil, dan pengajuan
                       izin dalam satu dashboard karyawan.
                     </p>
@@ -612,7 +772,10 @@ export default function HomePage() {
 
             <AppCard
               padding="md"
-              className="rounded-[1.8rem] border-blue-100 bg-white p-5 shadow-sm md:p-8"
+              className="home-card-enter rounded-[1.8rem] border-blue-100 bg-white p-5 shadow-sm transition hover:shadow-xl hover:shadow-slate-200/60 md:p-8"
+              style={{
+                animationDelay: "140ms",
+              }}
             >
               <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                 <div>
@@ -660,7 +823,12 @@ export default function HomePage() {
               </div>
             </AppCard>
 
-            <div className="mt-7 flex items-center justify-between md:mt-14">
+            <div
+              className="home-card-enter mt-7 flex items-center justify-between md:mt-14"
+              style={{
+                animationDelay: "180ms",
+              }}
+            >
               <div>
                 <h2 className="text-2xl font-black text-slate-950 md:text-2xl">
                   Pengumuman
@@ -674,7 +842,7 @@ export default function HomePage() {
               <Link
                 href="/pengumuman"
                 onClick={markAnnouncementsAsRead}
-                className="text-lg font-black text-[#123c8c] md:text-base"
+                className="text-lg font-black text-[#123c8c] transition hover:text-[#0f3274] active:scale-[0.98] md:text-base"
               >
                 Lihat Lainnya
               </Link>

@@ -144,6 +144,61 @@ function parseCoordinateText(text: string) {
   return null;
 }
 
+function OfficeMotionStyles() {
+  return (
+    <style>{`
+      @keyframes officeEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes officeRowEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .office-enter {
+        animation: officeEnter 320ms ease-out both;
+      }
+
+      .office-row-enter {
+        opacity: 0;
+        animation: officeRowEnter 300ms ease-out both;
+      }
+
+      .office-field {
+        transition:
+          border-color 180ms ease,
+          background-color 180ms ease,
+          box-shadow 180ms ease;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .office-enter,
+        .office-row-enter {
+          animation: none !important;
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      }
+    `}</style>
+  );
+}
+
 function StatusBadge({ status }: { status: OfficeStatus }) {
   const active = status === "active";
 
@@ -163,15 +218,22 @@ function StatusBadge({ status }: { status: OfficeStatus }) {
 
 function OfficeCard({
   office,
+  index,
   onEdit,
   onDelete,
 }: {
   office: OfficeLocation;
+  index: number;
   onEdit: (office: OfficeLocation) => void;
   onDelete: (office: OfficeLocation) => void;
 }) {
   return (
-    <AppCard className="w-full max-w-full overflow-hidden rounded-[2rem] border-blue-100 bg-white p-5 shadow-xl shadow-slate-200/60 md:overflow-visible">
+    <AppCard
+      className="office-row-enter w-full max-w-full overflow-hidden rounded-[2rem] border-blue-100 bg-white p-5 shadow-xl shadow-slate-200/60 transition duration-200 hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-slate-300/40 md:overflow-visible"
+      style={{
+        animationDelay: `${index * 55}ms`,
+      }}
+    >
       <div className="flex w-full max-w-full flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="flex w-full min-w-0 gap-3 md:gap-4">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
@@ -227,7 +289,7 @@ function OfficeCard({
               href={`https://www.google.com/maps?q=${office.latitude},${office.longitude}`}
               target="_blank"
               rel="noreferrer"
-              className="mt-4 inline-flex max-w-full items-center justify-center gap-2 rounded-2xl bg-[#f6f8ff] px-4 py-2 text-xs font-black text-[#123c8c] ring-1 ring-blue-100 transition active:scale-[0.98]"
+              className="mt-4 inline-flex max-w-full items-center justify-center gap-2 rounded-2xl bg-[#f6f8ff] px-4 py-2 text-xs font-black text-[#123c8c] ring-1 ring-blue-100 transition hover:bg-[#eaf1ff] active:scale-[0.98]"
             >
               <MapPin size={15} className="shrink-0" strokeWidth={2.7} />
               <span className="truncate">Buka Maps</span>
@@ -239,7 +301,7 @@ function OfficeCard({
           <button
             type="button"
             onClick={() => onEdit(office)}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-[#123c8c] transition active:scale-95"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-[#123c8c] transition hover:bg-[#eaf1ff] active:scale-95"
             aria-label="Edit kantor"
           >
             <Edit3 size={18} strokeWidth={2.6} />
@@ -248,7 +310,7 @@ function OfficeCard({
           <button
             type="button"
             onClick={() => onDelete(office)}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-600 transition active:scale-95"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-600 transition hover:bg-red-100 active:scale-95"
             aria-label="Hapus kantor"
           >
             <Trash2 size={18} strokeWidth={2.6} />
@@ -277,7 +339,7 @@ function OfficeFormPanel({
   onParseCoordinate: () => void;
 }) {
   return (
-    <AppCard className="h-fit w-full max-w-full overflow-hidden rounded-[2rem] border-white/80 bg-white p-5 shadow-2xl shadow-slate-300/30 md:overflow-visible md:p-6">
+    <AppCard className="office-enter h-fit w-full max-w-full overflow-hidden rounded-[2rem] border-white/80 bg-white p-5 shadow-2xl shadow-slate-300/30 md:overflow-visible md:p-6">
       <div className="flex min-w-0 items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <p className="break-words text-xs font-black uppercase tracking-[0.22em] text-[#123c8c]">
@@ -294,7 +356,7 @@ function OfficeFormPanel({
             type="button"
             onClick={onCancel}
             disabled={isSaving}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 transition active:scale-95 disabled:opacity-60"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 transition hover:bg-slate-200 active:scale-95 disabled:opacity-60"
             aria-label="Batal edit"
           >
             <X size={18} strokeWidth={2.7} />
@@ -303,28 +365,36 @@ function OfficeFormPanel({
       </div>
 
       <div className="mt-6 space-y-4">
-        <AppInput
-          label="Nama Kantor"
-          value={form.name}
-          onChange={(event) => onChange("name", event.target.value)}
-          placeholder="Contoh: Creativemu Academy"
-        />
+        <div className="office-row-enter" style={{ animationDelay: "40ms" }}>
+          <AppInput
+            label="Nama Kantor"
+            value={form.name}
+            onChange={(event) => onChange("name", event.target.value)}
+            placeholder="Contoh: Creativemu Academy"
+            className="office-field focus:ring-4 focus:ring-blue-100"
+          />
+        </div>
 
-        <AppTextarea
-          label="Alamat"
-          value={form.address}
-          onChange={(event) => onChange("address", event.target.value)}
-          placeholder="Contoh: Jogja"
-          className="min-h-28"
-        />
+        <div className="office-row-enter" style={{ animationDelay: "70ms" }}>
+          <AppTextarea
+            label="Alamat"
+            value={form.address}
+            onChange={(event) => onChange("address", event.target.value)}
+            placeholder="Contoh: Jogja"
+            className="office-field min-h-28 focus:ring-4 focus:ring-blue-100"
+          />
+        </div>
 
-        <div className="w-full max-w-full overflow-hidden rounded-[1.7rem] border border-blue-100 bg-[#f8fbff] p-4">
+        <div
+          className="office-row-enter w-full max-w-full overflow-hidden rounded-[1.7rem] border border-blue-100 bg-[#f8fbff] p-4"
+          style={{ animationDelay: "100ms" }}
+        >
           <AppTextarea
             label="Koordinat / Link Google Maps"
             value={form.coordinateText}
             onChange={(event) => onChange("coordinateText", event.target.value)}
             placeholder="Contoh: -7.812201, 110.2685415 atau paste link Google Maps"
-            className="min-h-24 bg-white"
+            className="office-field min-h-24 bg-white focus:ring-4 focus:ring-blue-100"
           />
 
           <AppButton
@@ -345,13 +415,17 @@ function OfficeFormPanel({
           </p>
         </div>
 
-        <div className="grid w-full max-w-full gap-4 md:grid-cols-2">
+        <div
+          className="office-row-enter grid w-full max-w-full gap-4 md:grid-cols-2"
+          style={{ animationDelay: "130ms" }}
+        >
           <AppInput
             label="Latitude"
             value={form.latitude}
             onChange={(event) => onChange("latitude", event.target.value)}
             placeholder="-7.812201"
             inputMode="decimal"
+            className="office-field focus:ring-4 focus:ring-blue-100"
           />
 
           <AppInput
@@ -360,16 +434,21 @@ function OfficeFormPanel({
             onChange={(event) => onChange("longitude", event.target.value)}
             placeholder="110.2685415"
             inputMode="decimal"
+            className="office-field focus:ring-4 focus:ring-blue-100"
           />
         </div>
 
-        <div className="grid w-full max-w-full gap-4 md:grid-cols-2">
+        <div
+          className="office-row-enter grid w-full max-w-full gap-4 md:grid-cols-2"
+          style={{ animationDelay: "160ms" }}
+        >
           <AppInput
             label="Radius Validasi Meter"
             value={form.radius_meters}
             onChange={(event) => onChange("radius_meters", event.target.value)}
             placeholder="100"
             inputMode="numeric"
+            className="office-field focus:ring-4 focus:ring-blue-100"
           />
 
           <AppSelect
@@ -378,13 +457,17 @@ function OfficeFormPanel({
             onChange={(event) =>
               onChange("status", event.target.value as OfficeStatus)
             }
+            className="office-field focus:ring-4 focus:ring-blue-100"
           >
             <option value="active">Aktif</option>
             <option value="inactive">Nonaktif</option>
           </AppSelect>
         </div>
 
-        <div className="w-full max-w-full overflow-hidden rounded-3xl border border-blue-100 bg-[#f8fbff] p-4">
+        <div
+          className="office-row-enter w-full max-w-full overflow-hidden rounded-3xl border border-blue-100 bg-[#f8fbff] p-4"
+          style={{ animationDelay: "190ms" }}
+        >
           <div className="flex min-w-0 items-start gap-3">
             <MapPin
               size={20}
@@ -399,7 +482,10 @@ function OfficeFormPanel({
           </div>
         </div>
 
-        <div className="grid w-full max-w-full gap-3 md:grid-cols-2">
+        <div
+          className="office-row-enter grid w-full max-w-full gap-3 md:grid-cols-2"
+          style={{ animationDelay: "220ms" }}
+        >
           {editingOffice ? (
             <AppButton
               type="button"
@@ -604,11 +690,13 @@ export default function AdminOfficePage() {
   }
 
   useEffect(() => {
-    loadOffices();
+    void loadOffices();
   }, []);
 
   return (
     <MobileShell variant="admin" withBottomPadding={false}>
+      <OfficeMotionStyles />
+
       <div className="min-h-dvh w-full max-w-full overflow-x-hidden bg-white md:bg-[#f6f8ff]">
         <AppHeader title="Kantor" variant="admin" />
 
@@ -630,7 +718,10 @@ export default function AdminOfficePage() {
             />
 
             <div className="w-full max-w-full space-y-5 overflow-hidden md:overflow-visible">
-              <div className="w-full max-w-full overflow-hidden rounded-[2rem] bg-[#123c8c] p-5 text-white shadow-2xl shadow-blue-900/20 md:p-8">
+              <div
+                className="office-enter w-full max-w-full overflow-hidden rounded-[2rem] bg-[#123c8c] p-5 text-white shadow-2xl shadow-blue-900/20 md:p-8"
+                style={{ animationDelay: "80ms" }}
+              >
                 <div className="flex min-w-0 flex-col gap-5 md:flex-row md:items-center md:justify-between">
                   <div className="min-w-0 flex-1">
                     <p className="break-words text-xs font-black uppercase tracking-[0.24em] text-blue-100">
@@ -649,7 +740,7 @@ export default function AdminOfficePage() {
                 </div>
 
                 <div className="mt-6 grid w-full max-w-full gap-3 md:grid-cols-3">
-                  <div className="min-w-0 rounded-2xl bg-white/15 p-4 ring-1 ring-white/20">
+                  <div className="office-row-enter min-w-0 rounded-2xl bg-white/15 p-4 ring-1 ring-white/20">
                     <p className="break-words text-xs font-black uppercase tracking-[0.16em] text-blue-100">
                       Total
                     </p>
@@ -659,7 +750,10 @@ export default function AdminOfficePage() {
                     </p>
                   </div>
 
-                  <div className="min-w-0 rounded-2xl bg-white/15 p-4 ring-1 ring-white/20">
+                  <div
+                    className="office-row-enter min-w-0 rounded-2xl bg-white/15 p-4 ring-1 ring-white/20"
+                    style={{ animationDelay: "60ms" }}
+                  >
                     <p className="break-words text-xs font-black uppercase tracking-[0.16em] text-blue-100">
                       Aktif
                     </p>
@@ -669,7 +763,10 @@ export default function AdminOfficePage() {
                     </p>
                   </div>
 
-                  <div className="min-w-0 rounded-2xl bg-white/15 p-4 ring-1 ring-white/20">
+                  <div
+                    className="office-row-enter min-w-0 rounded-2xl bg-white/15 p-4 ring-1 ring-white/20"
+                    style={{ animationDelay: "100ms" }}
+                  >
                     <p className="break-words text-xs font-black uppercase tracking-[0.16em] text-blue-100">
                       Nonaktif
                     </p>
@@ -682,7 +779,7 @@ export default function AdminOfficePage() {
               </div>
 
               {isLoading ? (
-                <div className="flex min-h-[260px] w-full max-w-full items-center justify-center rounded-[2rem] border border-blue-100 bg-white">
+                <div className="office-row-enter flex min-h-[260px] w-full max-w-full items-center justify-center rounded-[2rem] border border-blue-100 bg-white">
                   <div className="text-center">
                     <Loader2 className="mx-auto animate-spin text-[#123c8c]" />
 
@@ -692,16 +789,19 @@ export default function AdminOfficePage() {
                   </div>
                 </div>
               ) : offices.length === 0 ? (
-                <AppEmptyState
-                  icon={<Building2 size={30} strokeWidth={2.6} />}
-                  title="Belum ada data kantor"
-                  description="Tambahkan kantor pertama agar validasi GPS absensi bisa berjalan."
-                />
+                <div className="office-row-enter">
+                  <AppEmptyState
+                    icon={<Building2 size={30} strokeWidth={2.6} />}
+                    title="Belum ada data kantor"
+                    description="Tambahkan kantor pertama agar validasi GPS absensi bisa berjalan."
+                  />
+                </div>
               ) : (
                 <div className="w-full max-w-full space-y-4 overflow-hidden md:overflow-visible">
-                  {offices.map((office) => (
+                  {offices.map((office, index) => (
                     <OfficeCard
                       key={office.id}
+                      index={index}
                       office={office}
                       onEdit={startEdit}
                       onDelete={deleteOffice}

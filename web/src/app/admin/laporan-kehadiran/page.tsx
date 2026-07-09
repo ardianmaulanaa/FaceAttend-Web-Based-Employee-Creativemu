@@ -5,11 +5,9 @@ import Link from "next/link";
 import {
   CalendarDays,
   Camera,
-  Clock3,
   Eye,
   ImageIcon,
   Loader2,
-  RefreshCcw,
   Search,
   UserRound,
 } from "lucide-react";
@@ -131,13 +129,86 @@ function getAttendanceReportProfilePhoto(item: AttendanceReport) {
   );
 }
 
+function AttendanceReportMotionStyles() {
+  return (
+    <style>{`
+      @keyframes attendanceReportEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes attendanceReportRowEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes attendanceReportAvatarEnter {
+        0% {
+          opacity: 0;
+          transform: scale(0.94);
+        }
+
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      .attendance-report-enter {
+        animation: attendanceReportEnter 320ms ease-out both;
+      }
+
+      .attendance-report-row-enter {
+        opacity: 0;
+        animation: attendanceReportRowEnter 300ms ease-out both;
+      }
+
+      .attendance-report-avatar-enter {
+        animation: attendanceReportAvatarEnter 260ms ease-out both;
+      }
+
+      .attendance-report-field {
+        transition:
+          border-color 180ms ease,
+          background-color 180ms ease,
+          box-shadow 180ms ease;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .attendance-report-enter,
+        .attendance-report-row-enter,
+        .attendance-report-avatar-enter {
+          animation: none !important;
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      }
+    `}</style>
+  );
+}
+
 function EmployeeProfileAvatar({ item }: { item: AttendanceReport }) {
   const [imageError, setImageError] = useState(false);
   const profilePhoto = getAttendanceReportProfilePhoto(item);
 
   if (profilePhoto && !imageError) {
     return (
-      <div className="h-12 w-12 shrink-0 overflow-hidden rounded-2xl bg-[#eaf1ff] ring-1 ring-blue-100">
+      <div className="attendance-report-avatar-enter h-12 w-12 shrink-0 overflow-hidden rounded-2xl bg-[#eaf1ff] ring-1 ring-blue-100">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={profilePhoto}
           alt={`Foto profil ${item.employeeName}`}
@@ -149,7 +220,7 @@ function EmployeeProfileAvatar({ item }: { item: AttendanceReport }) {
   }
 
   return (
-    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
+    <div className="attendance-report-avatar-enter flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
       <UserRound size={23} strokeWidth={2.6} />
     </div>
   );
@@ -221,11 +292,11 @@ export default function AdminAttendanceReportPage() {
 
   function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    getAttendanceReports();
+    void getAttendanceReports();
   }
 
   useEffect(() => {
-    getAttendanceReports();
+    void getAttendanceReports();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate, month, year, statusFilter]);
 
@@ -264,11 +335,13 @@ export default function AdminAttendanceReportPage() {
 
   return (
     <MobileShell variant="admin" withBottomPadding={false}>
+      <AttendanceReportMotionStyles />
+
       <AppHeader title="Laporan Kehadiran" variant="admin" />
 
       <main className="min-h-dvh bg-gradient-to-br from-[#f6f8ff] via-white to-[#eef4ff]">
         <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 md:px-10 lg:px-16">
-          <div className="overflow-hidden rounded-[2rem] border border-blue-100 bg-white shadow-xl shadow-slate-300/30">
+          <div className="attendance-report-enter overflow-hidden rounded-[2rem] border border-blue-100 bg-white shadow-xl shadow-slate-300/30">
             <div className="grid gap-0 lg:grid-cols-[0.95fr_1.05fr]">
               <div className="bg-[#123c8c] p-6 text-white md:p-8">
                 <div className="flex items-center gap-3">
@@ -289,7 +362,10 @@ export default function AdminAttendanceReportPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3 p-5 md:grid-cols-4 md:p-6">
-                <div className="rounded-2xl border border-blue-100 bg-[#f8fbff] p-4">
+                <div
+                  className="attendance-report-row-enter rounded-2xl border border-blue-100 bg-[#f8fbff] p-4"
+                  style={{ animationDelay: "60ms" }}
+                >
                   <p className="text-xs font-bold text-slate-500">
                     Total Rekap
                   </p>
@@ -301,7 +377,10 @@ export default function AdminAttendanceReportPage() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4">
+                <div
+                  className="attendance-report-row-enter rounded-2xl border border-blue-100 bg-blue-50 p-4"
+                  style={{ animationDelay: "100ms" }}
+                >
                   <p className="text-xs font-bold text-[#123c8c]">Tanggal</p>
                   <h3 className="mt-3 text-3xl font-black text-[#123c8c]">
                     {stats.totalDates}
@@ -311,7 +390,10 @@ export default function AdminAttendanceReportPage() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
+                <div
+                  className="attendance-report-row-enter rounded-2xl border border-emerald-100 bg-emerald-50 p-4"
+                  style={{ animationDelay: "140ms" }}
+                >
                   <p className="text-xs font-bold text-emerald-700">Ada Foto</p>
                   <h3 className="mt-3 text-3xl font-black text-emerald-700">
                     {stats.withPhoto}
@@ -321,7 +403,10 @@ export default function AdminAttendanceReportPage() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
+                <div
+                  className="attendance-report-row-enter rounded-2xl border border-amber-100 bg-amber-50 p-4"
+                  style={{ animationDelay: "180ms" }}
+                >
                   <p className="text-xs font-bold text-amber-700">Ada Lokasi</p>
                   <h3 className="mt-3 text-3xl font-black text-amber-700">
                     {stats.withLocation}
@@ -334,7 +419,10 @@ export default function AdminAttendanceReportPage() {
             </div>
           </div>
 
-          <div className="rounded-[2rem] border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-6">
+          <div
+            className="attendance-report-enter rounded-[2rem] border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-6"
+            style={{ animationDelay: "100ms" }}
+          >
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.22em] text-[#123c8c]">
@@ -361,7 +449,7 @@ export default function AdminAttendanceReportPage() {
                   value={searchKeyword}
                   onChange={(event) => setSearchKeyword(event.target.value)}
                   placeholder="Cari nama / kode karyawan..."
-                  className="h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                  className="attendance-report-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
                 />
               </div>
 
@@ -369,7 +457,7 @@ export default function AdminAttendanceReportPage() {
                 type="date"
                 value={selectedDate}
                 onChange={(event) => setSelectedDate(event.target.value)}
-                className="h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                className="attendance-report-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
               />
 
               <input
@@ -380,7 +468,7 @@ export default function AdminAttendanceReportPage() {
                 onChange={(event) => setMonth(Number(event.target.value))}
                 disabled={Boolean(selectedDate)}
                 placeholder="Bulan"
-                className="h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+                className="attendance-report-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
               />
 
               <input
@@ -389,7 +477,7 @@ export default function AdminAttendanceReportPage() {
                 onChange={(event) => setYear(Number(event.target.value))}
                 disabled={Boolean(selectedDate)}
                 placeholder="Tahun"
-                className="h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+                className="attendance-report-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
               />
 
               <select
@@ -397,7 +485,7 @@ export default function AdminAttendanceReportPage() {
                 onChange={(event) =>
                   setStatusFilter(event.target.value as StatusFilter)
                 }
-                className="h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                className="attendance-report-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
               >
                 {statusOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -408,7 +496,7 @@ export default function AdminAttendanceReportPage() {
 
               <button
                 type="submit"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#123c8c] px-5 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition active:scale-[0.98]"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#123c8c] px-5 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#0f3274] active:scale-[0.98]"
               >
                 <Search size={17} />
                 Cari
@@ -417,12 +505,15 @@ export default function AdminAttendanceReportPage() {
           </div>
 
           {errorMessage ? (
-            <div className="rounded-3xl border border-red-100 bg-red-50 p-5 text-sm font-bold text-red-700">
+            <div className="attendance-report-row-enter rounded-3xl border border-red-100 bg-red-50 p-5 text-sm font-bold text-red-700">
               {errorMessage}
             </div>
           ) : null}
 
-          <div className="rounded-[2rem] border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-6">
+          <div
+            className="attendance-report-enter rounded-[2rem] border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-6"
+            style={{ animationDelay: "150ms" }}
+          >
             <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.22em] text-[#123c8c]">
@@ -441,12 +532,12 @@ export default function AdminAttendanceReportPage() {
 
             <div className="mt-6">
               {isLoading ? (
-                <div className="flex items-center justify-center gap-2 rounded-3xl border border-blue-100 bg-[#f8fbff] px-5 py-12 text-sm font-bold text-slate-500">
+                <div className="attendance-report-row-enter flex items-center justify-center gap-2 rounded-3xl border border-blue-100 bg-[#f8fbff] px-5 py-12 text-sm font-bold text-slate-500">
                   <Loader2 size={18} className="animate-spin text-[#123c8c]" />
                   Memuat rekap kehadiran...
                 </div>
               ) : groupedReports.length === 0 ? (
-                <div className="rounded-3xl border border-dashed border-blue-100 bg-[#f8fbff] px-5 py-12 text-center">
+                <div className="attendance-report-row-enter rounded-3xl border border-dashed border-blue-100 bg-[#f8fbff] px-5 py-12 text-center">
                   <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
                     <ImageIcon size={26} strokeWidth={2.6} />
                   </div>
@@ -457,10 +548,13 @@ export default function AdminAttendanceReportPage() {
                 </div>
               ) : (
                 <div className="space-y-5">
-                  {groupedReports.map((group) => (
+                  {groupedReports.map((group, groupIndex) => (
                     <section
                       key={group.dateLabel}
-                      className="rounded-[2rem] border border-blue-100 bg-[#f8fbff] p-4 md:p-5"
+                      className="attendance-report-row-enter rounded-[2rem] border border-blue-100 bg-[#f8fbff] p-4 md:p-5"
+                      style={{
+                        animationDelay: `${groupIndex * 70}ms`,
+                      }}
                     >
                       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                         <div className="flex items-center gap-3">
@@ -481,11 +575,14 @@ export default function AdminAttendanceReportPage() {
                       </div>
 
                       <div className="mt-4 space-y-3">
-                        {group.items.map((item) => (
+                        {group.items.map((item, index) => (
                           <Link
                             key={item.id}
                             href={`/admin/laporan-kehadiran/${item.id}`}
-                            className="group block rounded-[1.6rem] border border-blue-100 bg-white px-4 py-4 shadow-sm shadow-slate-200/60 transition hover:-translate-y-0.5 hover:border-[#123c8c]/30 hover:bg-[#fbfdff] hover:shadow-xl hover:shadow-slate-300/40 active:scale-[0.99] md:px-5"
+                            className="attendance-report-row-enter group block rounded-[1.6rem] border border-blue-100 bg-white px-4 py-4 shadow-sm shadow-slate-200/60 transition duration-200 hover:-translate-y-0.5 hover:border-[#123c8c]/30 hover:bg-[#fbfdff] hover:shadow-xl hover:shadow-slate-300/40 active:scale-[0.99] md:px-5"
+                            style={{
+                              animationDelay: `${index * 45}ms`,
+                            }}
                           >
                             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                               <div className="flex min-w-0 items-center gap-3 md:w-[260px]">

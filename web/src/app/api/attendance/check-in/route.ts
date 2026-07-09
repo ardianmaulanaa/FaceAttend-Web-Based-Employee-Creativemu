@@ -560,8 +560,21 @@ export async function POST(req: NextRequest) {
     } | null = null;
 
     if (isOfficeMode) {
-      const offices = await prisma.officeLocation.findMany({
+      if (!user.registered_office_id) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Akun kamu belum memiliki kantor terdaftar.",
+            message:
+              "Hubungi admin untuk mengatur kantor karyawan terlebih dahulu.",
+          },
+          { status: 400 },
+        );
+      }
+
+      const registeredOffice = await prisma.officeLocation.findFirst({
         where: {
+          id: user.registered_office_id,
           status: "active",
         },
         select: {
@@ -573,34 +586,86 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      if (offices.length === 0) {
-        return NextResponse.json(
-          { error: "Belum ada data kantor aktif untuk validasi GPS." },
-          { status: 400 },
-        );
-      }
-
-      matchedOffice = findNearestValidOffice(
-        {
-          lat: latitude,
-          lng: longitude,
-        },
-        offices,
-      );
-
-      if (!matchedOffice) {
+      if (!registeredOffice) {
         return NextResponse.json(
           {
-            error: "Lokasi kamu berada di luar radius semua kantor aktif.",
-            latitude,
-            longitude,
-            accuracy,
+            success: false,
+            error: "Kantor terdaftar tidak ditemukan atau sedang tidak aktif.",
+            message:
+              "Hubungi admin untuk memastikan kantor karyawan masih aktif.",
           },
           { status: 400 },
         );
       }
-    }
 
+      const officeLatitude = toNumber(registeredOffice.latitude);
+      const officeLongitude = toNumber(registeredOffice.longitude);
+      const officeRadius = toNumber(registeredOffice.radius_meters);
+
+      if (
+        officeLatitude === null ||
+        officeLongitude === null ||
+        officeRadius === null
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Data titik GPS kantor belum lengkap.",
+            message:
+              "Latitude, longitude, atau radius kantor belum lengkap di master data kantor.",
+          },
+          { status: 400 },
+        );
+      }
+
+      const distance = getDistanceInMeters(
+        {
+          lat: latitude,
+          lng: longitude,
+        },
+        {
+          lat: officeLatitude,
+          lng: officeLongitude,
+        },
+      );
+
+      const isWithinRadius = distance <= officeRadius;
+
+      if (!isWithinRadius) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Lokasi kamu berada di luar radius kantor ${registeredOffice.name}.`,
+            message: `Kamu hanya bisa absen mode Kantor di radius kantor terdaftar: ${registeredOffice.name}.`,
+            latitude,
+            longitude,
+            accuracy,
+            distance: Math.round(distance),
+            radius: officeRadius,
+            office: {
+              id: registeredOffice.id,
+              name: registeredOffice.name,
+              latitude: officeLatitude,
+              longitude: officeLongitude,
+              radius: officeRadius,
+            },
+          },
+          { status: 400 },
+        );
+      }
+
+      matchedOffice = {
+        office: {
+          id: registeredOffice.id,
+          name: registeredOffice.name,
+          latitude: officeLatitude,
+          longitude: officeLongitude,
+          radius_meters: officeRadius,
+        },
+        distance,
+        isWithinRadius,
+      };
+    }
     const now = new Date();
     const today = getTodayDateOnly();
 

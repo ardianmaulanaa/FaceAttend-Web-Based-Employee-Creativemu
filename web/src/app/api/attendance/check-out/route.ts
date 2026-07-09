@@ -96,6 +96,44 @@ function dateToMinutes(date: Date) {
   return jakartaDate.getHours() * 60 + jakartaDate.getMinutes();
 }
 
+function normalizeScheduleTime(value: unknown) {
+  if (!value) return "";
+
+  if (typeof value === "string") {
+    if (/^\d{2}:\d{2}/.test(value)) {
+      return value.slice(0, 5);
+    }
+
+    const parsedDate = new Date(value);
+
+    if (!Number.isNaN(parsedDate.getTime())) {
+      return new Intl.DateTimeFormat("id-ID", {
+        timeZone: "Asia/Jakarta",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      })
+        .format(parsedDate)
+        .replace(".", ":");
+    }
+
+    return "";
+  }
+
+  if (value instanceof Date) {
+    return new Intl.DateTimeFormat("id-ID", {
+      timeZone: "Asia/Jakarta",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    })
+      .format(value)
+      .replace(".", ":");
+  }
+
+  return "";
+}
+
 function getShiftDefaultCheckOutTime(shiftName?: string | null) {
   const name = String(shiftName || "").toUpperCase();
 
@@ -111,7 +149,10 @@ function getShiftDefaultCheckOutTime(shiftName?: string | null) {
   return "17:00";
 }
 
-function calculateEarlyLeaveMinutes(checkOutAt: Date, scheduledCheckOut: string) {
+function calculateEarlyLeaveMinutes(
+  checkOutAt: Date,
+  scheduledCheckOut: string,
+) {
   const checkOutMinutes = dateToMinutes(checkOutAt);
   const scheduledMinutes = timeToMinutes(scheduledCheckOut);
   const early = scheduledMinutes - checkOutMinutes;
@@ -130,7 +171,9 @@ function toNumber(value: unknown) {
 }
 
 function normalizeWorkMode(value: unknown): WorkMode {
-  const mode = String(value || "office").trim().toLowerCase();
+  const mode = String(value || "office")
+    .trim()
+    .toLowerCase();
 
   if (mode === "wfh") return "wfh";
   if (mode === "wfc") return "wfc";
@@ -195,31 +238,8 @@ function getDistanceInMeters(from: GeoPoint, to: GeoPoint) {
   return earthRadius * c;
 }
 
-function findNearestValidOffice(
-  userLocation: GeoPoint,
-  offices: OfficeGeofence[]
-) {
-  const validOffices = offices
-    .map((office) => {
-      const distance = getDistanceInMeters(userLocation, {
-        lat: office.latitude,
-        lng: office.longitude,
-      });
-
-      return {
-        office,
-        distance,
-        isWithinRadius: distance <= office.radius_meters,
-      };
-    })
-    .filter((item) => item.isWithinRadius)
-    .sort((a, b) => a.distance - b.distance);
-
-  return validOffices[0] ?? null;
-}
-
 async function parseAttendanceBody(
-  req: NextRequest
+  req: NextRequest,
 ): Promise<ParsedAttendanceBody> {
   const contentType = req.headers.get("content-type") || "";
 
@@ -233,15 +253,15 @@ async function parseAttendanceBody(
       formData.get("image");
 
     const latitude = toNumber(
-      formData.get("latitude") ?? formData.get("checkOutLatitude")
+      formData.get("latitude") ?? formData.get("checkOutLatitude"),
     );
 
     const longitude = toNumber(
-      formData.get("longitude") ?? formData.get("checkOutLongitude")
+      formData.get("longitude") ?? formData.get("checkOutLongitude"),
     );
 
     const accuracy = toNumber(
-      formData.get("accuracy") ?? formData.get("checkOutAccuracy")
+      formData.get("accuracy") ?? formData.get("checkOutAccuracy"),
     );
 
     if (photo instanceof File) {
@@ -277,7 +297,7 @@ async function parseAttendanceBody(
     };
   }
 
-  const body = await req.json();
+  const body = (await req.json()) as Record<string, any>;
 
   const photoDataUrl =
     typeof body.photo === "string"
@@ -291,15 +311,15 @@ async function parseAttendanceBody(
             : null;
 
   const latitude = toNumber(
-    body.latitude ?? body.checkOutLatitude ?? body.location?.latitude
+    body.latitude ?? body.checkOutLatitude ?? body.location?.latitude,
   );
 
   const longitude = toNumber(
-    body.longitude ?? body.checkOutLongitude ?? body.location?.longitude
+    body.longitude ?? body.checkOutLongitude ?? body.location?.longitude,
   );
 
   const accuracy = toNumber(
-    body.accuracy ?? body.checkOutAccuracy ?? body.location?.accuracy
+    body.accuracy ?? body.checkOutAccuracy ?? body.location?.accuracy,
   );
 
   if (!photoDataUrl) {
@@ -333,21 +353,21 @@ export async function POST(req: NextRequest) {
     if (!photoBuffer) {
       return NextResponse.json(
         { error: "Foto check-out wajib dikirim." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (latitude === null || longitude === null) {
       return NextResponse.json(
         { error: "Lokasi GPS check-out wajib dikirim." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (accuracy === null) {
       return NextResponse.json(
         { error: "Akurasi GPS check-out wajib dikirim." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -357,7 +377,7 @@ export async function POST(req: NextRequest) {
           error: `Akurasi GPS terlalu rendah. Maksimal ±${MAX_GPS_ACCURACY_METERS} meter.`,
           accuracy,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -368,6 +388,7 @@ export async function POST(req: NextRequest) {
       select: {
         id: true,
         name: true,
+        status: true,
         registered_office_id: true,
         shift: {
           select: {
@@ -389,7 +410,14 @@ export async function POST(req: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { error: "Data user tidak ditemukan." },
-        { status: 404 }
+        { status: 404 },
+      );
+    }
+
+    if (user.status !== "active") {
+      return NextResponse.json(
+        { error: "Akun kamu sedang tidak aktif." },
+        { status: 403 },
       );
     }
 
@@ -406,14 +434,14 @@ export async function POST(req: NextRequest) {
     if (!attendance || !attendance.check_in_time) {
       return NextResponse.json(
         { error: "Kamu belum melakukan check-in hari ini." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (attendance.check_out_time) {
       return NextResponse.json(
         { error: "Kamu sudah melakukan check-out hari ini." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -431,8 +459,24 @@ export async function POST(req: NextRequest) {
     } | null = null;
 
     if (isOfficeMode) {
-      const offices = await prisma.officeLocation.findMany({
+      const officeId =
+        attendance.registered_office_id || user.registered_office_id;
+
+      if (!officeId) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Akun kamu belum memiliki kantor terdaftar.",
+            message:
+              "Hubungi admin untuk mengatur kantor karyawan terlebih dahulu.",
+          },
+          { status: 400 },
+        );
+      }
+
+      const registeredOffice = await prisma.officeLocation.findFirst({
         where: {
+          id: officeId,
           status: "active",
         },
         select: {
@@ -444,32 +488,85 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      if (offices.length === 0) {
+      if (!registeredOffice) {
         return NextResponse.json(
-          { error: "Belum ada data kantor aktif untuk validasi GPS." },
-          { status: 400 }
+          {
+            success: false,
+            error: "Kantor terdaftar tidak ditemukan atau sedang tidak aktif.",
+            message:
+              "Hubungi admin untuk memastikan kantor karyawan masih aktif.",
+          },
+          { status: 400 },
         );
       }
 
-      matchedOffice = findNearestValidOffice(
+      const officeLatitude = toNumber(registeredOffice.latitude);
+      const officeLongitude = toNumber(registeredOffice.longitude);
+      const officeRadius = toNumber(registeredOffice.radius_meters);
+
+      if (
+        officeLatitude === null ||
+        officeLongitude === null ||
+        officeRadius === null
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Data titik GPS kantor belum lengkap.",
+            message:
+              "Latitude, longitude, atau radius kantor belum lengkap di master data kantor.",
+          },
+          { status: 400 },
+        );
+      }
+
+      const distance = getDistanceInMeters(
         {
           lat: latitude,
           lng: longitude,
         },
-        offices
+        {
+          lat: officeLatitude,
+          lng: officeLongitude,
+        },
       );
 
-      if (!matchedOffice) {
+      const isWithinRadius = distance <= officeRadius;
+
+      if (!isWithinRadius) {
         return NextResponse.json(
           {
-            error: "Lokasi kamu berada di luar radius semua kantor aktif.",
+            success: false,
+            error: `Lokasi kamu berada di luar radius kantor ${registeredOffice.name}.`,
+            message: `Kamu hanya bisa check-out mode Kantor di radius kantor terdaftar: ${registeredOffice.name}.`,
             latitude,
             longitude,
             accuracy,
+            distance: Math.round(distance),
+            radius: officeRadius,
+            office: {
+              id: registeredOffice.id,
+              name: registeredOffice.name,
+              latitude: officeLatitude,
+              longitude: officeLongitude,
+              radius: officeRadius,
+            },
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
+
+      matchedOffice = {
+        office: {
+          id: registeredOffice.id,
+          name: registeredOffice.name,
+          latitude: officeLatitude,
+          longitude: officeLongitude,
+          radius_meters: officeRadius,
+        },
+        distance,
+        isWithinRadius,
+      };
     }
 
     const todayName = getDayOfWeekEnum(now);
@@ -481,22 +578,22 @@ export async function POST(req: NextRequest) {
     if (todaySchedule && todaySchedule.is_work_day === false) {
       return NextResponse.json(
         { error: "Hari ini bukan jadwal kerja kamu." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const scheduledCheckOutTime =
-      todaySchedule?.check_out_time ||
+      normalizeScheduleTime(todaySchedule?.check_out_time) ||
       getShiftDefaultCheckOutTime(user.shift?.name);
 
     const workMinutes = Math.max(
       0,
-      Math.floor((now.getTime() - attendance.check_in_time.getTime()) / 60000)
+      Math.floor((now.getTime() - attendance.check_in_time.getTime()) / 60000),
     );
 
     const earlyLeaveMinutes = calculateEarlyLeaveMinutes(
       now,
-      scheduledCheckOutTime
+      scheduledCheckOutTime,
     );
 
     const checkOutStatus = earlyLeaveMinutes > 0 ? "EARLY" : "NORMAL";
@@ -608,7 +705,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(
       { error: "Gagal melakukan check-out." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

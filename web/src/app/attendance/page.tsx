@@ -326,6 +326,149 @@ function getWorkModeDescription(workMode: WorkMode) {
   return "Bebas lokasi, wajib isi data kunjungan.";
 }
 
+function AttendanceMotionStyles() {
+  return (
+    <style>{`
+      @keyframes attendanceEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes attendanceCardEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(14px) scale(0.985);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @keyframes attendanceCameraEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(12px) scale(0.985);
+          filter: blur(4px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+          filter: blur(0);
+        }
+      }
+
+      @keyframes attendanceRowEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes attendanceIconPop {
+        0% {
+          opacity: 0;
+          transform: translateY(8px) scale(0.92);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @keyframes attendancePulseScan {
+        0%, 100% {
+          opacity: 0.5;
+          transform: translateY(-35%);
+        }
+
+        50% {
+          opacity: 0.95;
+          transform: translateY(35%);
+        }
+      }
+
+      @keyframes attendanceFloatGlow {
+        0%, 100% {
+          transform: translate3d(0, 0, 0) scale(1);
+        }
+
+        50% {
+          transform: translate3d(12px, -10px, 0) scale(1.04);
+        }
+      }
+
+      .attendance-enter {
+        animation: attendanceEnter 330ms ease-out both;
+      }
+
+      .attendance-card-enter {
+        opacity: 0;
+        animation: attendanceCardEnter 350ms ease-out both;
+      }
+
+      .attendance-camera-enter {
+        animation: attendanceCameraEnter 420ms ease-out both;
+      }
+
+      .attendance-row-enter {
+        opacity: 0;
+        animation: attendanceRowEnter 310ms ease-out both;
+      }
+
+      .attendance-icon-pop {
+        animation: attendanceIconPop 280ms ease-out both;
+      }
+
+      .attendance-scan-line {
+        animation: attendancePulseScan 2.4s ease-in-out infinite;
+      }
+
+      .attendance-float-glow {
+        animation: attendanceFloatGlow 6s ease-in-out infinite;
+      }
+
+      .attendance-field {
+        transition:
+          border-color 180ms ease,
+          background-color 180ms ease,
+          box-shadow 180ms ease,
+          transform 180ms ease;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .attendance-enter,
+        .attendance-card-enter,
+        .attendance-camera-enter,
+        .attendance-row-enter,
+        .attendance-icon-pop,
+        .attendance-scan-line,
+        .attendance-float-glow {
+          animation: none !important;
+          opacity: 1 !important;
+          transform: none !important;
+          filter: none !important;
+        }
+      }
+    `}</style>
+  );
+}
+
 function CameraStatusIcon({
   cameraReady,
   cameraStarting,
@@ -338,7 +481,7 @@ function CameraStatusIcon({
   return (
     <div
       className={cn(
-        "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-lg shadow-blue-100/50 ring-1",
+        "attendance-icon-pop flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-lg shadow-blue-100/50 ring-1",
         laptopBlocked && "bg-orange-50 text-orange-600 ring-orange-100",
         !laptopBlocked &&
           cameraReady &&
@@ -375,7 +518,7 @@ function StatusPill({
   return (
     <span
       className={cn(
-        "rounded-full px-4 py-2 text-xs font-black",
+        "attendance-row-enter rounded-full px-4 py-2 text-xs font-black",
         laptopBlocked && "bg-orange-50 text-orange-700",
         !laptopBlocked && cameraReady && "bg-emerald-50 text-emerald-700",
         !laptopBlocked && cameraStarting && "bg-amber-50 text-amber-700",
@@ -420,7 +563,7 @@ function CameraEmptyState({
   laptopBlocked: boolean;
 }) {
   return (
-    <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-white">
+    <div className="attendance-row-enter absolute inset-0 flex items-center justify-center px-6 text-center text-white">
       <div>
         <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white/10 backdrop-blur-xl md:h-24 md:w-24">
           {cameraStarting ? (
@@ -471,7 +614,7 @@ function CameraControlButton({
       variant="soft"
       full
       className={cn(
-        "min-h-11 rounded-2xl px-3 text-xs shadow-lg backdrop-blur-md md:min-h-12 md:text-sm",
+        "min-h-11 rounded-2xl px-3 text-xs shadow-lg backdrop-blur-md transition hover:-translate-y-0.5 active:scale-[0.98] md:min-h-12 md:text-sm",
         danger ? "bg-red-500/95 text-white" : "bg-white text-[#123c8c]",
       )}
     >
@@ -505,7 +648,7 @@ function ActionButton({
       disabled={disabled}
       variant={primary ? "primary" : "secondary"}
       className={cn(
-        "min-h-[4.5rem] rounded-[1.45rem] px-3 shadow-xl md:min-h-[70px] md:rounded-2xl md:px-5",
+        "min-h-[4.5rem] rounded-[1.45rem] px-3 shadow-xl transition hover:-translate-y-0.5 active:scale-[0.98] md:min-h-[70px] md:rounded-2xl md:px-5",
         primary
           ? "bg-[#123c8c] text-white shadow-blue-900/25"
           : "border border-blue-200 bg-white text-[#123c8c] shadow-slate-200/70 md:bg-[#f8fbff]",
@@ -548,7 +691,7 @@ function LastPhoto({ url }: { url: string | null }) {
   if (!url) return null;
 
   return (
-    <div className="mt-5 hidden rounded-3xl border border-blue-100 bg-[#f6f8ff] p-4 md:block">
+    <div className="attendance-row-enter mt-5 hidden rounded-3xl border border-blue-100 bg-[#f6f8ff] p-4 md:block">
       <div className="mb-3 flex items-center gap-2">
         <ImageUp size={18} className="text-[#123c8c]" />
         <p className="text-sm font-black text-slate-950">Foto Terakhir</p>
@@ -571,7 +714,7 @@ function ProofCard({
   workMode: WorkMode;
 }) {
   return (
-    <div className="overflow-hidden rounded-[2rem] bg-[#123c8c] text-white shadow-2xl shadow-blue-900/20">
+    <div className="attendance-card-enter overflow-hidden rounded-[2rem] bg-[#123c8c] text-white shadow-2xl shadow-blue-900/20">
       <div className="relative p-6 md:p-8">
         <div className="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-white/10" />
         <div className="absolute -bottom-20 right-10 h-40 w-40 rounded-full bg-blue-300/10" />
@@ -610,7 +753,7 @@ function InfoTile({
   children: ReactNode;
 }) {
   return (
-    <div className="rounded-3xl border border-blue-100 bg-white p-5">
+    <div className="attendance-row-enter rounded-3xl border border-blue-100 bg-white p-5 transition duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-200/60">
       {icon}
       <p className="mt-3 text-sm font-black text-slate-950">{title}</p>
       <div className="mt-1 text-sm text-slate-500">{children}</div>
@@ -630,7 +773,7 @@ function WorkModeFilter({
   onOpenVisit: () => void;
 }) {
   return (
-    <div className="grid grid-cols-[1fr_auto] items-end gap-2 rounded-[1.6rem] border border-blue-100 bg-[#f8fbff] p-3">
+    <div className="attendance-row-enter grid grid-cols-[1fr_auto] items-end gap-2 rounded-[1.6rem] border border-blue-100 bg-[#f8fbff] p-3">
       <AppSelect
         label="Mode Attendance"
         value={value}
@@ -648,7 +791,7 @@ function WorkModeFilter({
           type="button"
           onClick={onOpenVisit}
           disabled={disabled}
-          className="mb-0.5 flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 text-orange-600 ring-1 ring-orange-100 transition active:scale-95 disabled:opacity-60"
+          className="mb-0.5 flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 text-orange-600 ring-1 ring-orange-100 transition hover:bg-orange-100 active:scale-95 disabled:opacity-60"
           aria-label="Isi data kunjungan"
         >
           <BriefcaseBusiness size={21} strokeWidth={2.7} />
@@ -2099,6 +2242,8 @@ export default function AttendancePage() {
 
   return (
     <MobileShell variant="employee" withBottomPadding={false}>
+      <AttendanceMotionStyles />
+
       <div className="hidden md:block">
         <AppHeader
           title="Face Attendance"
@@ -2114,8 +2259,10 @@ export default function AttendancePage() {
         />
       </div>
 
-      <main className="min-h-dvh overflow-x-hidden bg-gradient-to-br from-[#f6f8ff] via-white to-[#eef4ff] pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))] text-slate-950 md:min-h-dvh md:pb-28">
-        <section className="mx-auto w-full max-w-7xl px-5 pt-4 md:hidden">
+      <main className="relative min-h-dvh overflow-x-hidden bg-gradient-to-br from-[#f6f8ff] via-white to-[#eef4ff] pb-[calc(7.5rem+env(safe-area-inset-bottom,0px))] text-slate-950 md:min-h-dvh md:pb-28">
+        <div className="attendance-float-glow pointer-events-none fixed -left-32 top-20 hidden h-72 w-72 rounded-full bg-orange-200/20 blur-3xl md:block" />
+        <div className="attendance-float-glow pointer-events-none fixed -right-32 bottom-24 hidden h-72 w-72 rounded-full bg-blue-300/20 blur-3xl md:block" />
+        <section className="attendance-enter mx-auto w-full max-w-7xl px-5 pt-4 md:hidden">
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.28em] text-[#123c8c]">
@@ -2139,12 +2286,12 @@ export default function AttendancePage() {
           </div>
         </section>
 
-        <section className="mx-auto grid w-full max-w-7xl gap-3 px-5 pt-3 md:px-10 md:py-8 lg:grid-cols-[1.05fr_0.95fr] lg:px-16">
+        <section className="relative z-10 mx-auto grid w-full max-w-7xl gap-3 px-5 pt-3 md:px-10 md:py-8 lg:grid-cols-[1.05fr_0.95fr] lg:px-16">
           <AppCard
             padding="md"
-            className="flex flex-col rounded-[2rem] border-white/80 bg-white/95 p-3 shadow-2xl shadow-slate-300/30 backdrop-blur-xl md:p-6"
+            className="attendance-card-enter flex flex-col rounded-[2rem] border-white/80 bg-white/95 p-3 shadow-2xl shadow-slate-300/30 backdrop-blur-xl md:p-6"
           >
-            <div className="mb-4 hidden items-start justify-between gap-4 md:flex">
+            <div className="attendance-row-enter mb-4 hidden items-start justify-between gap-4 md:flex">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.24em] text-[#123c8c]">
                   Camera
@@ -2210,7 +2357,7 @@ export default function AttendancePage() {
             />
 
             {hasCheckedInToday ? (
-              <div className="mt-3 rounded-2xl border border-amber-100 bg-amber-50 p-4 text-xs font-bold leading-5 text-amber-700">
+              <div className="attendance-row-enter mt-3 rounded-2xl border border-amber-100 bg-amber-50 p-4 text-xs font-bold leading-5 text-amber-700">
                 {hasCheckedOutToday
                   ? `Absensi hari ini sudah selesai dengan mode ${getWorkModeLabel(
                       lockedWorkMode,
@@ -2221,7 +2368,7 @@ export default function AttendancePage() {
               </div>
             ) : null}
 
-            <div className="mt-3 rounded-[1.9rem] bg-white p-2 shadow-[0_22px_55px_rgba(15,23,42,0.20)] ring-1 ring-slate-200/80">
+            <div className="attendance-camera-enter mt-3 rounded-[1.9rem] bg-white p-2 shadow-[0_22px_55px_rgba(15,23,42,0.20)] ring-1 ring-slate-200/80">
               <div className="relative overflow-hidden rounded-[1.45rem] border border-slate-200 bg-slate-950 shadow-inner">
                 <div className="relative h-[56dvh] min-h-[360px] max-h-[620px] md:h-auto md:aspect-[16/10] md:min-h-0 md:max-h-none lg:aspect-[16/10]">
                   <video
@@ -2263,7 +2410,11 @@ export default function AttendancePage() {
 
                   <PhotoFrameOverlay />
 
-                  <div className="absolute left-4 top-4 z-30 rounded-full bg-slate-950/55 px-3 py-1.5 text-[11px] font-black text-white backdrop-blur-md md:left-5 md:top-5 md:text-xs">
+                  {cameraReady ? (
+                    <div className="attendance-scan-line pointer-events-none absolute left-5 right-5 top-1/2 z-30 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent" />
+                  ) : null}
+
+                  <div className="attendance-row-enter absolute left-4 top-4 z-30 rounded-full bg-slate-950/55 px-3 py-1.5 text-[11px] font-black text-white backdrop-blur-md md:left-5 md:top-5 md:text-xs">
                     {isLaptopBlocked
                       ? "Mobile Only"
                       : cameraReady
@@ -2273,7 +2424,7 @@ export default function AttendancePage() {
                           : "Camera Off"}
                   </div>
 
-                  <div className="absolute bottom-4 left-4 z-30 rounded-full bg-white/90 px-3 py-1.5 text-[11px] font-black text-[#123c8c] backdrop-blur-md">
+                  <div className="attendance-row-enter absolute bottom-4 left-4 z-30 rounded-full bg-white/90 px-3 py-1.5 text-[11px] font-black text-[#123c8c] backdrop-blur-md">
                     {getWorkModeLabel(workMode)}
                   </div>
 
@@ -2287,7 +2438,7 @@ export default function AttendancePage() {
               </div>
             </div>
 
-            <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="attendance-row-enter mt-3 grid grid-cols-2 gap-2">
               <CameraControlButton
                 onClick={toggleCamera}
                 disabled={loading || cameraStarting}
@@ -2316,7 +2467,7 @@ export default function AttendancePage() {
 
             <canvas ref={canvasRef} className="hidden" />
 
-            <div className="mt-3 grid grid-cols-2 gap-3">
+            <div className="attendance-row-enter mt-3 grid grid-cols-2 gap-3">
               <ActionButton
                 label="Check-in"
                 subtitle="Masuk"
@@ -2345,13 +2496,13 @@ export default function AttendancePage() {
 
             <AppCard
               padding="md"
-              className="rounded-[2rem] border-white/80 bg-white/95 p-5 shadow-2xl shadow-slate-300/30 backdrop-blur-xl md:p-6"
+              className="attendance-card-enter rounded-[2rem] border-white/80 bg-white/95 p-5 shadow-2xl shadow-slate-300/30 backdrop-blur-xl md:p-6"
             >
               <p className="text-xs font-black uppercase tracking-[0.24em] text-[#123c8c]">
                 Verification Status
               </p>
 
-              <div className="mt-4 flex items-start gap-4 rounded-3xl border border-blue-100 bg-[#f6f8ff] p-5">
+              <div className="attendance-row-enter mt-4 flex items-start gap-4 rounded-3xl border border-blue-100 bg-[#f6f8ff] p-5">
                 <CheckCircle2
                   size={24}
                   className="mt-0.5 shrink-0 text-[#123c8c]"

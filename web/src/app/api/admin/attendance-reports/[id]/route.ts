@@ -7,6 +7,7 @@ type AttendanceDetailRow = {
   attendanceId: string | null;
   employeeCode: string | null;
   employeeName: string | null;
+  userProfilePhoto: unknown;
 
   attendanceDate: Date | string | null;
   checkInTime: Date | string | null;
@@ -77,6 +78,29 @@ function selectAttendanceColumn(
 async function getAttendanceColumns() {
   const rows = await prisma.$queryRawUnsafe<DatabaseColumnRow[]>(
     "SHOW COLUMNS FROM Attendance",
+  );
+
+  return new Set(rows.map((row) => String(row.Field)));
+}
+
+function selectUserColumn(
+  columns: Set<string>,
+  candidates: string[],
+  alias: string,
+  fallback = "NULL",
+) {
+  const column = candidates.find((candidate) => columns.has(candidate));
+
+  if (!column) {
+    return `${fallback} AS ${alias}`;
+  }
+
+  return `u.${quoteSqlIdentifier(column)} AS ${alias}`;
+}
+
+async function getUserColumns() {
+  const rows = await prisma.$queryRawUnsafe<DatabaseColumnRow[]>(
+    "SHOW COLUMNS FROM users",
   );
 
   return new Set(rows.map((row) => String(row.Field)));
@@ -356,13 +380,28 @@ export async function GET(
     }
 
     const attendanceColumns = await getAttendanceColumns();
+    const userColumns = await getUserColumns();
 
     const rows = await prisma.$queryRawUnsafe<AttendanceDetailRow[]>(
       `
         SELECT
           a.id AS attendanceId,
-          u.employee_code AS employeeCode,
+         u.employee_code AS employeeCode,
           u.name AS employeeName,
+
+          ${selectUserColumn(
+            userColumns,
+            [
+              "profile_photo",
+              "profilePhoto",
+              "profile_photo_url",
+              "photo_url",
+              "avatar_url",
+              "image",
+              "image_url",
+            ],
+            "userProfilePhoto",
+          )},
 
           a.attendance_date AS attendanceDate,
           a.check_in_time AS checkInTime,
@@ -477,6 +516,12 @@ export async function GET(
         id: String(row.attendanceId || ""),
         employeeName: row.employeeName || "Tanpa Nama",
         employeeCode: row.employeeCode || null,
+
+        profilePhoto: normalizeImageUrl(row.userProfilePhoto),
+        profile_photo: normalizeImageUrl(row.userProfilePhoto),
+        profile_photo_url: normalizeImageUrl(row.userProfilePhoto),
+        photo_url: normalizeImageUrl(row.userProfilePhoto),
+        avatar_url: normalizeImageUrl(row.userProfilePhoto),
 
         date: toDateInput(dateSource),
         dateLabel: formatDate(dateSource),

@@ -7,7 +7,6 @@ import {
   Clock3,
   FileText,
   Loader2,
-  RefreshCcw,
   Search,
   X,
   XCircle,
@@ -159,6 +158,94 @@ function getDefaultAnswer(status: "approved" | "rejected") {
   return options[0]?.value || "";
 }
 
+function LeaveReportMotionStyles() {
+  return (
+    <style>{`
+      @keyframes leaveReportEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes leaveReportRowEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes leaveReportModalBackdrop {
+        0% {
+          opacity: 0;
+        }
+
+        100% {
+          opacity: 1;
+        }
+      }
+
+      @keyframes leaveReportModalPanel {
+        0% {
+          opacity: 0;
+          transform: translateY(16px) scale(0.985);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      .leave-report-enter {
+        animation: leaveReportEnter 320ms ease-out both;
+      }
+
+      .leave-report-row-enter {
+        opacity: 0;
+        animation: leaveReportRowEnter 300ms ease-out both;
+      }
+
+      .leave-report-modal-backdrop {
+        animation: leaveReportModalBackdrop 180ms ease-out both;
+      }
+
+      .leave-report-modal-panel {
+        animation: leaveReportModalPanel 260ms ease-out both;
+        transform-origin: center bottom;
+      }
+
+      .leave-report-field {
+        transition:
+          border-color 180ms ease,
+          background-color 180ms ease,
+          box-shadow 180ms ease;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .leave-report-enter,
+        .leave-report-row-enter,
+        .leave-report-modal-backdrop,
+        .leave-report-modal-panel {
+          animation: none !important;
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      }
+    `}</style>
+  );
+}
+
 export default function AdminLeaveReportPage() {
   const [requests, setRequests] = useState<AdminLeaveRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -271,7 +358,7 @@ export default function AdminLeaveReportPage() {
   }
 
   useEffect(() => {
-    getLeaveRequests();
+    void getLeaveRequests();
   }, []);
 
   const stats = useMemo(() => {
@@ -336,11 +423,13 @@ export default function AdminLeaveReportPage() {
 
   return (
     <MobileShell variant="admin" withBottomPadding={false}>
+      <LeaveReportMotionStyles />
+
       <AppHeader title="Laporan Cuti" variant="admin" />
 
       <main className="min-h-dvh bg-gradient-to-br from-[#f6f8ff] via-white to-[#eef4ff]">
         <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 md:px-10 lg:px-16">
-          <div className="overflow-hidden rounded-[2rem] border border-blue-100 bg-white shadow-xl shadow-slate-300/30">
+          <div className="leave-report-enter overflow-hidden rounded-[2rem] border border-blue-100 bg-white shadow-xl shadow-slate-300/30">
             <div className="grid gap-0 lg:grid-cols-[0.95fr_1.05fr]">
               <div className="bg-[#123c8c] p-6 text-white md:p-8">
                 <div className="flex items-center gap-3">
@@ -357,7 +446,10 @@ export default function AdminLeaveReportPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3 p-5 md:grid-cols-4 md:p-6">
-                <div className="rounded-2xl border border-blue-100 bg-[#f8fbff] p-4">
+                <div
+                  className="leave-report-row-enter rounded-2xl border border-blue-100 bg-[#f8fbff] p-4"
+                  style={{ animationDelay: "60ms" }}
+                >
                   <p className="text-xs font-bold text-slate-500">Total</p>
                   <h3 className="mt-3 text-3xl font-black text-[#123c8c]">
                     {stats.total}
@@ -367,7 +459,10 @@ export default function AdminLeaveReportPage() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-orange-100 bg-orange-50 p-4">
+                <div
+                  className="leave-report-row-enter rounded-2xl border border-orange-100 bg-orange-50 p-4"
+                  style={{ animationDelay: "100ms" }}
+                >
                   <p className="text-xs font-bold text-orange-700">Menunggu</p>
                   <h3 className="mt-3 text-3xl font-black text-orange-700">
                     {stats.pending}
@@ -377,7 +472,10 @@ export default function AdminLeaveReportPage() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
+                <div
+                  className="leave-report-row-enter rounded-2xl border border-emerald-100 bg-emerald-50 p-4"
+                  style={{ animationDelay: "140ms" }}
+                >
                   <p className="text-xs font-bold text-emerald-700">
                     Disetujui
                   </p>
@@ -389,7 +487,10 @@ export default function AdminLeaveReportPage() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-red-100 bg-red-50 p-4">
+                <div
+                  className="leave-report-row-enter rounded-2xl border border-red-100 bg-red-50 p-4"
+                  style={{ animationDelay: "180ms" }}
+                >
                   <p className="text-xs font-bold text-red-700">Ditolak</p>
                   <h3 className="mt-3 text-3xl font-black text-red-700">
                     {stats.rejected}
@@ -403,12 +504,15 @@ export default function AdminLeaveReportPage() {
           </div>
 
           {errorMessage ? (
-            <div className="rounded-3xl border border-red-100 bg-red-50 p-5 text-sm font-bold text-red-700">
+            <div className="leave-report-row-enter rounded-3xl border border-red-100 bg-red-50 p-5 text-sm font-bold text-red-700">
               {errorMessage}
             </div>
           ) : null}
 
-          <div className="rounded-[2rem] border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-6">
+          <div
+            className="leave-report-enter rounded-[2rem] border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-6"
+            style={{ animationDelay: "100ms" }}
+          >
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.22em] text-[#123c8c]">
@@ -432,7 +536,7 @@ export default function AdminLeaveReportPage() {
                   value={searchKeyword}
                   onChange={(event) => setSearchKeyword(event.target.value)}
                   placeholder="Cari nama, kode, alasan, atau jenis cuti..."
-                  className="h-13 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                  className="leave-report-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
                 />
               </div>
 
@@ -441,7 +545,7 @@ export default function AdminLeaveReportPage() {
                 onChange={(event) =>
                   setStatusFilter(event.target.value as StatusFilter)
                 }
-                className="h-13 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                className="leave-report-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
               >
                 <option value="all">Semua Status</option>
                 <option value="pending">Menunggu</option>
@@ -452,12 +556,12 @@ export default function AdminLeaveReportPage() {
 
             <div className="mt-6">
               {isLoading ? (
-                <div className="flex items-center justify-center gap-2 rounded-3xl border border-blue-100 bg-[#f8fbff] px-5 py-12 text-sm font-bold text-slate-500">
+                <div className="leave-report-row-enter flex items-center justify-center gap-2 rounded-3xl border border-blue-100 bg-[#f8fbff] px-5 py-12 text-sm font-bold text-slate-500">
                   <Loader2 size={18} className="animate-spin text-[#123c8c]" />
                   Memuat laporan cuti...
                 </div>
               ) : filteredRequests.length === 0 ? (
-                <div className="rounded-3xl border border-dashed border-blue-100 bg-[#f8fbff] px-5 py-12 text-center">
+                <div className="leave-report-row-enter rounded-3xl border border-dashed border-blue-100 bg-[#f8fbff] px-5 py-12 text-center">
                   <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
                     <CalendarDays size={26} strokeWidth={2.6} />
                   </div>
@@ -469,14 +573,17 @@ export default function AdminLeaveReportPage() {
                 </div>
               ) : (
                 <div className="grid gap-4">
-                  {filteredRequests.map((item) => {
+                  {filteredRequests.map((item, index) => {
                     const StatusIcon = getStatusIcon(item.status);
                     const isPending = item.status.toLowerCase() === "pending";
 
                     return (
                       <article
                         key={item.id}
-                        className="rounded-[2rem] border border-blue-100 bg-white p-5 shadow-lg shadow-slate-200/60"
+                        className="leave-report-row-enter rounded-[2rem] border border-blue-100 bg-white p-5 shadow-lg shadow-slate-200/60 transition duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-slate-300/40"
+                        style={{
+                          animationDelay: `${index * 55}ms`,
+                        }}
                       >
                         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                           <div className="min-w-0">
@@ -567,7 +674,7 @@ export default function AdminLeaveReportPage() {
                             <button
                               type="button"
                               onClick={() => openAnswerModal(item, "rejected")}
-                              className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-red-50 px-5 text-sm font-black text-red-700 ring-1 ring-red-100 transition active:scale-[0.98]"
+                              className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-red-50 px-5 text-sm font-black text-red-700 ring-1 ring-red-100 transition hover:bg-red-100 active:scale-[0.98]"
                             >
                               <XCircle size={17} strokeWidth={2.6} />
                               Tolak
@@ -576,7 +683,7 @@ export default function AdminLeaveReportPage() {
                             <button
                               type="button"
                               onClick={() => openAnswerModal(item, "approved")}
-                              className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 text-sm font-black text-white shadow-lg shadow-emerald-900/20 transition active:scale-[0.98]"
+                              className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 text-sm font-black text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-700 active:scale-[0.98]"
                             >
                               <CheckCircle2 size={17} strokeWidth={2.6} />
                               Setujui
@@ -594,8 +701,8 @@ export default function AdminLeaveReportPage() {
       </main>
 
       {pendingAction ? (
-        <div className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/50 px-4 pb-4 backdrop-blur-sm md:items-center md:pb-0">
-          <div className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-[2rem] bg-white p-5 shadow-2xl shadow-slate-950/30 md:p-7">
+        <div className="leave-report-modal-backdrop fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/50 px-4 pb-4 backdrop-blur-sm md:items-center md:pb-0">
+          <div className="leave-report-modal-panel max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-[2rem] bg-white p-5 shadow-2xl shadow-slate-950/30 md:p-7">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.22em] text-[#123c8c]">
@@ -614,13 +721,13 @@ export default function AdminLeaveReportPage() {
               <button
                 type="button"
                 onClick={closeAnswerModal}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 transition active:scale-[0.96]"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 transition hover:bg-slate-200 active:scale-[0.96]"
               >
                 <X size={20} />
               </button>
             </div>
 
-            <div className="mt-5 rounded-2xl bg-[#f8fbff] p-4">
+            <div className="leave-report-row-enter mt-5 rounded-2xl bg-[#f8fbff] p-4">
               <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
                 Karyawan
               </p>
@@ -630,7 +737,10 @@ export default function AdminLeaveReportPage() {
               </p>
             </div>
 
-            <div className="mt-5">
+            <div
+              className="leave-report-row-enter mt-5"
+              style={{ animationDelay: "40ms" }}
+            >
               <label className="text-sm font-black text-slate-700">
                 Pilih Jawaban
               </label>
@@ -640,7 +750,7 @@ export default function AdminLeaveReportPage() {
                 onChange={(event) =>
                   handleSelectedAnswerChange(event.target.value)
                 }
-                className="mt-2 h-14 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                className="leave-report-field mt-2 h-14 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
               >
                 {currentAnswerOptions.map((option) => (
                   <option key={option.label} value={option.value}>
@@ -650,7 +760,10 @@ export default function AdminLeaveReportPage() {
               </select>
             </div>
 
-            <div className="mt-4">
+            <div
+              className="leave-report-row-enter mt-4"
+              style={{ animationDelay: "80ms" }}
+            >
               <label className="text-sm font-black text-slate-700">
                 Catatan Admin
                 <span className="ml-1 text-xs font-bold text-slate-400">
@@ -662,21 +775,27 @@ export default function AdminLeaveReportPage() {
                 value={adminNote}
                 onChange={(event) => setAdminNote(event.target.value)}
                 placeholder="Tulis jawaban admin jika diperlukan..."
-                className="mt-2 min-h-32 w-full resize-none rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-4 text-sm font-bold leading-6 text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                className="leave-report-field mt-2 min-h-32 w-full resize-none rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-4 text-sm font-bold leading-6 text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
               />
             </div>
 
-            <div className="mt-5 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-xs font-semibold leading-6 text-[#123c8c]">
+            <div
+              className="leave-report-row-enter mt-5 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-xs font-semibold leading-6 text-[#123c8c]"
+              style={{ animationDelay: "120ms" }}
+            >
               Catatan ini akan tampil pada riwayat pengajuan cuti karyawan
               sebagai jawaban dari admin.
             </div>
 
-            <div className="mt-6 flex flex-col-reverse gap-3 md:flex-row md:justify-end">
+            <div
+              className="leave-report-row-enter mt-6 flex flex-col-reverse gap-3 md:flex-row md:justify-end"
+              style={{ animationDelay: "160ms" }}
+            >
               <button
                 type="button"
                 onClick={closeAnswerModal}
                 disabled={Boolean(isUpdatingId)}
-                className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-black text-slate-600 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-black text-slate-600 transition hover:bg-slate-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Batal
               </button>

@@ -5,13 +5,12 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   AlertCircle,
+  ArrowLeft,
   Camera,
   CheckCircle2,
-  ChevronLeft,
   Clock3,
   ExternalLink,
   ImageIcon,
-  Loader2,
   MapPin,
   Navigation,
   ShieldCheck,
@@ -22,13 +21,51 @@ import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import MobileShell from "@/components/MobileShell";
 
-type LocationData = {
-  latitude: number | null;
-  longitude: number | null;
-  accuracy: number | null;
-  distance: number | null;
-  withinRadius: boolean;
-};
+type LocationValue =
+  | string
+  | null
+  | undefined
+  | {
+      latitude?: number | string | null;
+      longitude?: number | string | null;
+      lat?: number | string | null;
+      lon?: number | string | null;
+      lng?: number | string | null;
+      accuracy?: number | string | null;
+      distance?: number | string | null;
+      withinRadius?: boolean | null;
+      within_radius?: boolean | null;
+      check_in_within_radius?: boolean | null;
+      check_out_within_radius?: boolean | null;
+
+      displayName?: string | null;
+      display_name?: string | null;
+      shortName?: string | null;
+      short_name?: string | null;
+      placeName?: string | null;
+      place_name?: string | null;
+      name?: string | null;
+
+      road?: string | null;
+      pedestrian?: string | null;
+      footway?: string | null;
+      path?: string | null;
+      neighbourhood?: string | null;
+      suburb?: string | null;
+      village?: string | null;
+      town?: string | null;
+      city?: string | null;
+      county?: string | null;
+      municipality?: string | null;
+      state_district?: string | null;
+      state?: string | null;
+      postcode?: string | null;
+      country?: string | null;
+      country_code?: string | null;
+
+      address?: Record<string, unknown> | string | null;
+      [key: string]: unknown;
+    };
 
 type AttendanceDetail = {
   id: string;
@@ -41,8 +78,8 @@ type AttendanceDetail = {
   workMinutes: number;
   hasCheckInPhoto: boolean;
   hasCheckOutPhoto: boolean;
-  checkInLocation: LocationData;
-  checkOutLocation: LocationData;
+  checkInLocation: LocationValue;
+  checkOutLocation: LocationValue;
 };
 
 function formatMinutes(minutes: number) {
@@ -62,30 +99,11 @@ function formatMinutes(minutes: number) {
   return `${remainingMinutes} menit`;
 }
 
-function formatDateLabel(date: string) {
-  if (!date) return "-";
-
-  const parsedDate = new Date(`${date}T00:00:00`);
-
-  if (Number.isNaN(parsedDate.getTime())) return date;
-
-  return new Intl.DateTimeFormat("id-ID", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  }).format(parsedDate);
-}
-
 function getStatusStyle(status: string) {
-  const normalizedStatus = status.toLowerCase();
+  const normalizedStatus = String(status || "").toLowerCase();
 
   if (normalizedStatus.includes("terlambat")) {
     return "bg-orange-50 text-orange-700 ring-orange-100";
-  }
-
-  if (normalizedStatus.includes("pulang cepat")) {
-    return "bg-amber-50 text-amber-700 ring-amber-100";
   }
 
   if (normalizedStatus.includes("cuti")) {
@@ -103,36 +121,292 @@ function getStatusStyle(status: string) {
   return "bg-emerald-50 text-emerald-700 ring-emerald-100";
 }
 
+function cleanText(value: unknown) {
+  return String(value || "").trim();
+}
+
+function toNumber(value: unknown) {
+  if (value === null || value === undefined || value === "") return null;
+
+  const numberValue = Number(value);
+
+  return Number.isFinite(numberValue) ? numberValue : null;
+}
+
+function getObjectLocation(location: LocationValue) {
+  if (!location || typeof location !== "object") return null;
+
+  return location;
+}
+
+function getNestedAddress(location: LocationValue) {
+  const objectLocation = getObjectLocation(location);
+
+  if (!objectLocation) return null;
+
+  const address = objectLocation.address;
+
+  if (!address) return null;
+
+  if (typeof address === "string") {
+    return {
+      displayName: address,
+    } as Record<string, unknown>;
+  }
+
+  if (typeof address === "object") {
+    return address as Record<string, unknown>;
+  }
+
+  return null;
+}
+
+function getLocationCoordinate(location: LocationValue, type: "lat" | "lng") {
+  const objectLocation = getObjectLocation(location);
+
+  if (!objectLocation) return null;
+
+  if (type === "lat") {
+    return toNumber(objectLocation.latitude ?? objectLocation.lat);
+  }
+
+  return toNumber(
+    objectLocation.longitude ?? objectLocation.lng ?? objectLocation.lon,
+  );
+}
+
+function getLocationAccuracy(location: LocationValue) {
+  const objectLocation = getObjectLocation(location);
+
+  if (!objectLocation) return null;
+
+  return toNumber(objectLocation.accuracy);
+}
+
+function getLocationDistance(location: LocationValue) {
+  const objectLocation = getObjectLocation(location);
+
+  if (!objectLocation) return null;
+
+  return toNumber(objectLocation.distance);
+}
+
+function getLocationWithinRadius(location: LocationValue) {
+  const objectLocation = getObjectLocation(location);
+
+  if (!objectLocation) return null;
+
+  const value =
+    objectLocation.withinRadius ??
+    objectLocation.within_radius ??
+    objectLocation.check_in_within_radius ??
+    objectLocation.check_out_within_radius;
+
+  if (typeof value === "boolean") return value;
+
+  return null;
+}
+
+function formatAddressFromObject(value: Record<string, unknown>) {
+  const displayName =
+    cleanText(value.displayName) ||
+    cleanText(value.display_name) ||
+    cleanText(value.shortName) ||
+    cleanText(value.short_name) ||
+    cleanText(value.placeName) ||
+    cleanText(value.place_name);
+
+  if (displayName) return displayName;
+
+  const place =
+    cleanText(value.name) ||
+    cleanText(value.office) ||
+    cleanText(value.company) ||
+    cleanText(value.building) ||
+    cleanText(value.amenity) ||
+    cleanText(value.shop) ||
+    cleanText(value.tourism);
+
+  const road =
+    cleanText(value.road) ||
+    cleanText(value.pedestrian) ||
+    cleanText(value.footway) ||
+    cleanText(value.path);
+
+  const area =
+    cleanText(value.neighbourhood) ||
+    cleanText(value.suburb) ||
+    cleanText(value.village);
+
+  const city =
+    cleanText(value.city) ||
+    cleanText(value.town) ||
+    cleanText(value.county) ||
+    cleanText(value.municipality) ||
+    cleanText(value.state_district);
+
+  const state = cleanText(value.state);
+  const postcode = cleanText(value.postcode);
+  const country = cleanText(value.country);
+
+  return [place, road, area, city, state, postcode, country]
+    .filter(Boolean)
+    .join(", ");
+}
+
+function formatLocationText(location: LocationValue) {
+  if (!location) return "";
+
+  if (typeof location === "string") {
+    return location.trim();
+  }
+
+  if (typeof location === "object") {
+    const directAddress = formatAddressFromObject(
+      location as Record<string, unknown>,
+    );
+
+    if (directAddress) return directAddress;
+
+    const nestedAddress = getNestedAddress(location);
+
+    if (nestedAddress) {
+      return formatAddressFromObject(nestedAddress);
+    }
+  }
+
+  return "";
+}
+
+function HistoryDetailMotionStyles() {
+  return (
+    <style>{`
+      @keyframes historyDetailEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes historyDetailRowEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes historyDetailIconPop {
+        0% {
+          opacity: 0;
+          transform: scale(0.92) translateY(8px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+
+      @keyframes historyDetailGlowFloat {
+        0%,
+        100% {
+          transform: translate3d(0, 0, 0) scale(1);
+        }
+
+        50% {
+          transform: translate3d(12px, -10px, 0) scale(1.04);
+        }
+      }
+
+      @keyframes historyDetailImageEnter {
+        0% {
+          opacity: 0;
+          transform: scale(1.025);
+        }
+
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      .history-detail-enter {
+        animation: historyDetailEnter 340ms ease-out both;
+      }
+
+      .history-detail-row-enter {
+        opacity: 0;
+        animation: historyDetailRowEnter 300ms ease-out both;
+      }
+
+      .history-detail-icon-pop {
+        animation: historyDetailIconPop 280ms ease-out both;
+      }
+
+      .history-detail-glow-float {
+        animation: historyDetailGlowFloat 6s ease-in-out infinite;
+      }
+
+      .history-detail-image-enter {
+        animation: historyDetailImageEnter 420ms ease-out both;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .history-detail-enter,
+        .history-detail-row-enter,
+        .history-detail-icon-pop,
+        .history-detail-glow-float,
+        .history-detail-image-enter {
+          animation: none !important;
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      }
+    `}</style>
+  );
+}
+
 function MetricCard({
   label,
   value,
   description,
   icon: Icon,
+  delay = "0ms",
 }: {
   label: string;
   value: string;
   description: string;
   icon: LucideIcon;
+  delay?: string;
 }) {
   return (
-    <div className="rounded-3xl border border-blue-100 bg-[#f8fbff] p-4 md:p-5">
+    <div
+      className="history-detail-row-enter rounded-3xl border border-blue-100 bg-white p-5 shadow-lg shadow-slate-200/50 transition duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-slate-300/40"
+      style={{ animationDelay: delay }}
+    >
       <div className="flex items-center gap-4">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
+        <div className="history-detail-icon-pop flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
           <Icon size={22} strokeWidth={2.6} />
         </div>
 
-        <div className="min-w-0">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
             {label}
           </p>
 
-          <h3 className="mt-1 truncate text-lg font-black text-slate-950 md:text-xl">
-            {value}
-          </h3>
+          <h3 className="mt-1 text-xl font-black text-slate-950">{value}</h3>
 
-          <p className="mt-1 text-xs font-bold leading-5 text-slate-500">
-            {description}
-          </p>
+          <p className="mt-1 text-xs font-bold text-slate-500">{description}</p>
         </div>
       </div>
     </div>
@@ -144,54 +418,60 @@ function PhotoCard({
   subtitle,
   imageUrl,
   isAvailable,
+  delay = "0ms",
 }: {
   title: string;
   subtitle: string;
   imageUrl: string;
   isAvailable: boolean;
+  delay?: string;
 }) {
   return (
-    <div className="overflow-hidden rounded-[2rem] border border-blue-100 bg-white">
+    <div
+      className="history-detail-row-enter overflow-hidden rounded-[2rem] border border-blue-100 bg-white shadow-xl shadow-slate-200/60 transition duration-200 hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-slate-300/40"
+      style={{ animationDelay: delay }}
+    >
       <div className="flex items-center justify-between gap-4 border-b border-blue-50 p-5">
-        <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
+        <div className="flex items-center gap-3">
+          <div className="history-detail-icon-pop flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
             <Camera size={23} strokeWidth={2.6} />
           </div>
 
-          <div className="min-w-0">
+          <div>
             <p className="text-xs font-black uppercase tracking-[0.2em] text-[#123c8c]">
               {title}
             </p>
 
-            <h3 className="mt-1 truncate text-lg font-black text-slate-950">
+            <h3 className="mt-1 text-lg font-black text-slate-950">
               {subtitle}
             </h3>
           </div>
         </div>
 
-        <div
-          className={`rounded-full px-3 py-2 text-xs font-black ring-1 ${
-            isAvailable
-              ? "bg-emerald-50 text-emerald-700 ring-emerald-100"
-              : "bg-slate-50 text-slate-500 ring-slate-100"
-          }`}
-        >
-          {isAvailable ? "Tersedia" : "Kosong"}
-        </div>
+        {isAvailable ? (
+          <div className="rounded-full bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-700 ring-1 ring-emerald-100">
+            Tersedia
+          </div>
+        ) : (
+          <div className="rounded-full bg-slate-50 px-3 py-2 text-xs font-black text-slate-500 ring-1 ring-slate-100">
+            Kosong
+          </div>
+        )}
       </div>
 
       <div className="p-5">
         {isAvailable ? (
           <div className="overflow-hidden rounded-3xl bg-slate-100">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={imageUrl}
               alt={subtitle}
-              className="h-72 w-full object-cover md:h-80"
+              className="history-detail-image-enter h-80 w-full object-cover transition duration-300 hover:scale-[1.03]"
             />
           </div>
         ) : (
-          <div className="flex h-72 flex-col items-center justify-center rounded-3xl border border-dashed border-blue-100 bg-[#f8fbff] p-6 text-center md:h-80">
-            <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-white text-slate-400">
+          <div className="flex h-80 flex-col items-center justify-center rounded-3xl border border-dashed border-blue-100 bg-[#f8fbff] p-6 text-center">
+            <div className="history-detail-icon-pop flex h-16 w-16 items-center justify-center rounded-3xl bg-white text-slate-400 shadow-sm">
               <ImageIcon size={30} strokeWidth={2.4} />
             </div>
 
@@ -212,137 +492,106 @@ function PhotoCard({
 function LocationCard({
   title,
   location,
+  delay = "0ms",
 }: {
   title: string;
-  location: LocationData;
+  location: LocationValue;
+  delay?: string;
 }) {
-  const [address, setAddress] = useState("");
-  const [isLoadingAddress, setIsLoadingAddress] = useState(false);
+  const latitude = getLocationCoordinate(location, "lat");
+  const longitude = getLocationCoordinate(location, "lng");
+  const accuracy = getLocationAccuracy(location);
+  const distance = getLocationDistance(location);
+  const withinRadius = getLocationWithinRadius(location);
+  const locationText = formatLocationText(location);
 
-  const hasLocation =
-    location.latitude !== null && location.longitude !== null;
+  const hasCoordinate = latitude !== null && longitude !== null;
+  const hasAddress = Boolean(locationText);
 
-  const mapsUrl = hasLocation
-    ? `https://www.google.com/maps?q=${location.latitude},${location.longitude}`
+  const mapsUrl = hasCoordinate
+    ? `https://www.google.com/maps?q=${latitude},${longitude}`
     : "#";
 
-  useEffect(() => {
-    async function getAddress() {
-      if (!hasLocation) return;
-
-      try {
-        setIsLoadingAddress(true);
-
-        const response = await fetch(
-          `/api/geocode/reverse?lat=${location.latitude}&lon=${location.longitude}`,
-          {
-            method: "GET",
-            cache: "no-store",
-          }
-        );
-
-        if (!response.ok) {
-          setAddress("Alamat lokasi tidak berhasil ditemukan.");
-          return;
-        }
-
-        const data = await response.json();
-
-        setAddress(data.address || "Alamat lokasi tidak ditemukan.");
-      } catch (error) {
-        console.error("Gagal mengambil alamat:", error);
-        setAddress("Alamat lokasi tidak berhasil ditemukan.");
-      } finally {
-        setIsLoadingAddress(false);
-      }
-    }
-
-    getAddress();
-  }, [hasLocation, location.latitude, location.longitude]);
-
   return (
-    <div className="rounded-[2rem] border border-blue-100 bg-white p-5">
+    <div
+      className="history-detail-row-enter rounded-[2rem] border border-blue-100 bg-white p-5 shadow-xl shadow-slate-200/60 transition duration-200 hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-slate-300/40"
+      style={{ animationDelay: delay }}
+    >
       <div className="flex items-start justify-between gap-4">
-        <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
+        <div className="flex items-center gap-3">
+          <div className="history-detail-icon-pop flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
             <MapPin size={23} strokeWidth={2.6} />
           </div>
 
-          <div className="min-w-0">
+          <div>
             <p className="text-xs font-black uppercase tracking-[0.2em] text-[#123c8c]">
               GPS Location
             </p>
 
-            <h3 className="mt-1 truncate text-lg font-black text-slate-950">
-              {title}
-            </h3>
+            <h3 className="mt-1 text-lg font-black text-slate-950">{title}</h3>
           </div>
         </div>
 
-        {hasLocation ? (
+        {withinRadius !== null ? (
           <div
-            className={`shrink-0 rounded-full px-3 py-2 text-xs font-black ring-1 ${
-              location.withinRadius
+            className={`rounded-full px-3 py-2 text-xs font-black ring-1 ${
+              withinRadius
                 ? "bg-emerald-50 text-emerald-700 ring-emerald-100"
                 : "bg-red-50 text-red-700 ring-red-100"
             }`}
           >
-            {location.withinRadius ? "Dalam radius" : "Di luar radius"}
+            {withinRadius ? "Dalam radius" : "Di luar radius"}
+          </div>
+        ) : hasCoordinate || hasAddress ? (
+          <div className="rounded-full bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-700 ring-1 ring-emerald-100">
+            Tersimpan
           </div>
         ) : null}
       </div>
 
-      {hasLocation ? (
-        <div className="mt-5 space-y-4">
-          <div className="rounded-3xl bg-[#f8fbff] p-5">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
-              Perkiraan Alamat Terdekat
+      {hasCoordinate || hasAddress ? (
+        <div className="mt-5">
+          <div className="rounded-3xl bg-[#f8fbff] p-5 ring-1 ring-blue-50">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
+              Lokasi Tercatat
             </p>
 
-            <p className="mt-3 text-sm font-bold leading-7 text-slate-700">
-              {isLoadingAddress
-                ? "Mencari alamat terdekat..."
-                : address || "Alamat sedang dimuat..."}
-            </p>
-          </div>
-
-          <div
-            className={`rounded-3xl p-5 ${
-              location.withinRadius
-                ? "bg-emerald-50 text-emerald-800"
-                : "bg-red-50 text-red-800"
-            }`}
-          >
-            <p className="text-sm font-black">
-              {location.withinRadius
-                ? "Karyawan berada di dalam radius kantor saat absensi."
-                : "Karyawan berada di luar radius kantor saat absensi."}
+            <p className="mt-2 break-words text-sm font-bold leading-6 text-slate-600">
+              {locationText ||
+                "Koordinat GPS absensi berhasil tercatat. Klik tombol di bawah untuk membuka titik lokasi pada Google Maps."}
             </p>
 
-            <div className="mt-3 grid gap-2 text-sm font-semibold opacity-90">
-              <p>
-                Jarak:{" "}
-                {location.distance !== null
-                  ? `${Math.round(location.distance)} meter`
-                  : "-"}
-              </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {accuracy !== null ? (
+                <span className="rounded-full bg-white px-3 py-2 text-xs font-black text-slate-600 ring-1 ring-blue-100">
+                  Akurasi: ±{Math.round(accuracy)} meter
+                </span>
+              ) : null}
+
+              {distance !== null ? (
+                <span className="rounded-full bg-white px-3 py-2 text-xs font-black text-slate-600 ring-1 ring-blue-100">
+                  Jarak: {Math.round(distance)} meter
+                </span>
+              ) : null}
             </div>
           </div>
 
-          <a
-            href={mapsUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#123c8c] px-5 py-4 text-sm font-black text-white transition active:scale-[0.98]"
-          >
-            <Navigation size={18} strokeWidth={2.6} />
-            Buka Lokasi di Google Maps
-            <ExternalLink size={16} strokeWidth={2.6} />
-          </a>
+          {hasCoordinate ? (
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#123c8c] px-5 py-4 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:-translate-y-0.5 hover:bg-[#0f3274] active:scale-[0.98]"
+            >
+              <Navigation size={18} strokeWidth={2.6} />
+              Buka Lokasi di Google Maps
+              <ExternalLink size={16} strokeWidth={2.6} />
+            </a>
+          ) : null}
         </div>
       ) : (
         <div className="mt-5 flex min-h-52 flex-col items-center justify-center rounded-3xl border border-dashed border-blue-100 bg-[#f8fbff] p-6 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-white text-slate-400">
+          <div className="history-detail-icon-pop flex h-16 w-16 items-center justify-center rounded-3xl bg-white text-slate-400 shadow-sm">
             <MapPin size={30} strokeWidth={2.4} />
           </div>
 
@@ -362,17 +611,32 @@ function LocationCard({
 function LoadingSkeleton() {
   return (
     <div className="space-y-5">
-      <div className="h-44 animate-pulse rounded-[2rem] bg-[#f8fbff]" />
+      <div className="history-detail-enter h-44 animate-pulse rounded-[2rem] bg-white shadow-lg shadow-slate-200/60" />
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="h-28 animate-pulse rounded-3xl bg-[#f8fbff]" />
-        <div className="h-28 animate-pulse rounded-3xl bg-[#f8fbff]" />
-        <div className="h-28 animate-pulse rounded-3xl bg-[#f8fbff]" />
+      <div className="grid gap-5 lg:grid-cols-3">
+        <div
+          className="history-detail-row-enter h-28 animate-pulse rounded-3xl bg-white shadow-lg shadow-slate-200/60"
+          style={{ animationDelay: "60ms" }}
+        />
+        <div
+          className="history-detail-row-enter h-28 animate-pulse rounded-3xl bg-white shadow-lg shadow-slate-200/60"
+          style={{ animationDelay: "100ms" }}
+        />
+        <div
+          className="history-detail-row-enter h-28 animate-pulse rounded-3xl bg-white shadow-lg shadow-slate-200/60"
+          style={{ animationDelay: "140ms" }}
+        />
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <div className="h-96 animate-pulse rounded-[2rem] bg-[#f8fbff]" />
-        <div className="h-96 animate-pulse rounded-[2rem] bg-[#f8fbff]" />
+        <div
+          className="history-detail-row-enter h-96 animate-pulse rounded-[2rem] bg-white shadow-lg shadow-slate-200/60"
+          style={{ animationDelay: "180ms" }}
+        />
+        <div
+          className="history-detail-row-enter h-96 animate-pulse rounded-[2rem] bg-white shadow-lg shadow-slate-200/60"
+          style={{ animationDelay: "220ms" }}
+        />
       </div>
     </div>
   );
@@ -380,7 +644,7 @@ function LoadingSkeleton() {
 
 export default function HistoryDetailPage() {
   const params = useParams();
-  const id = params.id as string;
+  const id = String(params.id || "");
 
   const [attendance, setAttendance] = useState<AttendanceDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -388,6 +652,8 @@ export default function HistoryDetailPage() {
   useEffect(() => {
     async function getDetail() {
       try {
+        setIsLoading(true);
+
         const response = await fetch(`/api/attendance/${id}`, {
           method: "GET",
           cache: "no-store",
@@ -398,7 +664,7 @@ export default function HistoryDetailPage() {
           return;
         }
 
-        const data = await response.json();
+        const data = (await response.json()) as AttendanceDetail;
         setAttendance(data);
       } catch (error) {
         console.error("Gagal mengambil detail absensi:", error);
@@ -409,225 +675,175 @@ export default function HistoryDetailPage() {
     }
 
     if (id) {
-      getDetail();
+      void getDetail();
     }
   }, [id]);
 
   return (
-    <MobileShell variant="employee" withBottomPadding={false}>
-      <div className="hidden md:block">
-        <AppHeader
-          title="Attendance Detail"
-          subtitle="Foto dan lokasi GPS absensi"
-          rightLabel="Detail"
-          variant="employee"
-        />
-      </div>
+    <MobileShell variant="employee">
+      <HistoryDetailMotionStyles />
 
-      <main className="min-h-dvh bg-gradient-to-br from-[#f6f8ff] via-white to-[#eef4ff] pb-28 text-slate-950">
-        <section className="mx-auto max-w-7xl px-5 pt-7 md:hidden">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.28em] text-[#123c8c]">
-                FaceAttend
-              </p>
+      <AppHeader
+        title="Attendance Detail"
+        subtitle="Foto dan lokasi GPS absensi"
+        rightLabel="Detail"
+      />
 
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-[#073456]">
-                Detail Presensi
-              </h1>
+      <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 md:px-10 lg:px-16">
+        <Link
+          href="/history"
+          className="history-detail-row-enter inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-black text-[#123c8c] shadow-lg shadow-slate-200/60 transition hover:-translate-y-0.5 hover:bg-[#f8fbff] active:scale-[0.98]"
+        >
+          <ArrowLeft size={18} strokeWidth={2.7} />
+          Kembali ke History
+        </Link>
 
-              <p className="mt-2 text-sm font-bold text-slate-500">
-                Foto, waktu, dan lokasi absensi.
-              </p>
+        {isLoading ? (
+          <LoadingSkeleton />
+        ) : !attendance ? (
+          <div className="history-detail-enter rounded-[2rem] border border-red-100 bg-white p-8 text-center shadow-xl shadow-slate-200/60">
+            <div className="history-detail-icon-pop mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-red-50 text-red-600">
+              <AlertCircle size={32} strokeWidth={2.5} />
             </div>
+
+            <h2 className="mt-5 text-2xl font-black text-slate-950">
+              Data absensi tidak ditemukan
+            </h2>
+
+            <p className="mx-auto mt-2 max-w-md text-sm font-semibold leading-6 text-slate-500">
+              Data absensi ini tidak tersedia, sudah dihapus, atau tidak sesuai
+              dengan akun yang sedang login.
+            </p>
 
             <Link
               href="/history"
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#123c8c] text-white ring-1 ring-[#123c8c] active:scale-[0.96]"
-              aria-label="Kembali"
+              className="mt-6 inline-flex rounded-2xl bg-[#123c8c] px-5 py-4 text-sm font-black text-white transition hover:bg-[#0f3274] active:scale-[0.98]"
             >
-              <ChevronLeft size={25} strokeWidth={2.8} />
+              Kembali ke Riwayat
             </Link>
           </div>
-        </section>
+        ) : (
+          <>
+            <div className="history-detail-enter relative overflow-hidden rounded-[2rem] bg-[#123c8c] p-6 text-white shadow-2xl shadow-blue-900/25 md:p-8">
+              <div className="history-detail-glow-float absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
+              <div className="history-detail-glow-float absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-blue-300/20 blur-3xl" />
 
-        <section className="mx-auto hidden max-w-7xl px-10 pt-8 md:block lg:px-16">
-          <div className="relative overflow-hidden rounded-[2.2rem] bg-[#123c8c] p-8 text-white">
-            <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-white/10" />
-            <div className="absolute bottom-[-7rem] right-24 h-60 w-60 rounded-full bg-blue-300/10" />
-
-            <div className="relative z-10 flex items-center justify-between gap-8">
-              <div className="flex items-center gap-5">
-                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[1.6rem] bg-white/15 text-white ring-1 ring-white/20">
-                  <ShieldCheck size={38} strokeWidth={2.5} />
-                </div>
-
+              <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                  <h1 className="text-4xl font-black tracking-tight">
-                    Detail Presensi
-                  </h1>
+                  <div className="history-detail-row-enter inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-blue-100 ring-1 ring-white/15">
+                    <ShieldCheck size={16} />
+                    Attendance Record
+                  </div>
 
-                  <p className="mt-3 max-w-2xl text-sm font-semibold leading-7 text-blue-100">
-                    Lihat bukti presensi berupa status kehadiran, foto
-                    check-in, foto check-out, lokasi GPS, dan durasi kerja.
-                  </p>
+                  <h2
+                    className="history-detail-row-enter mt-5 text-3xl font-black capitalize tracking-tight md:text-5xl"
+                    style={{ animationDelay: "80ms" }}
+                  >
+                    {attendance.date}
+                  </h2>
 
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <span className="rounded-full bg-white/15 px-4 py-2 text-xs font-black text-white ring-1 ring-white/20">
-                      Detail
-                    </span>
+                  <div
+                    className={`history-detail-row-enter mt-5 inline-flex rounded-full px-4 py-2 text-sm font-black ring-1 ${getStatusStyle(
+                      attendance.status,
+                    )}`}
+                    style={{ animationDelay: "120ms" }}
+                  >
+                    {attendance.status}
+                  </div>
+                </div>
 
-                    {attendance?.date ? (
-                      <span className="rounded-full bg-white/15 px-4 py-2 text-xs font-black text-white ring-1 ring-white/20">
-                        {formatDateLabel(attendance.date)}
-                      </span>
-                    ) : null}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div
+                    className="history-detail-row-enter rounded-3xl bg-white/10 p-5 ring-1 ring-white/15"
+                    style={{ animationDelay: "160ms" }}
+                  >
+                    <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-100">
+                      Check-in
+                    </p>
+
+                    <p className="mt-2 text-3xl font-black">
+                      {attendance.checkIn}
+                    </p>
+                  </div>
+
+                  <div
+                    className="history-detail-row-enter rounded-3xl bg-white/10 p-5 ring-1 ring-white/15"
+                    style={{ animationDelay: "200ms" }}
+                  >
+                    <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-100">
+                      Check-out
+                    </p>
+
+                    <p className="mt-2 text-3xl font-black">
+                      {attendance.checkOut}
+                    </p>
                   </div>
                 </div>
               </div>
-
-              <Link
-                href="/history"
-                className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-white/80 ring-1 ring-white/20 active:scale-[0.96]"
-                aria-label="Kembali"
-              >
-                <ChevronLeft size={30} strokeWidth={2.6} />
-              </Link>
             </div>
-          </div>
-        </section>
 
-        <section className="mx-auto max-w-7xl rounded-t-[2.5rem] bg-white px-5 pb-10 pt-8 md:mt-8 md:rounded-[2.5rem] md:px-8 lg:px-10">
-          {isLoading ? (
-            <LoadingSkeleton />
-          ) : !attendance ? (
-            <div className="rounded-[2rem] border border-red-100 bg-white p-8 text-center">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-red-50 text-red-600">
-                <AlertCircle size={32} strokeWidth={2.5} />
-              </div>
+            <div className="grid gap-5 md:grid-cols-3">
+              <MetricCard
+                label="Work Time"
+                value={formatMinutes(attendance.workMinutes)}
+                description="Total durasi kerja tercatat"
+                icon={Timer}
+                delay="60ms"
+              />
 
-              <h2 className="mt-5 text-2xl font-black text-slate-950">
-                Data absensi tidak ditemukan
-              </h2>
+              <MetricCard
+                label="Late"
+                value={formatMinutes(attendance.lateMinutes)}
+                description="Keterlambatan check-in"
+                icon={Clock3}
+                delay="100ms"
+              />
 
-              <p className="mx-auto mt-2 max-w-md text-sm font-semibold leading-6 text-slate-500">
-                Data absensi ini tidak tersedia, sudah dihapus, atau tidak
-                sesuai dengan akun yang sedang login.
-              </p>
-
-              <Link
-                href="/history"
-                className="mt-6 inline-flex rounded-2xl bg-[#123c8c] px-5 py-4 text-sm font-black text-white"
-              >
-                Kembali ke Riwayat
-              </Link>
+              <MetricCard
+                label="Early Leave"
+                value={formatMinutes(attendance.earlyLeaveMinutes)}
+                description="Pulang lebih awal"
+                icon={CheckCircle2}
+                delay="140ms"
+              />
             </div>
-          ) : (
-            <>
-              <div className="relative overflow-hidden rounded-[2rem] bg-[#123c8c] p-6 text-white md:p-8">
-                <div className="absolute -right-16 -top-20 h-60 w-60 rounded-full bg-white/10" />
-                <div className="absolute bottom-[-7rem] right-24 h-56 w-56 rounded-full bg-blue-300/10" />
 
-                <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-                  <div>
-                    <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-blue-100 ring-1 ring-white/15">
-                      <ShieldCheck size={16} />
-                      Attendance Record
-                    </div>
+            <div className="grid gap-5 lg:grid-cols-2">
+              <PhotoCard
+                title="Check-in Photo"
+                subtitle="Foto absensi masuk"
+                imageUrl={`/api/attendance/${attendance.id}/photo?type=check-in`}
+                isAvailable={attendance.hasCheckInPhoto}
+                delay="180ms"
+              />
 
-                    <h2 className="mt-5 text-3xl font-black capitalize tracking-tight md:text-5xl">
-                      {formatDateLabel(attendance.date)}
-                    </h2>
+              <PhotoCard
+                title="Check-out Photo"
+                subtitle="Foto absensi pulang"
+                imageUrl={`/api/attendance/${attendance.id}/photo?type=check-out`}
+                isAvailable={attendance.hasCheckOutPhoto}
+                delay="220ms"
+              />
+            </div>
 
-                    <div
-                      className={`mt-5 inline-flex rounded-full px-4 py-2 text-sm font-black ring-1 ${getStatusStyle(
-                        attendance.status
-                      )}`}
-                    >
-                      {attendance.status}
-                    </div>
-                  </div>
+            <div className="grid gap-5 lg:grid-cols-2">
+              <LocationCard
+                title="Lokasi Check-in"
+                location={attendance.checkInLocation}
+                delay="260ms"
+              />
 
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-3xl bg-white/15 p-5 ring-1 ring-white/15">
-                      <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-100">
-                        Check-in
-                      </p>
+              <LocationCard
+                title="Lokasi Check-out"
+                location={attendance.checkOutLocation}
+                delay="300ms"
+              />
+            </div>
+          </>
+        )}
+      </section>
 
-                      <p className="mt-2 text-3xl font-black">
-                        {attendance.checkIn}
-                      </p>
-                    </div>
-
-                    <div className="rounded-3xl bg-white/15 p-5 ring-1 ring-white/15">
-                      <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-100">
-                        Check-out
-                      </p>
-
-                      <p className="mt-2 text-3xl font-black">
-                        {attendance.checkOut}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-5 grid gap-4 md:grid-cols-3">
-                <MetricCard
-                  label="Work Time"
-                  value={formatMinutes(attendance.workMinutes)}
-                  description="Total durasi kerja tercatat"
-                  icon={Timer}
-                />
-
-                <MetricCard
-                  label="Late"
-                  value={formatMinutes(attendance.lateMinutes)}
-                  description="Keterlambatan check-in"
-                  icon={Clock3}
-                />
-
-                <MetricCard
-                  label="Early Leave"
-                  value={formatMinutes(attendance.earlyLeaveMinutes)}
-                  description="Pulang lebih awal"
-                  icon={CheckCircle2}
-                />
-              </div>
-
-              <div className="mt-5 grid gap-5 lg:grid-cols-2">
-                <PhotoCard
-                  title="Check-in Photo"
-                  subtitle="Foto absensi masuk"
-                  imageUrl={`/api/attendance/${attendance.id}/photo?type=check-in`}
-                  isAvailable={attendance.hasCheckInPhoto}
-                />
-
-                <PhotoCard
-                  title="Check-out Photo"
-                  subtitle="Foto absensi pulang"
-                  imageUrl={`/api/attendance/${attendance.id}/photo?type=check-out`}
-                  isAvailable={attendance.hasCheckOutPhoto}
-                />
-              </div>
-
-              <div className="mt-5 grid gap-5 lg:grid-cols-2">
-                <LocationCard
-                  title="Lokasi Check-in"
-                  location={attendance.checkInLocation}
-                />
-
-                <LocationCard
-                  title="Lokasi Check-out"
-                  location={attendance.checkOutLocation}
-                />
-              </div>
-            </>
-          )}
-        </section>
-
-        <BottomNav />
-      </main>
+      <BottomNav />
     </MobileShell>
   );
 }

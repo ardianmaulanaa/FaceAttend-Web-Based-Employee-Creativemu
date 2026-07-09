@@ -22,7 +22,13 @@ import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import MobileShell from "@/components/MobileShell";
 
-type NotificationType = "sick" | "leave" | "permission" | "wfh" | "wfc" | "visit";
+type NotificationType =
+  | "sick"
+  | "leave"
+  | "permission"
+  | "wfh"
+  | "wfc"
+  | "visit";
 
 type NotificationItem = {
   id: string;
@@ -117,10 +123,16 @@ function getTypeIcon(type: NotificationType) {
 function getTypeClass(type: NotificationType) {
   if (type === "sick") return "bg-red-50 text-red-600 border-red-100";
   if (type === "leave") return "bg-blue-50 text-[#123c8c] border-blue-100";
-  if (type === "permission") return "bg-amber-50 text-amber-700 border-amber-100";
-  if (type === "wfh") return "bg-emerald-50 text-emerald-700 border-emerald-100";
+  if (type === "permission") {
+    return "bg-amber-50 text-amber-700 border-amber-100";
+  }
+  if (type === "wfh") {
+    return "bg-emerald-50 text-emerald-700 border-emerald-100";
+  }
   if (type === "wfc") return "bg-purple-50 text-purple-700 border-purple-100";
-  if (type === "visit") return "bg-orange-50 text-orange-700 border-orange-100";
+  if (type === "visit") {
+    return "bg-orange-50 text-orange-700 border-orange-100";
+  }
 
   return "bg-slate-50 text-slate-600 border-slate-100";
 }
@@ -163,6 +175,78 @@ async function readJsonResponse(response: Response) {
   }
 }
 
+function NotificationMotionStyles() {
+  return (
+    <style>{`
+      @keyframes notificationEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes notificationRowEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes notificationIconPop {
+        0% {
+          opacity: 0;
+          transform: scale(0.92);
+        }
+
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      .notification-enter {
+        animation: notificationEnter 320ms ease-out both;
+      }
+
+      .notification-row-enter {
+        opacity: 0;
+        animation: notificationRowEnter 300ms ease-out both;
+      }
+
+      .notification-icon-pop {
+        animation: notificationIconPop 260ms ease-out both;
+      }
+
+      .notification-field {
+        transition:
+          border-color 180ms ease,
+          background-color 180ms ease,
+          box-shadow 180ms ease;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .notification-enter,
+        .notification-row-enter,
+        .notification-icon-pop {
+          animation: none !important;
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      }
+    `}</style>
+  );
+}
+
 export default function AdminNotificationsPage() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [stats, setStats] = useState<NotificationStats>(emptyStats);
@@ -198,7 +282,7 @@ export default function AdminNotificationsPage() {
       setErrorMessage(
         error instanceof Error
           ? error.message
-          : "Terjadi kesalahan saat mengambil notifikasi."
+          : "Terjadi kesalahan saat mengambil notifikasi.",
       );
     } finally {
       setIsLoading(false);
@@ -234,7 +318,7 @@ export default function AdminNotificationsPage() {
       alert(
         error instanceof Error
           ? error.message
-          : "Gagal menandai notifikasi sudah dibaca."
+          : "Gagal menandai notifikasi sudah dibaca.",
       );
     } finally {
       setIsMarking("");
@@ -242,7 +326,7 @@ export default function AdminNotificationsPage() {
   }
 
   useEffect(() => {
-    loadNotifications();
+    void loadNotifications();
   }, []);
 
   const filteredNotifications = useMemo(() => {
@@ -262,7 +346,8 @@ export default function AdminNotificationsPage() {
 
       const matchSearch = !keyword || text.includes(keyword);
       const matchType = typeFilter === "all" || item.type === typeFilter;
-      const matchStatus = statusFilter === "all" || item.status === statusFilter;
+      const matchStatus =
+        statusFilter === "all" || item.status === statusFilter;
 
       return matchSearch && matchType && matchStatus;
     });
@@ -297,6 +382,8 @@ export default function AdminNotificationsPage() {
 
   return (
     <MobileShell variant="admin">
+      <NotificationMotionStyles />
+
       <AppHeader
         title="Notifikasi"
         subtitle="Laporan sakit, cuti, izin, WFH, WFC, dan kunjungan"
@@ -304,7 +391,7 @@ export default function AdminNotificationsPage() {
       />
 
       <main className="mx-auto max-w-7xl space-y-6 px-5 py-6 pb-28 md:px-10 lg:px-16">
-        <section className="relative overflow-hidden rounded-[2.2rem] bg-[#123c8c] p-6 text-white shadow-2xl shadow-blue-900/25 md:p-8">
+        <section className="notification-enter relative overflow-hidden rounded-[2.2rem] bg-[#123c8c] p-6 text-white shadow-2xl shadow-blue-900/25 md:p-8">
           <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
           <div className="absolute -bottom-24 left-16 h-64 w-64 rounded-full bg-blue-300/20 blur-3xl" />
 
@@ -320,15 +407,15 @@ export default function AdminNotificationsPage() {
               </h1>
 
               <p className="mt-3 max-w-2xl text-sm leading-7 text-blue-100">
-                Cuti, sakit, dan izin diambil dari tabel LeaveRequest. WFH,
-                WFC, dan kunjungan diambil dari tabel AdminNotification.
+                Cuti, sakit, dan izin diambil dari tabel LeaveRequest. WFH, WFC,
+                dan kunjungan diambil dari tabel AdminNotification.
               </p>
             </div>
 
             <button
               type="button"
               onClick={loadNotifications}
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-white px-5 text-sm font-black text-[#123c8c] shadow-lg shadow-blue-950/20 transition hover:bg-blue-50 active:scale-[0.98]"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-white px-5 text-sm font-black text-[#123c8c] shadow-lg shadow-blue-950/20 transition hover:-translate-y-0.5 hover:bg-blue-50 active:scale-[0.98]"
             >
               <RefreshCw size={18} />
               Refresh
@@ -337,13 +424,16 @@ export default function AdminNotificationsPage() {
         </section>
 
         <section className="grid gap-4 md:grid-cols-4">
-          {statCards.map((item) => {
+          {statCards.map((item, index) => {
             const Icon = item.icon;
 
             return (
               <div
                 key={item.label}
-                className="rounded-[1.7rem] border border-blue-100 bg-white/90 p-5 shadow-xl shadow-slate-300/30"
+                className="notification-row-enter rounded-[1.7rem] border border-blue-100 bg-white/90 p-5 shadow-xl shadow-slate-300/30 transition duration-200 hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-slate-300/40"
+                style={{
+                  animationDelay: `${index * 70}ms`,
+                }}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -360,7 +450,7 @@ export default function AdminNotificationsPage() {
                     </p>
                   </div>
 
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
+                  <div className="notification-icon-pop flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
                     <Icon size={24} strokeWidth={2.7} />
                   </div>
                 </div>
@@ -369,7 +459,10 @@ export default function AdminNotificationsPage() {
           })}
         </section>
 
-        <section className="rounded-[2rem] border border-white/70 bg-white/90 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-6">
+        <section
+          className="notification-enter rounded-[2rem] border border-white/70 bg-white/90 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-6"
+          style={{ animationDelay: "100ms" }}
+        >
           <div className="grid gap-4 lg:grid-cols-[1fr_220px_220px_auto]">
             <div>
               <label className="text-sm font-black text-slate-500">
@@ -386,7 +479,7 @@ export default function AdminNotificationsPage() {
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Cari nama, laporan, status, atau keterangan..."
-                  className="h-[58px] w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] pl-12 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                  className="notification-field h-[58px] w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] pl-12 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 />
               </div>
             </div>
@@ -399,7 +492,7 @@ export default function AdminNotificationsPage() {
               <select
                 value={typeFilter}
                 onChange={(event) => setTypeFilter(event.target.value)}
-                className="mt-3 h-[58px] w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                className="notification-field mt-3 h-[58px] w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
               >
                 {typeOptions.map((item) => (
                   <option key={item.value} value={item.value}>
@@ -417,7 +510,7 @@ export default function AdminNotificationsPage() {
               <select
                 value={statusFilter}
                 onChange={(event) => setStatusFilter(event.target.value)}
-                className="mt-3 h-[58px] w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                className="notification-field mt-3 h-[58px] w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
               >
                 {statusOptions.map((item) => (
                   <option key={item.value} value={item.value}>
@@ -443,19 +536,19 @@ export default function AdminNotificationsPage() {
           </div>
 
           {errorMessage ? (
-            <div className="mt-5 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-black text-red-700">
+            <div className="notification-row-enter mt-5 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-black text-red-700">
               {errorMessage}
             </div>
           ) : null}
 
           <div className="mt-6 space-y-4">
             {isLoading ? (
-              <div className="flex items-center justify-center gap-3 rounded-3xl border border-blue-100 bg-[#f8fbff] p-10 text-sm font-black text-slate-600">
+              <div className="notification-row-enter flex items-center justify-center gap-3 rounded-3xl border border-blue-100 bg-[#f8fbff] p-10 text-sm font-black text-slate-600">
                 <Loader2 className="animate-spin text-[#123c8c]" size={22} />
                 Mengambil data notifikasi...
               </div>
             ) : filteredNotifications.length === 0 ? (
-              <div className="rounded-3xl border border-blue-100 bg-[#f8fbff] p-10 text-center">
+              <div className="notification-row-enter rounded-3xl border border-blue-100 bg-[#f8fbff] p-10 text-center">
                 <Bell className="mx-auto text-slate-300" size={42} />
                 <p className="mt-3 text-lg font-black text-slate-700">
                   Tidak ada notifikasi
@@ -465,21 +558,25 @@ export default function AdminNotificationsPage() {
                 </p>
               </div>
             ) : (
-              filteredNotifications.map((item) => {
+              filteredNotifications.map((item, index) => {
                 const Icon = getTypeIcon(item.type);
                 const canMarkRead =
-                  item.source === "AdminNotification" && item.status === "unread";
+                  item.source === "AdminNotification" &&
+                  item.status === "unread";
 
                 return (
                   <div
                     key={item.id}
-                    className="rounded-[1.7rem] border border-blue-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-slate-200/70"
+                    className="notification-row-enter rounded-[1.7rem] border border-blue-100 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-slate-200/70"
+                    style={{
+                      animationDelay: `${index * 55}ms`,
+                    }}
                   >
                     <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                       <div className="flex gap-4">
                         <div
-                          className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border ${getTypeClass(
-                            item.type
+                          className={`notification-icon-pop flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border ${getTypeClass(
+                            item.type,
                           )}`}
                         >
                           <Icon size={25} strokeWidth={2.8} />
@@ -489,7 +586,7 @@ export default function AdminNotificationsPage() {
                           <div className="flex flex-wrap items-center gap-2">
                             <span
                               className={`rounded-full border px-3 py-1 text-xs font-black ${getTypeClass(
-                                item.type
+                                item.type,
                               )}`}
                             >
                               {getTypeLabel(item.type)}
@@ -497,7 +594,7 @@ export default function AdminNotificationsPage() {
 
                             <span
                               className={`rounded-full px-3 py-1 text-xs font-black ${getStatusClass(
-                                item.status
+                                item.status,
                               )}`}
                             >
                               {item.statusText}

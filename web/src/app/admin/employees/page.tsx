@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   BadgeCheck,
@@ -33,6 +34,12 @@ import {
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import MobileShell from "@/components/MobileShell";
+import {
+  AppAnimatedActionButton,
+  AppFormReveal,
+  AppModalMotion,
+  AppModalPanel,
+} from "@/components/ui/AppUI";
 
 function getShortEmployeeId(id: string) {
   if (!id) return "";
@@ -386,7 +393,81 @@ async function readJsonResponse(response: Response) {
   }
 }
 
+function EmployeeMotionStyles() {
+  return (
+    <style>{`
+      @keyframes employeeEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes employeeRowEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes employeeAlertEnter {
+        0% {
+          opacity: 0;
+          transform: translateX(20px) scale(0.98);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateX(0) scale(1);
+        }
+      }
+
+      .employee-enter {
+        animation: employeeEnter 320ms ease-out both;
+      }
+
+      .employee-row-enter {
+        opacity: 0;
+        animation: employeeRowEnter 300ms ease-out both;
+      }
+
+      .employee-alert-enter {
+        animation: employeeAlertEnter 260ms ease-out both;
+      }
+
+      .employee-field {
+        transition:
+          border-color 180ms ease,
+          background-color 180ms ease,
+          box-shadow 180ms ease;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .employee-enter,
+        .employee-row-enter,
+        .employee-alert-enter {
+          animation: none !important;
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      }
+    `}</style>
+  );
+}
+
 export default function AdminEmployeesPage() {
+  const router = useRouter();
+
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<DepartmentOption[]>([]);
   const [units, setUnits] = useState<UnitOption[]>([]);
@@ -812,10 +893,12 @@ export default function AdminEmployeesPage() {
 
   return (
     <MobileShell variant="admin">
+      <EmployeeMotionStyles />
+
       <AppHeader title="Employees" variant="admin" />
 
       <main className="mx-auto max-w-7xl px-5 py-6 pb-28 md:px-10 lg:px-16">
-        <section className="relative overflow-hidden rounded-[2.2rem] bg-[#123c8c] p-6 text-white shadow-2xl shadow-blue-900/25 md:p-8">
+        <section className="employee-enter relative overflow-hidden rounded-[2.2rem] bg-[#123c8c] p-6 text-white shadow-2xl shadow-blue-900/25 md:p-8">
           <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
           <div className="absolute -bottom-24 left-16 h-64 w-64 rounded-full bg-blue-300/20 blur-3xl" />
 
@@ -831,26 +914,20 @@ export default function AdminEmployeesPage() {
               </h2>
             </div>
 
-            <button
-              type="button"
+            <AppAnimatedActionButton
+              icon={<Plus size={27} strokeWidth={3} />}
+              title="Register Employee"
+              loadingTitle="Opening..."
               onClick={openRegisterModal}
-              className="group inline-flex w-full items-center justify-center gap-4 rounded-[1.8rem] bg-white px-6 py-5 text-[#123c8c] shadow-2xl shadow-blue-950/20 ring-1 ring-white/70 transition-all duration-300 hover:-translate-y-1 hover:bg-blue-50 hover:shadow-blue-950/30 active:scale-[0.97] md:w-auto"
-            >
-              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[1.4rem] bg-[#eaf1ff] transition-all duration-300 group-hover:rotate-90 group-hover:bg-[#123c8c] group-hover:text-white">
-                <Plus size={27} strokeWidth={3} />
-              </span>
-
-              <span className="text-left">
-                <span className="block text-xl font-black leading-none tracking-tight">
-                  Register Employee
-                </span>
-              </span>
-            </button>
+            />
           </div>
         </section>
 
         <section className="mt-6 grid gap-4 md:grid-cols-3">
-          <div className="rounded-[1.7rem] border border-blue-100 bg-white/90 p-5 shadow-xl shadow-slate-300/30">
+          <div
+            className="employee-row-enter rounded-[1.7rem] border border-blue-100 bg-white/90 p-5 shadow-xl shadow-slate-300/30"
+            style={{ animationDelay: "70ms" }}
+          >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-bold text-slate-500">
@@ -867,7 +944,10 @@ export default function AdminEmployeesPage() {
             </div>
           </div>
 
-          <div className="rounded-[1.7rem] border border-emerald-100 bg-white/90 p-5 shadow-xl shadow-slate-300/30">
+          <div
+            className="employee-row-enter rounded-[1.7rem] border border-emerald-100 bg-white/90 p-5 shadow-xl shadow-slate-300/30"
+            style={{ animationDelay: "110ms" }}
+          >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-bold text-slate-500">
@@ -884,7 +964,10 @@ export default function AdminEmployeesPage() {
             </div>
           </div>
 
-          <div className="rounded-[1.7rem] border border-slate-200 bg-white/90 p-5 shadow-xl shadow-slate-300/30">
+          <div
+            className="employee-row-enter rounded-[1.7rem] border border-slate-200 bg-white/90 p-5 shadow-xl shadow-slate-300/30"
+            style={{ animationDelay: "150ms" }}
+          >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-bold text-slate-500">
@@ -902,7 +985,10 @@ export default function AdminEmployeesPage() {
           </div>
         </section>
 
-        <section className="mt-6 rounded-[2rem] border border-white/70 bg-white/90 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl">
+        <section
+          className="employee-enter mt-6 rounded-[2rem] border border-white/70 bg-white/90 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl"
+          style={{ animationDelay: "120ms" }}
+        >
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <h3 className="text-xl font-black text-slate-950">
@@ -923,7 +1009,7 @@ export default function AdminEmployeesPage() {
                   value={keyword}
                   onChange={(event) => setKeyword(event.target.value)}
                   placeholder="Search employee..."
-                  className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                  className="employee-field w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 />
               </div>
 
@@ -940,7 +1026,7 @@ export default function AdminEmployeesPage() {
 
           <div className="mt-5 overflow-x-auto rounded-3xl border border-blue-100 bg-white">
             <div className="md:min-w-[1180px]">
-              <div className="hidden grid-cols-[1.15fr_minmax(180px,1fr)_0.9fr_0.75fr_0.8fr_0.95fr_0.7fr_0.65fr_1.05fr] items-center bg-[#f6f8ff] px-5 py-4 text-[11px] font-black uppercase tracking-[0.18em] text-[#123c8c] md:grid">
+              <div className="hidden grid-cols-[1.15fr_minmax(180px,1fr)_0.9fr_0.75fr_0.8fr_0.95fr_0.7fr_0.65fr_0.85fr] items-center bg-[#f6f8ff] px-5 py-4 text-[11px] font-black uppercase tracking-[0.18em] text-[#123c8c] md:grid">
                 <p>Employee</p>
                 <p>Email</p>
                 <p>Kantor</p>
@@ -954,7 +1040,7 @@ export default function AdminEmployeesPage() {
 
               <div className="divide-y divide-blue-50">
                 {isLoading && (
-                  <div className="px-5 py-10 text-center">
+                  <div className="employee-row-enter px-5 py-10 text-center">
                     <p className="font-black text-slate-700">
                       Loading employee data...
                     </p>
@@ -962,10 +1048,24 @@ export default function AdminEmployeesPage() {
                 )}
 
                 {!isLoading &&
-                  filteredEmployees.map((employee) => (
+                  filteredEmployees.map((employee, index) => (
                     <div
                       key={employee.id}
-                      className="grid gap-4 px-5 py-4 transition hover:bg-[#f8fbff] md:min-h-[86px] md:grid-cols-[1.15fr_minmax(180px,1fr)_0.9fr_0.75fr_0.8fr_0.95fr_0.7fr_0.65fr_1.05fr] md:items-center md:gap-3"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() =>
+                        router.push(`/admin/employees/${employee.id}`)
+                      }
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          router.push(`/admin/employees/${employee.id}`);
+                        }
+                      }}
+                      className="employee-row-enter grid cursor-pointer gap-4 px-5 py-4 transition duration-200 hover:bg-[#f8fbff] active:bg-[#eef4ff] md:min-h-[86px] md:grid-cols-[1.15fr_minmax(180px,1fr)_0.9fr_0.75fr_0.8fr_0.95fr_0.7fr_0.65fr_0.85fr] md:items-center md:gap-3"
+                      style={{
+                        animationDelay: `${index * 45}ms`,
+                      }}
                     >
                       <div className="flex min-w-0 items-center gap-3">
                         <EmployeeAvatar employee={employee} />
@@ -1024,7 +1124,10 @@ export default function AdminEmployeesPage() {
                       <div className="grid gap-2 md:flex md:justify-center">
                         <button
                           type="button"
-                          onClick={() => openEditModal(employee)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            openEditModal(employee);
+                          }}
                           className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#123c8c] px-4 text-xs font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#0f3274] active:scale-[0.97] md:h-10 md:rounded-xl md:border md:border-blue-100 md:bg-white md:px-3 md:py-0 md:text-[#123c8c] md:shadow-none md:hover:bg-[#eaf1ff]"
                         >
                           <Edit size={15} />
@@ -1033,7 +1136,10 @@ export default function AdminEmployeesPage() {
 
                         <button
                           type="button"
-                          onClick={() => handleDeleteEmployee(employee)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleDeleteEmployee(employee);
+                          }}
                           disabled={deletingId === employee.id}
                           className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-red-100 bg-red-50 px-4 text-xs font-black text-red-600 transition hover:bg-red-100 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 md:h-10 md:rounded-xl md:px-3 md:py-0"
                         >
@@ -1045,7 +1151,7 @@ export default function AdminEmployeesPage() {
                   ))}
 
                 {!isLoading && filteredEmployees.length === 0 && (
-                  <div className="px-5 py-10 text-center">
+                  <div className="employee-row-enter px-5 py-10 text-center">
                     <p className="font-black text-slate-700">
                       Data tidak ditemukan
                     </p>
@@ -1061,8 +1167,8 @@ export default function AdminEmployeesPage() {
       </main>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/50 px-4 pb-4 backdrop-blur-sm md:items-center md:pb-0">
-          <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-[2rem] bg-white p-5 shadow-2xl shadow-slate-950/30 md:p-7">
+        <AppModalMotion>
+          <AppModalPanel>
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="inline-flex items-center gap-2 rounded-full bg-[#eaf1ff] px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[#123c8c]">
@@ -1097,61 +1203,65 @@ export default function AdminEmployeesPage() {
               noValidate
               className="mt-6 grid gap-4"
             >
-              <div>
-                <label className="mb-2 block text-sm font-black text-slate-700">
-                  Full Name
-                </label>
-                <div className="relative">
-                  <UserRound
-                    size={18}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                  />
-                  <input
-                    value={form.name}
-                    onChange={(event) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        name: event.target.value,
-                      }))
-                    }
-                    placeholder="Nama karyawan"
-                    className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white"
-                  />
+              <AppFormReveal delay={20}>
+                <div>
+                  <label className="mb-2 block text-sm font-black text-slate-700">
+                    Full Name
+                  </label>
+                  <div className="app-field-smooth relative rounded-2xl">
+                    <UserRound
+                      size={18}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+                    <input
+                      value={form.name}
+                      onChange={(event) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          name: event.target.value,
+                        }))
+                      }
+                      placeholder="Nama karyawan"
+                      className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                    />
+                  </div>
                 </div>
-              </div>
+              </AppFormReveal>
 
-              <div>
-                <label className="mb-2 block text-sm font-black text-slate-700">
-                  Email
-                </label>
-                <div className="relative">
-                  <Mail
-                    size={18}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                  />
-                  <input
-                    type="text"
-                    inputMode="email"
-                    autoComplete="email"
-                    value={form.email}
-                    onChange={(event) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        email: event.target.value,
-                      }))
-                    }
-                    placeholder="employee@creativemu.com"
-                    className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white"
-                  />
+              <AppFormReveal delay={40}>
+                <div>
+                  <label className="mb-2 block text-sm font-black text-slate-700">
+                    Email
+                  </label>
+                  <div className="app-field-smooth relative rounded-2xl">
+                    <Mail
+                      size={18}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+                    <input
+                      type="text"
+                      inputMode="email"
+                      autoComplete="email"
+                      value={form.email}
+                      onChange={(event) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          email: event.target.value,
+                        }))
+                      }
+                      placeholder="employee@creativemu.com"
+                      className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                    />
+                  </div>
                 </div>
-              </div>
+              </AppFormReveal>
 
-              <div className="grid gap-4 md:grid-cols-5">
+              <AppFormReveal delay={60} className="grid gap-4 md:grid-cols-5">
                 <div>
                   <label className="mb-2 block text-sm font-black text-slate-700">
                     Kantor
                   </label>
-                  <div className="relative">
+                  <div className="app-field-smooth relative rounded-2xl">
                     <MapPin
                       size={18}
                       className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
@@ -1167,7 +1277,7 @@ export default function AdminEmployeesPage() {
                           position_id: "",
                         }))
                       }
-                      className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white"
+                      className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                     >
                       <option value="">Pilih Kantor</option>
                       {activeOffices.map((office) => (
@@ -1183,7 +1293,7 @@ export default function AdminEmployeesPage() {
                   <label className="mb-2 block text-sm font-black text-slate-700">
                     Divisi
                   </label>
-                  <div className="relative">
+                  <div className="app-field-smooth relative rounded-2xl">
                     <Network
                       size={18}
                       className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
@@ -1199,7 +1309,7 @@ export default function AdminEmployeesPage() {
                         }))
                       }
                       disabled={!form.registered_office_id}
-                      className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                      className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
                     >
                       <option value="">
                         {form.registered_office_id
@@ -1219,7 +1329,7 @@ export default function AdminEmployeesPage() {
                   <label className="mb-2 block text-sm font-black text-slate-700">
                     Unit
                   </label>
-                  <div className="relative">
+                  <div className="app-field-smooth relative rounded-2xl">
                     <Building2
                       size={18}
                       className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
@@ -1234,7 +1344,7 @@ export default function AdminEmployeesPage() {
                         }))
                       }
                       disabled={!form.department_id}
-                      className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                      className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
                     >
                       <option value="">
                         {form.department_id
@@ -1254,7 +1364,7 @@ export default function AdminEmployeesPage() {
                   <label className="mb-2 block text-sm font-black text-slate-700">
                     Jabatan
                   </label>
-                  <div className="relative">
+                  <div className="app-field-smooth relative rounded-2xl">
                     <BriefcaseBusiness
                       size={18}
                       className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
@@ -1268,7 +1378,7 @@ export default function AdminEmployeesPage() {
                         }))
                       }
                       disabled={!form.unit_id}
-                      className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                      className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
                     >
                       <option value="">
                         {form.unit_id ? "Pilih Jabatan" : "Pilih Unit dulu"}
@@ -1286,7 +1396,7 @@ export default function AdminEmployeesPage() {
                   <label className="mb-2 block text-sm font-black text-slate-700">
                     Shift
                   </label>
-                  <div className="relative">
+                  <div className="app-field-smooth relative rounded-2xl">
                     <Clock3
                       size={18}
                       className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
@@ -1299,7 +1409,7 @@ export default function AdminEmployeesPage() {
                           shift_id: event.target.value,
                         }))
                       }
-                      className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white"
+                      className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                     >
                       <option value="">Pilih Shift</option>
                       {activeShifts.map((shift) => (
@@ -1311,49 +1421,55 @@ export default function AdminEmployeesPage() {
                     </select>
                   </div>
                 </div>
-              </div>
+              </AppFormReveal>
 
               {form.registered_office_id && filteredDepartments.length === 0 ? (
-                <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
-                  <p className="text-sm font-black text-amber-700">
-                    Divisi belum tersedia untuk kantor ini
-                  </p>
-                  <p className="mt-1 text-sm leading-6 text-amber-700/80">
-                    Tambahkan Divisi terlebih dahulu dan hubungkan ke kantor
-                    yang dipilih.
-                  </p>
-                </div>
+                <AppFormReveal delay={80}>
+                  <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
+                    <p className="text-sm font-black text-amber-700">
+                      Divisi belum tersedia untuk kantor ini
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-amber-700/80">
+                      Tambahkan Divisi terlebih dahulu dan hubungkan ke kantor
+                      yang dipilih.
+                    </p>
+                  </div>
+                </AppFormReveal>
               ) : null}
 
               {form.department_id && filteredUnits.length === 0 ? (
-                <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
-                  <p className="text-sm font-black text-amber-700">
-                    Unit belum tersedia untuk divisi ini
-                  </p>
-                  <p className="mt-1 text-sm leading-6 text-amber-700/80">
-                    Tambahkan Unit terlebih dahulu pada divisi yang dipilih.
-                  </p>
-                </div>
+                <AppFormReveal delay={80}>
+                  <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
+                    <p className="text-sm font-black text-amber-700">
+                      Unit belum tersedia untuk divisi ini
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-amber-700/80">
+                      Tambahkan Unit terlebih dahulu pada divisi yang dipilih.
+                    </p>
+                  </div>
+                </AppFormReveal>
               ) : null}
 
               {form.unit_id && filteredPositions.length === 0 ? (
-                <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
-                  <p className="text-sm font-black text-amber-700">
-                    Jabatan belum tersedia untuk unit ini
-                  </p>
-                  <p className="mt-1 text-sm leading-6 text-amber-700/80">
-                    Tambahkan Jabatan terlebih dahulu pada unit yang dipilih.
-                  </p>
-                </div>
+                <AppFormReveal delay={80}>
+                  <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
+                    <p className="text-sm font-black text-amber-700">
+                      Jabatan belum tersedia untuk unit ini
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-amber-700/80">
+                      Tambahkan Jabatan terlebih dahulu pada unit yang dipilih.
+                    </p>
+                  </div>
+                </AppFormReveal>
               ) : null}
 
-              <div className="grid gap-4 md:grid-cols-2">
+              <AppFormReveal delay={100} className="grid gap-4 md:grid-cols-2">
                 {!editingEmployee ? (
                   <div>
                     <label className="mb-2 block text-sm font-black text-slate-700">
                       Password
                     </label>
-                    <div className="relative">
+                    <div className="app-field-smooth relative rounded-2xl">
                       <KeyRound
                         size={18}
                         className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
@@ -1368,7 +1484,7 @@ export default function AdminEmployeesPage() {
                           }))
                         }
                         placeholder="Minimal 8 karakter"
-                        className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white"
+                        className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                       />
                     </div>
                   </div>
@@ -1379,7 +1495,7 @@ export default function AdminEmployeesPage() {
                     <label className="mb-2 block text-sm font-black text-slate-700">
                       Konfirmasi Password
                     </label>
-                    <div className="relative">
+                    <div className="app-field-smooth relative rounded-2xl">
                       <KeyRound
                         size={18}
                         className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
@@ -1394,7 +1510,7 @@ export default function AdminEmployeesPage() {
                           }))
                         }
                         placeholder="Ulangi password"
-                        className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white"
+                        className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                       />
                     </div>
                   </div>
@@ -1404,34 +1520,42 @@ export default function AdminEmployeesPage() {
                   <label className="mb-2 block text-sm font-black text-slate-700">
                     Status
                   </label>
-                  <select
-                    value={form.status}
-                    onChange={(event) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        status: event.target.value as "active" | "inactive",
-                      }))
-                    }
-                    className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white"
-                  >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
+                  <div className="app-field-smooth rounded-2xl">
+                    <select
+                      value={form.status}
+                      onChange={(event) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          status: event.target.value as "active" | "inactive",
+                        }))
+                      }
+                      className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                    >
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+                  </div>
                 </div>
-              </div>
+              </AppFormReveal>
 
-              <div className="rounded-2xl border border-blue-100 bg-[#f6f8ff] p-4">
-                <p className="text-sm font-black text-[#123c8c]">
-                  Catatan Employee
-                </p>
-                <p className="mt-1 text-sm leading-6 text-slate-500">
-                  Kantor dipilih terlebih dahulu. Setelah itu sistem hanya
-                  menampilkan Divisi milik kantor tersebut. Unit mengikuti
-                  Divisi, Jabatan mengikuti Unit, sedangkan Shift tetap global.
-                </p>
-              </div>
+              <AppFormReveal delay={120}>
+                <div className="rounded-2xl border border-blue-100 bg-[#f6f8ff] p-4">
+                  <p className="text-sm font-black text-[#123c8c]">
+                    Catatan Employee
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-slate-500">
+                    Kantor dipilih terlebih dahulu. Setelah itu sistem hanya
+                    menampilkan Divisi milik kantor tersebut. Unit mengikuti
+                    Divisi, Jabatan mengikuti Unit, sedangkan Shift tetap
+                    global.
+                  </p>
+                </div>
+              </AppFormReveal>
 
-              <div className="mt-2 flex flex-col-reverse gap-3 md:flex-row md:justify-end">
+              <AppFormReveal
+                delay={140}
+                className="mt-2 flex flex-col-reverse gap-3 md:flex-row md:justify-end"
+              >
                 <button
                   type="button"
                   onClick={closeRegisterModal}
@@ -1451,15 +1575,15 @@ export default function AdminEmployeesPage() {
                       ? "Update Employee"
                       : "Save Employee"}
                 </button>
-              </div>
+              </AppFormReveal>
             </form>
-          </div>
-        </div>
+          </AppModalPanel>
+        </AppModalMotion>
       )}
 
       {employeeAlert && alertTheme ? (
         <div
-          className={`fixed right-4 top-4 z-[9999] w-[calc(100vw-2rem)] max-w-md transition-all duration-300 ease-out md:right-7 md:top-7 ${
+          className={`employee-alert-enter fixed right-4 top-4 z-[9999] w-[calc(100vw-2rem)] max-w-md transition-all duration-300 ease-out md:right-7 md:top-7 ${
             isAlertClosing
               ? "translate-x-8 scale-95 opacity-0"
               : "translate-x-0 scale-100 opacity-100"
