@@ -1,62 +1,208 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+type NominatimAddress = Record<string, string | undefined>;
+
+type NominatimResponse = {
+  error?: string;
+  lat?: string;
+  lon?: string;
+  name?: string;
+  display_name?: string;
+  address?: NominatimAddress;
+};
+
+function clean(value?: string | null) {
+  return String(value || "").trim();
+}
+
+function pickAddress(address: NominatimAddress, keys: string[]) {
+  for (const key of keys) {
+    const value = clean(address[key]);
+
+    if (value) {
+      return value;
+    }
+  }
+
+  return "";
+}
+
+function buildPlaceName(data: NominatimResponse) {
+  const address = data.address || {};
+
+  return (
+    clean(data.name) ||
+    pickAddress(address, [
+      "office",
+      "company",
+      "building",
+      "amenity",
+      "shop",
+      "tourism",
+      "attraction",
+      "road",
+      "pedestrian",
+      "neighbourhood",
+      "suburb",
+      "village",
+      "town",
+      "city",
+    ])
+  );
+}
+
+function buildShortName(data: NominatimResponse) {
+  const address = data.address || {};
+
+  const houseNumber = clean(address.house_number);
+
+  const road = pickAddress(address, [
+    "road",
+    "pedestrian",
+    "footway",
+    "path",
+    "residential",
+  ]);
+
+  const neighbourhood = pickAddress(address, [
+    "neighbourhood",
+    "suburb",
+    "hamlet",
+    "village",
+    "city_district",
+  ]);
+
+  const city = pickAddress(address, [
+    "city",
+    "town",
+    "county",
+    "municipality",
+    "state_district",
+  ]);
+
+  const state = clean(address.state);
+  const postcode = clean(address.postcode);
+
+  const street = [road, houseNumber].filter(Boolean).join(" ");
+
+  return [street, neighbourhood, city, state, postcode]
+    .filter(Boolean)
+    .join(", ");
+}
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
 
-    const lat = searchParams.get("lat");
-    const lon = searchParams.get("lon") || searchParams.get("lng");
+    const latRaw = searchParams.get("lat");
+    const lonRaw = searchParams.get("lon") || searchParams.get("lng");
 
-    if (!lat || !lon) {
+    const latitude = Number(latRaw);
+    const longitude = Number(lonRaw);
+
+    if (
+      !latRaw ||
+      !lonRaw ||
+      Number.isNaN(latitude) ||
+      Number.isNaN(longitude)
+    ) {
       return NextResponse.json(
         {
           success: false,
-          message: "Latitude dan longitude wajib diisi.",
+          message: "Latitude dan longitude wajib berupa angka.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(
-        lat
-      )}&lon=${encodeURIComponent(lon)}&zoom=18&addressdetails=1`,
-      {
-        method: "GET",
-        headers: {
-          "Accept-Language": "id",
-          "User-Agent": "FaceAttend/1.0",
-        },
-        cache: "no-store",
-      }
-    );
-
-    if (!response.ok) {
+    if (latitude < -90 || latitude > 90) {
       return NextResponse.json(
         {
           success: false,
-          message: "Gagal mengambil alamat lokasi.",
+          message: "Latitude tidak valid.",
         },
-        { status: 500 }
+        { status: 400 },
       );
     }
 
-    const data = await response.json();
+    if (longitude < -180 || longitude > 180) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Longitude tidak valid.",
+        },
+        { status: 400 },
+      );
+    }
 
-    return NextResponse.json({
-      success: true,
-      address: data.display_name || "Alamat tidak ditemukan.",
+    const reverseUrl = new URL("https://nominatim.openstreetmap.org/reverse");
+
+    reverseUrl.searchParams.set("format", "jsonv2");
+    reverseUrl.searchParams.set("lat", String(latitude));
+    reverseUrl.searchParams.set("lon", String(longitude));
+    reverseUrl.searchParams.set("zoom", "18");
+    reverseUrl.searchParams.set("addressdetails", "1");
+
+    const response = await fetch(reverseUrl.toString(), {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "Accept-Language": "id,en;q=0.8",
+        "User-Agent": "FaceAttend/1.0 Development",
+      },
+      cache: "no-store",
     });
+
+    const data = (await response.json()) as NominatimResponse;
+
+    if (!response.ok || data.error) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: data.error || "Gagal mengambil alamat lokasi.",
+        },
+        { status: response.status || 500 },
+      );
+    }
+
+    const placeName = buildPlaceName(data);
+    const shortName = buildShortName(data);
+    const displayName = clean(data.display_name) || shortName || placeName;
+
+    return NextResponse.json(
+      {
+        success: true,
+        source: "openstreetmap_nominatim",
+
+        display_name: displayName,
+        displayName,
+
+        name: placeName,
+        placeName,
+
+        shortName,
+
+        lat: data.lat,
+        lon: data.lon,
+
+        address: data.address || {},
+      },
+      { status: 200 },
+    );
   } catch (error) {
+    console.error("REVERSE_GEOCODE_ERROR:", error);
+
     return NextResponse.json(
       {
         success: false,
         message: "Gagal mengambil alamat lokasi.",
         error: error instanceof Error ? error.message : String(error),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

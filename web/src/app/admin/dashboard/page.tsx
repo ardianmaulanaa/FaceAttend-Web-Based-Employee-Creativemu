@@ -136,6 +136,54 @@ async function readJsonResponse(response: Response) {
   }
 }
 
+function DashboardMotionStyles() {
+  return (
+    <style>{`
+      @keyframes dashboardEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes dashboardRowEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .dashboard-enter {
+        animation: dashboardEnter 320ms ease-out both;
+      }
+
+      .dashboard-row-enter {
+        opacity: 0;
+        animation: dashboardRowEnter 300ms ease-out both;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .dashboard-enter,
+        .dashboard-row-enter {
+          animation: none !important;
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      }
+    `}</style>
+  );
+}
+
 export default function AdminDashboardPage() {
   const [data, setData] = useState<DashboardResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -172,7 +220,7 @@ export default function AdminDashboardPage() {
   }
 
   useEffect(() => {
-    loadDashboardData();
+    void loadDashboardData();
   }, []);
 
   const stats = useMemo(() => {
@@ -208,10 +256,12 @@ export default function AdminDashboardPage() {
 
   return (
     <MobileShell variant="admin">
+      <DashboardMotionStyles />
+
       <AppHeader title="Admin Dashboard" variant="admin" />
 
       <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 pb-28 md:px-10 lg:px-16">
-        <div className="overflow-hidden rounded-3xl border border-blue-100 bg-white shadow-xl shadow-slate-300/30">
+        <div className="dashboard-enter overflow-hidden rounded-3xl border border-blue-100 bg-white shadow-xl shadow-slate-300/30">
           <div className="grid gap-0 lg:grid-cols-[1fr_1fr]">
             <div className="bg-[#123c8c] p-6 text-white md:p-8">
               <div className="flex items-center gap-3">
@@ -220,10 +270,6 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <div>
-                  <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-100">
-                    Admin Control Center
-                  </p>
-
                   <h2 className="mt-1 text-3xl font-black tracking-tight md:text-4xl">
                     Attendance Overview
                   </h2>
@@ -238,7 +284,10 @@ export default function AdminDashboardPage() {
                 return (
                   <div
                     key={`${item.label}-${index}`}
-                    className="rounded-2xl border border-blue-100 bg-[#f6f8ff] p-4"
+                    className="dashboard-row-enter rounded-2xl border border-blue-100 bg-[#f6f8ff] p-4 transition duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-lg hover:shadow-slate-200/60"
+                    style={{
+                      animationDelay: `${index * 70}ms`,
+                    }}
                   >
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-xs font-bold text-slate-500">
@@ -271,12 +320,17 @@ export default function AdminDashboardPage() {
         </div>
 
         {errorMessage ? (
-          <div className="rounded-3xl border border-red-100 bg-red-50 p-5 text-sm font-bold text-red-700">
+          <div className="dashboard-row-enter rounded-3xl border border-red-100 bg-red-50 p-5 text-sm font-bold text-red-700">
             {errorMessage}
           </div>
         ) : null}
 
-        <div className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-6">
+        <div
+          className="dashboard-enter rounded-3xl border border-white/70 bg-white/90 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-6"
+          style={{
+            animationDelay: "100ms",
+          }}
+        >
           <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.22em] text-[#123c8c]">
@@ -301,7 +355,7 @@ export default function AdminDashboardPage() {
 
             <div className="divide-y divide-blue-100 bg-white">
               {isLoading ? (
-                <div className="flex items-center justify-center gap-2 px-5 py-10 text-sm font-bold text-slate-500">
+                <div className="dashboard-row-enter flex items-center justify-center gap-2 px-5 py-10 text-sm font-bold text-slate-500">
                   <Loader2 size={18} className="animate-spin" />
                   Mengambil data absensi...
                 </div>
@@ -309,7 +363,10 @@ export default function AdminDashboardPage() {
                 data.recentAttendance.map((item, index) => (
                   <div
                     key={getAttendanceKey(item, index)}
-                    className="grid gap-3 px-5 py-4 text-sm md:grid-cols-[0.9fr_1.4fr_0.8fr_0.8fr_0.8fr_0.8fr] md:items-center"
+                    className="dashboard-row-enter grid gap-3 px-5 py-4 text-sm transition duration-200 hover:bg-[#f8fbff] md:grid-cols-[0.9fr_1.4fr_0.8fr_0.8fr_0.8fr_0.8fr] md:items-center"
+                    style={{
+                      animationDelay: `${index * 45}ms`,
+                    }}
                   >
                     <div>
                       <p className="font-black text-[#123c8c]">
@@ -363,7 +420,7 @@ export default function AdminDashboardPage() {
                   </div>
                 ))
               ) : (
-                <div className="px-5 py-10 text-center text-sm font-bold text-slate-500">
+                <div className="dashboard-row-enter px-5 py-10 text-center text-sm font-bold text-slate-500">
                   Belum ada data check-in atau check-out hari ini.
                 </div>
               )}

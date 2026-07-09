@@ -135,6 +135,94 @@ async function readJsonResponse(response: Response) {
   }
 }
 
+function PositionMotionStyles() {
+  return (
+    <style>{`
+      @keyframes positionEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes positionRowEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes positionModalBackdrop {
+        0% {
+          opacity: 0;
+        }
+
+        100% {
+          opacity: 1;
+        }
+      }
+
+      @keyframes positionModalPanel {
+        0% {
+          opacity: 0;
+          transform: translateY(16px) scale(0.985);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      .position-enter {
+        animation: positionEnter 320ms ease-out both;
+      }
+
+      .position-row-enter {
+        opacity: 0;
+        animation: positionRowEnter 300ms ease-out both;
+      }
+
+      .position-modal-backdrop {
+        animation: positionModalBackdrop 180ms ease-out both;
+      }
+
+      .position-modal-panel {
+        animation: positionModalPanel 260ms ease-out both;
+        transform-origin: center bottom;
+      }
+
+      .position-field {
+        transition:
+          border-color 180ms ease,
+          background-color 180ms ease,
+          box-shadow 180ms ease;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .position-enter,
+        .position-row-enter,
+        .position-modal-backdrop,
+        .position-modal-panel {
+          animation: none !important;
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      }
+    `}</style>
+  );
+}
+
 function FieldLabel({ children }: { children: ReactNode }) {
   return (
     <label className="text-sm font-black text-slate-500">{children}</label>
@@ -175,7 +263,7 @@ function SelectField(props: {
           value={value}
           onChange={(event) => onChange(event.target.value)}
           disabled={disabled}
-          className={`h-[58px] w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] pr-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 ${
+          className={`position-field h-[58px] w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] pr-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 ${
             icon ? "pl-11" : "px-4"
           }`}
         >
@@ -206,7 +294,7 @@ function SearchField(props: {
           value={value}
           onChange={(event) => onChange(event.target.value)}
           placeholder="Cari jabatan, unit, divisi, atau kantor..."
-          className="h-[58px] w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] pl-12 pr-4 text-sm font-semibold text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#123c8c] focus:bg-white"
+          className="position-field h-[58px] w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] pl-12 pr-4 text-sm font-semibold text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
         />
       </div>
     </div>
@@ -381,7 +469,7 @@ export default function AdminPositionsPage() {
   }
 
   useEffect(() => {
-    loadPositions();
+    void loadPositions();
   }, []);
 
   function openCreateModal() {
@@ -531,10 +619,12 @@ export default function AdminPositionsPage() {
 
   return (
     <MobileShell variant="admin">
+      <PositionMotionStyles />
+
       <AppHeader title="Daftar Jabatan" variant="admin" />
 
       <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 pb-28 md:px-10 lg:px-16">
-        <div className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-xl shadow-slate-300/30">
+        <div className="position-enter overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-xl shadow-slate-300/30">
           <div className="bg-[#123c8c] p-6 text-white md:p-8">
             <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
               <div>
@@ -546,7 +636,7 @@ export default function AdminPositionsPage() {
               <button
                 type="button"
                 onClick={openCreateModal}
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-white px-5 text-sm font-black text-[#123c8c] shadow-lg shadow-blue-950/20 transition hover:bg-blue-50 active:scale-[0.98]"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-white px-5 text-sm font-black text-[#123c8c] shadow-lg shadow-blue-950/20 transition duration-200 hover:-translate-y-0.5 hover:bg-blue-50 active:scale-[0.98]"
               >
                 <Plus size={18} />
                 Tambah Jabatan
@@ -555,7 +645,10 @@ export default function AdminPositionsPage() {
           </div>
 
           <div className="p-5 md:p-8">
-            <div className="space-y-4">
+            <div
+              className="position-row-enter space-y-4"
+              style={{ animationDelay: "80ms" }}
+            >
               <div className="grid gap-4 xl:grid-cols-[minmax(320px,1.2fr)_minmax(230px,0.8fr)_minmax(230px,0.8fr)]">
                 <SearchField value={search} onChange={setSearch} />
 
@@ -650,12 +743,15 @@ export default function AdminPositionsPage() {
             </div>
 
             {errorMessage ? (
-              <div className="mt-5 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-black text-red-700">
+              <div className="position-row-enter mt-5 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-black text-red-700">
                 {errorMessage}
               </div>
             ) : null}
 
-            <div className="mt-8 overflow-hidden rounded-2xl border border-blue-100">
+            <div
+              className="position-row-enter mt-8 overflow-hidden rounded-2xl border border-blue-100"
+              style={{ animationDelay: "130ms" }}
+            >
               <div className="hidden grid-cols-[0.3fr_1.15fr_1fr_1fr_1fr_0.75fr_1fr] bg-[#f6f8ff] px-5 py-4 text-xs font-black uppercase tracking-[0.18em] text-[#123c8c] md:grid">
                 <p>#</p>
                 <p>Jabatan</p>
@@ -668,14 +764,14 @@ export default function AdminPositionsPage() {
 
               <div className="divide-y divide-blue-50 bg-white">
                 {isLoading ? (
-                  <div className="px-5 py-10 text-center">
+                  <div className="position-row-enter px-5 py-10 text-center">
                     <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#123c8c]" />
                     <p className="mt-3 text-sm font-black text-slate-600">
                       Mengambil data jabatan...
                     </p>
                   </div>
                 ) : filteredPositions.length === 0 ? (
-                  <div className="px-5 py-10 text-center">
+                  <div className="position-row-enter px-5 py-10 text-center">
                     <BriefcaseBusiness
                       className="mx-auto text-slate-300"
                       size={36}
@@ -696,7 +792,10 @@ export default function AdminPositionsPage() {
                     return (
                       <div
                         key={position.id}
-                        className="grid gap-4 px-4 py-4 text-sm transition hover:bg-[#f8fbff] md:grid-cols-[0.3fr_1.15fr_1fr_1fr_1fr_0.75fr_1fr] md:items-center md:px-5 md:py-6"
+                        className="position-row-enter grid gap-4 px-4 py-4 text-sm transition duration-200 hover:bg-[#f8fbff] md:grid-cols-[0.3fr_1.15fr_1fr_1fr_1fr_0.75fr_1fr] md:items-center md:px-5 md:py-6"
+                        style={{
+                          animationDelay: `${index * 55}ms`,
+                        }}
                       >
                         <div className="flex items-start justify-between gap-3 md:block">
                           <div className="flex items-center gap-3">
@@ -802,8 +901,8 @@ export default function AdminPositionsPage() {
       </section>
 
       {isModalOpen ? (
-        <div className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/50 px-4 pb-4 backdrop-blur-sm md:items-center md:pb-0">
-          <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] bg-white p-5 shadow-2xl shadow-slate-950/30 md:p-7">
+        <div className="position-modal-backdrop fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/50 px-4 pb-4 backdrop-blur-sm md:items-center md:pb-0">
+          <div className="position-modal-panel max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] bg-white p-5 shadow-2xl shadow-slate-950/30 md:p-7">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.22em] text-[#123c8c]">
@@ -822,14 +921,14 @@ export default function AdminPositionsPage() {
               <button
                 type="button"
                 onClick={closeModal}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 transition active:scale-[0.96]"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 transition hover:bg-slate-200 active:scale-[0.96]"
               >
                 <X size={20} />
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-              <div className="rounded-[1.6rem] border border-blue-100 bg-[#f8fbff] p-4">
+              <div className="position-row-enter rounded-[1.6rem] border border-blue-100 bg-[#f8fbff] p-4">
                 <div className="grid gap-4 md:grid-cols-3">
                   <SelectField
                     label="Kantor"
@@ -900,7 +999,10 @@ export default function AdminPositionsPage() {
                 </div>
 
                 {form.office_id && formDepartments.length === 0 ? (
-                  <div className="mt-4 rounded-2xl border border-amber-100 bg-amber-50 p-4">
+                  <div
+                    className="position-row-enter mt-4 rounded-2xl border border-amber-100 bg-amber-50 p-4"
+                    style={{ animationDelay: "40ms" }}
+                  >
                     <p className="text-sm font-black text-amber-700">
                       Divisi belum tersedia untuk kantor ini
                     </p>
@@ -911,7 +1013,10 @@ export default function AdminPositionsPage() {
                 ) : null}
 
                 {form.department_id && formUnits.length === 0 ? (
-                  <div className="mt-4 rounded-2xl border border-amber-100 bg-amber-50 p-4">
+                  <div
+                    className="position-row-enter mt-4 rounded-2xl border border-amber-100 bg-amber-50 p-4"
+                    style={{ animationDelay: "40ms" }}
+                  >
                     <p className="text-sm font-black text-amber-700">
                       Unit belum tersedia untuk divisi ini
                     </p>
@@ -922,7 +1027,10 @@ export default function AdminPositionsPage() {
                 ) : null}
               </div>
 
-              <div>
+              <div
+                className="position-row-enter"
+                style={{ animationDelay: "40ms" }}
+              >
                 <FieldLabel>Nama Jabatan</FieldLabel>
 
                 <input
@@ -934,7 +1042,7 @@ export default function AdminPositionsPage() {
                     }))
                   }
                   placeholder="Contoh: Backend Developer, Mobile Developer, Finance Staff"
-                  className="mt-3 h-[58px] w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                  className="position-field mt-3 h-[58px] w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 />
               </div>
 
@@ -947,12 +1055,16 @@ export default function AdminPositionsPage() {
                     status: value,
                   }))
                 }
+                className="position-row-enter"
               >
                 <option value="active">Aktif</option>
                 <option value="inactive">Nonaktif</option>
               </SelectField>
 
-              <div className="rounded-2xl border border-blue-100 bg-[#f6f8ff] p-4">
+              <div
+                className="position-row-enter rounded-2xl border border-blue-100 bg-[#f6f8ff] p-4"
+                style={{ animationDelay: "120ms" }}
+              >
                 <p className="text-sm font-black text-[#123c8c]">
                   Relasi Jabatan
                 </p>
@@ -962,11 +1074,14 @@ export default function AdminPositionsPage() {
                 </p>
               </div>
 
-              <div className="flex flex-col-reverse gap-3 pt-2 md:flex-row md:justify-end">
+              <div
+                className="position-row-enter flex flex-col-reverse gap-3 pt-2 md:flex-row md:justify-end"
+                style={{ animationDelay: "160ms" }}
+              >
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-black text-slate-600 transition hover:bg-slate-200"
+                  className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-black text-slate-600 transition hover:bg-slate-200 active:scale-[0.98]"
                 >
                   Cancel
                 </button>

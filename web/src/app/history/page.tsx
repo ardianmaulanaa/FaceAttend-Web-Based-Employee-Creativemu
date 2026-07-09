@@ -54,13 +54,13 @@ const years = [2024, 2025, 2026, 2027];
 function formatDateLabel(date: string) {
   const parsedDate = new Date(`${date}T00:00:00`);
   const weekday = new Intl.DateTimeFormat("id-ID", { weekday: "long" }).format(
-    parsedDate
+    parsedDate,
   );
   const day = new Intl.DateTimeFormat("id-ID", { day: "2-digit" }).format(
-    parsedDate
+    parsedDate,
   );
   const month = new Intl.DateTimeFormat("id-ID", { month: "long" }).format(
-    parsedDate
+    parsedDate,
   );
 
   return `${weekday}, ${day} ${month}`;
@@ -79,13 +79,18 @@ function formatWorkDuration(minutes: number) {
   const hours = Math.floor(minutes / 60);
   const remainingMinutes = minutes % 60;
 
-  if (hours > 0 && remainingMinutes > 0) return `${hours}j ${remainingMinutes}m`;
+  if (hours > 0 && remainingMinutes > 0) {
+    return `${hours}j ${remainingMinutes}m`;
+  }
+
   if (hours > 0) return `${hours}j`;
 
   return `${remainingMinutes}m`;
 }
 
-function getStatusVariant(status: string): "green" | "yellow" | "red" | "gray" | "blue" {
+function getStatusVariant(
+  status: string,
+): "green" | "yellow" | "red" | "gray" | "blue" {
   const value = status.toLowerCase();
 
   if (value.includes("terlambat")) return "yellow";
@@ -101,9 +106,115 @@ function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-function HeroBadge({ children }: { children: ReactNode }) {
+function HistoryMotionStyles() {
   return (
-    <span className="rounded-full bg-white/15 px-4 py-2 text-xs font-black text-white ring-1 ring-white/20">
+    <style>{`
+      @keyframes historyEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes historyRowEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes historyIconPop {
+        0% {
+          opacity: 0;
+          transform: scale(0.92) translateY(8px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+
+      @keyframes historyFloatGlow {
+        0%,
+        100% {
+          transform: translate3d(0, 0, 0) scale(1);
+        }
+
+        50% {
+          transform: translate3d(12px, -10px, 0) scale(1.04);
+        }
+      }
+
+      .history-enter {
+        animation: historyEnter 340ms ease-out both;
+      }
+
+      .history-row-enter {
+        opacity: 0;
+        animation: historyRowEnter 300ms ease-out both;
+      }
+
+      .history-icon-pop {
+        animation: historyIconPop 280ms ease-out both;
+      }
+
+      .history-float-glow {
+        animation: historyFloatGlow 6s ease-in-out infinite;
+      }
+
+      .history-field {
+        transition:
+          border-color 180ms ease,
+          background-color 180ms ease,
+          box-shadow 180ms ease,
+          transform 180ms ease;
+      }
+
+      .history-field:focus-within {
+        transform: translateY(-1px);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .history-enter,
+        .history-row-enter,
+        .history-icon-pop,
+        .history-float-glow {
+          animation: none !important;
+          opacity: 1 !important;
+          transform: none !important;
+        }
+
+        .history-field:focus-within {
+          transform: none !important;
+        }
+      }
+    `}</style>
+  );
+}
+
+function HeroBadge({
+  children,
+  delay = "0ms",
+}: {
+  children: ReactNode;
+  delay?: string;
+}) {
+  return (
+    <span
+      className="history-row-enter rounded-full bg-white/15 px-4 py-2 text-xs font-black text-white ring-1 ring-white/20"
+      style={{ animationDelay: delay }}
+    >
       {children}
     </span>
   );
@@ -111,7 +222,7 @@ function HeroBadge({ children }: { children: ReactNode }) {
 
 function MobileHeader() {
   return (
-    <section className="mx-auto max-w-7xl px-5 pt-7 md:hidden">
+    <section className="history-enter mx-auto max-w-7xl px-5 pt-7 md:hidden">
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.28em] text-[#123c8c]">
@@ -123,7 +234,7 @@ function MobileHeader() {
           </h1>
         </div>
 
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#123c8c] text-white ring-1 ring-[#123c8c]">
+        <div className="history-icon-pop flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#123c8c] text-white ring-1 ring-[#123c8c]">
           <History size={24} strokeWidth={2.6} />
         </div>
       </div>
@@ -144,13 +255,13 @@ function DesktopHero({
 }) {
   return (
     <section className="mx-auto hidden max-w-7xl px-10 pt-8 md:block lg:px-16">
-      <div className="relative overflow-hidden rounded-[2.2rem] bg-[#123c8c] p-8 text-white">
-        <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-white/10" />
-        <div className="absolute bottom-[-7rem] right-24 h-60 w-60 rounded-full bg-blue-300/10" />
+      <div className="history-enter relative overflow-hidden rounded-[2.2rem] bg-[#123c8c] p-8 text-white shadow-2xl shadow-blue-900/25">
+        <div className="history-float-glow absolute -right-16 -top-20 h-64 w-64 rounded-full bg-white/10" />
+        <div className="history-float-glow absolute bottom-[-7rem] right-24 h-60 w-60 rounded-full bg-blue-300/10" />
 
         <div className="relative z-10 flex items-center justify-between gap-8">
           <div className="flex items-center gap-5">
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[1.6rem] bg-white/15 text-white ring-1 ring-white/20">
+            <div className="history-icon-pop flex h-20 w-20 shrink-0 items-center justify-center rounded-[1.6rem] bg-white/15 text-white ring-1 ring-white/20">
               <History size={38} strokeWidth={2.5} />
             </div>
 
@@ -165,16 +276,18 @@ function DesktopHero({
               </p>
 
               <div className="mt-4 flex flex-wrap gap-2">
-                <HeroBadge>
+                <HeroBadge delay="80ms">
                   {monthLabel} {year}
                 </HeroBadge>
-                <HeroBadge>{total} Data</HeroBadge>
-                <HeroBadge>{sort === "desc" ? "Terbaru" : "Terlama"}</HeroBadge>
+                <HeroBadge delay="120ms">{total} Data</HeroBadge>
+                <HeroBadge delay="160ms">
+                  {sort === "desc" ? "Terbaru" : "Terlama"}
+                </HeroBadge>
               </div>
             </div>
           </div>
 
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-white/80 ring-1 ring-white/20">
+          <div className="history-icon-pop flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-white/80 ring-1 ring-white/20">
             <CalendarDays size={28} strokeWidth={2.4} />
           </div>
         </div>
@@ -187,26 +300,33 @@ function StatCard({
   label,
   value,
   large = false,
+  delay = "0ms",
 }: {
   label: string;
   value: ReactNode;
   large?: boolean;
+  delay?: string;
 }) {
   return (
-    <AppCard padding="sm" className="rounded-3xl bg-[#f8fbff] shadow-none">
-      <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">
-        {label}
-      </p>
-
-      <p
-        className={cn(
-          "mt-2 font-black text-slate-950",
-          large ? "truncate text-lg md:text-2xl" : "text-2xl"
-        )}
+    <div className="history-row-enter" style={{ animationDelay: delay }}>
+      <AppCard
+        padding="sm"
+        className="rounded-3xl bg-[#f8fbff] shadow-none transition duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-lg hover:shadow-slate-200/60"
       >
-        {value}
-      </p>
-    </AppCard>
+        <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">
+          {label}
+        </p>
+
+        <p
+          className={cn(
+            "mt-2 font-black text-slate-950",
+            large ? "truncate text-lg md:text-2xl" : "text-2xl",
+          )}
+        >
+          {value}
+        </p>
+      </AppCard>
+    </div>
   );
 }
 
@@ -232,9 +352,12 @@ function FilterCard({
   onApply: () => void;
 }) {
   return (
-    <AppCard padding="md" className="rounded-[1.8rem] shadow-none md:p-6">
+    <AppCard
+      padding="md"
+      className="history-enter rounded-[1.8rem] shadow-none md:p-6"
+    >
       <div className="flex items-center gap-4">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
+        <div className="history-icon-pop flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
           <CalendarDays size={24} strokeWidth={2.6} />
         </div>
 
@@ -250,38 +373,46 @@ function FilterCard({
       </div>
 
       <div className="mt-5 grid gap-3 md:grid-cols-[1fr_1fr_1fr_auto]">
-        <AppSelect
-          value={month}
-          onChange={(event) => onMonthChange(Number(event.target.value))}
-          className="!mt-0 h-13 md:h-14"
-        >
-          {months.map((item) => (
-            <option key={item.value} value={item.value}>
-              {item.label}
-            </option>
-          ))}
-        </AppSelect>
+        <div className="history-field">
+          <AppSelect
+            value={month}
+            onChange={(event) => onMonthChange(Number(event.target.value))}
+            className="!mt-0 h-13 md:h-14"
+          >
+            {months.map((item) => (
+              <option key={item.value} value={item.value}>
+                {item.label}
+              </option>
+            ))}
+          </AppSelect>
+        </div>
 
-        <AppSelect
-          value={year}
-          onChange={(event) => onYearChange(Number(event.target.value))}
-          className="!mt-0 h-13 md:h-14"
-        >
-          {years.map((item) => (
-            <option key={item} value={item}>
-              {item}
-            </option>
-          ))}
-        </AppSelect>
+        <div className="history-field">
+          <AppSelect
+            value={year}
+            onChange={(event) => onYearChange(Number(event.target.value))}
+            className="!mt-0 h-13 md:h-14"
+          >
+            {years.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </AppSelect>
+        </div>
 
-        <AppSelect
-          value={sort}
-          onChange={(event) => onSortChange(event.target.value as "desc" | "asc")}
-          className="!mt-0 h-13 md:h-14"
-        >
-          <option value="desc">Terbaru</option>
-          <option value="asc">Terlama</option>
-        </AppSelect>
+        <div className="history-field">
+          <AppSelect
+            value={sort}
+            onChange={(event) =>
+              onSortChange(event.target.value as "desc" | "asc")
+            }
+            className="!mt-0 h-13 md:h-14"
+          >
+            <option value="desc">Terbaru</option>
+            <option value="asc">Terlama</option>
+          </AppSelect>
+        </div>
 
         <AppButton
           type="button"
@@ -303,11 +434,20 @@ function FilterCard({
   );
 }
 
-function AttendanceRecordCard({ item }: { item: AttendanceRecord }) {
+function AttendanceRecordCard({
+  item,
+  delay = "0ms",
+}: {
+  item: AttendanceRecord;
+  delay?: string;
+}) {
   const shortDate = formatShortDate(item.date).split(" ");
   const note =
     item.lateMinutes > 0
-      ? { text: `Terlambat ${item.lateMinutes} menit`, className: "text-orange-600" }
+      ? {
+          text: `Terlambat ${item.lateMinutes} menit`,
+          className: "text-orange-600",
+        }
       : item.earlyLeaveMinutes > 0
         ? {
             text: `Pulang cepat ${item.earlyLeaveMinutes} menit`,
@@ -318,7 +458,8 @@ function AttendanceRecordCard({ item }: { item: AttendanceRecord }) {
   return (
     <Link
       href={`/history/${item.id}`}
-      className="block rounded-3xl border border-blue-100 bg-white p-5 transition hover:bg-[#f8fbff] active:scale-[0.99]"
+      className="history-row-enter block rounded-3xl border border-blue-100 bg-white p-5 transition duration-200 hover:-translate-y-0.5 hover:bg-[#f8fbff] hover:shadow-xl hover:shadow-slate-200/60 active:scale-[0.99]"
+      style={{ animationDelay: delay }}
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 gap-4">
@@ -364,7 +505,7 @@ function AttendanceRecordCard({ item }: { item: AttendanceRecord }) {
           </div>
         </div>
 
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#f8fbff] text-slate-400">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#f8fbff] text-slate-400 transition group-hover:text-[#123c8c]">
           <ChevronRight size={20} strokeWidth={2.6} />
         </div>
       </div>
@@ -384,21 +525,27 @@ function HistoryContent({
   year: number;
 }) {
   if (isLoading) {
-    return <AppLoadingState text="Memuat riwayat absensi..." />;
+    return (
+      <div className="history-row-enter">
+        <AppLoadingState text="Memuat riwayat absensi..." />
+      </div>
+    );
   }
 
   if (!records.length) {
     return (
-      <AppEmptyState
-        icon={<CalendarDays size={28} strokeWidth={2.6} />}
-        title="Belum ada data absensi"
-        description={`Data absensi untuk periode ${monthLabel} ${year} belum tersedia.`}
-      />
+      <div className="history-row-enter">
+        <AppEmptyState
+          icon={<CalendarDays size={28} strokeWidth={2.6} />}
+          title="Belum ada data absensi"
+          description={`Data absensi untuk periode ${monthLabel} ${year} belum tersedia.`}
+        />
+      </div>
     );
   }
 
-  return records.map((item) => (
-    <AttendanceRecordCard key={item.id} item={item} />
+  return records.map((item, index) => (
+    <AttendanceRecordCard key={item.id} item={item} delay={`${index * 55}ms`} />
   ));
 }
 
@@ -413,7 +560,7 @@ export default function HistoryPage() {
 
   const currentMonthLabel = useMemo(
     () => months.find((item) => item.value === month)?.label || "",
-    [month]
+    [month],
   );
 
   async function getHistory() {
@@ -422,7 +569,7 @@ export default function HistoryPage() {
 
       const response = await fetch(
         `/api/attendance/history?month=${month}&year=${year}&sort=${sort}`,
-        { method: "GET", cache: "no-store" }
+        { method: "GET", cache: "no-store" },
       );
 
       if (!response.ok) {
@@ -442,12 +589,14 @@ export default function HistoryPage() {
   }
 
   useEffect(() => {
-    getHistory();
+    void getHistory();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [month, year, sort]);
 
   return (
     <MobileShell variant="employee" withBottomPadding={false}>
+      <HistoryMotionStyles />
+
       <div className="hidden md:block">
         <AppHeader
           title="History"
@@ -467,7 +616,7 @@ export default function HistoryPage() {
           sort={sort}
         />
 
-        <section className="mx-auto max-w-7xl rounded-t-[2.5rem] bg-white px-5 pb-10 pt-8 md:mt-8 md:rounded-[2.5rem] md:px-8 lg:px-10">
+        <section className="history-enter mx-auto max-w-7xl rounded-t-[2.5rem] bg-white px-5 pb-10 pt-8 md:mt-8 md:rounded-[2.5rem] md:px-8 lg:px-10">
           <FilterCard
             month={month}
             year={year}
@@ -481,9 +630,14 @@ export default function HistoryPage() {
           />
 
           <div className="mt-6 grid grid-cols-3 gap-3">
-            <StatCard label="Total" value={records.length} />
-            <StatCard label="Bulan" value={currentMonthLabel} large />
-            <StatCard label="Tahun" value={year} />
+            <StatCard label="Total" value={records.length} delay="60ms" />
+            <StatCard
+              label="Bulan"
+              value={currentMonthLabel}
+              large
+              delay="100ms"
+            />
+            <StatCard label="Tahun" value={year} delay="140ms" />
           </div>
 
           <div className="mt-6 space-y-4">

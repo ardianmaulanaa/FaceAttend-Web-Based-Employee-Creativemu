@@ -134,6 +134,94 @@ async function readJsonResponse(response: Response) {
   }
 }
 
+function ShiftMotionStyles() {
+  return (
+    <style>{`
+      @keyframes shiftEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes shiftRowEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes shiftModalBackdrop {
+        0% {
+          opacity: 0;
+        }
+
+        100% {
+          opacity: 1;
+        }
+      }
+
+      @keyframes shiftModalPanel {
+        0% {
+          opacity: 0;
+          transform: translateY(16px) scale(0.985);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      .shift-enter {
+        animation: shiftEnter 320ms ease-out both;
+      }
+
+      .shift-row-enter {
+        opacity: 0;
+        animation: shiftRowEnter 300ms ease-out both;
+      }
+
+      .shift-modal-backdrop {
+        animation: shiftModalBackdrop 180ms ease-out both;
+      }
+
+      .shift-modal-panel {
+        animation: shiftModalPanel 260ms ease-out both;
+        transform-origin: center bottom;
+      }
+
+      .shift-field {
+        transition:
+          border-color 180ms ease,
+          background-color 180ms ease,
+          box-shadow 180ms ease;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .shift-enter,
+        .shift-row-enter,
+        .shift-modal-backdrop,
+        .shift-modal-panel {
+          animation: none !important;
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      }
+    `}</style>
+  );
+}
+
 export default function ShiftsPage() {
   const [shifts, setShifts] = useState<Shift[]>(presetShifts);
   const [search, setSearch] = useState("");
@@ -177,7 +265,7 @@ export default function ShiftsPage() {
   }
 
   useEffect(() => {
-    loadShifts();
+    void loadShifts();
   }, []);
 
   const filteredShifts = useMemo(() => {
@@ -294,10 +382,12 @@ export default function ShiftsPage() {
 
   return (
     <MobileShell variant="admin">
+      <ShiftMotionStyles />
+
       <AppHeader title="Daftar Shift" variant="admin" />
 
       <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 pb-28 md:px-10 lg:px-16">
-        <div className="rounded-[2rem] border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-8">
+        <div className="shift-enter rounded-[2rem] border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-8">
           <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.24em] text-[#123c8c]">
@@ -309,7 +399,10 @@ export default function ShiftsPage() {
               </h1>
             </div>
 
-            <div className="w-full md:w-72">
+            <div
+              className="shift-row-enter w-full md:w-72"
+              style={{ animationDelay: "70ms" }}
+            >
               <label className="mb-2 block text-sm font-black text-slate-500">
                 Filter Shift
               </label>
@@ -317,7 +410,7 @@ export default function ShiftsPage() {
               <select
                 value={shiftFilter}
                 onChange={(event) => setShiftFilter(event.target.value)}
-                className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                className="shift-field w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
               >
                 {shiftFilterOptions.map((item) => (
                   <option key={item.value} value={item.value}>
@@ -328,7 +421,10 @@ export default function ShiftsPage() {
             </div>
           </div>
 
-          <div className="mt-8">
+          <div
+            className="shift-row-enter mt-8"
+            style={{ animationDelay: "110ms" }}
+          >
             <label className="text-sm font-black text-slate-500">
               Nama Shift
             </label>
@@ -344,7 +440,7 @@ export default function ShiftsPage() {
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Cari nama shift..."
-                  className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-4 pl-12 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                  className="shift-field w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-4 pl-12 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 />
               </div>
 
@@ -360,12 +456,15 @@ export default function ShiftsPage() {
           </div>
 
           {errorMessage ? (
-            <div className="mt-5 rounded-2xl border border-amber-100 bg-amber-50 p-4 text-sm font-black text-amber-700">
+            <div className="shift-row-enter mt-5 rounded-2xl border border-amber-100 bg-amber-50 p-4 text-sm font-black text-amber-700">
               {errorMessage}
             </div>
           ) : null}
 
-          <div className="mt-8 overflow-hidden rounded-2xl border border-blue-100">
+          <div
+            className="shift-row-enter mt-8 overflow-hidden rounded-2xl border border-blue-100"
+            style={{ animationDelay: "150ms" }}
+          >
             <div className="hidden grid-cols-[0.3fr_1.4fr_1fr_1fr_1fr] bg-[#f6f8ff] px-5 py-4 text-xs font-black uppercase tracking-[0.18em] text-[#123c8c] md:grid">
               <p>#</p>
               <p>Shift</p>
@@ -376,14 +475,14 @@ export default function ShiftsPage() {
 
             <div className="divide-y divide-blue-50 bg-white">
               {isLoading ? (
-                <div className="px-5 py-10 text-center">
+                <div className="shift-row-enter px-5 py-10 text-center">
                   <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#123c8c]" />
                   <p className="mt-3 text-sm font-black text-slate-600">
                     Mengambil data shift...
                   </p>
                 </div>
               ) : filteredShifts.length === 0 ? (
-                <div className="px-5 py-10 text-center">
+                <div className="shift-row-enter px-5 py-10 text-center">
                   <p className="font-black text-slate-700">
                     Data shift tidak ditemukan.
                   </p>
@@ -395,7 +494,10 @@ export default function ShiftsPage() {
                 filteredShifts.map((shift, index) => (
                   <div
                     key={shift.id}
-                    className="grid gap-4 px-4 py-4 text-sm transition hover:bg-[#f8fbff] md:grid-cols-[0.3fr_1.4fr_1fr_1fr_1fr] md:items-center md:px-5 md:py-6"
+                    className="shift-row-enter grid gap-4 px-4 py-4 text-sm transition duration-200 hover:bg-[#f8fbff] md:grid-cols-[0.3fr_1.4fr_1fr_1fr_1fr] md:items-center md:px-5 md:py-6"
+                    style={{
+                      animationDelay: `${index * 55}ms`,
+                    }}
                   >
                     <div className="flex items-start justify-between gap-3 md:block">
                       <div className="flex items-center gap-3">
@@ -487,8 +589,8 @@ export default function ShiftsPage() {
       </section>
 
       {isModalOpen && editingShift ? (
-        <div className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/50 px-4 pb-4 backdrop-blur-sm md:items-center md:pb-0">
-          <div className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-[2rem] bg-white p-5 shadow-2xl shadow-slate-950/30 md:p-7">
+        <div className="shift-modal-backdrop fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/50 px-4 pb-4 backdrop-blur-sm md:items-center md:pb-0">
+          <div className="shift-modal-panel max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-[2rem] bg-white p-5 shadow-2xl shadow-slate-950/30 md:p-7">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.22em] text-[#123c8c]">
@@ -507,14 +609,14 @@ export default function ShiftsPage() {
               <button
                 type="button"
                 onClick={closeModal}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 transition active:scale-[0.96]"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 transition hover:bg-slate-200 active:scale-[0.96]"
               >
                 <X size={20} />
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-              <div>
+              <div className="shift-row-enter">
                 <label className="mb-2 block text-sm font-black text-slate-700">
                   Nama Shift
                 </label>
@@ -524,7 +626,10 @@ export default function ShiftsPage() {
                 </div>
               </div>
 
-              <div>
+              <div
+                className="shift-row-enter"
+                style={{ animationDelay: "40ms" }}
+              >
                 <label className="mb-2 block text-sm font-black text-slate-700">
                   Toleransi Telat
                 </label>
@@ -540,11 +645,14 @@ export default function ShiftsPage() {
                     }))
                   }
                   placeholder="0"
-                  className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                  className="shift-field w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 />
               </div>
 
-              <div>
+              <div
+                className="shift-row-enter"
+                style={{ animationDelay: "80ms" }}
+              >
                 <label className="mb-2 block text-sm font-black text-slate-700">
                   Status Shift
                 </label>
@@ -557,7 +665,7 @@ export default function ShiftsPage() {
                       status: event.target.value,
                     }))
                   }
-                  className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                  className="shift-field w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 >
                   <option value="active">Aktif</option>
                   <option value="inactive">Nonaktif</option>
@@ -568,11 +676,14 @@ export default function ShiftsPage() {
                 </p>
               </div>
 
-              <div className="flex flex-col-reverse gap-3 pt-2 md:flex-row md:justify-end">
+              <div
+                className="shift-row-enter flex flex-col-reverse gap-3 pt-2 md:flex-row md:justify-end"
+                style={{ animationDelay: "120ms" }}
+              >
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-black text-slate-600 transition hover:bg-slate-200"
+                  className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-black text-slate-600 transition hover:bg-slate-200 active:scale-[0.98]"
                 >
                   Cancel
                 </button>

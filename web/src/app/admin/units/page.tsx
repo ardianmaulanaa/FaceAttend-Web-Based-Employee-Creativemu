@@ -92,6 +92,94 @@ async function readJsonResponse(response: Response) {
   }
 }
 
+function UnitMotionStyles() {
+  return (
+    <style>{`
+      @keyframes unitEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes unitRowEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes unitModalBackdrop {
+        0% {
+          opacity: 0;
+        }
+
+        100% {
+          opacity: 1;
+        }
+      }
+
+      @keyframes unitModalPanel {
+        0% {
+          opacity: 0;
+          transform: translateY(16px) scale(0.985);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      .unit-enter {
+        animation: unitEnter 320ms ease-out both;
+      }
+
+      .unit-row-enter {
+        opacity: 0;
+        animation: unitRowEnter 300ms ease-out both;
+      }
+
+      .unit-modal-backdrop {
+        animation: unitModalBackdrop 180ms ease-out both;
+      }
+
+      .unit-modal-panel {
+        animation: unitModalPanel 260ms ease-out both;
+        transform-origin: center bottom;
+      }
+
+      .unit-field {
+        transition:
+          border-color 180ms ease,
+          background-color 180ms ease,
+          box-shadow 180ms ease;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .unit-enter,
+        .unit-row-enter,
+        .unit-modal-backdrop,
+        .unit-modal-panel {
+          animation: none !important;
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      }
+    `}</style>
+  );
+}
+
 export default function UnitsPage() {
   const [units, setUnits] = useState<Unit[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -228,7 +316,7 @@ export default function UnitsPage() {
   }
 
   useEffect(() => {
-    loadUnits();
+    void loadUnits();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -367,10 +455,12 @@ export default function UnitsPage() {
 
   return (
     <MobileShell variant="admin">
+      <UnitMotionStyles />
+
       <AppHeader title="Daftar Unit" variant="admin" />
 
       <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 pb-28 md:px-10 lg:px-16">
-        <div className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-xl shadow-slate-300/30">
+        <div className="unit-enter overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-xl shadow-slate-300/30">
           <div className="bg-[#123c8c] p-6 text-white md:p-8">
             <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
               <div>
@@ -382,7 +472,7 @@ export default function UnitsPage() {
               <button
                 type="button"
                 onClick={openCreateModal}
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-white px-5 text-sm font-black text-[#123c8c] shadow-lg shadow-blue-950/20 transition hover:bg-blue-50 active:scale-[0.98]"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-white px-5 text-sm font-black text-[#123c8c] shadow-lg shadow-blue-950/20 transition duration-200 hover:-translate-y-0.5 hover:bg-blue-50 active:scale-[0.98]"
               >
                 <Plus size={18} />
                 Tambah Unit
@@ -391,7 +481,10 @@ export default function UnitsPage() {
           </div>
 
           <div className="p-5 md:p-8">
-            <div className="grid gap-3 md:grid-cols-[1fr_220px_220px_210px_auto]">
+            <div
+              className="unit-row-enter grid gap-3 md:grid-cols-[1fr_220px_220px_210px_auto]"
+              style={{ animationDelay: "80ms" }}
+            >
               <div>
                 <label className="text-sm font-black text-slate-500">
                   Nama Unit / Divisi / Kantor
@@ -407,7 +500,7 @@ export default function UnitsPage() {
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
                     placeholder="Cari unit, divisi, atau kantor..."
-                    className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-4 pl-12 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                    className="unit-field w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-4 pl-12 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                   />
                 </div>
               </div>
@@ -423,7 +516,7 @@ export default function UnitsPage() {
                     setOfficeFilter(event.target.value);
                     setDepartmentFilter("all");
                   }}
-                  className="mt-3 w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                  className="unit-field mt-3 w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 >
                   <option value="all">Semua Kantor</option>
                   <option value="none">Tanpa Kantor</option>
@@ -443,7 +536,7 @@ export default function UnitsPage() {
                 <select
                   value={departmentFilter}
                   onChange={(event) => setDepartmentFilter(event.target.value)}
-                  className="mt-3 w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                  className="unit-field mt-3 w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 >
                   <option value="all">Semua Divisi</option>
                   <option value="none">Tanpa Divisi</option>
@@ -466,7 +559,7 @@ export default function UnitsPage() {
                 <select
                   value={statusFilter}
                   onChange={(event) => setStatusFilter(event.target.value)}
-                  className="mt-3 w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                  className="unit-field mt-3 w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 >
                   {statusOptions.map((item) => (
                     <option key={item.value} value={item.value}>
@@ -497,12 +590,15 @@ export default function UnitsPage() {
             </div>
 
             {errorMessage ? (
-              <div className="mt-5 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-black text-red-700">
+              <div className="unit-row-enter mt-5 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-black text-red-700">
                 {errorMessage}
               </div>
             ) : null}
 
-            <div className="mt-8 overflow-hidden rounded-2xl border border-blue-100">
+            <div
+              className="unit-row-enter mt-8 overflow-hidden rounded-2xl border border-blue-100"
+              style={{ animationDelay: "130ms" }}
+            >
               <div className="hidden grid-cols-[0.3fr_1.2fr_1.1fr_1.1fr_0.75fr_0.75fr_1fr] bg-[#f6f8ff] px-5 py-4 text-xs font-black uppercase tracking-[0.18em] text-[#123c8c] md:grid">
                 <p>#</p>
                 <p>Unit</p>
@@ -515,14 +611,14 @@ export default function UnitsPage() {
 
               <div className="divide-y divide-blue-50 bg-white">
                 {isLoading ? (
-                  <div className="px-5 py-10 text-center">
+                  <div className="unit-row-enter px-5 py-10 text-center">
                     <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#123c8c]" />
                     <p className="mt-3 text-sm font-black text-slate-600">
                       Mengambil data unit...
                     </p>
                   </div>
                 ) : filteredUnits.length === 0 ? (
-                  <div className="px-5 py-10 text-center">
+                  <div className="unit-row-enter px-5 py-10 text-center">
                     <Building2 className="mx-auto text-slate-300" size={36} />
                     <p className="mt-3 font-black text-slate-700">
                       Data unit tidak ditemukan.
@@ -535,7 +631,10 @@ export default function UnitsPage() {
                   filteredUnits.map((unit, index) => (
                     <div
                       key={unit.id}
-                      className="grid gap-4 px-4 py-4 text-sm transition hover:bg-[#f8fbff] md:grid-cols-[0.3fr_1.2fr_1.1fr_1.1fr_0.75fr_0.75fr_1fr] md:items-center md:px-5 md:py-6"
+                      className="unit-row-enter grid gap-4 px-4 py-4 text-sm transition duration-200 hover:bg-[#f8fbff] md:grid-cols-[0.3fr_1.2fr_1.1fr_1.1fr_0.75fr_0.75fr_1fr] md:items-center md:px-5 md:py-6"
+                      style={{
+                        animationDelay: `${index * 55}ms`,
+                      }}
                     >
                       <div className="flex items-start justify-between gap-3 md:block">
                         <div className="flex items-center gap-3">
@@ -664,8 +763,8 @@ export default function UnitsPage() {
       </section>
 
       {isModalOpen ? (
-        <div className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/50 px-4 pb-4 backdrop-blur-sm md:items-center md:pb-0">
-          <div className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-[2rem] bg-white p-5 shadow-2xl shadow-slate-950/30 md:p-7">
+        <div className="unit-modal-backdrop fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/50 px-4 pb-4 backdrop-blur-sm md:items-center md:pb-0">
+          <div className="unit-modal-panel max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-[2rem] bg-white p-5 shadow-2xl shadow-slate-950/30 md:p-7">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.22em] text-[#123c8c]">
@@ -684,14 +783,14 @@ export default function UnitsPage() {
               <button
                 type="button"
                 onClick={closeModal}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 transition active:scale-[0.96]"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 transition hover:bg-slate-200 active:scale-[0.96]"
               >
                 <X size={20} />
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-              <div className="rounded-[1.6rem] border border-blue-100 bg-[#f8fbff] p-4">
+              <div className="unit-row-enter rounded-[1.6rem] border border-blue-100 bg-[#f8fbff] p-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
                     <label className="mb-2 block text-sm font-black text-slate-700">
@@ -713,7 +812,7 @@ export default function UnitsPage() {
                             department_id: "",
                           }))
                         }
-                        className="w-full appearance-none rounded-2xl border border-blue-100 bg-white py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c]"
+                        className="unit-field w-full appearance-none rounded-2xl border border-blue-100 bg-white py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
                       >
                         <option value="">Pilih Kantor</option>
                         {activeOffices.map((office) => (
@@ -746,7 +845,7 @@ export default function UnitsPage() {
                           }))
                         }
                         disabled={!form.office_id}
-                        className="w-full appearance-none rounded-2xl border border-blue-100 bg-white py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                        className="unit-field w-full appearance-none rounded-2xl border border-blue-100 bg-white py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
                       >
                         <option value="">
                           {form.office_id
@@ -764,7 +863,10 @@ export default function UnitsPage() {
                 </div>
 
                 {form.office_id && formDepartments.length === 0 ? (
-                  <div className="mt-4 rounded-2xl border border-amber-100 bg-amber-50 p-4">
+                  <div
+                    className="unit-row-enter mt-4 rounded-2xl border border-amber-100 bg-amber-50 p-4"
+                    style={{ animationDelay: "40ms" }}
+                  >
                     <p className="text-sm font-black text-amber-700">
                       Divisi belum tersedia untuk kantor ini
                     </p>
@@ -776,7 +878,10 @@ export default function UnitsPage() {
                 ) : null}
               </div>
 
-              <div>
+              <div
+                className="unit-row-enter"
+                style={{ animationDelay: "40ms" }}
+              >
                 <label className="mb-2 block text-sm font-black text-slate-700">
                   Nama Unit
                 </label>
@@ -790,11 +895,14 @@ export default function UnitsPage() {
                     }))
                   }
                   placeholder="Contoh: Backend Development, Mobile Development, Accounting"
-                  className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                  className="unit-field w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 />
               </div>
 
-              <div>
+              <div
+                className="unit-row-enter"
+                style={{ animationDelay: "80ms" }}
+              >
                 <label className="mb-2 block text-sm font-black text-slate-700">
                   Status Unit
                 </label>
@@ -807,7 +915,7 @@ export default function UnitsPage() {
                       status: event.target.value,
                     }))
                   }
-                  className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                  className="unit-field w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 >
                   <option value="active">Aktif</option>
                   <option value="inactive">Nonaktif</option>
@@ -818,7 +926,10 @@ export default function UnitsPage() {
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-blue-100 bg-[#f6f8ff] p-4">
+              <div
+                className="unit-row-enter rounded-2xl border border-blue-100 bg-[#f6f8ff] p-4"
+                style={{ animationDelay: "120ms" }}
+              >
                 <p className="text-sm font-black text-[#123c8c]">Relasi Unit</p>
                 <p className="mt-1 text-sm leading-6 text-slate-500">
                   Unit berada di bawah divisi. Contoh: Kantor Pusat Bandung →
@@ -826,11 +937,14 @@ export default function UnitsPage() {
                 </p>
               </div>
 
-              <div className="flex flex-col-reverse gap-3 pt-2 md:flex-row md:justify-end">
+              <div
+                className="unit-row-enter flex flex-col-reverse gap-3 pt-2 md:flex-row md:justify-end"
+                style={{ animationDelay: "160ms" }}
+              >
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-black text-slate-600 transition hover:bg-slate-200"
+                  className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-black text-slate-600 transition hover:bg-slate-200 active:scale-[0.98]"
                 >
                   Cancel
                 </button>

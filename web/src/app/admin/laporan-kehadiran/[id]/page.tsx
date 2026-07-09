@@ -5,7 +5,6 @@ import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
   BriefcaseBusiness,
-  Building2,
   CalendarDays,
   Clock3,
   ImageIcon,
@@ -30,6 +29,14 @@ type AttendanceReportDetail = {
   statusLabel: string;
   workMode: string;
   workModeLabel: string;
+
+  profilePhoto?: string | null;
+  profile_photo?: string | null;
+  profile_photo_url?: string | null;
+  photo_url?: string | null;
+  avatar_url?: string | null;
+  image?: string | null;
+  image_url?: string | null;
 
   checkOutWorkMode?: string | null;
   check_out_work_mode?: string | null;
@@ -153,6 +160,35 @@ function getCheckOutMode(report: AttendanceReportDetail) {
 
 function hasText(value?: string | null) {
   return Boolean(String(value || "").trim());
+}
+
+function normalizeProfilePhotoUrl(value?: string | null) {
+  const raw = String(value || "").trim();
+
+  if (!raw) return "";
+
+  if (raw.startsWith("http://") || raw.startsWith("https://")) {
+    return raw;
+  }
+
+  if (raw.startsWith("/")) {
+    return raw;
+  }
+
+  return `/${raw}`;
+}
+
+function getEmployeeProfilePhoto(report: AttendanceReportDetail) {
+  return normalizeProfilePhotoUrl(
+    report.profilePhoto ||
+      report.profile_photo ||
+      report.profile_photo_url ||
+      report.photo_url ||
+      report.avatar_url ||
+      report.image ||
+      report.image_url ||
+      null,
+  );
 }
 
 function getVisitTitle(report: AttendanceReportDetail) {
@@ -313,17 +349,89 @@ async function reverseGeocode(
   }
 }
 
+function AttendanceDetailMotionStyles() {
+  return (
+    <style>{`
+      @keyframes attendanceDetailEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes attendanceDetailRowEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes attendanceDetailAvatarEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(8px) scale(0.94);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      .attendance-detail-enter {
+        animation: attendanceDetailEnter 320ms ease-out both;
+      }
+
+      .attendance-detail-row-enter {
+        opacity: 0;
+        animation: attendanceDetailRowEnter 300ms ease-out both;
+      }
+
+      .attendance-detail-avatar-enter {
+        animation: attendanceDetailAvatarEnter 320ms ease-out both;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .attendance-detail-enter,
+        .attendance-detail-row-enter,
+        .attendance-detail-avatar-enter {
+          animation: none !important;
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      }
+    `}</style>
+  );
+}
+
 function PhotoCard({
   title,
   subtitle,
   imageUrl,
+  delay = 0,
 }: {
   title: string;
   subtitle: string;
   imageUrl: string | null;
+  delay?: number;
 }) {
   return (
-    <div className="overflow-hidden rounded-[2rem] border border-blue-100 bg-white shadow-xl shadow-slate-200/60">
+    <div
+      className="attendance-detail-row-enter overflow-hidden rounded-[2rem] border border-blue-100 bg-white shadow-xl shadow-slate-200/60 transition duration-200 hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-slate-300/40"
+      style={{
+        animationDelay: `${delay}ms`,
+      }}
+    >
       <div className="border-b border-blue-50 px-5 py-4">
         <p className="text-xs font-black uppercase tracking-[0.18em] text-[#123c8c]">
           {title}
@@ -335,6 +443,7 @@ function PhotoCard({
       {imageUrl ? (
         <div className="bg-[#f8fbff] p-4">
           <div className="mx-auto max-w-[320px] overflow-hidden rounded-[1.3rem] bg-slate-950 shadow-lg shadow-slate-300/40">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={imageUrl}
               alt={title}
@@ -357,15 +466,13 @@ function PhotoCard({
   );
 }
 
-function EmptyNoteCard({ message }: { message: string }) {
-  return (
-    <div className="rounded-[1.6rem] border border-slate-100 bg-slate-50 p-4 text-sm font-bold leading-6 text-slate-500">
-      {message}
-    </div>
-  );
-}
-
-function EmployeeNotesSection({ report }: { report: AttendanceReportDetail }) {
+function EmployeeNotesSection({
+  report,
+  delay = 0,
+}: {
+  report: AttendanceReportDetail;
+  delay?: number;
+}) {
   const shouldShowLate = isLateReport(report);
   const shouldShowVisit = hasVisitReport(report);
 
@@ -381,102 +488,93 @@ function EmployeeNotesSection({ report }: { report: AttendanceReportDetail }) {
     : "Kunjungan";
 
   return (
-    <section className="overflow-hidden rounded-[2rem] border border-blue-100 bg-white shadow-xl shadow-slate-200/60">
-      <div className="border-b border-blue-50 bg-[#f8fbff] px-5 py-5 md:px-6">
-        <p className="text-xs font-black uppercase tracking-[0.22em] text-[#123c8c]">
-          Keterangan Karyawan
-        </p>
-        <h3 className="mt-2 text-2xl font-black text-slate-950">
-          Terlambat & Kunjungan
-        </h3>
-        <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">
-          Bagian ini menampilkan alasan datang terlambat dan detail kunjungan
-          yang dikirim oleh karyawan.
-        </p>
+    <section
+      className="attendance-detail-row-enter rounded-[1.7rem] border border-blue-100 bg-white p-4 shadow-xl shadow-slate-200/60 md:p-5"
+      style={{
+        animationDelay: `${delay}ms`,
+      }}
+    >
+      <div className="mb-4 flex items-center gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
+          <BriefcaseBusiness size={21} strokeWidth={2.7} />
+        </div>
+
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-[#123c8c]">
+            Keterangan Karyawan
+          </p>
+          <p className="mt-1 text-sm font-semibold text-slate-500">
+            Catatan terlambat atau kunjungan dari karyawan.
+          </p>
+        </div>
       </div>
 
-      <div className="grid gap-4 p-5 md:grid-cols-2 md:p-6">
+      <div className="grid gap-3">
         {shouldShowLate ? (
-          <div className="rounded-[1.7rem] border border-amber-100 bg-white p-5 shadow-sm">
-            <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-700 ring-1 ring-amber-100">
-                <Clock3 size={24} strokeWidth={2.7} />
+          <div className="attendance-detail-row-enter rounded-2xl border border-amber-100 bg-amber-50/70 p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-amber-700 ring-1 ring-amber-100">
+                <Clock3 size={21} strokeWidth={2.7} />
               </div>
 
               <div className="min-w-0">
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">
-                  Keterangan Datang Terlambat
+                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-amber-700">
+                  Keterangan Terlambat
                 </p>
-                <h4 className="mt-2 text-lg font-black text-slate-950">
-                  Alasan dari karyawan
-                </h4>
-                <p className="mt-3 text-sm font-semibold leading-7 text-slate-600">
+
+                <p className="mt-2 text-sm font-bold leading-6 text-slate-700">
                   {report.lateReason?.trim() ||
                     "Belum ada alasan terlambat yang tersimpan."}
                 </p>
               </div>
             </div>
           </div>
-        ) : (
-          <EmptyNoteCard message="Tidak ada keterangan datang terlambat pada laporan ini." />
-        )}
+        ) : null}
 
         {shouldShowVisit ? (
-          <div className="rounded-[1.7rem] border border-orange-100 bg-white p-5 shadow-sm">
-            <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-orange-50 text-orange-600 ring-1 ring-orange-100">
-                <BriefcaseBusiness size={24} strokeWidth={2.7} />
+          <div className="attendance-detail-row-enter rounded-2xl border border-orange-100 bg-orange-50/70 p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-orange-600 ring-1 ring-orange-100">
+                <BriefcaseBusiness size={21} strokeWidth={2.7} />
               </div>
 
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">
+                  <p className="text-[11px] font-black uppercase tracking-[0.16em] text-orange-600">
                     Keterangan Kunjungan
                   </p>
 
-                  <span className="rounded-full bg-orange-50 px-3 py-1 text-[10px] font-black text-orange-700 ring-1 ring-orange-100">
+                  <span className="rounded-full bg-white px-3 py-1 text-[10px] font-black text-orange-700 ring-1 ring-orange-100">
                     {visitModeLabel}
                   </span>
                 </div>
 
-                <h4 className="mt-2 text-lg font-black text-slate-950">
+                <p className="mt-2 text-sm font-black leading-6 text-slate-900">
                   {visitTitle || "Tujuan kunjungan belum diisi"}
-                </h4>
+                </p>
 
-                <div className="mt-4 grid gap-3 text-sm font-semibold leading-6 text-slate-600">
-                  <div className="rounded-2xl bg-orange-50/70 p-4 ring-1 ring-orange-100">
-                    <p className="text-[11px] font-black uppercase tracking-[0.16em] text-orange-600">
-                      PIC / Client / Perusahaan
-                    </p>
-                    <p className="mt-1 text-slate-800">
-                      {visitClientName || "Belum diisi"}
-                    </p>
+                <div className="mt-3 grid gap-2 text-xs font-bold leading-5 text-slate-600 md:grid-cols-2">
+                  <div className="rounded-xl bg-white px-3 py-2 ring-1 ring-orange-100">
+                    <span className="text-orange-600">PIC / Client: </span>
+                    {visitClientName || "Belum diisi"}
                   </div>
 
-                  <div className="rounded-2xl bg-orange-50/70 p-4 ring-1 ring-orange-100">
-                    <p className="text-[11px] font-black uppercase tracking-[0.16em] text-orange-600">
-                      Alamat Kunjungan
-                    </p>
-                    <p className="mt-1 text-slate-800">
-                      {visitAddress || "Belum diisi"}
-                    </p>
-                  </div>
-
-                  <div className="rounded-2xl bg-orange-50/70 p-4 ring-1 ring-orange-100">
-                    <p className="text-[11px] font-black uppercase tracking-[0.16em] text-orange-600">
-                      Keperluan / Catatan
-                    </p>
-                    <p className="mt-1 text-slate-800">
-                      {visitNote || "Belum diisi"}
-                    </p>
+                  <div className="rounded-xl bg-white px-3 py-2 ring-1 ring-orange-100">
+                    <span className="text-orange-600">Alamat: </span>
+                    {visitAddress || "Belum diisi"}
                   </div>
                 </div>
+
+                {visitNote ? (
+                  <div className="mt-2 rounded-xl bg-white px-3 py-2 text-xs font-bold leading-5 text-slate-600 ring-1 ring-orange-100">
+                    <span className="text-orange-600">Catatan: </span>
+                    {visitNote}
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>
-        ) : (
-          <EmptyNoteCard message="Tidak ada keterangan kunjungan pada laporan ini." />
-        )}
+        ) : null}
       </div>
     </section>
   );
@@ -489,6 +587,8 @@ function GpsLocationCard({
   longitude,
   accuracy,
   reverseResult,
+  isLoadingAddress,
+  delay = 0,
 }: {
   title: string;
   subtitle: string;
@@ -496,6 +596,8 @@ function GpsLocationCard({
   longitude?: number | null;
   accuracy?: number | null;
   reverseResult: ReverseGeocodeResult | null;
+  isLoadingAddress?: boolean;
+  delay?: number;
 }) {
   const hasGps =
     latitude !== null &&
@@ -503,81 +605,84 @@ function GpsLocationCard({
     longitude !== null &&
     longitude !== undefined;
 
-  const mainTitle = reverseResult?.placeName
-    ? reverseResult.placeName
-    : reverseResult?.shortName
-      ? reverseResult.shortName
-      : hasGps
-        ? "Koordinat GPS terbaca"
-        : "GPS belum tersedia";
+  const nearestLocation =
+    reverseResult?.placeName ||
+    reverseResult?.shortName ||
+    reverseResult?.displayName ||
+    "";
 
-  const description = reverseResult?.displayName
-    ? reverseResult.displayName
-    : reverseResult?.shortName
-      ? reverseResult.shortName
-      : hasGps
-        ? "Koordinat berhasil disimpan. Alamat belum bisa diterjemahkan otomatis oleh reverse geocode."
-        : subtitle;
+  const mainTitle = hasGps
+    ? nearestLocation ||
+      (isLoadingAddress
+        ? "Mencari lokasi terdekat..."
+        : "Lokasi terdekat belum terbaca")
+    : "GPS belum tersedia";
+
+  const description = hasGps
+    ? reverseResult?.displayName ||
+      reverseResult?.shortName ||
+      (isLoadingAddress
+        ? "Sistem sedang menerjemahkan koordinat GPS menjadi nama lokasi terdekat."
+        : "Koordinat GPS berhasil disimpan, tetapi nama wilayah terdekat belum berhasil dibaca.")
+    : subtitle;
 
   return (
-    <div className="rounded-[2rem] border border-blue-100 bg-white p-5 shadow-xl shadow-slate-200/60">
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div className="flex items-start gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
-            <Navigation size={24} strokeWidth={2.6} />
+    <div
+      className="attendance-detail-row-enter rounded-[1.5rem] border border-blue-100 bg-white p-4 shadow-lg shadow-slate-200/50 transition duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-slate-300/40"
+      style={{
+        animationDelay: `${delay}ms`,
+      }}
+    >
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div className="flex min-w-0 items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
+            <Navigation size={21} strokeWidth={2.6} />
           </div>
 
-          <div>
+          <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#123c8c]">
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#123c8c]">
                 {title}
               </p>
 
-              {hasGps ? (
-                <span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black text-emerald-700 ring-1 ring-emerald-100">
+              {isLoadingAddress && hasGps ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-[9px] font-black text-[#123c8c] ring-1 ring-blue-100">
+                  <Loader2 size={11} className="animate-spin" />
+                  Membaca
+                </span>
+              ) : hasGps ? (
+                <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[9px] font-black text-emerald-700 ring-1 ring-emerald-100">
                   GPS Terbaca
                 </span>
               ) : (
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black text-slate-500 ring-1 ring-slate-200">
+                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[9px] font-black text-slate-500 ring-1 ring-slate-200">
                   GPS Kosong
                 </span>
               )}
             </div>
 
-            <p className="mt-2 text-base font-black text-slate-950">
-              {mainTitle}
-            </p>
+            <div className="mt-3 rounded-2xl bg-[#f8fbff] p-3 ring-1 ring-blue-50">
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
+                Lokasi Terdekat
+              </p>
 
-            <p className="mt-1 max-w-3xl text-sm font-semibold leading-6 text-slate-500">
-              {description}
-            </p>
+              <p className="mt-1.5 break-words text-sm font-black leading-5 text-slate-950">
+                {mainTitle}
+              </p>
+
+              <p className="mt-1.5 line-clamp-2 break-words text-xs font-semibold leading-5 text-slate-500">
+                {description}
+              </p>
+            </div>
 
             {hasGps ? (
-              <div className="mt-4 grid gap-2 text-xs font-bold text-slate-500 sm:grid-cols-3">
-                <div className="rounded-2xl bg-[#f8fbff] p-3 ring-1 ring-blue-50">
-                  <p className="font-black uppercase tracking-[0.16em] text-slate-400">
-                    Latitude
-                  </p>
-                  <p className="mt-1 text-slate-800">{latitude}</p>
-                </div>
-
-                <div className="rounded-2xl bg-[#f8fbff] p-3 ring-1 ring-blue-50">
-                  <p className="font-black uppercase tracking-[0.16em] text-slate-400">
-                    Longitude
-                  </p>
-                  <p className="mt-1 text-slate-800">{longitude}</p>
-                </div>
-
-                <div className="rounded-2xl bg-[#f8fbff] p-3 ring-1 ring-blue-50">
-                  <p className="font-black uppercase tracking-[0.16em] text-slate-400">
-                    Akurasi
-                  </p>
-                  <p className="mt-1 text-slate-800">
-                    {accuracy !== null && accuracy !== undefined
-                      ? `±${Math.round(accuracy)} meter`
-                      : "-"}
-                  </p>
-                </div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <span className="rounded-full bg-slate-50 px-2.5 py-1.5 text-[11px] font-black text-slate-600 ring-1 ring-slate-100">
+                  Akurasi:{" "}
+                  {accuracy !== null && accuracy !== undefined
+                    ? `±${Math.round(accuracy)} meter`
+                    : "-"}
+                </span>
               </div>
             ) : null}
           </div>
@@ -588,7 +693,7 @@ function GpsLocationCard({
             href={`https://www.google.com/maps?q=${latitude},${longitude}`}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center justify-center rounded-2xl bg-[#123c8c] px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition active:scale-[0.98]"
+            className="inline-flex shrink-0 items-center justify-center rounded-2xl bg-[#123c8c] px-4 py-2.5 text-xs font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#0f3274] active:scale-[0.98]"
           >
             Buka Maps
           </a>
@@ -598,9 +703,20 @@ function GpsLocationCard({
   );
 }
 
-function OfficeLocationCard({ report }: { report: AttendanceReportDetail }) {
+function OfficeLocationCard({
+  report,
+  delay = 0,
+}: {
+  report: AttendanceReportDetail;
+  delay?: number;
+}) {
   return (
-    <div className="rounded-[2rem] border border-blue-100 bg-white p-5 shadow-xl shadow-slate-200/60">
+    <div
+      className="attendance-detail-row-enter rounded-[2rem] border border-blue-100 bg-white p-5 shadow-xl shadow-slate-200/60 transition duration-200 hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-slate-300/40"
+      style={{
+        animationDelay: `${delay}ms`,
+      }}
+    >
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-start gap-3">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
@@ -627,7 +743,7 @@ function OfficeLocationCard({ report }: { report: AttendanceReportDetail }) {
             href={`https://www.google.com/maps?q=${report.officeLatitude},${report.officeLongitude}`}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center justify-center rounded-2xl bg-[#123c8c] px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition active:scale-[0.98]"
+            className="inline-flex items-center justify-center rounded-2xl bg-[#123c8c] px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#0f3274] active:scale-[0.98]"
           >
             Buka Maps
           </a>
@@ -705,7 +821,7 @@ export default function AdminAttendanceReportDetailPage() {
 
   useEffect(() => {
     if (id) {
-      getAttendanceDetail();
+      void getAttendanceDetail();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
@@ -729,11 +845,13 @@ export default function AdminAttendanceReportDetailPage() {
       }
     }
 
-    loadGpsAddress();
+    void loadGpsAddress();
   }, [report]);
 
   return (
     <MobileShell variant="admin" withBottomPadding={false}>
+      <AttendanceDetailMotionStyles />
+
       <AppHeader
         title="Detail Kehadiran"
         subtitle="Foto bukti absen dan lokasi GPS"
@@ -745,14 +863,14 @@ export default function AdminAttendanceReportDetailPage() {
           <button
             type="button"
             onClick={() => router.push("/admin/laporan-kehadiran")}
-            className="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-black text-[#123c8c] shadow-sm ring-1 ring-blue-100 transition active:scale-[0.98]"
+            className="attendance-detail-enter inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-black text-[#123c8c] shadow-sm ring-1 ring-blue-100 transition hover:bg-[#f8fbff] active:scale-[0.98]"
           >
             <ArrowLeft size={18} strokeWidth={2.6} />
             Kembali ke Laporan
           </button>
 
           {isLoading ? (
-            <div className="flex min-h-[360px] items-center justify-center rounded-3xl border border-blue-100 bg-white">
+            <div className="attendance-detail-enter flex min-h-[360px] items-center justify-center rounded-3xl border border-blue-100 bg-white">
               <div className="text-center">
                 <Loader2 className="mx-auto animate-spin text-[#123c8c]" />
                 <p className="mt-3 text-sm font-black text-slate-600">
@@ -761,35 +879,52 @@ export default function AdminAttendanceReportDetailPage() {
               </div>
             </div>
           ) : errorMessage || !report ? (
-            <div className="rounded-3xl border border-red-100 bg-red-50 p-6 text-sm font-bold text-red-700">
+            <div className="attendance-detail-enter rounded-3xl border border-red-100 bg-red-50 p-6 text-sm font-bold text-red-700">
               {errorMessage || "Detail laporan tidak ditemukan."}
             </div>
           ) : (
             <>
-              <div className="overflow-hidden rounded-[2rem] border border-blue-100 bg-white shadow-xl shadow-slate-300/30">
+              <div className="attendance-detail-enter overflow-hidden rounded-[2rem] border border-blue-100 bg-white shadow-xl shadow-slate-300/30">
                 <div className="grid gap-0 lg:grid-cols-[0.95fr_1.05fr]">
                   <div className="bg-[#123c8c] p-6 text-white md:p-8">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
-                        <UserRound size={25} strokeWidth={2.6} />
+                      <div className="attendance-detail-avatar-enter flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/15 ring-1 ring-white/20">
+                        {getEmployeeProfilePhoto(report) ? (
+                          <>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={getEmployeeProfilePhoto(report)}
+                              alt={report.employeeName}
+                              className="h-full w-full object-cover"
+                            />
+                          </>
+                        ) : (
+                          <UserRound size={26} strokeWidth={2.6} />
+                        )}
                       </div>
 
                       <div className="min-w-0">
-                        <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-100">
-                          Employee Attendance
-                        </p>
-
                         <h2 className="mt-1 truncate text-3xl font-black tracking-tight md:text-4xl">
                           {report.employeeName}
                         </h2>
                       </div>
                     </div>
 
-                    <p className="mt-4 text-sm font-semibold text-blue-100">
-                      {report.employeeCode || "-"}
+                    <p
+                      className="attendance-detail-row-enter mt-4 text-sm font-semibold text-blue-100"
+                      style={{
+                        animationDelay: "80ms",
+                      }}
+                    >
+                      {report.employeeCode || ""}
                     </p>
 
-                    <div className="mt-5 flex flex-wrap gap-2">
+                    <div
+                      className="attendance-detail-row-enter mt-5 flex flex-wrap gap-2"
+                      style={{
+                        animationDelay: "120ms",
+                      }}
+                    >
                       <span
                         className={`rounded-full px-3 py-1 text-xs font-black ring-1 ${getStatusStyle(
                           report.status,
@@ -818,7 +953,12 @@ export default function AdminAttendanceReportDetailPage() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 p-5 md:grid-cols-4 md:p-6">
-                    <div className="rounded-2xl border border-blue-100 bg-[#f8fbff] p-4">
+                    <div
+                      className="attendance-detail-row-enter rounded-2xl border border-blue-100 bg-[#f8fbff] p-4"
+                      style={{
+                        animationDelay: "70ms",
+                      }}
+                    >
                       <CalendarDays size={20} className="text-[#123c8c]" />
                       <p className="mt-3 text-xs font-bold text-slate-500">
                         Tanggal
@@ -828,7 +968,12 @@ export default function AdminAttendanceReportDetailPage() {
                       </p>
                     </div>
 
-                    <div className="rounded-2xl border border-blue-100 bg-[#f8fbff] p-4">
+                    <div
+                      className="attendance-detail-row-enter rounded-2xl border border-blue-100 bg-[#f8fbff] p-4"
+                      style={{
+                        animationDelay: "110ms",
+                      }}
+                    >
                       <Clock3 size={20} className="text-[#123c8c]" />
                       <p className="mt-3 text-xs font-bold text-slate-500">
                         Masuk
@@ -838,7 +983,12 @@ export default function AdminAttendanceReportDetailPage() {
                       </p>
                     </div>
 
-                    <div className="rounded-2xl border border-blue-100 bg-[#f8fbff] p-4">
+                    <div
+                      className="attendance-detail-row-enter rounded-2xl border border-blue-100 bg-[#f8fbff] p-4"
+                      style={{
+                        animationDelay: "150ms",
+                      }}
+                    >
                       <Clock3 size={20} className="text-[#123c8c]" />
                       <p className="mt-3 text-xs font-bold text-slate-500">
                         Keluar
@@ -848,7 +998,12 @@ export default function AdminAttendanceReportDetailPage() {
                       </p>
                     </div>
 
-                    <div className="rounded-2xl border border-blue-100 bg-[#f8fbff] p-4">
+                    <div
+                      className="attendance-detail-row-enter rounded-2xl border border-blue-100 bg-[#f8fbff] p-4"
+                      style={{
+                        animationDelay: "190ms",
+                      }}
+                    >
                       <Clock3 size={20} className="text-[#123c8c]" />
                       <p className="mt-3 text-xs font-bold text-slate-500">
                         Durasi
@@ -861,7 +1016,7 @@ export default function AdminAttendanceReportDetailPage() {
                 </div>
               </div>
 
-              <EmployeeNotesSection report={report} />
+              <EmployeeNotesSection report={report} delay={80} />
 
               <div className="grid gap-6 lg:grid-cols-2">
                 <GpsLocationCard
@@ -873,6 +1028,8 @@ export default function AdminAttendanceReportDetailPage() {
                   }
                   accuracy={report.checkInAccuracy}
                   reverseResult={checkInAddress}
+                  isLoadingAddress={isAddressLoading}
+                  delay={110}
                 />
 
                 <GpsLocationCard
@@ -882,11 +1039,13 @@ export default function AdminAttendanceReportDetailPage() {
                   longitude={report.checkOutLongitude}
                   accuracy={report.checkOutAccuracy}
                   reverseResult={checkOutAddress}
+                  isLoadingAddress={isAddressLoading}
+                  delay={150}
                 />
               </div>
 
               {shouldShowOfficeLocation ? (
-                <OfficeLocationCard report={report} />
+                <OfficeLocationCard report={report} delay={180} />
               ) : null}
 
               <div className="grid gap-6 lg:grid-cols-2">
@@ -894,12 +1053,14 @@ export default function AdminAttendanceReportDetailPage() {
                   title="Foto Check-in"
                   subtitle={`${report.employeeName} • ${report.dateLabel}`}
                   imageUrl={primaryCheckInPhoto}
+                  delay={210}
                 />
 
                 <PhotoCard
                   title="Foto Check-out"
                   subtitle={`${report.employeeName} • ${report.dateLabel}`}
                   imageUrl={report.checkOutPhoto}
+                  delay={250}
                 />
               </div>
             </>

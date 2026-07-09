@@ -81,6 +81,94 @@ async function readJsonResponse(response: Response) {
   }
 }
 
+function DepartmentMotionStyles() {
+  return (
+    <style>{`
+      @keyframes departmentEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes departmentRowEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes departmentModalBackdrop {
+        0% {
+          opacity: 0;
+        }
+
+        100% {
+          opacity: 1;
+        }
+      }
+
+      @keyframes departmentModalPanel {
+        0% {
+          opacity: 0;
+          transform: translateY(16px) scale(0.985);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      .department-enter {
+        animation: departmentEnter 320ms ease-out both;
+      }
+
+      .department-row-enter {
+        opacity: 0;
+        animation: departmentRowEnter 300ms ease-out both;
+      }
+
+      .department-modal-backdrop {
+        animation: departmentModalBackdrop 180ms ease-out both;
+      }
+
+      .department-modal-panel {
+        animation: departmentModalPanel 260ms ease-out both;
+        transform-origin: center bottom;
+      }
+
+      .department-field {
+        transition:
+          border-color 180ms ease,
+          background-color 180ms ease,
+          box-shadow 180ms ease;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .department-enter,
+        .department-row-enter,
+        .department-modal-backdrop,
+        .department-modal-panel {
+          animation: none !important;
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      }
+    `}</style>
+  );
+}
+
 export default function DepartmentsPage() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [offices, setOffices] = useState<Office[]>([]);
@@ -180,7 +268,7 @@ export default function DepartmentsPage() {
   }
 
   useEffect(() => {
-    loadDepartments();
+    void loadDepartments();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -315,10 +403,12 @@ export default function DepartmentsPage() {
 
   return (
     <MobileShell variant="admin">
+      <DepartmentMotionStyles />
+
       <AppHeader title="Daftar Divisi" variant="admin" />
 
       <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 pb-28 md:px-10 lg:px-16">
-        <div className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-xl shadow-slate-300/30">
+        <div className="department-enter overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-xl shadow-slate-300/30">
           <div className="bg-[#123c8c] p-6 text-white md:p-8">
             <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
               <div>
@@ -330,7 +420,7 @@ export default function DepartmentsPage() {
               <button
                 type="button"
                 onClick={openCreateModal}
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-white px-5 text-sm font-black text-[#123c8c] shadow-lg shadow-blue-950/20 transition hover:bg-blue-50 active:scale-[0.98]"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-white px-5 text-sm font-black text-[#123c8c] shadow-lg shadow-blue-950/20 transition duration-200 hover:-translate-y-0.5 hover:bg-blue-50 active:scale-[0.98]"
               >
                 <Plus size={18} />
                 Tambah Divisi
@@ -339,7 +429,10 @@ export default function DepartmentsPage() {
           </div>
 
           <div className="p-5 md:p-8">
-            <div className="grid gap-3 md:grid-cols-[1fr_230px_210px_auto]">
+            <div
+              className="department-row-enter grid gap-3 md:grid-cols-[1fr_230px_210px_auto]"
+              style={{ animationDelay: "80ms" }}
+            >
               <div>
                 <label className="text-sm font-black text-slate-500">
                   Nama Divisi / Kantor
@@ -355,7 +448,7 @@ export default function DepartmentsPage() {
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
                     placeholder="Cari divisi atau kantor..."
-                    className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-4 pl-12 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                    className="department-field w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-4 pl-12 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                   />
                 </div>
               </div>
@@ -368,7 +461,7 @@ export default function DepartmentsPage() {
                 <select
                   value={officeFilter}
                   onChange={(event) => setOfficeFilter(event.target.value)}
-                  className="mt-3 w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                  className="department-field mt-3 w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 >
                   <option value="all">Semua Kantor</option>
                   <option value="none">Tanpa Kantor</option>
@@ -388,7 +481,7 @@ export default function DepartmentsPage() {
                 <select
                   value={statusFilter}
                   onChange={(event) => setStatusFilter(event.target.value)}
-                  className="mt-3 w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                  className="department-field mt-3 w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 >
                   {statusOptions.map((item) => (
                     <option key={item.value} value={item.value}>
@@ -419,12 +512,15 @@ export default function DepartmentsPage() {
             </div>
 
             {errorMessage ? (
-              <div className="mt-5 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-black text-red-700">
+              <div className="department-row-enter mt-5 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-black text-red-700">
                 {errorMessage}
               </div>
             ) : null}
 
-            <div className="mt-8 overflow-hidden rounded-2xl border border-blue-100">
+            <div
+              className="department-row-enter mt-8 overflow-hidden rounded-2xl border border-blue-100"
+              style={{ animationDelay: "130ms" }}
+            >
               <div className="hidden grid-cols-[0.3fr_1.3fr_1.2fr_0.75fr_0.75fr_1fr] bg-[#f6f8ff] px-5 py-4 text-xs font-black uppercase tracking-[0.18em] text-[#123c8c] md:grid">
                 <p>#</p>
                 <p>Divisi</p>
@@ -436,14 +532,14 @@ export default function DepartmentsPage() {
 
               <div className="divide-y divide-blue-50 bg-white">
                 {isLoading ? (
-                  <div className="px-5 py-10 text-center">
+                  <div className="department-row-enter px-5 py-10 text-center">
                     <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#123c8c]" />
                     <p className="mt-3 text-sm font-black text-slate-600">
                       Mengambil data divisi...
                     </p>
                   </div>
                 ) : filteredDepartments.length === 0 ? (
-                  <div className="px-5 py-10 text-center">
+                  <div className="department-row-enter px-5 py-10 text-center">
                     <Network className="mx-auto text-slate-300" size={36} />
                     <p className="mt-3 font-black text-slate-700">
                       Data divisi tidak ditemukan.
@@ -456,7 +552,10 @@ export default function DepartmentsPage() {
                   filteredDepartments.map((department, index) => (
                     <div
                       key={department.id}
-                      className="grid gap-4 px-4 py-4 text-sm transition hover:bg-[#f8fbff] md:grid-cols-[0.3fr_1.3fr_1.2fr_0.75fr_0.75fr_1fr] md:items-center md:px-5 md:py-6"
+                      className="department-row-enter grid gap-4 px-4 py-4 text-sm transition duration-200 hover:bg-[#f8fbff] md:grid-cols-[0.3fr_1.3fr_1.2fr_0.75fr_0.75fr_1fr] md:items-center md:px-5 md:py-6"
+                      style={{
+                        animationDelay: `${index * 55}ms`,
+                      }}
                     >
                       <div className="flex items-start justify-between gap-3 md:block">
                         <div className="flex items-center gap-3">
@@ -575,8 +674,8 @@ export default function DepartmentsPage() {
       </section>
 
       {isModalOpen ? (
-        <div className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/50 px-4 pb-4 backdrop-blur-sm md:items-center md:pb-0">
-          <div className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-[2rem] bg-white p-5 shadow-2xl shadow-slate-950/30 md:p-7">
+        <div className="department-modal-backdrop fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/50 px-4 pb-4 backdrop-blur-sm md:items-center md:pb-0">
+          <div className="department-modal-panel max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-[2rem] bg-white p-5 shadow-2xl shadow-slate-950/30 md:p-7">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.22em] text-[#123c8c]">
@@ -595,14 +694,14 @@ export default function DepartmentsPage() {
               <button
                 type="button"
                 onClick={closeModal}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 transition active:scale-[0.96]"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 transition hover:bg-slate-200 active:scale-[0.96]"
               >
                 <X size={20} />
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-              <div>
+              <div className="department-row-enter">
                 <label className="mb-2 block text-sm font-black text-slate-700">
                   Kantor
                 </label>
@@ -621,7 +720,7 @@ export default function DepartmentsPage() {
                         office_id: event.target.value,
                       }))
                     }
-                    className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                    className="department-field w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                   >
                     <option value="">Pilih Kantor</option>
                     {activeOffices.map((office) => (
@@ -634,7 +733,10 @@ export default function DepartmentsPage() {
                 </div>
               </div>
 
-              <div>
+              <div
+                className="department-row-enter"
+                style={{ animationDelay: "40ms" }}
+              >
                 <label className="mb-2 block text-sm font-black text-slate-700">
                   Nama Divisi
                 </label>
@@ -648,11 +750,14 @@ export default function DepartmentsPage() {
                     }))
                   }
                   placeholder="Contoh: Technology, Finance, HRD"
-                  className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                  className="department-field w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 />
               </div>
 
-              <div>
+              <div
+                className="department-row-enter"
+                style={{ animationDelay: "80ms" }}
+              >
                 <label className="mb-2 block text-sm font-black text-slate-700">
                   Status Divisi
                 </label>
@@ -665,7 +770,7 @@ export default function DepartmentsPage() {
                       status: event.target.value,
                     }))
                   }
-                  className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                  className="department-field w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 >
                   <option value="active">Aktif</option>
                   <option value="inactive">Nonaktif</option>
@@ -676,7 +781,10 @@ export default function DepartmentsPage() {
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-blue-100 bg-[#f6f8ff] p-4">
+              <div
+                className="department-row-enter rounded-2xl border border-blue-100 bg-[#f6f8ff] p-4"
+                style={{ animationDelay: "120ms" }}
+              >
                 <p className="text-sm font-black text-[#123c8c]">
                   Relasi Divisi
                 </p>
@@ -687,11 +795,14 @@ export default function DepartmentsPage() {
                 </p>
               </div>
 
-              <div className="flex flex-col-reverse gap-3 pt-2 md:flex-row md:justify-end">
+              <div
+                className="department-row-enter flex flex-col-reverse gap-3 pt-2 md:flex-row md:justify-end"
+                style={{ animationDelay: "160ms" }}
+              >
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-black text-slate-600 transition hover:bg-slate-200"
+                  className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-black text-slate-600 transition hover:bg-slate-200 active:scale-[0.98]"
                 >
                   Cancel
                 </button>

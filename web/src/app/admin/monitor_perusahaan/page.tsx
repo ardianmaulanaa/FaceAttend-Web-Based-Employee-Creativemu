@@ -5,12 +5,12 @@ import {
   AlertTriangle,
   BarChart3,
   BriefcaseBusiness,
+  Building2,
   CheckCircle2,
   Clock3,
   Home,
   Loader2,
   TrendingUp,
-  Building2,
 } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import MobileShell from "@/components/MobileShell";
@@ -383,6 +383,79 @@ function getSummaryModePercentage(
   return Math.min(Number(((value / base) * 100).toFixed(1)), 100);
 }
 
+function MonitorMotionStyles() {
+  return (
+    <style>{`
+      @keyframes monitorEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes monitorRowEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes monitorBarEnter {
+        0% {
+          opacity: 0;
+          transform: scaleY(0.15);
+        }
+
+        100% {
+          opacity: 1;
+          transform: scaleY(1);
+        }
+      }
+
+      .monitor-enter {
+        animation: monitorEnter 320ms ease-out both;
+      }
+
+      .monitor-row-enter {
+        opacity: 0;
+        animation: monitorRowEnter 300ms ease-out both;
+      }
+
+      .monitor-bar-enter {
+        transform-origin: bottom;
+        animation: monitorBarEnter 420ms ease-out both;
+      }
+
+      .monitor-field {
+        transition:
+          border-color 180ms ease,
+          background-color 180ms ease,
+          box-shadow 180ms ease;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .monitor-enter,
+        .monitor-row-enter,
+        .monitor-bar-enter {
+          animation: none !important;
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      }
+    `}</style>
+  );
+}
+
 function AnimatedHistogram({
   metricLabel,
   unit,
@@ -426,7 +499,7 @@ function AnimatedHistogram({
         }
       `}</style>
 
-      <div className="mt-6 overflow-x-auto overflow-y-visible rounded-[1.65rem] border border-blue-100 bg-[#123c8c] p-3 text-white shadow-xl shadow-blue-900/15 md:rounded-[2rem] md:p-5">
+      <div className="monitor-row-enter mt-6 overflow-x-auto overflow-y-visible rounded-[1.65rem] border border-blue-100 bg-[#123c8c] p-3 text-white shadow-xl shadow-blue-900/15 md:rounded-[2rem] md:p-5">
         <div className="min-w-[760px] md:min-w-[900px]">
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div className="min-w-0">
@@ -480,16 +553,22 @@ function AnimatedHistogram({
                       onFocus={() => setActiveIndex(index)}
                       onBlur={() => setActiveIndex(null)}
                       onClick={() => setActiveIndex(index)}
-                      className={`relative w-full rounded-t-md outline-none transition duration-300 ease-out ${
+                      className={`monitor-bar-enter relative w-full rounded-t-md outline-none transition duration-300 ease-out ${
                         isActive
                           ? "scale-x-110 bg-blue-200"
                           : "bg-blue-300/95 hover:bg-blue-200"
                       }`}
                       style={{
                         height,
-                        animation: isActive
-                          ? "histogramBarGlow 160ms ease-out forwards"
+                        animationDelay: `${index * 18}ms`,
+                        animationName: isActive
+                          ? "histogramBarGlow"
                           : undefined,
+                        animationDuration: isActive ? "160ms" : undefined,
+                        animationTimingFunction: isActive
+                          ? "ease-out"
+                          : undefined,
+                        animationFillMode: isActive ? "forwards" : undefined,
                       }}
                       aria-label={`${metricLabel} tanggal ${point.label}: ${point.value} ${unit}`}
                     >
@@ -562,7 +641,7 @@ function PieProgressCard({
   const rest = 100 - safePercentage;
 
   return (
-    <div className="rounded-3xl border border-blue-100 bg-white p-5 shadow-lg shadow-slate-200/60">
+    <div className="monitor-row-enter rounded-3xl border border-blue-100 bg-white p-5 shadow-lg shadow-slate-200/60 transition duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-slate-300/40">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">
@@ -718,6 +797,9 @@ export default function AdminCompanyMonitorPage() {
               todayRecords: toSafeNumber(item?.todayRecords),
             }))
           : [],
+        alerts: Array.isArray(monitorResult?.alerts)
+          ? monitorResult.alerts
+          : [],
         lateReasons: Array.isArray(monitorResult?.lateReasons)
           ? monitorResult.lateReasons
           : [],
@@ -744,7 +826,7 @@ export default function AdminCompanyMonitorPage() {
   }
 
   useEffect(() => {
-    loadMonitorData();
+    void loadMonitorData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [month, year]);
 
@@ -878,11 +960,13 @@ export default function AdminCompanyMonitorPage() {
 
   return (
     <MobileShell variant="admin" withBottomPadding={false}>
+      <MonitorMotionStyles />
+
       <AppHeader title="Monitor Perusahaan" variant="admin" />
 
       <main className="min-h-dvh bg-gradient-to-br from-[#f6f8ff] via-white to-[#eef4ff]">
         <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 md:px-10 lg:px-16">
-          <div className="overflow-hidden rounded-[2rem] border border-blue-100 bg-white shadow-xl shadow-slate-300/30">
+          <div className="monitor-enter overflow-hidden rounded-[2rem] border border-blue-100 bg-white shadow-xl shadow-slate-300/30">
             <div className="grid gap-0 xl:grid-cols-[0.95fr_1.05fr]">
               <div className="bg-[#123c8c] p-6 text-white md:p-8">
                 <div className="flex items-center gap-3">
@@ -891,10 +975,6 @@ export default function AdminCompanyMonitorPage() {
                   </div>
 
                   <div>
-                    <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-100">
-                      Company Monitor
-                    </p>
-
                     <h2 className="mt-1 text-3xl font-black tracking-tight md:text-4xl">
                       Snapshot Perusahaan
                     </h2>
@@ -903,7 +983,10 @@ export default function AdminCompanyMonitorPage() {
               </div>
 
               <div className="space-y-5 p-5 md:p-6">
-                <div>
+                <div
+                  className="monitor-row-enter"
+                  style={{ animationDelay: "60ms" }}
+                >
                   <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">
                     Mode Tampilan
                   </p>
@@ -930,7 +1013,10 @@ export default function AdminCompanyMonitorPage() {
                   </div>
                 </div>
 
-                <div className="grid gap-3 md:grid-cols-2">
+                <div
+                  className="monitor-row-enter grid gap-3 md:grid-cols-2"
+                  style={{ animationDelay: "100ms" }}
+                >
                   <div>
                     <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">
                       Bulan
@@ -939,7 +1025,7 @@ export default function AdminCompanyMonitorPage() {
                     <select
                       value={month}
                       onChange={(event) => setMonth(Number(event.target.value))}
-                      className="mt-2 h-12 w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                      className="monitor-field mt-2 h-12 w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
                     >
                       {monthOptions.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -958,12 +1044,15 @@ export default function AdminCompanyMonitorPage() {
                       type="number"
                       value={year}
                       onChange={(event) => setYear(Number(event.target.value))}
-                      className="mt-2 h-12 w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                      className="monitor-field mt-2 h-12 w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
                     />
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-blue-100 bg-[#f8fbff] p-4">
+                <div
+                  className="monitor-row-enter rounded-2xl border border-blue-100 bg-[#f8fbff] p-4"
+                  style={{ animationDelay: "140ms" }}
+                >
                   <p className="text-xs font-black uppercase tracking-[0.16em] text-[#123c8c]">
                     Kategori Grafik Aktif
                   </p>
@@ -977,7 +1066,7 @@ export default function AdminCompanyMonitorPage() {
           </div>
 
           {isLoading ? (
-            <div className="flex min-h-[320px] items-center justify-center rounded-3xl border border-blue-100 bg-white">
+            <div className="monitor-enter flex min-h-[320px] items-center justify-center rounded-3xl border border-blue-100 bg-white">
               <div className="text-center">
                 <Loader2 className="mx-auto animate-spin text-[#123c8c]" />
                 <p className="mt-3 text-sm font-black text-slate-600">
@@ -986,13 +1075,16 @@ export default function AdminCompanyMonitorPage() {
               </div>
             </div>
           ) : errorMessage ? (
-            <div className="rounded-3xl border border-red-100 bg-red-50 p-5 text-sm font-bold text-red-700">
+            <div className="monitor-enter rounded-3xl border border-red-100 bg-red-50 p-5 text-sm font-bold text-red-700">
               {errorMessage}
             </div>
           ) : data ? (
             <>
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-2xl border border-amber-100 bg-white p-4 shadow-lg shadow-slate-200/60">
+                <div
+                  className="monitor-row-enter rounded-2xl border border-amber-100 bg-white p-4 shadow-lg shadow-slate-200/60 transition duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-slate-300/40"
+                  style={{ animationDelay: "60ms" }}
+                >
                   <div className="flex items-center gap-2 text-amber-700">
                     <Clock3 size={18} />
                     <p className="text-sm font-black text-slate-900">
@@ -1005,7 +1097,10 @@ export default function AdminCompanyMonitorPage() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-blue-100 bg-white p-4 shadow-lg shadow-slate-200/60">
+                <div
+                  className="monitor-row-enter rounded-2xl border border-blue-100 bg-white p-4 shadow-lg shadow-slate-200/60 transition duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-slate-300/40"
+                  style={{ animationDelay: "100ms" }}
+                >
                   <div className="flex items-center gap-2 text-[#123c8c]">
                     <TrendingUp size={18} />
                     <p className="text-sm font-black text-slate-900">
@@ -1019,7 +1114,10 @@ export default function AdminCompanyMonitorPage() {
                 </div>
               </div>
 
-              <div className="rounded-3xl border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30">
+              <div
+                className="monitor-enter rounded-3xl border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30"
+                style={{ animationDelay: "100ms" }}
+              >
                 <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                   <div>
                     <div className="flex items-center gap-2 text-[#123c8c]">
@@ -1040,7 +1138,7 @@ export default function AdminCompanyMonitorPage() {
                 </div>
 
                 <div className="mt-5 grid gap-4 md:grid-cols-3">
-                  {flexibleModeCards.map((item) => {
+                  {flexibleModeCards.map((item, index) => {
                     const icon =
                       item.key === "wfh" ? (
                         <Home size={20} strokeWidth={2.5} />
@@ -1053,7 +1151,10 @@ export default function AdminCompanyMonitorPage() {
                     return (
                       <div
                         key={item.key}
-                        className="rounded-2xl border border-blue-100 bg-[#f8fbff] p-4"
+                        className="monitor-row-enter rounded-2xl border border-blue-100 bg-[#f8fbff] p-4 transition duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-200/60"
+                        style={{
+                          animationDelay: `${index * 70}ms`,
+                        }}
                       >
                         <div className="flex items-center justify-between gap-3">
                           <div>
@@ -1072,7 +1173,7 @@ export default function AdminCompanyMonitorPage() {
 
                         <div className="mt-4 h-3 overflow-hidden rounded-full bg-blue-100">
                           <div
-                            className="h-full rounded-full bg-[#123c8c]"
+                            className="h-full rounded-full bg-[#123c8c] transition-all duration-700 ease-out"
                             style={{
                               width: `${Math.min(item.percentage, 100)}%`,
                             }}
@@ -1093,7 +1194,10 @@ export default function AdminCompanyMonitorPage() {
               </div>
 
               {displayMode === "chart" ? (
-                <div className="rounded-3xl border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30">
+                <div
+                  className="monitor-enter rounded-3xl border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30"
+                  style={{ animationDelay: "140ms" }}
+                >
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
                       <div className="flex items-center gap-2 text-[#123c8c]">
@@ -1165,10 +1269,13 @@ export default function AdminCompanyMonitorPage() {
                 </div>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  {summaryCards.map((item) => (
+                  {summaryCards.map((item, index) => (
                     <div
                       key={item.label}
-                      className="rounded-2xl border border-blue-100 bg-white p-4 shadow-lg shadow-slate-200/60"
+                      className="monitor-row-enter rounded-2xl border border-blue-100 bg-white p-4 shadow-lg shadow-slate-200/60 transition duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-slate-300/40"
+                      style={{
+                        animationDelay: `${index * 55}ms`,
+                      }}
                     >
                       <p className="text-xs font-black uppercase tracking-[0.15em] text-slate-500">
                         {item.label}
@@ -1186,7 +1293,10 @@ export default function AdminCompanyMonitorPage() {
                 </div>
               )}
 
-              <div className="rounded-3xl border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30">
+              <div
+                className="monitor-enter rounded-3xl border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30"
+                style={{ animationDelay: "180ms" }}
+              >
                 <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                   <div>
                     <div className="flex items-center gap-2 text-[#123c8c]">
@@ -1253,7 +1363,10 @@ export default function AdminCompanyMonitorPage() {
                 </div>
               </div>
 
-              <div className="rounded-3xl border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30">
+              <div
+                className="monitor-enter rounded-3xl border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30"
+                style={{ animationDelay: "220ms" }}
+              >
                 <div className="flex items-center gap-2 text-amber-700">
                   <AlertTriangle size={18} />
 
@@ -1268,10 +1381,13 @@ export default function AdminCompanyMonitorPage() {
                   </p>
                 ) : (
                   <div className="mt-4 grid gap-2 md:grid-cols-2">
-                    {data.alerts.map((alert) => (
+                    {data.alerts.map((alert, index) => (
                       <div
                         key={alert.id}
-                        className="rounded-xl border border-amber-100 bg-amber-50/70 px-3 py-2"
+                        className="monitor-row-enter rounded-xl border border-amber-100 bg-amber-50/70 px-3 py-2"
+                        style={{
+                          animationDelay: `${index * 55}ms`,
+                        }}
                       >
                         <p className="text-sm font-black text-slate-900">
                           {alert.employeeName}
@@ -1287,7 +1403,10 @@ export default function AdminCompanyMonitorPage() {
                 )}
               </div>
 
-              <div className="rounded-3xl border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30">
+              <div
+                className="monitor-enter rounded-3xl border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30"
+                style={{ animationDelay: "260ms" }}
+              >
                 <div className="flex items-center gap-2 text-amber-700">
                   <Clock3 size={18} />
 
@@ -1313,10 +1432,13 @@ export default function AdminCompanyMonitorPage() {
                       </thead>
 
                       <tbody>
-                        {data.lateReasons.map((item) => (
+                        {data.lateReasons.map((item, index) => (
                           <tr
                             key={item.id}
-                            className="border-b border-slate-100 last:border-0"
+                            className="monitor-row-enter border-b border-slate-100 last:border-0"
+                            style={{
+                              animationDelay: `${index * 45}ms`,
+                            }}
                           >
                             <td className="py-3 pr-4 font-bold text-slate-700">
                               {item.date}

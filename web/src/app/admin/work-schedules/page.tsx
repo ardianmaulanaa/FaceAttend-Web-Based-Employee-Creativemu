@@ -237,6 +237,61 @@ async function readJsonResponse(response: Response) {
   }
 }
 
+function WorkScheduleMotionStyles() {
+  return (
+    <style>{`
+      @keyframes workScheduleEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes workScheduleRowEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .work-schedule-enter {
+        animation: workScheduleEnter 320ms ease-out both;
+      }
+
+      .work-schedule-row-enter {
+        opacity: 0;
+        animation: workScheduleRowEnter 300ms ease-out both;
+      }
+
+      .work-schedule-field {
+        transition:
+          border-color 180ms ease,
+          background-color 180ms ease,
+          box-shadow 180ms ease;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .work-schedule-enter,
+        .work-schedule-row-enter {
+          animation: none !important;
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      }
+    `}</style>
+  );
+}
+
 export default function WorkSchedulesPage() {
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [rows, setRows] = useState<ScheduleRow[]>([]);
@@ -315,7 +370,7 @@ export default function WorkSchedulesPage() {
   }
 
   useEffect(() => {
-    loadWorkSchedules();
+    void loadWorkSchedules();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -434,10 +489,12 @@ export default function WorkSchedulesPage() {
 
   return (
     <MobileShell variant="admin">
+      <WorkScheduleMotionStyles />
+
       <AppHeader title="Daftar Jam Kerja" variant="admin" />
 
       <section className="mx-auto max-w-6xl space-y-5 px-5 py-6 pb-28 md:px-10 lg:px-16">
-        <div className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-xl shadow-slate-300/30">
+        <div className="work-schedule-enter overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-xl shadow-slate-300/30">
           <div className="bg-[#123c8c] p-6 text-white md:p-8">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <div>
@@ -446,7 +503,10 @@ export default function WorkSchedulesPage() {
                 </h1>
               </div>
 
-              <div className="grid w-full gap-3 rounded-3xl bg-white/10 p-3 backdrop-blur md:grid-cols-[1fr_auto_auto] lg:max-w-2xl">
+              <div
+                className="work-schedule-row-enter grid w-full gap-3 rounded-3xl bg-white/10 p-3 backdrop-blur md:grid-cols-[1fr_auto_auto] lg:max-w-2xl"
+                style={{ animationDelay: "80ms" }}
+              >
                 <div>
                   <label className="mb-2 block text-xs font-black uppercase tracking-[0.15em] text-blue-100">
                     Pilih Shift
@@ -458,7 +518,7 @@ export default function WorkSchedulesPage() {
                       setSelectedShiftId(event.target.value);
                       setSuccessMessage("");
                     }}
-                    className="h-[52px] w-full rounded-2xl border border-white/20 bg-white px-4 text-sm font-black text-slate-700 outline-none"
+                    className="work-schedule-field h-[52px] w-full rounded-2xl border border-white/20 bg-white px-4 text-sm font-black text-slate-700 outline-none focus:ring-4 focus:ring-white/20"
                   >
                     {shifts.length === 0 ? (
                       <option value="">Belum ada shift</option>
@@ -505,20 +565,20 @@ export default function WorkSchedulesPage() {
 
           <div className="p-5 md:p-7">
             {errorMessage ? (
-              <div className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-black text-red-700">
+              <div className="work-schedule-row-enter rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-black text-red-700">
                 {errorMessage}
               </div>
             ) : null}
 
             {successMessage ? (
-              <div className="flex items-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-black text-emerald-700">
+              <div className="work-schedule-row-enter flex items-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-sm font-black text-emerald-700">
                 <CheckCircle2 size={18} />
                 {successMessage}
               </div>
             ) : null}
 
             {selectedRow?.shift_status === "inactive" ? (
-              <div className="mt-5 rounded-2xl border border-amber-100 bg-amber-50 p-4 text-sm font-black leading-6 text-amber-700">
+              <div className="work-schedule-row-enter mt-5 rounded-2xl border border-amber-100 bg-amber-50 p-4 text-sm font-black leading-6 text-amber-700">
                 Shift ini sedang nonaktif. Jadwal tetap bisa disimpan, tetapi
                 sebaiknya tidak digunakan untuk karyawan aktif sampai status
                 shift diubah kembali menjadi aktif.
@@ -526,7 +586,7 @@ export default function WorkSchedulesPage() {
             ) : null}
 
             {loading ? (
-              <div className="mt-8 flex min-h-[320px] items-center justify-center rounded-3xl border border-blue-100 bg-[#f8fbff]">
+              <div className="work-schedule-row-enter mt-8 flex min-h-[320px] items-center justify-center rounded-3xl border border-blue-100 bg-[#f8fbff]">
                 <div className="text-center">
                   <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#123c8c]" />
                   <p className="mt-3 text-sm font-black text-slate-600">
@@ -535,7 +595,7 @@ export default function WorkSchedulesPage() {
                 </div>
               </div>
             ) : !selectedRow ? (
-              <div className="mt-8 rounded-3xl border border-blue-100 bg-[#f8fbff] px-5 py-12 text-center">
+              <div className="work-schedule-row-enter mt-8 rounded-3xl border border-blue-100 bg-[#f8fbff] px-5 py-12 text-center">
                 <p className="font-black text-slate-700">
                   Data jadwal kerja belum tersedia.
                 </p>
@@ -546,7 +606,10 @@ export default function WorkSchedulesPage() {
             ) : (
               <>
                 <div className="grid gap-3 md:grid-cols-4">
-                  <div className="rounded-3xl border border-blue-100 bg-[#f8fbff] p-4">
+                  <div
+                    className="work-schedule-row-enter rounded-3xl border border-blue-100 bg-[#f8fbff] p-4"
+                    style={{ animationDelay: "40ms" }}
+                  >
                     <div className="flex items-center gap-2 text-[#123c8c]">
                       <CalendarDays size={18} />
                       <p className="text-sm font-bold text-slate-500">Shift</p>
@@ -556,7 +619,10 @@ export default function WorkSchedulesPage() {
                     </p>
                   </div>
 
-                  <div className="rounded-3xl border border-blue-100 bg-[#f8fbff] p-4">
+                  <div
+                    className="work-schedule-row-enter rounded-3xl border border-blue-100 bg-[#f8fbff] p-4"
+                    style={{ animationDelay: "80ms" }}
+                  >
                     <div className="flex items-center gap-2 text-[#123c8c]">
                       <Power size={18} />
                       <p className="text-sm font-bold text-slate-500">Status</p>
@@ -572,7 +638,10 @@ export default function WorkSchedulesPage() {
                     </p>
                   </div>
 
-                  <div className="rounded-3xl border border-blue-100 bg-[#f8fbff] p-4">
+                  <div
+                    className="work-schedule-row-enter rounded-3xl border border-blue-100 bg-[#f8fbff] p-4"
+                    style={{ animationDelay: "120ms" }}
+                  >
                     <div className="flex items-center gap-2 text-[#123c8c]">
                       <CalendarDays size={18} />
                       <p className="text-sm font-bold text-slate-500">
@@ -584,7 +653,10 @@ export default function WorkSchedulesPage() {
                     </p>
                   </div>
 
-                  <div className="rounded-3xl border border-blue-100 bg-[#f8fbff] p-4">
+                  <div
+                    className="work-schedule-row-enter rounded-3xl border border-blue-100 bg-[#f8fbff] p-4"
+                    style={{ animationDelay: "160ms" }}
+                  >
                     <div className="flex items-center gap-2 text-[#123c8c]">
                       <Clock3 size={18} />
                       <p className="text-sm font-bold text-slate-500">
@@ -597,7 +669,10 @@ export default function WorkSchedulesPage() {
                   </div>
                 </div>
 
-                <div className="mt-5 flex flex-col gap-3 rounded-3xl border border-blue-100 bg-[#f8fbff] p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div
+                  className="work-schedule-row-enter mt-5 flex flex-col gap-3 rounded-3xl border border-blue-100 bg-[#f8fbff] p-4 sm:flex-row sm:items-center sm:justify-between"
+                  style={{ animationDelay: "200ms" }}
+                >
                   <div>
                     <p className="text-sm font-black text-slate-900">
                       Pengaturan Cepat
@@ -618,17 +693,20 @@ export default function WorkSchedulesPage() {
                 </div>
 
                 <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {dayOrder.map((dayKey) => {
+                  {dayOrder.map((dayKey, index) => {
                     const day = selectedRow.days[dayKey];
 
                     return (
                       <div
                         key={dayKey}
-                        className={`rounded-3xl border p-4 transition ${
+                        className={`work-schedule-row-enter rounded-3xl border p-4 transition duration-200 hover:-translate-y-0.5 ${
                           day.is_work_day
-                            ? "border-blue-100 bg-white shadow-lg shadow-slate-200/50"
+                            ? "border-blue-100 bg-white shadow-lg shadow-slate-200/50 hover:shadow-xl hover:shadow-slate-300/40"
                             : "border-slate-100 bg-slate-50"
                         }`}
+                        style={{
+                          animationDelay: `${index * 55}ms`,
+                        }}
                       >
                         <div className="flex items-center justify-between gap-3">
                           <div>
@@ -683,7 +761,7 @@ export default function WorkSchedulesPage() {
                                   event.target.value,
                                 )
                               }
-                              className="h-12 w-full max-w-[150px] min-w-0 rounded-2xl border border-blue-100 bg-[#f8fbff] px-3 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-100 disabled:text-slate-400"
+                              className="work-schedule-field h-12 w-full max-w-[150px] min-w-0 rounded-2xl border border-blue-100 bg-[#f8fbff] px-3 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-100 disabled:text-slate-400"
                             />
                           </label>
 
@@ -704,7 +782,7 @@ export default function WorkSchedulesPage() {
                                   event.target.value,
                                 )
                               }
-                              className="h-12 w-full max-w-[150px] min-w-0 rounded-2xl border border-blue-100 bg-[#f8fbff] px-3 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-100 disabled:text-slate-400"
+                              className="work-schedule-field h-12 w-full max-w-[150px] min-w-0 rounded-2xl border border-blue-100 bg-[#f8fbff] px-3 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-100 disabled:text-slate-400"
                             />
                           </label>
                         </div>

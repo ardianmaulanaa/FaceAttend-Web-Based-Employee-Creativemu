@@ -240,6 +240,137 @@ async function readJsonResponse(response: Response) {
   }
 }
 
+function ProfileMotionStyles() {
+  return (
+    <style>{`
+      @keyframes profileEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes profileRowEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes profileModalBackdrop {
+        0% {
+          opacity: 0;
+        }
+
+        100% {
+          opacity: 1;
+        }
+      }
+
+      @keyframes profileModalPanel {
+        0% {
+          opacity: 0;
+          transform: translateY(16px) scale(0.985);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @keyframes profileAvatarPop {
+        0% {
+          opacity: 0;
+          transform: translateY(8px) scale(0.92);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @keyframes profileToastIn {
+        0% {
+          opacity: 0;
+          transform: translateX(28px) translateY(-8px) scale(0.96);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateX(0) translateY(0) scale(1);
+        }
+      }
+
+      .profile-enter {
+        animation: profileEnter 340ms ease-out both;
+      }
+
+      .profile-row-enter {
+        opacity: 0;
+        animation: profileRowEnter 300ms ease-out both;
+      }
+
+      .profile-modal-backdrop {
+        animation: profileModalBackdrop 180ms ease-out both;
+      }
+
+      .profile-modal-panel {
+        animation: profileModalPanel 260ms ease-out both;
+        transform-origin: center bottom;
+      }
+
+      .profile-avatar-pop {
+        animation: profileAvatarPop 300ms ease-out both;
+      }
+
+      .profile-toast-enter {
+        animation: profileToastIn 260ms ease-out both;
+      }
+
+      .profile-field {
+        transition:
+          border-color 180ms ease,
+          background-color 180ms ease,
+          box-shadow 180ms ease,
+          transform 180ms ease;
+      }
+
+      .profile-field:focus {
+        transform: translateY(-1px);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .profile-enter,
+        .profile-row-enter,
+        .profile-modal-backdrop,
+        .profile-modal-panel,
+        .profile-avatar-pop,
+        .profile-toast-enter {
+          animation: none !important;
+          opacity: 1 !important;
+          transform: none !important;
+        }
+
+        .profile-field:focus {
+          transform: none !important;
+        }
+      }
+    `}</style>
+  );
+}
+
 type ProfileAvatarProps = {
   user: ProfileUser;
   initials: string;
@@ -255,14 +386,17 @@ function ProfileAvatar({ user, initials, size = "md" }: ProfileAvatarProps) {
 
   return (
     <div
-      className={`flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#eaf1ff] font-black text-[#123c8c] ring-4 ring-blue-100 ${sizeClass}`}
+      className={`profile-avatar-pop flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#eaf1ff] font-black text-[#123c8c] ring-4 ring-blue-100 ${sizeClass}`}
     >
       {user.profile_photo ? (
-        <img
-          src={user.profile_photo}
-          alt={user.name}
-          className="h-full w-full object-cover"
-        />
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={user.profile_photo}
+            alt={user.name}
+            className="h-full w-full object-cover"
+          />
+        </>
       ) : (
         initials
       )}
@@ -275,14 +409,22 @@ type SectionRowProps = {
   title: string;
   subtitle?: string;
   onClick?: () => void;
+  delay?: string;
 };
 
-function SectionRow({ icon: Icon, title, subtitle, onClick }: SectionRowProps) {
+function SectionRow({
+  icon: Icon,
+  title,
+  subtitle,
+  onClick,
+  delay = "0ms",
+}: SectionRowProps) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="w-full border-b border-slate-100 transition active:scale-[0.99]"
+      className="profile-row-enter w-full border-b border-slate-100 transition hover:bg-[#f8fbff] active:scale-[0.99]"
+      style={{ animationDelay: delay }}
     >
       <div className="flex w-full items-center gap-4 py-5">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eef5ff] text-[#123c8c]">
@@ -315,11 +457,20 @@ type DetailItemProps = {
   label: string;
   value: string;
   icon?: LucideIcon;
+  delay?: string;
 };
 
-function DetailItem({ label, value, icon: Icon }: DetailItemProps) {
+function DetailItem({
+  label,
+  value,
+  icon: Icon,
+  delay = "0ms",
+}: DetailItemProps) {
   return (
-    <div className="rounded-3xl border border-blue-100 bg-white p-5 shadow-sm shadow-slate-200/40 md:p-6">
+    <div
+      className="profile-row-enter rounded-3xl border border-blue-100 bg-white p-5 shadow-sm shadow-slate-200/40 transition duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-slate-300/40 md:p-6"
+      style={{ animationDelay: delay }}
+    >
       <div className="flex items-start gap-4">
         {Icon ? (
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#eef5ff] text-[#123c8c]">
@@ -356,7 +507,7 @@ function PasswordInput({
   onChange,
 }: PasswordInputProps) {
   return (
-    <div>
+    <div className="profile-row-enter">
       <label className="mb-2 block text-sm font-black text-slate-700">
         {label}
       </label>
@@ -367,7 +518,7 @@ function PasswordInput({
           value={value}
           onChange={(event) => onChange(event.target.value)}
           placeholder={placeholder}
-          className="w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-3 pr-12 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+          className="profile-field w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-3 pr-12 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
         />
 
         <button
@@ -778,7 +929,7 @@ export default function ProfilePage() {
   }
 
   useEffect(() => {
-    loadProfile();
+    void loadProfile();
   }, []);
 
   useEffect(() => {
@@ -886,6 +1037,8 @@ export default function ProfilePage() {
 
   return (
     <MobileShell variant="employee" withBottomPadding={false}>
+      <ProfileMotionStyles />
+
       <div className="hidden md:block">
         <AppHeader
           title={
@@ -903,14 +1056,14 @@ export default function ProfilePage() {
 
       <main className="min-h-dvh bg-white pb-28 text-slate-950 md:bg-gradient-to-br md:from-[#f6f8ff] md:via-white md:to-[#eef4ff]">
         {loading ? (
-          <section className="mx-auto max-w-5xl px-5 pt-8 md:px-10">
+          <section className="profile-enter mx-auto max-w-5xl px-5 pt-8 md:px-10">
             <div className="flex items-center gap-3 rounded-3xl border border-blue-100 bg-[#f8fbff] p-5 text-sm font-bold text-slate-500">
               <Loader2 size={20} className="animate-spin text-[#123c8c]" />
               Mengambil data profil...
             </div>
           </section>
         ) : errorMessage || !user ? (
-          <section className="mx-auto max-w-5xl px-5 pt-8 md:px-10">
+          <section className="profile-enter mx-auto max-w-5xl px-5 pt-8 md:px-10">
             <div className="rounded-3xl border border-red-100 bg-red-50 px-6 py-8 text-center">
               <p className="text-sm font-black text-red-700">
                 {errorMessage || "Profil tidak ditemukan."}
@@ -918,12 +1071,12 @@ export default function ProfilePage() {
             </div>
           </section>
         ) : activeView === "personal-detail" ? (
-          <section className="mx-auto max-w-5xl px-5 pt-5 md:px-10 md:pt-8">
+          <section className="profile-enter mx-auto max-w-5xl px-5 pt-5 md:px-10 md:pt-8">
             <div className="flex items-center gap-4 border-b border-slate-100 pb-5 md:hidden">
               <button
                 type="button"
                 onClick={() => setActiveView("menu")}
-                className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-[#123456] transition active:scale-[0.96]"
+                className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-[#123456] transition hover:bg-[#f8fbff] active:scale-[0.96]"
               >
                 <ArrowLeft size={25} strokeWidth={2.8} />
               </button>
@@ -937,7 +1090,7 @@ export default function ProfilePage() {
               <button
                 type="button"
                 onClick={() => setActiveView("menu")}
-                className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#123456] shadow-sm shadow-slate-200 transition active:scale-[0.96]"
+                className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#123456] shadow-sm shadow-slate-200 transition hover:-translate-y-0.5 hover:bg-[#f8fbff] active:scale-[0.96]"
               >
                 <ArrowLeft size={25} strokeWidth={2.8} />
               </button>
@@ -953,7 +1106,10 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="mt-10 flex flex-col items-center md:mt-8">
+            <div
+              className="profile-row-enter mt-10 flex flex-col items-center md:mt-8"
+              style={{ animationDelay: "60ms" }}
+            >
               <ProfileAvatar user={user} initials={initials} size="md" />
 
               <h2 className="mt-5 text-center text-2xl font-black text-[#123456] md:text-3xl">
@@ -969,7 +1125,7 @@ export default function ProfilePage() {
               <button
                 type="button"
                 onClick={openEditProfileModal}
-                className="mt-5 inline-flex items-center justify-center gap-2 rounded-2xl bg-[#123c8c] px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition active:scale-[0.98]"
+                className="mt-5 inline-flex items-center justify-center gap-2 rounded-2xl bg-[#123c8c] px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:-translate-y-0.5 hover:bg-[#0f3274] active:scale-[0.98]"
               >
                 <Pencil size={17} strokeWidth={2.7} />
                 Edit Detail
@@ -977,21 +1133,22 @@ export default function ProfilePage() {
             </div>
 
             <div className="mt-10 grid gap-4 md:grid-cols-2">
-              {detailItems.map((item) => (
+              {detailItems.map((item, index) => (
                 <DetailItem
                   key={item.label}
                   label={item.label}
                   value={item.value}
                   icon={item.icon}
+                  delay={`${index * 45}ms`}
                 />
               ))}
             </div>
           </section>
         ) : (
-          <section className="mx-auto max-w-5xl px-5 pt-5 md:px-10 md:pt-8">
-            <div className="rounded-[1.7rem] border border-blue-100 bg-[#f8fbff] p-5 shadow-sm shadow-blue-100/60 md:rounded-[2rem] md:bg-white md:p-6">
+          <section className="profile-enter mx-auto max-w-5xl px-5 pt-5 md:px-10 md:pt-8">
+            <div className="rounded-[1.7rem] border border-blue-100 bg-[#f8fbff] p-5 shadow-sm shadow-blue-100/60 transition duration-200 hover:shadow-lg hover:shadow-slate-200/50 md:rounded-[2rem] md:bg-white md:p-6">
               <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#123c8c] text-white">
+                <div className="profile-avatar-pop flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#123c8c] text-white">
                   <UserRound size={24} strokeWidth={2.7} />
                 </div>
 
@@ -1007,7 +1164,10 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="mt-6 flex items-center gap-5 rounded-[2rem] bg-white md:border md:border-blue-100 md:p-6 md:shadow-xl md:shadow-slate-200/50">
+            <div
+              className="profile-row-enter mt-6 flex items-center gap-5 rounded-[2rem] bg-white transition duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-slate-200/50 md:border md:border-blue-100 md:p-6 md:shadow-xl md:shadow-slate-200/50"
+              style={{ animationDelay: "60ms" }}
+            >
               <ProfileAvatar user={user} initials={initials} size="sm" />
 
               <div className="min-w-0">
@@ -1021,7 +1181,10 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="mt-12 md:mt-10">
+            <div
+              className="profile-row-enter mt-12 md:mt-10"
+              style={{ animationDelay: "100ms" }}
+            >
               <h3 className="text-xl font-black text-slate-950">
                 Data Pribadi
               </h3>
@@ -1032,14 +1195,16 @@ export default function ProfilePage() {
                   title="Info Pribadi"
                   subtitle="Lihat detail personal dan data karyawan"
                   onClick={() => setActiveView("personal-detail")}
+                  delay="120ms"
                 />
 
                 <label
-                  className={`block w-full border-b border-slate-100 transition active:scale-[0.99] ${
+                  className={`profile-row-enter block w-full border-b border-slate-100 transition hover:bg-[#f8fbff] active:scale-[0.99] ${
                     isUploadingPhoto
                       ? "cursor-not-allowed opacity-60"
                       : "cursor-pointer"
                   }`}
+                  style={{ animationDelay: "160ms" }}
                 >
                   <div className="flex w-full items-center gap-4 py-5">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eef5ff] text-[#123c8c]">
@@ -1078,7 +1243,7 @@ export default function ProfilePage() {
                       const file = event.target.files?.[0];
 
                       if (file) {
-                        handleUploadProfilePhoto(file);
+                        void handleUploadProfilePhoto(file);
                       }
 
                       event.target.value = "";
@@ -1091,6 +1256,7 @@ export default function ProfilePage() {
                   title="Ubah Kata Sandi"
                   subtitle="Perbarui password akun"
                   onClick={openPasswordModal}
+                  delay="200ms"
                 />
               </div>
             </div>
@@ -1099,7 +1265,8 @@ export default function ProfilePage() {
               type="button"
               onClick={handleLogout}
               disabled={isLoggingOut}
-              className="mt-20 flex h-14 w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white text-base font-black text-[#123456] shadow-sm transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 md:mx-auto md:mt-12 md:max-w-sm"
+              className="profile-row-enter mt-20 flex h-14 w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white text-base font-black text-[#123456] shadow-sm transition hover:-translate-y-0.5 hover:bg-red-50 hover:text-red-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 md:mx-auto md:mt-12 md:max-w-sm"
+              style={{ animationDelay: "240ms" }}
             >
               {isLoggingOut ? (
                 <>
@@ -1117,8 +1284,8 @@ export default function ProfilePage() {
         )}
 
         {isEditProfileModalOpen ? (
-          <div className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/50 px-4 pb-4 backdrop-blur-sm md:items-center md:pb-0">
-            <div className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-[2rem] bg-white p-5 shadow-2xl shadow-slate-950/30 md:p-7">
+          <div className="profile-modal-backdrop fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/50 px-4 pb-4 backdrop-blur-sm md:items-center md:pb-0">
+            <div className="profile-modal-panel max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-[2rem] bg-white p-5 shadow-2xl shadow-slate-950/30 md:p-7">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.22em] text-[#123c8c]">
@@ -1137,14 +1304,14 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={closeEditProfileModal}
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 transition active:scale-[0.96]"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-700 active:scale-[0.96]"
                 >
                   <X size={20} />
                 </button>
               </div>
 
               <form onSubmit={handleUpdateProfile} className="mt-6 space-y-4">
-                <div>
+                <div className="profile-row-enter">
                   <label className="mb-2 block text-sm font-black text-slate-700">
                     Nama Lengkap
                   </label>
@@ -1164,12 +1331,15 @@ export default function ProfilePage() {
                         }))
                       }
                       placeholder="Masukkan nama lengkap"
-                      className="w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                      className="profile-field w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                     />
                   </div>
                 </div>
 
-                <div>
+                <div
+                  className="profile-row-enter"
+                  style={{ animationDelay: "40ms" }}
+                >
                   <label className="mb-2 block text-sm font-black text-slate-700">
                     Nomor Telepon
                   </label>
@@ -1200,21 +1370,27 @@ export default function ProfilePage() {
                       pattern="[0-9]*"
                       maxLength={12}
                       placeholder="Contoh: 081234567890"
-                      className="w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                      className="profile-field w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                     />
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-blue-100 bg-[#f8fbff] p-4 text-xs font-semibold leading-6 text-slate-500">
+                <div
+                  className="profile-row-enter rounded-2xl border border-blue-100 bg-[#f8fbff] p-4 text-xs font-semibold leading-6 text-slate-500"
+                  style={{ animationDelay: "80ms" }}
+                >
                   Email, status, role, unit, divisi, jabatan, shift, dan kantor
                   terdaftar hanya dapat diubah oleh admin.
                 </div>
 
-                <div className="flex flex-col-reverse gap-3 pt-2 md:flex-row md:justify-end">
+                <div
+                  className="profile-row-enter flex flex-col-reverse gap-3 pt-2 md:flex-row md:justify-end"
+                  style={{ animationDelay: "120ms" }}
+                >
                   <button
                     type="button"
                     onClick={closeEditProfileModal}
-                    className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-black text-slate-600 transition hover:bg-slate-200"
+                    className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-black text-slate-600 transition hover:bg-slate-200 active:scale-[0.98]"
                   >
                     Batal
                   </button>
@@ -1243,8 +1419,8 @@ export default function ProfilePage() {
         ) : null}
 
         {isPasswordModalOpen ? (
-          <div className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/50 px-4 pb-4 backdrop-blur-sm md:items-center md:pb-0">
-            <div className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-[2rem] bg-white p-5 md:p-7">
+          <div className="profile-modal-backdrop fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/50 px-4 pb-4 backdrop-blur-sm md:items-center md:pb-0">
+            <div className="profile-modal-panel max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-[2rem] bg-white p-5 shadow-2xl shadow-slate-950/30 md:p-7">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.22em] text-[#123c8c]">
@@ -1263,9 +1439,9 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={closePasswordModal}
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 transition active:scale-[0.96]"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-700 active:scale-[0.96]"
                 >
-                  ×
+                  <X size={20} />
                 </button>
               </div>
 
@@ -1312,16 +1488,16 @@ export default function ProfilePage() {
                   }
                 />
 
-                <div className="rounded-2xl border border-blue-100 bg-[#f8fbff] p-4 text-xs font-semibold leading-6 text-slate-500">
+                <div className="profile-row-enter rounded-2xl border border-blue-100 bg-[#f8fbff] p-4 text-xs font-semibold leading-6 text-slate-500">
                   Setelah kata sandi berhasil diubah, gunakan kata sandi baru
                   untuk login berikutnya.
                 </div>
 
-                <div className="flex flex-col-reverse gap-3 pt-2 md:flex-row md:justify-end">
+                <div className="profile-row-enter flex flex-col-reverse gap-3 pt-2 md:flex-row md:justify-end">
                   <button
                     type="button"
                     onClick={closePasswordModal}
-                    className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-black text-slate-600 transition hover:bg-slate-200"
+                    className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-black text-slate-600 transition hover:bg-slate-200 active:scale-[0.98]"
                   >
                     Batal
                   </button>
@@ -1351,7 +1527,7 @@ export default function ProfilePage() {
 
         {profileAlert && profileAlertTheme ? (
           <div
-            className={`fixed right-4 top-4 z-[140] w-[calc(100vw-2rem)] max-w-md transition-all duration-300 ease-out md:right-7 md:top-7 ${
+            className={`profile-toast-enter fixed right-4 top-4 z-[140] w-[calc(100vw-2rem)] max-w-md transition-all duration-300 ease-out md:right-7 md:top-7 ${
               isProfileAlertClosing
                 ? "translate-x-8 scale-95 opacity-0"
                 : "translate-x-0 scale-100 opacity-100"
@@ -1370,7 +1546,7 @@ export default function ProfilePage() {
 
                 <div className="relative flex items-start gap-4">
                   <div
-                    className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.5rem] ${profileAlertTheme.iconWrap} shadow-lg shadow-slate-300/40`}
+                    className={`profile-avatar-pop flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.5rem] ${profileAlertTheme.iconWrap} shadow-lg shadow-slate-300/40`}
                   >
                     <ProfileAlertIcon size={32} strokeWidth={3} />
                   </div>

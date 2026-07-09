@@ -61,6 +61,94 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
+function AnnouncementMotionStyles() {
+  return (
+    <style>{`
+      @keyframes adminAnnouncementEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes adminAnnouncementModalBackdrop {
+        0% {
+          opacity: 0;
+        }
+
+        100% {
+          opacity: 1;
+        }
+      }
+
+      @keyframes adminAnnouncementModalPanel {
+        0% {
+          opacity: 0;
+          transform: translateY(16px) scale(0.985);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @keyframes adminAnnouncementRow {
+        0% {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .admin-announcement-enter {
+        animation: adminAnnouncementEnter 320ms ease-out both;
+      }
+
+      .admin-announcement-row-enter {
+        opacity: 0;
+        animation: adminAnnouncementRow 300ms ease-out both;
+      }
+
+      .admin-announcement-modal-backdrop {
+        animation: adminAnnouncementModalBackdrop 180ms ease-out both;
+      }
+
+      .admin-announcement-modal-panel {
+        animation: adminAnnouncementModalPanel 260ms ease-out both;
+        transform-origin: center bottom;
+      }
+
+      .admin-announcement-field {
+        transition:
+          border-color 180ms ease,
+          background-color 180ms ease,
+          box-shadow 180ms ease;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .admin-announcement-enter,
+        .admin-announcement-row-enter,
+        .admin-announcement-modal-backdrop,
+        .admin-announcement-modal-panel {
+          animation: none !important;
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      }
+    `}</style>
+  );
+}
+
 export default function AdminAnnouncementsPage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [search, setSearch] = useState("");
@@ -120,7 +208,7 @@ export default function AdminAnnouncementsPage() {
   }
 
   useEffect(() => {
-    loadAnnouncements();
+    void loadAnnouncements();
   }, []);
 
   const filteredAnnouncements = useMemo(() => {
@@ -295,10 +383,12 @@ export default function AdminAnnouncementsPage() {
 
   return (
     <MobileShell variant="admin">
+      <AnnouncementMotionStyles />
+
       <AppHeader title="Pengumuman" variant="admin" />
 
       <main className="mx-auto max-w-7xl px-5 py-6 pb-28 md:px-10 lg:px-16">
-        <section className="relative overflow-hidden rounded-[2.2rem] bg-[#123c8c] p-6 text-white shadow-2xl shadow-blue-900/25 md:p-8">
+        <section className="admin-announcement-enter relative overflow-hidden rounded-[2.2rem] bg-[#123c8c] p-6 text-white shadow-2xl shadow-blue-900/25 md:p-8">
           <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
           <div className="absolute -bottom-24 left-16 h-64 w-64 rounded-full bg-blue-300/20 blur-3xl" />
 
@@ -317,7 +407,7 @@ export default function AdminAnnouncementsPage() {
             <button
               type="button"
               onClick={openAddModal}
-              className="inline-flex items-center justify-center gap-3 rounded-[1.6rem] bg-white px-6 py-4 text-sm font-black text-[#123c8c] shadow-2xl shadow-blue-950/20 transition active:scale-[0.98]"
+              className="inline-flex items-center justify-center gap-3 rounded-[1.6rem] bg-white px-6 py-4 text-sm font-black text-[#123c8c] shadow-2xl shadow-blue-950/20 transition duration-200 hover:-translate-y-0.5 hover:bg-blue-50 active:scale-[0.98]"
             >
               <Plus size={20} strokeWidth={3} />
               Tambah Pengumuman
@@ -326,21 +416,30 @@ export default function AdminAnnouncementsPage() {
         </section>
 
         <section className="mt-6 grid gap-4 md:grid-cols-3">
-          <div className="rounded-[1.7rem] border border-emerald-100 bg-white/90 p-5 shadow-xl shadow-slate-300/30">
+          <div
+            className="admin-announcement-row-enter rounded-[1.7rem] border border-emerald-100 bg-white/90 p-5 shadow-xl shadow-slate-300/30"
+            style={{ animationDelay: "70ms" }}
+          >
             <p className="text-sm font-bold text-slate-500">Published</p>
             <h3 className="mt-2 text-3xl font-black text-emerald-700">
               {publishedCount}
             </h3>
           </div>
 
-          <div className="rounded-[1.7rem] border border-amber-100 bg-white/90 p-5 shadow-xl shadow-slate-300/30">
+          <div
+            className="admin-announcement-row-enter rounded-[1.7rem] border border-amber-100 bg-white/90 p-5 shadow-xl shadow-slate-300/30"
+            style={{ animationDelay: "110ms" }}
+          >
             <p className="text-sm font-bold text-slate-500">Draft</p>
             <h3 className="mt-2 text-3xl font-black text-amber-700">
               {draftCount}
             </h3>
           </div>
 
-          <div className="rounded-[1.7rem] border border-slate-100 bg-white/90 p-5 shadow-xl shadow-slate-300/30">
+          <div
+            className="admin-announcement-row-enter rounded-[1.7rem] border border-slate-100 bg-white/90 p-5 shadow-xl shadow-slate-300/30"
+            style={{ animationDelay: "150ms" }}
+          >
             <p className="text-sm font-bold text-slate-500">Archived</p>
             <h3 className="mt-2 text-3xl font-black text-slate-700">
               {archivedCount}
@@ -348,7 +447,10 @@ export default function AdminAnnouncementsPage() {
           </div>
         </section>
 
-        <section className="mt-6 rounded-[2rem] border border-white/70 bg-white/90 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-6">
+        <section
+          className="admin-announcement-enter mt-6 rounded-[2rem] border border-white/70 bg-white/90 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-6"
+          style={{ animationDelay: "120ms" }}
+        >
           <div className="flex flex-col gap-4">
             <div>
               <h2 className="text-xl font-black text-slate-950">
@@ -370,7 +472,7 @@ export default function AdminAnnouncementsPage() {
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Cari pengumuman..."
-                  className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                  className="admin-announcement-field w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 />
               </div>
 
@@ -381,7 +483,7 @@ export default function AdminAnnouncementsPage() {
                     event.target.value as "all" | AnnouncementStatus,
                   )
                 }
-                className="rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                className="admin-announcement-field rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
               >
                 <option value="all">Semua Status</option>
                 <option value="published">Published</option>
@@ -392,7 +494,7 @@ export default function AdminAnnouncementsPage() {
               <button
                 type="button"
                 onClick={resetFilter}
-                className="inline-flex h-[46px] items-center justify-center rounded-2xl border border-blue-100 bg-white px-4 text-[#123c8c] shadow-sm transition active:scale-[0.96]"
+                className="inline-flex h-[46px] items-center justify-center rounded-2xl border border-blue-100 bg-white px-4 text-[#123c8c] shadow-sm transition duration-200 hover:bg-[#eaf1ff] active:scale-[0.96]"
                 title="Reset Filter"
               >
                 <RefreshCw size={20} strokeWidth={2.6} />
@@ -401,7 +503,7 @@ export default function AdminAnnouncementsPage() {
           </div>
 
           {errorMessage ? (
-            <div className="mt-5 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-bold text-red-700">
+            <div className="admin-announcement-row-enter mt-5 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-bold text-red-700">
               {errorMessage}
             </div>
           ) : null}
@@ -416,14 +518,14 @@ export default function AdminAnnouncementsPage() {
 
             <div className="divide-y divide-blue-50 bg-white">
               {isLoading ? (
-                <div className="px-5 py-10 text-center">
+                <div className="admin-announcement-row-enter px-5 py-10 text-center">
                   <RefreshCw className="mx-auto h-8 w-8 animate-spin text-[#123c8c]" />
                   <p className="mt-3 font-black text-slate-700">
                     Mengambil data pengumuman...
                   </p>
                 </div>
               ) : filteredAnnouncements.length === 0 ? (
-                <div className="px-5 py-10 text-center">
+                <div className="admin-announcement-row-enter px-5 py-10 text-center">
                   <p className="font-black text-slate-700">
                     Pengumuman tidak ditemukan.
                   </p>
@@ -432,10 +534,13 @@ export default function AdminAnnouncementsPage() {
                   </p>
                 </div>
               ) : (
-                filteredAnnouncements.map((announcement) => (
+                filteredAnnouncements.map((announcement, index) => (
                   <div
                     key={announcement.id}
-                    className="grid gap-4 px-5 py-5 text-sm transition hover:bg-[#f8fbff] md:grid-cols-[1.4fr_2fr_0.8fr_1fr] md:items-center"
+                    className="admin-announcement-row-enter grid gap-4 px-5 py-5 text-sm transition duration-200 hover:bg-[#f8fbff] md:grid-cols-[1.4fr_2fr_0.8fr_1fr] md:items-center"
+                    style={{
+                      animationDelay: `${index * 55}ms`,
+                    }}
                   >
                     <div>
                       <p className="font-black text-slate-950">
@@ -466,7 +571,7 @@ export default function AdminAnnouncementsPage() {
                       <button
                         type="button"
                         onClick={() => openEditModal(announcement)}
-                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-blue-100 bg-white px-3 py-2 text-xs font-black text-[#123c8c] transition hover:bg-[#eaf1ff]"
+                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-blue-100 bg-white px-3 py-2 text-xs font-black text-[#123c8c] transition hover:bg-[#eaf1ff] active:scale-[0.97]"
                       >
                         <Edit size={14} />
                         Edit
@@ -478,7 +583,7 @@ export default function AdminAnnouncementsPage() {
                           onClick={() =>
                             updateStatus(announcement.id, "published")
                           }
-                          className="rounded-xl bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-700 transition hover:bg-emerald-100"
+                          className="rounded-xl bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-700 transition hover:bg-emerald-100 active:scale-[0.97]"
                         >
                           Publish
                         </button>
@@ -490,7 +595,7 @@ export default function AdminAnnouncementsPage() {
                           onClick={() =>
                             updateStatus(announcement.id, "archived")
                           }
-                          className="rounded-xl bg-slate-100 px-3 py-2 text-xs font-black text-slate-600 transition hover:bg-slate-200"
+                          className="rounded-xl bg-slate-100 px-3 py-2 text-xs font-black text-slate-600 transition hover:bg-slate-200 active:scale-[0.97]"
                         >
                           Archive
                         </button>
@@ -499,7 +604,7 @@ export default function AdminAnnouncementsPage() {
                       <button
                         type="button"
                         onClick={() => deleteAnnouncement(announcement.id)}
-                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-50 px-3 py-2 text-xs font-black text-rose-600 transition hover:bg-rose-100"
+                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-50 px-3 py-2 text-xs font-black text-rose-600 transition hover:bg-rose-100 active:scale-[0.97]"
                       >
                         <Trash2 size={14} />
                         Hapus
@@ -514,8 +619,8 @@ export default function AdminAnnouncementsPage() {
       </main>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/50 px-4 pb-4 backdrop-blur-sm md:items-center md:pb-0">
-          <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] bg-white p-5 shadow-2xl shadow-slate-950/30 md:p-7">
+        <div className="admin-announcement-modal-backdrop fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/50 px-4 pb-4 backdrop-blur-sm md:items-center md:pb-0">
+          <div className="admin-announcement-modal-panel max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] bg-white p-5 shadow-2xl shadow-slate-950/30 md:p-7">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.22em] text-[#123c8c]">
@@ -538,14 +643,14 @@ export default function AdminAnnouncementsPage() {
               <button
                 type="button"
                 onClick={closeModal}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 transition active:scale-[0.96]"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 transition hover:bg-slate-200 active:scale-[0.96]"
               >
                 <X size={20} />
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-              <div>
+              <div className="admin-announcement-row-enter">
                 <label className="mb-2 block text-sm font-black text-slate-700">
                   Judul Pengumuman
                 </label>
@@ -559,11 +664,14 @@ export default function AdminAnnouncementsPage() {
                     }))
                   }
                   placeholder="Contoh: Pengingat Absensi Harian"
-                  className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                  className="admin-announcement-field w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 />
               </div>
 
-              <div>
+              <div
+                className="admin-announcement-row-enter"
+                style={{ animationDelay: "40ms" }}
+              >
                 <label className="mb-2 block text-sm font-black text-slate-700">
                   Isi Pengumuman
                 </label>
@@ -578,11 +686,14 @@ export default function AdminAnnouncementsPage() {
                   }
                   rows={6}
                   placeholder="Tulis isi pemberitahuan..."
-                  className="w-full resize-none rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold leading-6 text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                  className="admin-announcement-field w-full resize-none rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold leading-6 text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 />
               </div>
 
-              <div>
+              <div
+                className="admin-announcement-row-enter"
+                style={{ animationDelay: "80ms" }}
+              >
                 <label className="mb-2 block text-sm font-black text-slate-700">
                   Status
                 </label>
@@ -595,7 +706,7 @@ export default function AdminAnnouncementsPage() {
                       status: event.target.value as AnnouncementStatus,
                     }))
                   }
-                  className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white"
+                  className="admin-announcement-field w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 >
                   <option value="published">Published</option>
                   <option value="draft">Draft</option>
@@ -603,11 +714,14 @@ export default function AdminAnnouncementsPage() {
                 </select>
               </div>
 
-              <div className="flex flex-col-reverse gap-3 pt-2 md:flex-row md:justify-end">
+              <div
+                className="admin-announcement-row-enter flex flex-col-reverse gap-3 pt-2 md:flex-row md:justify-end"
+                style={{ animationDelay: "120ms" }}
+              >
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-black text-slate-600 transition hover:bg-slate-200"
+                  className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-black text-slate-600 transition hover:bg-slate-200 active:scale-[0.98]"
                 >
                   Cancel
                 </button>

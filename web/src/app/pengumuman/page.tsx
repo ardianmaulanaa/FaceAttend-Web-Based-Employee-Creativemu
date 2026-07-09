@@ -1,11 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  CalendarDays,
-  Loader2,
-  Megaphone,
-} from "lucide-react";
+import { CalendarDays, Loader2, Megaphone } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import MobileShell from "@/components/MobileShell";
@@ -44,6 +40,87 @@ function formatDate(value?: string) {
   }).format(date);
 }
 
+function AnnouncementMotionStyles() {
+  return (
+    <style>{`
+      @keyframes announcementEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes announcementRowEnter {
+        0% {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes announcementIconPop {
+        0% {
+          opacity: 0;
+          transform: translateY(8px) scale(0.92);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @keyframes announcementGlowFloat {
+        0%,
+        100% {
+          transform: translate3d(0, 0, 0) scale(1);
+        }
+
+        50% {
+          transform: translate3d(12px, -10px, 0) scale(1.04);
+        }
+      }
+
+      .announcement-enter {
+        animation: announcementEnter 340ms ease-out both;
+      }
+
+      .announcement-row-enter {
+        opacity: 0;
+        animation: announcementRowEnter 300ms ease-out both;
+      }
+
+      .announcement-icon-pop {
+        animation: announcementIconPop 280ms ease-out both;
+      }
+
+      .announcement-glow-float {
+        animation: announcementGlowFloat 6s ease-in-out infinite;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .announcement-enter,
+        .announcement-row-enter,
+        .announcement-icon-pop,
+        .announcement-glow-float {
+          animation: none !important;
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      }
+    `}</style>
+  );
+}
+
 export default function AnnouncementPage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -77,7 +154,7 @@ export default function AnnouncementPage() {
       if (latestId) {
         window.localStorage.setItem(
           "faceattend_read_announcement_id",
-          latestId
+          latestId,
         );
       }
     } catch (error) {
@@ -90,11 +167,13 @@ export default function AnnouncementPage() {
   }
 
   useEffect(() => {
-    getAnnouncements();
+    void getAnnouncements();
   }, []);
 
   return (
     <MobileShell variant="employee" withBottomPadding={false}>
+      <AnnouncementMotionStyles />
+
       <div className="hidden md:block">
         <AppHeader
           title="Pengumuman"
@@ -105,23 +184,35 @@ export default function AnnouncementPage() {
       </div>
 
       <main className="min-h-dvh bg-gradient-to-br from-[#f6f8ff] via-white to-[#eef4ff] pb-[calc(8rem+env(safe-area-inset-bottom))] text-slate-950 md:pb-28">
+        <div className="announcement-glow-float pointer-events-none fixed -left-32 top-24 hidden h-72 w-72 rounded-full bg-orange-200/20 blur-3xl md:block" />
+        <div className="announcement-glow-float pointer-events-none fixed -right-32 bottom-24 hidden h-72 w-72 rounded-full bg-blue-300/20 blur-3xl md:block" />
+
         <section className="mx-auto max-w-5xl px-5 pt-7 md:hidden">
-          <div className="rounded-[2rem] bg-[#123c8c] p-5 text-white shadow-xl shadow-blue-900/20">
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/15">
+          <div className="announcement-enter relative overflow-hidden rounded-[2rem] bg-[#123c8c] p-5 text-white shadow-xl shadow-blue-900/20">
+            <div className="announcement-glow-float absolute -right-16 -top-16 h-44 w-44 rounded-full bg-white/10 blur-2xl" />
+            <div className="announcement-glow-float absolute -bottom-20 left-14 h-44 w-44 rounded-full bg-blue-300/20 blur-2xl" />
+
+            <div className="relative z-10 flex items-center gap-3">
+              <div className="announcement-icon-pop flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/15">
                 <Megaphone size={25} strokeWidth={2.6} />
               </div>
 
               <div className="min-w-0">
-                <p className="text-xs font-black uppercase tracking-[0.24em] text-blue-100">
+                <p className="announcement-row-enter text-xs font-black uppercase tracking-[0.24em] text-blue-100">
                   FaceAttend
                 </p>
 
-                <h1 className="mt-1 text-3xl font-black tracking-tight">
+                <h1
+                  className="announcement-row-enter mt-1 text-3xl font-black tracking-tight"
+                  style={{ animationDelay: "60ms" }}
+                >
                   Pengumuman
                 </h1>
 
-                <p className="mt-1 text-sm font-semibold text-blue-100">
+                <p
+                  className="announcement-row-enter mt-1 text-sm font-semibold text-blue-100"
+                  style={{ animationDelay: "100ms" }}
+                >
                   Informasi terbaru dari perusahaan.
                 </p>
               </div>
@@ -131,19 +222,19 @@ export default function AnnouncementPage() {
 
         <section className="mx-auto max-w-5xl px-5 py-6 md:px-10 lg:px-0">
           {errorMessage ? (
-            <div className="rounded-3xl border border-red-100 bg-red-50 p-5 text-sm font-black text-red-700">
+            <div className="announcement-row-enter rounded-3xl border border-red-100 bg-red-50 p-5 text-sm font-black text-red-700">
               {errorMessage}
             </div>
           ) : null}
 
           {isLoading ? (
-            <div className="flex items-center justify-center gap-2 rounded-3xl border border-blue-100 bg-white p-8 text-sm font-black text-slate-500 shadow-lg shadow-slate-200/50">
+            <div className="announcement-row-enter flex items-center justify-center gap-2 rounded-3xl border border-blue-100 bg-white p-8 text-sm font-black text-slate-500 shadow-lg shadow-slate-200/50">
               <Loader2 size={18} className="animate-spin text-[#123c8c]" />
               Memuat pengumuman...
             </div>
           ) : announcements.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-blue-100 bg-white px-5 py-14 text-center shadow-lg shadow-slate-200/50">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
+            <div className="announcement-row-enter rounded-3xl border border-dashed border-blue-100 bg-white px-5 py-14 text-center shadow-lg shadow-slate-200/50">
+              <div className="announcement-icon-pop mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
                 <Megaphone size={26} strokeWidth={2.6} />
               </div>
 
@@ -157,14 +248,17 @@ export default function AnnouncementPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {announcements.map((announcement) => {
+              {announcements.map((announcement, index) => {
                 const dateValue =
                   announcement.created_at || announcement.createdAt;
 
                 return (
                   <article
                     key={announcement.id}
-                    className="min-w-0 rounded-[2rem] border border-blue-100 bg-white p-5 shadow-lg shadow-slate-200/50 md:p-6"
+                    className="announcement-row-enter min-w-0 rounded-[2rem] border border-blue-100 bg-white p-5 shadow-lg shadow-slate-200/50 transition duration-200 hover:-translate-y-0.5 hover:bg-[#f8fbff] hover:shadow-xl hover:shadow-slate-300/40 md:p-6"
+                    style={{
+                      animationDelay: `${index * 55}ms`,
+                    }}
                   >
                     <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                       <div className="min-w-0">
