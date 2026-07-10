@@ -636,6 +636,38 @@ function AnimatedHistogram({
   );
 }
 
+function AnimatedCounter({ value }: { value: number }) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let start = 0;
+    const end = Number(value) || 0;
+    if (start === end) {
+      setCount(end);
+      return;
+    }
+
+    const duration = 800; // 800ms
+    const totalSteps = 30;
+    const stepTime = duration / totalSteps;
+    const increment = (end - start) / totalSteps;
+
+    const timer = setInterval(() => {
+      start += increment;
+      if (start >= end) {
+        clearInterval(timer);
+        setCount(end);
+      } else {
+        setCount(Math.round(start));
+      }
+    }, stepTime);
+
+    return () => clearInterval(timer);
+  }, [value]);
+
+  return <>{count}</>;
+}
+
 function PieProgressCard({
   label,
   value,
@@ -649,12 +681,46 @@ function PieProgressCard({
   description: string;
   icon: ReactNode;
 }) {
-  const safePercentage = Math.max(0, Math.min(100, toSafeNumber(percentage)));
+  const [animatedValue, setAnimatedValue] = useState(0);
+  const [animatedPercentage, setAnimatedPercentage] = useState(0);
+
+  const targetValue = toSafeNumber(value);
+  const targetPercentage = Math.max(0, Math.min(100, toSafeNumber(percentage)));
+
+  useEffect(() => {
+    setAnimatedValue(0);
+    setAnimatedPercentage(0);
+
+    const duration = 1000; // 1s duration
+    const steps = 40;
+    const stepDuration = duration / steps;
+    let currentStep = 0;
+
+    const interval = setInterval(() => {
+      currentStep++;
+      const progress = currentStep / steps;
+      const easeProgress = progress * (2 - progress); // easeOutQuad
+
+      setAnimatedValue(Math.round(targetValue * easeProgress));
+      setAnimatedPercentage(targetPercentage * easeProgress);
+
+      if (currentStep >= steps) {
+        clearInterval(interval);
+        setAnimatedValue(targetValue);
+        setAnimatedPercentage(targetPercentage);
+      }
+    }, stepDuration);
+
+    return () => clearInterval(interval);
+  }, [value, percentage]);
+
   const visualPercentage =
-    value > 0 && safePercentage > 0
-      ? Math.max(safePercentage, 1.5)
-      : safePercentage;
-  const rest = 100 - safePercentage;
+    animatedValue > 0 && animatedPercentage > 0
+      ? Math.max(animatedPercentage, 1.5)
+      : animatedPercentage;
+  const rest = 100 - animatedPercentage;
+
+  const currentRotation = 360 * (animatedPercentage / 100);
 
   return (
     <div className="monitor-row-enter rounded-3xl border border-blue-100 bg-white p-5 shadow-lg shadow-slate-200/60 transition duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-slate-300/40">
@@ -663,7 +729,7 @@ function PieProgressCard({
           <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">
             {label}
           </p>
-          <p className="mt-2 text-3xl font-black text-slate-950">{value}</p>
+          <p className="mt-2 text-3xl font-black text-slate-950">{animatedValue}</p>
           <p className="mt-1 text-xs font-bold text-slate-500">{description}</p>
         </div>
 
@@ -674,15 +740,19 @@ function PieProgressCard({
 
       <div className="mt-5 flex items-center gap-4">
         <div
-          className="relative h-24 w-24 rounded-full"
+          className="relative h-24 w-24 rounded-full transition-transform duration-300"
           style={{
             background: `conic-gradient(#123c8c 0% ${visualPercentage}%, #dbeafe ${visualPercentage}% 100%)`,
+            transform: `rotate(${currentRotation}deg)`,
           }}
         >
-          <div className="absolute inset-[10px] flex items-center justify-center rounded-full bg-white">
+          <div 
+            className="absolute inset-[10px] flex items-center justify-center rounded-full bg-white"
+            style={{ transform: `rotate(-${currentRotation}deg)` }}
+          >
             <div className="text-center">
               <p className="text-lg font-black text-slate-950">
-                {safePercentage.toFixed(1)}%
+                {animatedPercentage.toFixed(1)}%
               </p>
               <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
                 Proporsi
@@ -695,7 +765,7 @@ function PieProgressCard({
           <div className="flex items-center justify-between rounded-2xl bg-[#f8fbff] px-3 py-2 text-sm font-bold text-slate-600 ring-1 ring-blue-100">
             <span>Terpakai</span>
             <span className="font-black text-[#123c8c]">
-              {safePercentage.toFixed(1)}%
+              {animatedPercentage.toFixed(1)}%
             </span>
           </div>
 
@@ -1304,7 +1374,7 @@ export default function AdminCompanyMonitorPage() {
                         </p>
 
                         <p className={`mt-2 text-3xl font-black ${valueColor}`}>
-                          {item.value}
+                          <AnimatedCounter value={item.value} />
                         </p>
 
                         <p className={`mt-1 text-xs font-black ${noteColor}`}>
