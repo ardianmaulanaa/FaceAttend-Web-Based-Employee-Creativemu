@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { AlertCircle, Loader2, LogIn, ShieldCheck, X } from "lucide-react";
@@ -45,6 +45,46 @@ function isCreativemuEmail(email: string) {
 function LoginMotionStyles() {
   return (
     <style>{`
+      @keyframes logoWave {
+        0% {
+          transform: scale(0.9);
+          opacity: 0.8;
+          filter: blur(0px);
+        }
+        50% {
+          opacity: 0.5;
+        }
+        100% {
+          transform: scale(2.3);
+          opacity: 0;
+          filter: blur(3px);
+        }
+      }
+
+      @keyframes splashLogoPulse {
+        0%, 100% {
+          transform: scale(1);
+          filter: drop-shadow(0 4px 6px rgba(18, 60, 140, 0.08));
+        }
+        50% {
+          transform: scale(1.05);
+          filter: drop-shadow(0 10px 15px rgba(255, 138, 0, 0.18));
+        }
+      }
+
+      @keyframes splashTextFadeIn {
+        0% {
+          opacity: 0;
+          transform: translateY(10px);
+          filter: blur(4px);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+          filter: blur(0px);
+        }
+      }
+
       @keyframes loginEnter {
         0% {
           opacity: 0;
@@ -291,6 +331,24 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const [showSplash, setShowSplash] = useState(true);
+  const [fadeSplash, setFadeSplash] = useState(false);
+
+  useEffect(() => {
+    const fadeTimeout = setTimeout(() => {
+      setFadeSplash(true);
+    }, 1800);
+
+    const hideTimeout = setTimeout(() => {
+      setShowSplash(false);
+    }, 2350);
+
+    return () => {
+      clearTimeout(fadeTimeout);
+      clearTimeout(hideTimeout);
+    };
+  }, []);
+
   const [isLoading, setIsLoading] = useState(false);
   const [isAdminDemoLoading, setIsAdminDemoLoading] = useState(false);
 
@@ -403,6 +461,48 @@ export default function LoginPage() {
   return (
     <MobileShell variant="auth" withBottomPadding={false}>
       <LoginMotionStyles />
+
+      {showSplash && (
+        <div
+          className={`fixed inset-0 z-[999] flex flex-col items-center justify-center bg-[#f6f8ff] transition-all duration-500 ease-in-out ${
+            fadeSplash ? "opacity-0 scale-105 pointer-events-none blur-md" : ""
+          }`}
+        >
+          {/* Glowing Background Orbs */}
+          <div className="absolute top-1/4 left-1/4 h-[350px] w-[350px] rounded-full bg-orange-200/25 blur-3xl animate-[loginBackgroundFloat_8s_ease-in-out_infinite]" />
+          <div className="absolute bottom-1/4 right-1/4 h-[350px] w-[350px] rounded-full bg-blue-200/25 blur-3xl animate-[loginBackgroundFloat_6s_ease-in-out_infinite_reverse]" />
+
+          <div className="relative flex h-40 w-40 items-center justify-center">
+            {/* Concentric Expanding Wave Ripples (Squircle-shaped to match the logo frame) */}
+            <div className="absolute h-36 w-36 rounded-[2.75rem] border border-orange-500/25 bg-gradient-to-br from-orange-400/8 to-transparent animate-[logoWave_2.4s_cubic-bezier(0.1,0.8,0.3,1)_infinite]" style={{ animationDelay: "0s" }} />
+            <div className="absolute h-36 w-36 rounded-[2.75rem] border border-[#123c8c]/25 bg-gradient-to-br from-blue-400/8 to-transparent animate-[logoWave_2.4s_cubic-bezier(0.1,0.8,0.3,1)_infinite]" style={{ animationDelay: "0.8s" }} />
+            <div className="absolute h-36 w-36 rounded-[2.75rem] border border-orange-500/25 bg-gradient-to-br from-orange-400/8 to-transparent animate-[logoWave_2.4s_cubic-bezier(0.1,0.8,0.3,1)_infinite]" style={{ animationDelay: "1.6s" }} />
+
+            {/* Large White Logo Container */}
+            <div className="relative z-10 flex h-32 w-32 items-center justify-center overflow-hidden rounded-[2.5rem] bg-white p-5 shadow-[0_25px_60px_rgba(18,60,140,0.15)] border border-white/60 transition-transform duration-300 hover:scale-105">
+              <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-white/5 to-transparent" />
+              <Image
+                src="/images/creativemu-logo/creativemu.png"
+                alt="Creativemu Logo"
+                width={100}
+                height={100}
+                className="h-full w-full object-contain animate-[splashLogoPulse_2s_ease-in-out_infinite]"
+                priority
+              />
+            </div>
+          </div>
+
+          <div className="mt-14 flex flex-col items-center w-full max-w-[280px]">
+            {/* Smooth fading text animations */}
+            <h2 className="text-2xl font-black tracking-[0.18em] text-slate-950 text-center uppercase animate-[splashTextFadeIn_0.8s_ease-out_both]" style={{ animationDelay: "250ms" }}>
+              Creativemu
+            </h2>
+            <p className="mt-1.5 text-[10px] font-black uppercase tracking-[0.24em] text-[#ff8a00] animate-[splashTextFadeIn_0.8s_ease-out_both]" style={{ animationDelay: "500ms" }}>
+              Face Attend System
+            </p>
+          </div>
+        </div>
+      )}
 
       <section className="relative min-h-dvh w-full overflow-hidden bg-[#f6f8ff]">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,138,0,0.16),transparent_32%),radial-gradient(circle_at_top_right,rgba(18,60,140,0.18),transparent_36%)]" />
