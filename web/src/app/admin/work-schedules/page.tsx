@@ -7,7 +7,6 @@ import {
   Clock3,
   Loader2,
   Power,
-  RefreshCw,
   Save,
 } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
@@ -530,18 +529,6 @@ export default function WorkSchedulesPage() {
                       ))
                     )}
                   </select>
-                </div>
-
-                <div className="flex items-end">
-                  <button
-                    type="button"
-                    onClick={loadWorkSchedules}
-                    disabled={loading || saving}
-                    className="flex h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 text-sm font-black text-[#123c8c] transition hover:bg-blue-50 active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-60 md:w-[52px]"
-                    title="Refresh"
-                  >
-                    <RefreshCw size={20} strokeWidth={2.6} />
-                  </button>
                 </div>
 
                 <div className="flex items-end">

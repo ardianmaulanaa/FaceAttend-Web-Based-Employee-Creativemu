@@ -350,10 +350,6 @@ export default function AdminAttendanceReportPage() {
                   </div>
 
                   <div>
-                    <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-100">
-                      Attendance Report
-                    </p>
-
                     <h2 className="mt-1 text-3xl font-black tracking-tight md:text-4xl">
                       Rekap Kehadiran Karyawan
                     </h2>

@@ -7,7 +7,6 @@ import {
   MapPin,
   Network,
   Plus,
-  RefreshCw,
   Search,
   Trash2,
   X,
@@ -492,15 +491,6 @@ export default function DepartmentsPage() {
               </div>
 
               <div className="flex items-end gap-2">
-                <button
-                  type="button"
-                  onClick={loadDepartments}
-                  className="flex h-[54px] flex-1 items-center justify-center gap-2 rounded-2xl bg-[#123c8c] px-5 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#0f3274] active:scale-[0.96] md:flex-none"
-                >
-                  <RefreshCw size={20} strokeWidth={2.6} />
-                  <span className="md:hidden">Refresh</span>
-                </button>
-
                 <button
                   type="button"
                   onClick={resetFilter}

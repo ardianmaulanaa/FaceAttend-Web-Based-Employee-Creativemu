@@ -1,6 +1,6 @@
 # Creativemu FaceAttend
 
-**Creativemu FaceAttend** adalah aplikasi absensi karyawan berbasis web untuk Creativemu. Aplikasi ini dibuat untuk membantu proses check-in, check-out, pencatatan riwayat kehadiran, pengelolaan data karyawan, monitoring absensi, pengumuman internal, serta pelaporan kehadiran karyawan.
+**Creativemu FaceAttend** adalah aplikasi absensi karyawan berbasis web untuk Creativemu. Aplikasi ini dibuat untuk membantu proses check-in, check-out, pencatatan riwayat kehadiran, pengelolaan data karyawan, monitoring absensi, pengumuman internal, pengajuan cuti/izin/sakit, serta pelaporan kehadiran karyawan.
 
 Pada versi terbaru, sistem absensi **tidak lagi menggunakan face recognition berbasis AI**. Mekanisme absensi dilakukan dengan cara karyawan mengambil foto melalui kamera browser sebagai bukti kehadiran, lalu sistem menyimpan lokasi GPS saat check-in dan check-out.
 
@@ -10,7 +10,7 @@ Pada versi terbaru, sistem absensi **tidak lagi menggunakan face recognition ber
 
 **Status:** Development
 
-Project ini masih berada pada tahap pengembangan aktif. Beberapa bagian utama seperti autentikasi, role access, absensi berbasis foto dan GPS, manajemen karyawan, master data, pengumuman, riwayat presensi, dan dashboard admin sudah mulai dikembangkan dan terus disempurnakan.
+Project ini masih berada pada tahap pengembangan aktif. Beberapa bagian utama seperti autentikasi, role access, absensi berbasis foto dan GPS, manajemen karyawan, master data, pengumuman, riwayat presensi, pengajuan cuti/izin/sakit, notifikasi karyawan, notifikasi admin, dan dashboard admin sudah dikembangkan dan terus disempurnakan.
 
 ---
 
@@ -24,7 +24,10 @@ Creativemu FaceAttend dikembangkan untuk:
 - Menyimpan data lokasi GPS saat absensi dilakukan.
 - Membantu admin memantau status kehadiran karyawan.
 - Memudahkan karyawan melihat riwayat presensi.
+- Memudahkan karyawan mengajukan cuti, izin, atau sakit.
+- Membantu admin mengelola laporan cuti dan keputusan approval.
 - Menyediakan pengumuman internal dari admin ke karyawan.
+- Menyediakan pusat notifikasi untuk karyawan dan admin.
 - Menyediakan dasar pengembangan sistem monitoring dan laporan kehadiran.
 
 ---
@@ -37,8 +40,10 @@ Sistem absensi pada Creativemu FaceAttend menggunakan kombinasi:
 2. **Lokasi GPS dari browser**
 3. **Data waktu check-in dan check-out**
 4. **Validasi radius kantor**
-5. **Riwayat kehadiran per bulan dan tahun**
-6. **Role-based access antara admin dan karyawan**
+5. **Kategori lokasi kerja**
+6. **Riwayat kehadiran per bulan dan tahun**
+7. **Role-based access antara admin dan karyawan**
+8. **Notifikasi berbasis status dan pengumuman**
 
 Dengan konsep ini, setiap absensi memiliki bukti visual dan lokasi yang dapat digunakan sebagai dasar validasi kehadiran.
 
@@ -59,11 +64,12 @@ Fitur autentikasi:
 - Proteksi halaman berdasarkan role.
 - Logout melalui sidebar menu.
 
-Role yang digunakan:
+Role utama:
 
 - Admin
 - Employee
-- Role tambahan dapat dikembangkan sesuai kebutuhan sistem.
+
+Role tambahan dapat dikembangkan sesuai kebutuhan sistem.
 
 ---
 
@@ -74,17 +80,12 @@ Dashboard karyawan digunakan sebagai halaman utama setelah login.
 Fitur dashboard karyawan:
 
 - Menampilkan sapaan pengguna.
-- Menampilkan informasi shift, jabatan, unit, dan divisi.
+- Menampilkan informasi shift, jabatan, unit, divisi, dan kantor terdaftar.
 - Menampilkan waktu saat ini.
 - Menampilkan status absensi hari ini.
 - Tombol masuk ke halaman presensi.
-- Akses cepat ke:
-  - Laporan presensi
-  - Face Attendance / Presensi
-  - Profil
-  - Izin / Cuti
-- Notifikasi pengumuman baru.
-- Badge notifikasi hanya muncul ketika ada pengumuman baru yang belum dibaca.
+- Akses cepat ke presensi, riwayat presensi, profil, cuti/izin/sakit, dan pengumuman.
+- Badge notifikasi untuk status cuti/izin/sakit dan pengumuman baru.
 
 ---
 
@@ -105,12 +106,27 @@ Fitur presensi:
 - Foto terakhir dapat ditampilkan sebagai preview.
 - Data absensi dikirim ke API internal aplikasi.
 
+Kategori lokasi kerja yang didukung:
+
+- Presensi dari kantor.
+- Work From Home.
+- Work From Cafe.
+- Kunjungan.
+
+Catatan kategori lokasi:
+
+- Presensi kantor menggunakan validasi radius kantor.
+- WFH dan WFC dapat dilakukan dari lokasi karyawan saat itu.
+- Kunjungan membutuhkan pengisian data kunjungan tambahan.
+- WFH, WFC, dan kunjungan dapat masuk ke notifikasi admin untuk kebutuhan monitoring.
+- WFH, WFC, dan kunjungan tidak masuk ke notifikasi karyawan.
+
 Alur check-in:
 
 ```txt
 Karyawan membuka halaman Attendance
 → Kamera aktif
-→ Karyawan melakukan check-in
+→ Karyawan memilih kategori presensi
 → Sistem mengambil foto dari kamera
 → Sistem mengambil lokasi GPS
 → Sistem mengirim data ke API
@@ -157,6 +173,7 @@ Informasi yang ditampilkan:
 
 - Tanggal absensi.
 - Status kehadiran.
+- Kategori presensi.
 - Jam check-in.
 - Jam check-out.
 - Durasi kerja.
@@ -183,16 +200,15 @@ Informasi profil:
 - Nama karyawan.
 - Email.
 - Nomor telepon.
-- Kode karyawan.
 - Status akun.
 - Role akun.
-- Unit kerja.
+- Kantor terdaftar.
 - Divisi.
+- Unit kerja.
 - Jabatan.
 - Shift.
 - Toleransi keterlambatan.
 - Jam kerja.
-- Kantor terdaftar.
 
 Fitur profil:
 
@@ -215,7 +231,9 @@ Fitur admin yang dikembangkan:
 - Register employee.
 - Pengumuman internal.
 - Laporan cuti.
+- Laporan kehadiran.
 - Master data.
+- Notifikasi admin.
 - Monitoring awal absensi.
 
 ---
@@ -226,25 +244,34 @@ Master data digunakan admin untuk mengelola data dasar perusahaan.
 
 Master data yang tersedia atau sedang dikembangkan:
 
-- Unit
+- Kantor
 - Divisi
+- Unit
 - Jabatan
 - Shift
 - Jam Kerja
-- Kantor / Office
 - Data karyawan
 
 Relasi utama:
 
 ```txt
-Unit
+Kantor
 → Divisi
+→ Unit
 → Jabatan
 → Karyawan
 → Shift
 → Jam Kerja
-→ Kantor Terdaftar
 ```
+
+Penjelasan singkat:
+
+- Kantor digunakan sebagai lokasi kerja dan dasar validasi radius.
+- Divisi berada di bawah kantor.
+- Unit berada di bawah divisi.
+- Jabatan berada di bawah unit.
+- Karyawan memiliki kantor, divisi, unit, jabatan, dan shift.
+- Shift terhubung dengan jadwal kerja.
 
 ---
 
@@ -258,11 +285,11 @@ Data yang dapat diatur:
 - Email.
 - Password awal.
 - Nomor telepon.
-- Unit.
+- Kantor terdaftar.
 - Divisi.
+- Unit.
 - Jabatan.
 - Shift.
-- Kantor terdaftar.
 - Status akun.
 
 Password disimpan dalam bentuk hash, bukan plain text.
@@ -278,8 +305,8 @@ Fitur pengumuman:
 - Admin membuat pengumuman.
 - Admin mengatur status pengumuman.
 - Karyawan dapat melihat pengumuman yang sudah dipublikasikan.
-- Dashboard karyawan menampilkan indikator jika ada pengumuman baru.
-- Indikator notifikasi akan hilang setelah pengumuman dibaca.
+- Pengumuman baru dapat masuk ke notifikasi karyawan.
+- Notifikasi pengumuman akan berubah menjadi terbaca setelah karyawan membuka notifikasi tersebut.
 
 Status pengumuman:
 
@@ -289,24 +316,153 @@ Status pengumuman:
 
 ---
 
-### 11. Cuti / Izin
+### 11. Cuti / Izin / Sakit
 
-Fitur cuti atau izin digunakan untuk pengajuan ketidakhadiran karyawan.
+Fitur cuti, izin, dan sakit digunakan untuk pengajuan ketidakhadiran karyawan.
 
-Fitur yang dikembangkan:
+Fitur karyawan:
 
-- Karyawan dapat mengajukan cuti.
-- Karyawan dapat mengajukan izin.
-- Karyawan dapat mengajukan sakit.
-- Karyawan dapat melihat riwayat pengajuan.
-- Admin dapat melihat laporan cuti.
-- Admin dapat menyetujui atau menolak pengajuan.
+- Mengajukan cuti.
+- Mengajukan izin.
+- Mengajukan sakit.
+- Mengisi tanggal mulai.
+- Mengisi tanggal selesai.
+- Mengisi alasan pengajuan.
+- Melihat riwayat pengajuan.
+- Melihat status pengajuan.
+
+Fitur admin:
+
+- Melihat semua pengajuan cuti, izin, dan sakit.
+- Melihat detail karyawan yang mengajukan.
+- Menyetujui pengajuan.
+- Menolak pengajuan.
+- Memberikan catatan admin.
+- Mengubah status pengajuan.
+- Mengirim notifikasi status ke karyawan.
 
 Status pengajuan:
 
 - Pending
 - Approved
 - Rejected
+
+Alur pengajuan:
+
+```txt
+Karyawan mengajukan cuti / izin / sakit
+→ Data masuk sebagai pending
+→ Admin membuka laporan cuti
+→ Admin menyetujui atau menolak
+→ Status pengajuan berubah
+→ Notifikasi dikirim ke karyawan
+→ Karyawan membuka notifikasi
+→ Notifikasi ditandai sebagai dibaca
+```
+
+---
+
+### 12. Notifikasi Karyawan
+
+Notifikasi karyawan dibuat sebagai pusat informasi untuk employee.
+
+Notifikasi karyawan hanya berisi:
+
+- Cuti disetujui atau ditolak.
+- Izin disetujui atau ditolak.
+- Sakit disetujui atau ditolak.
+- Pengumuman baru.
+
+Notifikasi karyawan tidak digunakan untuk:
+
+- WFH.
+- WFC.
+- Kunjungan.
+
+Fitur notifikasi karyawan:
+
+- Badge notifikasi pada AppHeader.
+- Badge hanya muncul jika ada notifikasi yang belum dibaca.
+- Halaman notifikasi khusus karyawan.
+- Daftar notifikasi ditampilkan untuk bulan berjalan.
+- Klik notifikasi akan menandai notifikasi sebagai sudah dibaca.
+- Klik notifikasi cuti/izin/sakit mengarah ke halaman Cuti.
+- Klik notifikasi pengumuman mengarah ke halaman Pengumuman.
+- Setelah notifikasi dibaca, badge akan berkurang atau hilang.
+
+Alur notifikasi karyawan:
+
+```txt
+Admin approve / reject cuti, izin, atau sakit
+→ Sistem membuat notifikasi karyawan
+→ Badge notifikasi karyawan menyala
+→ Karyawan membuka halaman notifikasi
+→ Karyawan klik notifikasi
+→ Notifikasi berubah menjadi read
+→ Karyawan diarahkan ke halaman terkait
+```
+
+---
+
+### 13. Notifikasi Admin
+
+Notifikasi admin digunakan untuk membantu admin memantau aktivitas penting.
+
+Notifikasi admin dapat digunakan untuk:
+
+- Pengajuan cuti/izin/sakit yang masih pending.
+- Aktivitas WFH.
+- Aktivitas WFC.
+- Aktivitas kunjungan.
+
+Fitur notifikasi admin:
+
+- Badge notifikasi pada AppHeader admin.
+- Badge menghitung data yang belum dibaca atau masih pending.
+- Halaman notifikasi admin.
+- Notifikasi admin dapat diarahkan ke laporan cuti atau laporan kehadiran.
+
+Catatan:
+
+- Notifikasi admin dan notifikasi karyawan memiliki alur yang berbeda.
+- Status approval cuti/izin/sakit untuk karyawan masuk ke notifikasi karyawan.
+- Aktivitas WFH/WFC/kunjungan hanya digunakan untuk kebutuhan monitoring admin.
+
+---
+
+### 14. AppHeader dan Navigasi
+
+AppHeader digunakan sebagai komponen navigasi utama untuk admin dan karyawan.
+
+Fitur AppHeader:
+
+- Sidebar menu.
+- Navigasi role-based.
+- Top notification button.
+- Badge notifikasi.
+- Responsive untuk mobile dan desktop.
+- Sidebar tertutup otomatis ketika berpindah halaman.
+- Notifikasi admin diarahkan ke halaman notifikasi admin.
+- Notifikasi karyawan diarahkan ke halaman notifikasi karyawan.
+
+Menu karyawan:
+
+- Home
+- Attendance
+- History
+- Cuti
+- Info
+- Profile
+
+Menu admin:
+
+- Dashboard
+- Monitor Perusahaan
+- Pengumuman
+- Register Employee
+- Laporan Kehadiran
+- Laporan Cuti
+- Master Data
 
 ---
 
@@ -335,7 +491,6 @@ Status pengajuan:
 - Prisma Client
 - Prisma Schema
 - Prisma Studio
-- Sequel Ace untuk database lokal
 
 ### Authentication & Security
 
@@ -351,7 +506,6 @@ Status pengajuan:
 - Camera API
 - Geolocation API
 - FormData upload
-- LocalStorage untuk status pengumuman terbaca
 
 ---
 
@@ -368,13 +522,18 @@ src
 │   │   ├── employees
 │   │   ├── profile
 │   │   ├── announcements
+│   │   ├── notifications
+│   │   ├── leave-requests
 │   │   └── admin
+│   │       ├── notifications
+│   │       └── leave-requests
 │   ├── home
 │   ├── attendance
 │   ├── history
 │   ├── profile
 │   ├── pengumuman
 │   ├── cuti
+│   ├── notifikasi
 │   └── admin
 │       ├── dashboard
 │       ├── employees
@@ -382,15 +541,15 @@ src
 │       ├── pengumuman
 │       ├── shifts
 │       ├── work-schedules
-│       ├── units
+│       ├── kantor
 │       ├── departments
+│       ├── units
 │       ├── positions
+│       ├── laporan-kehadiran
+│       ├── notifikasi
 │       └── cuti
 ├── components
-│   ├── AppHeader.tsx
-│   ├── BottomNav.tsx
-│   ├── MobileShell.tsx
-│   └── StatCard.tsx
+│   └── AppHeader.tsx
 ├── lib
 │   ├── prisma.ts
 │   └── auth.ts
@@ -406,26 +565,28 @@ src
 
 Admin dapat mengakses:
 
-- Dashboard admin
-- Monitoring perusahaan
-- Register employee
-- Master data
-- Pengumuman
-- Laporan cuti
-- Laporan kehadiran
-- Manajemen data karyawan
+- Dashboard admin.
+- Monitoring perusahaan.
+- Register employee.
+- Master data.
+- Pengumuman.
+- Laporan cuti.
+- Laporan kehadiran.
+- Notifikasi admin.
+- Manajemen data karyawan.
 
 ### Employee
 
 Karyawan dapat mengakses:
 
-- Home
-- Attendance
-- History
-- Detail History
-- Profile
-- Pengumuman
-- Cuti / Izin
+- Home.
+- Attendance.
+- History.
+- Detail History.
+- Profile.
+- Pengumuman.
+- Cuti / Izin / Sakit.
+- Notifikasi karyawan.
 
 ---
 
@@ -439,13 +600,14 @@ Menyimpan data akun dan karyawan.
 
 Relasi utama:
 
-- Unit
+- Registered Office
 - Department
+- Unit
 - Position
 - Shift
-- Registered Office
 - Attendance
 - Leave Request
+- Notification
 
 ### Attendance
 
@@ -453,54 +615,46 @@ Menyimpan data absensi harian.
 
 Data yang disimpan:
 
-- Tanggal absensi
-- Check-in time
-- Check-out time
-- Foto check-in
-- Foto check-out
-- Latitude check-in
-- Longitude check-in
-- Latitude check-out
-- Longitude check-out
-- Akurasi GPS
-- Jarak dari kantor
-- Status presensi
-- Late minutes
-- Early leave minutes
-- Work minutes
+- Tanggal absensi.
+- Check-in time.
+- Check-out time.
+- Foto check-in.
+- Foto check-out.
+- Latitude check-in.
+- Longitude check-in.
+- Latitude check-out.
+- Longitude check-out.
+- Akurasi GPS.
+- Jarak dari kantor.
+- Status presensi.
+- Kategori lokasi kerja.
+- Late minutes.
+- Early leave minutes.
+- Work minutes.
+
+### Office Location
+
+Menyimpan data kantor dan radius lokasi.
+
+### Department
+
+Menyimpan data divisi yang berada di bawah kantor.
+
+### Unit
+
+Menyimpan unit kerja yang berada di bawah divisi.
+
+### Position
+
+Menyimpan jabatan yang berada di bawah unit.
 
 ### Shift
 
 Menyimpan data shift karyawan.
 
-Data shift:
-
-- Nama shift
-- Toleransi keterlambatan
-- Status shift
-
 ### Work Schedule
 
 Menyimpan jadwal kerja berdasarkan shift.
-
-Data jam kerja:
-
-- Hari kerja
-- Status hari kerja
-- Jam masuk
-- Jam keluar
-
-### Unit
-
-Menyimpan unit kerja perusahaan.
-
-### Department
-
-Menyimpan divisi yang dapat terhubung ke unit.
-
-### Position
-
-Menyimpan jabatan yang dapat terhubung ke divisi.
 
 ### Announcement
 
@@ -509,6 +663,22 @@ Menyimpan pengumuman dari admin.
 ### Leave Request
 
 Menyimpan pengajuan cuti, izin, sakit, atau lainnya.
+
+### Notification
+
+Menyimpan notifikasi yang digunakan untuk admin atau karyawan.
+
+Jenis notifikasi karyawan:
+
+- leave_status
+- announcement
+
+Jenis notifikasi admin:
+
+- pending leave request
+- wfh
+- wfc
+- visit
 
 ---
 
@@ -532,6 +702,24 @@ GET  /api/attendance/today
 GET  /api/attendance/history
 GET  /api/attendance/[id]
 GET  /api/attendance/[id]/photo
+```
+
+### Leave Request
+
+```txt
+GET   /api/leave-requests
+POST  /api/leave-requests
+GET   /api/admin/leave-requests
+PATCH /api/admin/leave-requests
+```
+
+### Notification
+
+```txt
+GET   /api/notifications
+PATCH /api/notifications
+GET   /api/admin/notifications
+PATCH /api/admin/notifications
 ```
 
 ### Profile
@@ -562,9 +750,9 @@ DELETE /api/announcements
 ### Admin
 
 ```txt
-GET /api/admin/...
-POST /api/admin/...
-PATCH /api/admin/...
+GET    /api/admin/...
+POST   /api/admin/...
+PATCH  /api/admin/...
 DELETE /api/admin/...
 ```
 
@@ -582,6 +770,7 @@ DELETE /api/admin/...
 /profile
 /pengumuman
 /cuti
+/notifikasi
 ```
 
 ### Admin
@@ -593,10 +782,13 @@ DELETE /api/admin/...
 /admin/pengumuman
 /admin/shifts
 /admin/work-schedules
-/admin/units
+/admin/kantor
 /admin/departments
+/admin/units
 /admin/positions
+/admin/laporan-kehadiran
 /admin/cuti
+/admin/notifikasi
 ```
 
 ---
@@ -641,36 +833,6 @@ npx prisma studio
 
 ---
 
-## Catatan Environment
-
-Repository ini **tidak menyertakan file environment asli**.
-
-File seperti berikut tidak boleh dipush ke GitHub:
-
-```txt
-.env
-.env.local
-.env.production
-.env.development
-```
-
-Konfigurasi database, JWT secret, dan konfigurasi sensitif lainnya harus dibuat secara lokal oleh developer masing-masing.
-
-Pastikan file `.gitignore` memiliki aturan untuk menyembunyikan file sensitif.
-
-Contoh file yang sebaiknya tidak dipush:
-
-```txt
-node_modules
-.next
-.env
-.env.local
-.env.production
-.env.development
-```
-
----
-
 ## Keamanan
 
 Beberapa prinsip keamanan yang digunakan:
@@ -682,7 +844,8 @@ Beberapa prinsip keamanan yang digunakan:
 - Route admin hanya dapat diakses role tertentu.
 - Data absensi dikirim menggunakan FormData.
 - Data lokasi diambil langsung dari browser.
-- File environment tidak disertakan di repository.
+- Server-side validation digunakan pada API penting.
+- Data sensitif dan konfigurasi lokal tidak dicantumkan dalam dokumentasi.
 
 ---
 
@@ -690,16 +853,15 @@ Beberapa prinsip keamanan yang digunakan:
 
 Karena project masih tahap development, beberapa batasan yang masih ada:
 
-- Database masih menggunakan MySQL lokal saat development.
 - Sistem belum sepenuhnya production-ready.
 - Face recognition AI sudah tidak digunakan.
 - Absensi menggunakan foto sebagai bukti, bukan identifikasi wajah otomatis.
 - Validasi GPS bergantung pada akurasi perangkat dan izin lokasi browser.
 - Beberapa fitur admin dan monitoring masih dalam tahap pengembangan.
 - Belum ada deployment production final.
-- Belum ada integrasi cloud database final.
 - Belum ada sistem audit log lengkap.
-- Belum ada sistem notifikasi realtime.
+- Belum ada sistem notifikasi realtime berbasis websocket.
+- Notifikasi saat ini masih menggunakan polling dari client.
 
 ---
 
@@ -714,11 +876,13 @@ Rencana pengembangan berikutnya:
 - Pengembangan laporan bulanan.
 - Validasi lokasi kantor yang lebih detail.
 - Pengelolaan office radius dari admin.
-- Penyempurnaan fitur cuti dan izin.
+- Penyempurnaan fitur cuti, izin, dan sakit.
+- Penyempurnaan pusat notifikasi karyawan.
+- Penyempurnaan pusat notifikasi admin.
+- Integrasi notifikasi pengumuman ke seluruh karyawan.
 - Role access yang lebih detail.
 - Audit log aktivitas admin.
 - Deployment ke hosting production.
-- Migrasi database ke cloud database.
 - Optimasi tampilan mobile.
 - Optimasi performa API.
 - Peningkatan keamanan session.
@@ -726,21 +890,20 @@ Rencana pengembangan berikutnya:
 
 ---
 
-## Catatan Penting untuk GitHub
+## Catatan Penting untuk Repository
 
-README ini dibuat aman untuk GitHub karena tidak mencantumkan:
+README ini tidak mencantumkan:
 
-- Database URL asli
-- JWT secret
-- Password
-- Token
-- Credential
-- API key
-- Data private perusahaan
-- Data asli karyawan
-- Konfigurasi environment production
+- Konfigurasi sensitif.
+- Credential.
+- Token.
+- Secret.
+- Data asli karyawan.
+- Data private perusahaan.
+- Data pribadi developer.
+- Detail konfigurasi production.
 
-Jika project ingin dipublikasikan, pastikan data dummy digunakan untuk demo.
+Jika project ingin dipublikasikan, pastikan data yang digunakan untuk demo bukan data asli.
 
 ---
 
@@ -750,15 +913,15 @@ Creativemu FaceAttend adalah project aplikasi absensi berbasis web yang masih da
 
 Sebelum digunakan untuk production, aplikasi perlu melalui tahap:
 
-- Testing keamanan
-- Testing akurasi GPS
-- Testing beban server
-- Review validasi role
-- Review database schema
-- Backup database
-- Deployment configuration
-- Privacy policy
-- SOP penggunaan karyawan
+- Testing keamanan.
+- Testing akurasi GPS.
+- Testing beban server.
+- Review validasi role.
+- Review database schema.
+- Backup database.
+- Deployment configuration review.
+- Privacy policy.
+- SOP penggunaan karyawan.
 
 ---
 

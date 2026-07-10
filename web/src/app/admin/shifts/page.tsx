@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Edit, Loader2, RefreshCw, Search, X } from "lucide-react";
+import { Edit, Loader2, Search, X } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import MobileShell from "@/components/MobileShell";
@@ -443,15 +443,6 @@ export default function ShiftsPage() {
                   className="shift-field w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-4 pl-12 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 />
               </div>
-
-              <button
-                type="button"
-                onClick={resetFilter}
-                className="flex h-[54px] items-center justify-center rounded-2xl border border-blue-100 bg-white px-5 text-[#123c8c] shadow-sm transition hover:bg-blue-50 active:scale-[0.96]"
-                title="Reset Filter"
-              >
-                <RefreshCw size={22} strokeWidth={2.6} />
-              </button>
             </div>
           </div>
 
