@@ -24,7 +24,8 @@ model User {
   phone  String? @db.VarChar(20)
   status String  @default("active") @db.VarChar(20)
 
-  profile_photo String? @db.VarChar(255)
+  profile_photo           String? @db.Text
+  profile_photo_public_id String? @db.VarChar(255)
 
   unit_id       String? @db.Char(36)
   department_id String? @db.Char(36)

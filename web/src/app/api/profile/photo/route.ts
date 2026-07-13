@@ -1,74 +1,80 @@
-import { NextRequest, NextResponse } from "next/server";
-import { jwtVerify } from "jose";
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
-import { randomUUID } from "node:crypto";
 import { Buffer } from "node:buffer";
+
+import type { UploadApiResponse } from "cloudinary";
+import { jwtVerify } from "jose";
+import { NextRequest, NextResponse } from "next/server";
+
+import { getCloudinary } from "@/lib/cloudinary";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 const MAX_PHOTO_SIZE = 4 * 1024 * 1024;
 
-const allowedMimeTypes = new Set([
+const ALLOWED_MIME_TYPES = new Set([
   "image/jpeg",
   "image/jpg",
   "image/png",
   "image/webp",
 ]);
 
-const possiblePhotoColumns = [
-  "profile_photo",
-  "profile_image",
-  "profile_picture",
-  "photo",
-  "photo_url",
-  "avatar",
-  "avatar_url",
-  "image",
-  "image_url",
-];
-
 type ParsedPhotoBody = {
   buffer: Buffer | null;
   mime: string;
 };
 
+class ApiError extends Error {
+  constructor(
+    public readonly status: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 async function getUserIdFromRequest(req: NextRequest) {
   const token = req.cookies.get("faceattend_token")?.value;
 
   if (!token) {
-    throw new Error("Token login tidak ditemukan.");
+    throw new ApiError(401, "Sesi login tidak ditemukan.");
   }
 
-  if (!process.env.JWT_SECRET) {
-    throw new Error("JWT_SECRET belum ada di file .env");
+  const jwtSecret = process.env.JWT_SECRET;
+
+  if (!jwtSecret) {
+    throw new ApiError(500, "JWT_SECRET belum dikonfigurasi.");
   }
 
-  const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-  const { payload } = await jwtVerify(token, secret);
+  try {
+    const secret = new TextEncoder().encode(jwtSecret);
+    const { payload } = await jwtVerify(token, secret);
 
-  const userId =
-    (payload.id as string | undefined) ||
-    (payload.userId as string | undefined) ||
-    (payload.sub as string | undefined);
+    const userId =
+      (payload.id as string | undefined) ||
+      (payload.userId as string | undefined) ||
+      (payload.sub as string | undefined);
 
-  if (!userId) {
-    throw new Error("User ID tidak ditemukan di token.");
+    if (!userId) {
+      throw new ApiError(401, "User ID tidak ditemukan pada sesi login.");
+    }
+
+    return userId;
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+
+    throw new ApiError(
+      401,
+      "Sesi login tidak valid atau sudah kedaluwarsa.",
+    );
   }
-
-  return userId;
 }
 
-function getPhotoExtension(mime: string) {
-  if (mime === "image/png") return "png";
-  if (mime === "image/webp") return "webp";
-
-  return "jpg";
-}
-
-function dataUrlToBuffer(dataUrl: string) {
-  const match = dataUrl.match(/^data:(.+);base64,(.+)$/);
+function dataUrlToBuffer(dataUrl: string): ParsedPhotoBody {
+  const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
 
   if (!match) {
     return {
@@ -79,20 +85,22 @@ function dataUrlToBuffer(dataUrl: string) {
 
   return {
     buffer: Buffer.from(match[2], "base64"),
-    mime: match[1],
+    mime: match[1].toLowerCase(),
   };
 }
 
-async function fileToBuffer(file: File) {
+async function fileToBuffer(file: File): Promise<ParsedPhotoBody> {
   const arrayBuffer = await file.arrayBuffer();
 
   return {
     buffer: Buffer.from(arrayBuffer),
-    mime: file.type || "image/jpeg",
+    mime: (file.type || "image/jpeg").toLowerCase(),
   };
 }
 
-async function parsePhotoBody(req: NextRequest): Promise<ParsedPhotoBody> {
+async function parsePhotoBody(
+  req: NextRequest,
+): Promise<ParsedPhotoBody> {
   const contentType = req.headers.get("content-type") || "";
 
   if (contentType.includes("multipart/form-data")) {
@@ -106,21 +114,11 @@ async function parsePhotoBody(req: NextRequest): Promise<ParsedPhotoBody> {
       formData.get("image");
 
     if (photo instanceof File) {
-      const result = await fileToBuffer(photo);
-
-      return {
-        buffer: result.buffer,
-        mime: result.mime,
-      };
+      return fileToBuffer(photo);
     }
 
     if (typeof photo === "string" && photo.trim()) {
-      const result = dataUrlToBuffer(photo);
-
-      return {
-        buffer: result.buffer,
-        mime: result.mime,
-      };
+      return dataUrlToBuffer(photo.trim());
     }
 
     return {
@@ -129,7 +127,20 @@ async function parsePhotoBody(req: NextRequest): Promise<ParsedPhotoBody> {
     };
   }
 
-  const body = (await req.json()) as Record<string, unknown>;
+  if (!contentType.includes("application/json")) {
+    throw new ApiError(
+      400,
+      "Content-Type harus multipart/form-data atau application/json.",
+    );
+  }
+
+  let body: Record<string, unknown>;
+
+  try {
+    body = (await req.json()) as Record<string, unknown>;
+  } catch {
+    throw new ApiError(400, "Data JSON foto tidak valid.");
+  }
 
   const photoDataUrl =
     typeof body.photo === "string"
@@ -144,92 +155,121 @@ async function parsePhotoBody(req: NextRequest): Promise<ParsedPhotoBody> {
               ? body.image
               : null;
 
-  if (!photoDataUrl) {
+  if (!photoDataUrl?.trim()) {
     return {
       buffer: null,
       mime: "image/jpeg",
     };
   }
 
-  const result = dataUrlToBuffer(photoDataUrl);
-
-  return {
-    buffer: result.buffer,
-    mime: result.mime,
-  };
+  return dataUrlToBuffer(photoDataUrl.trim());
 }
 
-async function getUserTableColumns() {
-  const columns = await prisma.$queryRaw<Array<{ COLUMN_NAME: string }>>`
-    SELECT COLUMN_NAME
-    FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE()
-      AND TABLE_NAME = 'users'
-  `;
+async function uploadProfilePhoto(
+  buffer: Buffer,
+  userId: string,
+): Promise<UploadApiResponse> {
+  const cloudinary = getCloudinary();
 
-  return new Set(columns.map((item) => item.COLUMN_NAME));
+  return new Promise<UploadApiResponse>((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: "faceattend/profiles",
+        public_id: `user-${userId}-${Date.now()}`,
+        resource_type: "image",
+        overwrite: false,
+      },
+      (error, result) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        if (!result) {
+          reject(new Error("Cloudinary tidak mengembalikan hasil upload."));
+          return;
+        }
+
+        resolve(result);
+      },
+    );
+
+    uploadStream.end(buffer);
+  });
+}
+
+async function deleteCloudinaryPhoto(publicId: string | null) {
+  if (!publicId) return;
+
+  try {
+    const cloudinary = getCloudinary();
+
+    await cloudinary.uploader.destroy(publicId, {
+      resource_type: "image",
+      invalidate: true,
+    });
+  } catch (error) {
+    console.warn(
+      "DELETE_OLD_PROFILE_PHOTO_WARNING:",
+      error,
+    );
+  }
 }
 
 async function getSafeUser(userId: string) {
-  const rows = await prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
-    "SELECT * FROM users WHERE id = ? LIMIT 1",
-    userId
-  );
-
-  const user = rows[0];
-
-  if (!user) return null;
-
-  delete user.password_hash;
-  delete user.password;
-
-  return user;
+  return prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+    select: {
+      id: true,
+      employee_code: true,
+      name: true,
+      email: true,
+      role: true,
+      employee_type: true,
+      phone: true,
+      status: true,
+      profile_photo: true,
+      profile_photo_public_id: true,
+      unit_id: true,
+      department_id: true,
+      position_id: true,
+      shift_id: true,
+      registered_office_id: true,
+      npwp_number: true,
+      ptkp_status: true,
+      base_salary: true,
+      created_at: true,
+      updated_at: true,
+    },
+  });
 }
 
-async function savePhoto(buffer: Buffer, mime: string) {
-  const uploadDir = path.join(process.cwd(), "public", "uploads", "profiles");
-  const extension = getPhotoExtension(mime);
-  const filename = `${randomUUID()}.${extension}`;
-  const filePath = path.join(uploadDir, filename);
-  const publicPath = `/uploads/profiles/${filename}`;
-
-  await mkdir(uploadDir, { recursive: true });
-  await writeFile(filePath, buffer);
-
-  return publicPath;
-}
-
-async function updateUserPhoto(userId: string, photoUrl: string) {
-  const columns = await getUserTableColumns();
-
-  const availablePhotoColumns = possiblePhotoColumns.filter((column) =>
-    columns.has(column)
-  );
-
-  if (availablePhotoColumns.length === 0) {
-    return {
-      updated: false,
-      columns: availablePhotoColumns,
-    };
+function errorResponse(error: unknown, fallbackMessage: string) {
+  if (error instanceof ApiError) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: error.message,
+      },
+      {
+        status: error.status,
+      },
+    );
   }
 
-  const setClauses = availablePhotoColumns.map((column) => `\`${column}\` = ?`);
-  const values = availablePhotoColumns.map(() => photoUrl);
+  console.error(fallbackMessage, error);
 
-  if (columns.has("updated_at")) {
-    setClauses.push("`updated_at` = NOW()");
-  }
-
-  await prisma.$executeRawUnsafe(
-    `UPDATE users SET ${setClauses.join(", ")} WHERE id = ?`,
-    ...values,
-    userId
+  return NextResponse.json(
+    {
+      success: false,
+      message: "Terjadi kesalahan pada server.",
+    },
+    {
+      status: 500,
+    },
   );
-
-  return {
-    updated: true,
-    columns: availablePhotoColumns,
-  };
 }
 
 export async function GET(req: NextRequest) {
@@ -238,142 +278,127 @@ export async function GET(req: NextRequest) {
     const user = await getSafeUser(userId);
 
     if (!user) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Data user tidak ditemukan.",
-        },
-        { status: 404 }
-      );
+      throw new ApiError(404, "Data user tidak ditemukan.");
     }
-
-    const photoUrl =
-      possiblePhotoColumns
-        .map((column) => user[column])
-        .find((value) => typeof value === "string" && value.trim()) || null;
 
     return NextResponse.json({
       success: true,
-      photoUrl,
-      profilePhoto: photoUrl,
-      photo: photoUrl,
+      photoUrl: user.profile_photo,
+      profilePhoto: user.profile_photo,
+      photo: user.profile_photo,
       user,
     });
   } catch (error) {
-    console.error("GET_PROFILE_PHOTO_ERROR:", error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Gagal mengambil foto profil.",
-      },
-      { status: 500 }
-    );
+    return errorResponse(error, "GET_PROFILE_PHOTO_ERROR:");
   }
 }
 
 export async function PATCH(req: NextRequest) {
+  let newPublicId: string | null = null;
+
   try {
     const userId = await getUserIdFromRequest(req);
 
-    const user = await prisma.user.findUnique({
+    const currentUser = await prisma.user.findUnique({
       where: {
         id: userId,
       },
       select: {
         id: true,
         status: true,
+        profile_photo_public_id: true,
       },
     });
 
-    if (!user) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Data user tidak ditemukan.",
-        },
-        { status: 404 }
-      );
+    if (!currentUser) {
+      throw new ApiError(404, "Data user tidak ditemukan.");
     }
 
-    if (user.status !== "active") {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Akun kamu sedang tidak aktif.",
-        },
-        { status: 403 }
-      );
+    if (currentUser.status !== "active") {
+      throw new ApiError(403, "Akun kamu sedang tidak aktif.");
     }
 
     const { buffer, mime } = await parsePhotoBody(req);
 
-    if (!buffer) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Foto profil wajib dikirim.",
-        },
-        { status: 400 }
-      );
+    if (!buffer || buffer.length === 0) {
+      throw new ApiError(400, "Foto profil wajib dikirim.");
     }
 
-    if (!allowedMimeTypes.has(mime)) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Format foto harus JPG, PNG, atau WEBP.",
-        },
-        { status: 400 }
+    if (!ALLOWED_MIME_TYPES.has(mime)) {
+      throw new ApiError(
+        400,
+        "Format foto harus JPG, PNG, atau WEBP.",
       );
     }
 
     if (buffer.length > MAX_PHOTO_SIZE) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Ukuran foto maksimal 4MB.",
-        },
-        { status: 400 }
-      );
+      throw new ApiError(400, "Ukuran foto maksimal 4MB.");
     }
 
-    const photoUrl = await savePhoto(buffer, mime);
-    const updateResult = await updateUserPhoto(userId, photoUrl);
+    const uploadResult = await uploadProfilePhoto(buffer, userId);
+    newPublicId = uploadResult.public_id;
 
-    if (!updateResult.updated) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Kolom foto profil belum tersedia di tabel users. Tambahkan salah satu kolom: profile_photo, profile_image, photo, avatar, atau avatar_url.",
-          photoUrl,
+    let updatedUser;
+
+    try {
+      updatedUser = await prisma.user.update({
+        where: {
+          id: userId,
         },
-        { status: 400 }
-      );
+        data: {
+          profile_photo: uploadResult.secure_url,
+          profile_photo_public_id: uploadResult.public_id,
+        },
+        select: {
+          id: true,
+          employee_code: true,
+          name: true,
+          email: true,
+          role: true,
+          employee_type: true,
+          phone: true,
+          status: true,
+          profile_photo: true,
+          profile_photo_public_id: true,
+          unit_id: true,
+          department_id: true,
+          position_id: true,
+          shift_id: true,
+          registered_office_id: true,
+          npwp_number: true,
+          ptkp_status: true,
+          base_salary: true,
+          created_at: true,
+          updated_at: true,
+        },
+      });
+    } catch (databaseError) {
+      await deleteCloudinaryPhoto(newPublicId);
+      newPublicId = null;
+
+      throw databaseError;
     }
 
-    const safeUser = await getSafeUser(userId);
+    if (
+      currentUser.profile_photo_public_id &&
+      currentUser.profile_photo_public_id !== uploadResult.public_id
+    ) {
+      await deleteCloudinaryPhoto(
+        currentUser.profile_photo_public_id,
+      );
+    }
 
     return NextResponse.json({
       success: true,
       message: "Foto profil berhasil diperbarui.",
-      photoUrl,
-      profilePhoto: photoUrl,
-      photo: photoUrl,
-      updatedColumns: updateResult.columns,
-      user: safeUser,
+      photoUrl: uploadResult.secure_url,
+      profilePhoto: uploadResult.secure_url,
+      photo: uploadResult.secure_url,
+      publicId: uploadResult.public_id,
+      user: updatedUser,
     });
   } catch (error) {
-    console.error("UPDATE_PROFILE_PHOTO_ERROR:", error);
-
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Gagal memperbarui foto profil.",
-      },
-      { status: 500 }
-    );
+    return errorResponse(error, "UPDATE_PROFILE_PHOTO_ERROR:");
   }
 }
 
