@@ -10,7 +10,7 @@ const MAX_GPS_ACCURACY_METERS = 100;
 type WorkMode = "office" | "wfh" | "wfc" | "visit";
 
 type ParsedAttendanceBody = {
-  photoBuffer: Buffer | null;
+  photoBuffer: Uint8Array<ArrayBuffer> | null;
   photoMime: string;
   latitude: number | null;
   longitude: number | null;
@@ -197,13 +197,13 @@ function dataUrlToBuffer(dataUrl: string) {
 
   if (!match) {
     return {
-      buffer: Buffer.from(dataUrl, "base64"),
+      buffer: Uint8Array.from(Buffer.from(dataUrl, "base64")),
       mime: "image/jpeg",
     };
   }
 
   return {
-    buffer: Buffer.from(match[2], "base64"),
+    buffer: Uint8Array.from(Buffer.from(match[2], "base64")),
     mime: match[1],
   };
 }
@@ -212,7 +212,7 @@ async function fileToBuffer(file: File) {
   const arrayBuffer = await file.arrayBuffer();
 
   return {
-    buffer: Buffer.from(arrayBuffer),
+    buffer: new Uint8Array(arrayBuffer),
     mime: file.type || "image/jpeg",
   };
 }
@@ -596,7 +596,8 @@ export async function POST(req: NextRequest) {
       scheduledCheckOutTime,
     );
 
-    const checkOutStatus = earlyLeaveMinutes > 0 ? "EARLY" : "NORMAL";
+    const checkOutStatus =
+      earlyLeaveMinutes > 0 ? ("EARLY" as const) : ("NORMAL" as const);
 
     const updatedAttendance = await prisma.$transaction(async (tx) => {
       const savedAttendance = await tx.attendance.update({

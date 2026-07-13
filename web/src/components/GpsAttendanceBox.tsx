@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import type { ComponentType } from "react";
 import { MapPin, Navigation, RefreshCw, ShieldCheck, TriangleAlert } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -9,9 +10,26 @@ import {
   type OfficeGeofence,
 } from "@/lib/geo";
 
-const AttendanceMap = dynamic(() => import("@/components/AttendanceMap"), {
-  ssr: false,
-});
+type AttendanceMapProps = {
+  userLocation: {
+    lat: number;
+    lng: number;
+  };
+  userAccuracy: number;
+  offices: OfficeGeofence[];
+  matchedOfficeId: string | null;
+};
+
+const AttendanceMap = dynamic<AttendanceMapProps>(
+  () =>
+    import("@/components/AttendanceMap").then(
+      (module) =>
+        module.default as ComponentType<AttendanceMapProps>,
+    ),
+  {
+    ssr: false,
+  },
+);
 
 type UserLocation = {
   lat: number;

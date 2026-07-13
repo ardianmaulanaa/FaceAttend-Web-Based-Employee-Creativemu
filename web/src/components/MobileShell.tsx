@@ -4,7 +4,7 @@ import { ReactNode } from "react";
 
 type MobileShellProps = {
   children: ReactNode;
-  variant?: "employee" | "admin";
+  variant?: "employee" | "admin" | "auth";
   withBottomPadding?: boolean;
   className?: string;
 };

@@ -5,7 +5,6 @@ import {
   AlertTriangle,
   BarChart3,
   BriefcaseBusiness,
-  Building2,
   CheckCircle2,
   Clock3,
   Home,
@@ -19,7 +18,6 @@ const metricOptions = [
   { value: "present", label: "Hadir" },
   { value: "late", label: "Terlambat" },
   { value: "wfh", label: "WFH" },
-  { value: "wfc", label: "WFC" },
   { value: "visit", label: "Kunjungan" },
   { value: "cuti", label: "Cuti" },
 ] as const;
@@ -39,7 +37,6 @@ type Summary = {
   present: number;
   late: number;
   wfh: number;
-  wfc?: number;
   visit: number;
   cuti: number;
   pending: number;
@@ -47,7 +44,6 @@ type Summary = {
   presentPercentage: number;
   latePercentage: number;
   wfhPercentage: number;
-  wfcPercentage?: number;
   visitPercentage: number;
   cutiPercentage: number;
   pendingPercentage: number;
@@ -62,7 +58,6 @@ type DailyChartPoint = {
   present: number;
   late: number;
   wfh: number;
-  wfc?: number;
   visit: number;
   cuti: number;
   pending: number;
@@ -127,7 +122,7 @@ type LeaveChartPoint = {
   value: number;
 };
 
-type FlexibleModeKey = "wfh" | "wfc" | "visit";
+type FlexibleModeKey = "wfh" | "visit";
 
 type FlexibleModeTotals = Record<FlexibleModeKey, number>;
 
@@ -171,8 +166,6 @@ const indonesianMonthMap: Record<string, number> = {
 
 function getMetricValue(point: DailyChartPoint, metric: MetricValue) {
   if (metric === "cuti") return 0;
-  if (metric === "wfc") return Number(point.wfc || 0);
-
   return Number(point[metric] || 0);
 }
 
@@ -184,11 +177,10 @@ function getMetricLabel(metric: MetricValue) {
 
 function formatWorkMode(mode: string) {
   if (mode === "wfh") return "WFH";
-  if (mode === "wfc") return "WFC";
   if (mode === "visit") return "Kunjungan";
   if (mode === "office") return "Kantor";
 
-  return mode;
+  return "Lainnya";
 }
 
 function formatMinutes(minutes: number) {
@@ -318,14 +310,12 @@ function getDailyChartModeTotals(
   return dailyChart.reduce<FlexibleModeTotals>(
     (total, point) => {
       total.wfh += toSafeNumber(point.wfh);
-      total.wfc += toSafeNumber(point.wfc);
       total.visit += toSafeNumber(point.visit);
 
       return total;
     },
     {
       wfh: 0,
-      wfc: 0,
       visit: 0,
     },
   );
@@ -337,11 +327,7 @@ function getSummaryModeValue(
   dailyTotals?: FlexibleModeTotals,
 ) {
   const summaryValue =
-    key === "wfh"
-      ? toSafeNumber(summary.wfh)
-      : key === "wfc"
-        ? toSafeNumber(summary.wfc)
-        : toSafeNumber(summary.visit);
+    key === "wfh" ? toSafeNumber(summary.wfh) : toSafeNumber(summary.visit);
 
   const dailyValue = dailyTotals ? toSafeNumber(dailyTotals[key]) : 0;
 
@@ -352,14 +338,10 @@ function getMonitoringBase(summary: Summary, dailyTotals?: FlexibleModeTotals) {
   const todayRecords = toSafeNumber(summary.todayRecords);
   const activeEmployees = toSafeNumber(summary.activeEmployees);
   const flexibleSummaryTotal =
-    toSafeNumber(summary.wfh) +
-    toSafeNumber(summary.wfc) +
-    toSafeNumber(summary.visit);
+    toSafeNumber(summary.wfh) + toSafeNumber(summary.visit);
 
   const flexibleDailyTotal = dailyTotals
-    ? toSafeNumber(dailyTotals.wfh) +
-      toSafeNumber(dailyTotals.wfc) +
-      toSafeNumber(dailyTotals.visit)
+    ? toSafeNumber(dailyTotals.wfh) + toSafeNumber(dailyTotals.visit)
     : 0;
 
   if (todayRecords > 0) return todayRecords;
@@ -759,7 +741,6 @@ export default function AdminCompanyMonitorPage() {
           present: toSafeNumber(monitorResult?.summary?.present),
           late: toSafeNumber(monitorResult?.summary?.late),
           wfh: toSafeNumber(monitorResult?.summary?.wfh),
-          wfc: toSafeNumber(monitorResult?.summary?.wfc),
           visit: toSafeNumber(monitorResult?.summary?.visit),
           cuti: toSafeNumber(monitorResult?.summary?.cuti),
           pending: toSafeNumber(monitorResult?.summary?.pending),
@@ -768,7 +749,6 @@ export default function AdminCompanyMonitorPage() {
           ),
           latePercentage: toSafeNumber(monitorResult?.summary?.latePercentage),
           wfhPercentage: toSafeNumber(monitorResult?.summary?.wfhPercentage),
-          wfcPercentage: toSafeNumber(monitorResult?.summary?.wfcPercentage),
           visitPercentage: toSafeNumber(
             monitorResult?.summary?.visitPercentage,
           ),
@@ -789,7 +769,6 @@ export default function AdminCompanyMonitorPage() {
               present: toSafeNumber(item?.present),
               late: toSafeNumber(item?.late),
               wfh: toSafeNumber(item?.wfh),
-              wfc: toSafeNumber(item?.wfc),
               visit: toSafeNumber(item?.visit),
               cuti: toSafeNumber(item?.cuti),
               pending: toSafeNumber(item?.pending),
@@ -893,15 +872,6 @@ export default function AdminCompanyMonitorPage() {
         )}% dari total data`,
       },
       {
-        label: "WFC",
-        value: getSummaryModeValue(data.summary, "wfc", flexibleModeTotals),
-        note: `${getSummaryModePercentage(
-          data.summary,
-          "wfc",
-          flexibleModeTotals,
-        )}% dari total data`,
-      },
-      {
         label: "Kunjungan",
         value: getSummaryModeValue(data.summary, "visit", flexibleModeTotals),
         note: `${getSummaryModePercentage(
@@ -932,17 +902,6 @@ export default function AdminCompanyMonitorPage() {
           flexibleModeTotals,
         ),
         description: "Monitoring absensi kerja dari rumah.",
-      },
-      {
-        key: "wfc",
-        label: "WFC",
-        value: getSummaryModeValue(data.summary, "wfc", flexibleModeTotals),
-        percentage: getSummaryModePercentage(
-          data.summary,
-          "wfc",
-          flexibleModeTotals,
-        ),
-        description: "Monitoring absensi kerja dari luar kantor.",
       },
       {
         key: "visit",
@@ -1128,7 +1087,7 @@ export default function AdminCompanyMonitorPage() {
                     </div>
 
                     <h3 className="mt-2 text-2xl font-black text-slate-950">
-                      Ringkasan WFH, WFC, dan Kunjungan
+                      Ringkasan WFH dan Kunjungan
                     </h3>
                   </div>
 
@@ -1137,13 +1096,11 @@ export default function AdminCompanyMonitorPage() {
                   </div>
                 </div>
 
-                <div className="mt-5 grid gap-4 md:grid-cols-3">
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
                   {flexibleModeCards.map((item, index) => {
                     const icon =
                       item.key === "wfh" ? (
                         <Home size={20} strokeWidth={2.5} />
-                      ) : item.key === "wfc" ? (
-                        <Building2 size={20} strokeWidth={2.5} />
                       ) : (
                         <BriefcaseBusiness size={20} strokeWidth={2.5} />
                       );
@@ -1312,7 +1269,7 @@ export default function AdminCompanyMonitorPage() {
                   </div>
                 </div>
 
-                <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
                   <PieProgressCard
                     label="WFH"
                     value={getSummaryModeValue(
@@ -1327,22 +1284,6 @@ export default function AdminCompanyMonitorPage() {
                     )}
                     description="Proporsi absensi WFH pada periode monitor."
                     icon={<Home size={20} strokeWidth={2.5} />}
-                  />
-
-                  <PieProgressCard
-                    label="WFC"
-                    value={getSummaryModeValue(
-                      data.summary,
-                      "wfc",
-                      flexibleModeTotals,
-                    )}
-                    percentage={getSummaryModePercentage(
-                      data.summary,
-                      "wfc",
-                      flexibleModeTotals,
-                    )}
-                    description="Proporsi absensi WFC pada periode monitor."
-                    icon={<Building2 size={20} strokeWidth={2.5} />}
                   />
 
                   <PieProgressCard

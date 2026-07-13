@@ -782,7 +782,6 @@ function WorkModeFilter({
       >
         <option value="office">Kantor</option>
         <option value="wfh">WFH</option>
-        <option value="wfc">WFC</option>
         <option value="visit">Kunjungan</option>
       </AppSelect>
 

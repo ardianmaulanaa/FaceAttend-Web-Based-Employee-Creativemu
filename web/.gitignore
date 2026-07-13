@@ -162,3 +162,22 @@ Thumbs.db
 .vscode/
 .idea/
 /src/generated/prisma
+
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Deployment
+*.zip
+
+# Logs and macOS
+*.log
+.DS_Store

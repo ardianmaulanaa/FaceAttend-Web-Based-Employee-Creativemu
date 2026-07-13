@@ -10,7 +10,7 @@ const MAX_GPS_ACCURACY_METERS = 100;
 type WorkMode = "office" | "wfh" | "wfc" | "visit";
 
 type ParsedAttendanceBody = {
-  photoBuffer: Buffer | null;
+  photoBuffer: Uint8Array<ArrayBuffer> | null;
   photoMime: string;
   latitude: number | null;
   longitude: number | null;
@@ -134,13 +134,13 @@ function dataUrlToBuffer(dataUrl: string) {
 
   if (!match) {
     return {
-      buffer: Buffer.from(dataUrl, "base64"),
+      buffer: Uint8Array.from(Buffer.from(dataUrl, "base64")),
       mime: "image/jpeg",
     };
   }
 
   return {
-    buffer: Buffer.from(match[2], "base64"),
+    buffer: Uint8Array.from(Buffer.from(match[2], "base64")),
     mime: match[1],
   };
 }
@@ -149,7 +149,7 @@ async function fileToBuffer(file: File) {
   const arrayBuffer = await file.arrayBuffer();
 
   return {
-    buffer: Buffer.from(arrayBuffer),
+    buffer: new Uint8Array(arrayBuffer),
     mime: file.type || "image/jpeg",
   };
 }
@@ -698,7 +698,7 @@ export async function POST(req: NextRequest) {
         : 0;
 
     const isLate = shouldValidateLate && lateMinutes > 0;
-    const attendanceStatus = isLate ? "LATE" : "PRESENT";
+    const attendanceStatus = isLate ? ("LATE" as const) : ("PRESENT" as const);
 
     if (isLate && !lateReason) {
       return NextResponse.json(
@@ -740,7 +740,7 @@ export async function POST(req: NextRequest) {
       check_in_office_id: matchedOffice?.office.id ?? null,
 
       status: attendanceStatus,
-      check_in_status: isLate ? "LATE" : "ON_TIME",
+      check_in_status: isLate ? ("LATE" as const) : ("ON_TIME" as const),
       late_minutes: lateMinutes,
       is_over_tolerance: isLate,
       late_reason: isLate ? lateReason : null,
