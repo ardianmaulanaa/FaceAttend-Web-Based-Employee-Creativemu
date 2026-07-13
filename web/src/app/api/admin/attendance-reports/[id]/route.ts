@@ -55,6 +55,18 @@ type DatabaseColumnRow = {
   Field: string;
 };
 
+type EmployeeVisitRow = {
+  visitTitle: string | null;
+  visitClientName: string | null;
+  visitAddress: string | null;
+  visitNote: string | null;
+  visitLatitude: number | string | null;
+  visitLongitude: number | string | null;
+  visitAccuracy: number | string | null;
+  visitStartTime: Date | string | null;
+  visitEndTime: Date | string | null;
+};
+
 function quoteSqlIdentifier(value: string) {
   if (!/^[A-Za-z0-9_]+$/.test(value)) {
     throw new Error("Nama kolom database tidak valid.");
@@ -485,35 +497,28 @@ export async function GET(
           o.latitude AS officeLatitude,
           o.longitude AS officeLongitude,
 
-          ev.title AS visitTitle,
-          ev.client_name AS visitClientName,
-          ev.address AS visitAddress,
-          ev.note AS visitNote,
-          ev.latitude AS visitLatitude,
-          ev.longitude AS visitLongitude,
-          ev.accuracy AS visitAccuracy,
-          ev.start_time AS visitStartTime,
-          ev.end_time AS visitEndTime
+          NULL AS visitTitle,
+          NULL AS visitClientName,
+          NULL AS visitAddress,
+          NULL AS visitNote,
+          NULL AS visitLatitude,
+          NULL AS visitLongitude,
+          NULL AS visitAccuracy,
+          NULL AS visitStartTime,
+          NULL AS visitEndTime
 
         FROM Attendance a
         LEFT JOIN users u ON u.id = a.user_id
         LEFT JOIN OfficeLocation o ON o.id = u.registered_office_id
-        LEFT JOIN EmployeeVisit ev ON ev.id = (
-          SELECT ev2.id
-          FROM EmployeeVisit ev2
-          WHERE ev2.attendance_id = a.id
-          ORDER BY ev2.start_time DESC
-          LIMIT 1
-        )
         WHERE a.id = ?
         LIMIT 1
       `,
       id,
     );
 
-    const row = rows[0];
+    const attendanceRow = rows[0];
 
-    if (!row) {
+    if (!attendanceRow) {
       return NextResponse.json(
         {
           success: false,
@@ -523,6 +528,41 @@ export async function GET(
         { status: 404 },
       );
     }
+
+    const visitRows = await prisma.$queryRawUnsafe<EmployeeVisitRow[]>(
+      `
+        SELECT
+          ev.title AS visitTitle,
+          ev.client_name AS visitClientName,
+          ev.address AS visitAddress,
+          ev.note AS visitNote,
+          ev.latitude AS visitLatitude,
+          ev.longitude AS visitLongitude,
+          ev.accuracy AS visitAccuracy,
+          ev.start_time AS visitStartTime,
+          ev.end_time AS visitEndTime
+        FROM EmployeeVisit ev
+        WHERE ev.attendance_id = ?
+        ORDER BY ev.start_time DESC, ev.id DESC
+        LIMIT 1
+      `,
+      id,
+    );
+
+    const visitRow = visitRows[0] || null;
+
+    const row: AttendanceDetailRow = {
+      ...attendanceRow,
+      visitTitle: visitRow?.visitTitle || null,
+      visitClientName: visitRow?.visitClientName || null,
+      visitAddress: visitRow?.visitAddress || null,
+      visitNote: visitRow?.visitNote || null,
+      visitLatitude: visitRow?.visitLatitude ?? null,
+      visitLongitude: visitRow?.visitLongitude ?? null,
+      visitAccuracy: visitRow?.visitAccuracy ?? null,
+      visitStartTime: visitRow?.visitStartTime || null,
+      visitEndTime: visitRow?.visitEndTime || null,
+    };
 
     const dateSource = row.attendanceDate || row.checkInTime || row.createdAt;
     const primaryWorkMode = normalizeWorkMode(row.workMode);
