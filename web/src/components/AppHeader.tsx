@@ -514,19 +514,6 @@ export default function AppHeader({
               </div>
             ) : (
               <>
-                <a
-                  href={WHATSAPP_LINK}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Hubungi Customer Service"
-                  className="relative inline-flex h-12 w-12 lg:w-auto items-center justify-center gap-2 rounded-2xl bg-[#25D366] text-white shadow-lg shadow-green-900/10 hover:bg-[#20ba56] transition active:scale-[0.96] lg:px-4"
-                >
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                    <path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984a9.96 9.96 0 001.33 4.982L2 22l5.164-1.354a9.959 9.959 0 004.845 1.252h.004c5.507 0 9.99-4.478 9.99-9.985 0-2.67-1.037-5.18-2.92-7.065A9.925 9.925 0 0012.012 2zm5.727 14.047c-.245.69-1.22 1.262-1.688 1.348-.46.085-.92.146-2.96-.677-2.607-1.05-4.27-3.705-4.4-3.88-.13-.176-1.052-1.4-1.052-2.67 0-1.27.665-1.894.902-2.147.237-.253.52-.317.693-.317.172 0 .345.002.495.01.155.007.363-.058.57.443.208.508.71 1.73.772 1.857.063.128.105.277.02.447-.085.17-.127.277-.255.426-.127.15-.268.334-.383.45-.128.127-.26.265-.11.52.15.255.666 1.1 1.43 1.78.983.876 1.81 1.147 2.07 1.276.26.13.413.11.566-.064.153-.176.666-.777.844-1.04.177-.264.356-.22.597-.13.24.09 1.527.72 1.79.85.263.13.438.196.502.307.064.11.064.646-.18 1.336z" />
-                  </svg>
-                  <span className="hidden lg:inline font-bold text-xs">CS Creativemu</span>
-                </a>
-
                 <Link
                   href={notificationHref}
                   className={`relative hidden h-12 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-black shadow-sm ring-1 transition active:scale-[0.96] sm:inline-flex ${isNotificationPage
@@ -591,7 +578,7 @@ export default function AppHeader({
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between gap-3 border-b border-blue-50 px-5 py-5">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-2 shadow-lg shadow-slate-300/50 ring-1 ring-blue-100">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white keep-white p-2 shadow-lg shadow-slate-300/50 ring-1 ring-blue-100 dark:ring-transparent">
                 <Image
                   src="/images/creativemu-logo/creativemu.png"
                   alt="Creativemu Logo"

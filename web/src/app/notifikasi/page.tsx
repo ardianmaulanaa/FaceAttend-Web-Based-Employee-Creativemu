@@ -12,6 +12,7 @@ import {
   RefreshCcw,
 } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
+import MobileShell from "@/components/MobileShell";
 
 type NotificationItem = {
   id: string;
@@ -196,11 +197,12 @@ export default function EmployeeNotificationPage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-[#f6f8ff] text-slate-950">
-      <AppHeader
-        title="Notifikasi"
-        subtitle="Pusat informasi cuti, izin, sakit, dan pengumuman terbaru."
-      />
+    <MobileShell variant="employee">
+      <main className="w-full max-w-full text-slate-950">
+        <AppHeader
+          title="Notifikasi"
+          subtitle="Pusat informasi cuti, izin, sakit, dan pengumuman terbaru."
+        />
 
       <section className="mx-auto max-w-5xl px-5 pb-10 pt-6 md:px-8">
         <div className="grid gap-4 md:grid-cols-3">
@@ -293,21 +295,21 @@ export default function EmployeeNotificationPage() {
 
           <div className="mt-6">
             {isLoading ? (
-              <div className="flex min-h-48 flex-col items-center justify-center rounded-[2rem] bg-slate-50 text-slate-500">
+              <div className="flex min-h-48 flex-col items-center justify-center rounded-[2rem] bg-[#f8fbff] dark:bg-[#161b22]/40 text-slate-500">
                 <Loader2 size={32} className="animate-spin" />
                 <p className="mt-3 text-sm font-black">
                   Mengambil notifikasi...
                 </p>
               </div>
             ) : notifications.length === 0 ? (
-              <div className="flex min-h-56 flex-col items-center justify-center rounded-[2rem] bg-slate-50 px-5 text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-white text-slate-400 shadow-sm ring-1 ring-slate-100">
+              <div className="flex min-h-56 flex-col items-center justify-center rounded-[2rem] bg-[#f8fbff] dark:bg-[#161b22]/40 px-5 text-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-white dark:bg-[#21262d] text-slate-400 shadow-sm ring-1 ring-slate-100 dark:ring-[#30363d]/50">
                   <Bell size={28} strokeWidth={2.5} />
                 </div>
-                <h4 className="mt-4 text-lg font-black text-slate-900">
+                <h4 className="mt-4 text-lg font-black text-slate-900 dark:text-white">
                   Belum ada notifikasi bulan ini
                 </h4>
-                <p className="mt-2 max-w-md text-sm font-semibold leading-6 text-slate-500">
+                <p className="mt-2 max-w-md text-sm font-semibold leading-6 text-slate-500 dark:text-slate-400">
                   Notifikasi cuti, izin, sakit, dan pengumuman baru akan muncul
                   di sini.
                 </p>
@@ -385,5 +387,6 @@ export default function EmployeeNotificationPage() {
         </div>
       </section>
     </main>
+  </MobileShell>
   );
 }

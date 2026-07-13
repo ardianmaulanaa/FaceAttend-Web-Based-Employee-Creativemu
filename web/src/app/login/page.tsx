@@ -515,9 +515,7 @@ export default function LoginPage() {
             }`} style={{ animationDelay: "1.6s" }} />
 
             {/* White Logo Container */}
-            <div className={`relative z-10 flex h-32 w-32 md:h-48 md:w-48 items-center justify-center overflow-hidden rounded-[2rem] md:rounded-[3.25rem] p-5 md:p-8 shadow-[0_25px_60px_rgba(18,60,140,0.15)] border transition-transform duration-300 hover:scale-105 ${
-              theme === "dark" ? "border-[#30363d] bg-[#161b22]" : "border-white/60 bg-white"
-            }`}>
+            <div className="relative z-10 flex h-32 w-32 md:h-48 md:w-48 items-center justify-center overflow-hidden rounded-[2rem] md:rounded-[3.25rem] bg-white keep-white p-5 md:p-8 shadow-[0_25px_60px_rgba(18,60,140,0.15)] border border-white/60 transition-transform duration-300 hover:scale-105">
               <div className="absolute inset-0 bg-gradient-to-br from-white/30 via-white/5 to-transparent dark:from-white/5 dark:via-transparent" />
               <Image
                 src="/images/creativemu-logo/creativemu.png"
@@ -700,16 +698,15 @@ export default function LoginPage() {
                       type="submit"
                       full
                       disabled={isLoading || isAdminDemoLoading}
-                      leftIcon={<LogIn size={18} />}
-                    >
-                      {isLoading ? (
-                        <>
+                      leftIcon={
+                        isLoading ? (
                           <Loader2 size={18} className="animate-spin" />
-                          Memproses...
-                        </>
-                      ) : (
-                        "Masuk"
-                      )}
+                        ) : (
+                          <LogIn size={18} />
+                        )
+                      }
+                    >
+                      {isLoading ? "Memproses..." : "Masuk"}
                     </AppButton>
                   </div>
 

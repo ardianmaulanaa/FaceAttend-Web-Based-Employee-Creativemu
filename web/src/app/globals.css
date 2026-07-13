@@ -225,6 +225,12 @@ aside {
     linear-gradient(180deg, #0d1117 0%, #090c10 100%);
 }
 
+.dark html,
+.dark body {
+  background: var(--bg-gradient) !important;
+  background-color: var(--background) !important;
+}
+
 
 /* Cinematic Theme Transitions for a premium feel when toggling */
 body, 
@@ -300,6 +306,7 @@ main {
 main:not(.app-card) {
   background: transparent !important;
   background-color: transparent !important;
+  background-image: none !important;
 }
 
 .dark [class*="bg-[#f6f8ff]"]:not(.app-card):not(button),
@@ -307,12 +314,13 @@ main:not(.app-card) {
 .dark main {
   background: transparent !important;
   background-color: transparent !important;
+  background-image: none !important;
 }
 
 
 /* Glassmorphism Cards & Panels (Restored to Clean, Low-Contrast Muted Borders) */
-.dark .bg-white:not(aside):not(header):not(button),
-.dark [class*="bg-white"]:not(button):not(header):not(aside) {
+.dark .bg-white:not(aside):not(header):not(button):not(.keep-white),
+.dark [class*="bg-white"]:not(button):not(header):not(aside):not(.keep-white):not([class*="keep-white"]) {
   background-color: #161b22 !important;
   border: 1px solid #21262d !important;
   box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.3) !important;
@@ -328,13 +336,12 @@ main:not(.app-card) {
   transform: translateY(-2px);
 }
 
-/* Keep brand logo wrapper containers fully white so transparent logos are visible */
-.dark div:has(> img[src*="creativemu.png"]):not(.fixed):not(.login-enter),
-.dark [class*="bg-white"]:has(> img[src*="creativemu.png"]),
-.dark [class*="bg-white"]:has(> div > img[src*="creativemu.png"]),
-.dark [class*="bg-white"]:has(> a > img[src*="creativemu.png"]) {
+/* Explicit keep-white containers for specific logos (e.g. login/splash pages) */
+.dark .keep-white,
+.dark [class*="keep-white"] {
   background-color: #ffffff !important;
   border: none !important;
+  box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.25) !important;
 }
 
 /* Muted primary text colors (No glows or high-contrast gradients) */
@@ -944,10 +951,19 @@ div[style*="creativemu.png"].universal-watermark,
   box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.1) !important;
 }
 
-/* Clear light blue rings in dark mode for soft variant buttons and boxes */
+/* Clear light rings in dark mode for soft variant buttons and boxes */
 .dark [class*="ring-blue-100"],
-.dark .ring-blue-100 {
+.dark .ring-blue-100,
+.dark [class*="ring-orange-100"],
+.dark .ring-orange-100,
+.dark [class*="ring-emerald-100"],
+.dark .ring-emerald-100,
+.dark [class*="ring-red-100"],
+.dark .ring-red-100,
+.dark [class*="ring-slate-100"],
+.dark .ring-slate-100 {
   --tw-ring-color: transparent !important;
+  border-color: #21262d !important;
   box-shadow: none !important;
 }
 

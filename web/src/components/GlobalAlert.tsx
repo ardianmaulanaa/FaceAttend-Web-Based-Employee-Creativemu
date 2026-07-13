@@ -86,34 +86,34 @@ export default function GlobalAlert() {
 
   const theme = {
     success: {
-      shell: "from-emerald-50 via-white to-blue-50",
-      iconWrap: "bg-emerald-100 text-emerald-600",
-      badge: "text-emerald-600 bg-white/70",
-      button: "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-900/20",
+      shell: "from-emerald-50 via-white to-blue-50 dark:from-[#0f291e] dark:via-[#161b22] dark:to-[#0d141e] dark:border-[#21262d]",
+      iconWrap: "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400",
+      badge: "text-emerald-600 bg-white/70 dark:bg-[#30363d] dark:text-emerald-400",
+      button: "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-900/20 dark:bg-emerald-500 dark:hover:bg-emerald-600 dark:text-[#0d1117]",
       icon: CheckCircle2,
       label: "BERHASIL",
     },
     error: {
-      shell: "from-red-50 via-white to-blue-50",
-      iconWrap: "bg-red-100 text-red-600",
-      badge: "text-red-600 bg-white/70",
-      button: "bg-red-600 hover:bg-red-700 shadow-red-900/20",
+      shell: "from-red-50 via-white to-blue-50 dark:from-[#2d1918] dark:via-[#161b22] dark:to-[#0f141c] dark:border-[#21262d]",
+      iconWrap: "bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400",
+      badge: "text-red-600 bg-white/70 dark:bg-[#30363d] dark:text-red-400",
+      button: "bg-red-600 hover:bg-red-700 shadow-red-900/20 dark:bg-red-500 dark:hover:bg-red-600 dark:text-[#0d1117]",
       icon: AlertTriangle,
       label: "GAGAL",
     },
     info: {
-      shell: "from-blue-50 via-white to-blue-50",
-      iconWrap: "bg-blue-100 text-[#123c8c]",
-      badge: "text-[#123c8c] bg-white/70",
-      button: "bg-[#123c8c] hover:bg-[#0f3274] shadow-blue-900/20",
+      shell: "from-blue-50 via-white to-blue-50 dark:from-[#0d1f3d] dark:via-[#161b22] dark:to-[#0d1f3d] dark:border-[#21262d]",
+      iconWrap: "bg-blue-100 text-[#123c8c] dark:bg-blue-950/40 dark:text-[#58a6ff]",
+      badge: "text-[#123c8c] bg-white/70 dark:bg-[#30363d] dark:text-[#58a6ff]",
+      button: "bg-[#123c8c] hover:bg-[#0f3274] shadow-blue-900/20 dark:bg-[#1f6feb] dark:hover:bg-[#388bfd]",
       icon: Info,
       label: "INFO",
     },
     warning: {
-      shell: "from-orange-50 via-white to-blue-50",
-      iconWrap: "bg-orange-100 text-orange-600",
-      badge: "text-orange-600 bg-white/70",
-      button: "bg-[#526fae] hover:bg-[#46629d] shadow-blue-900/20",
+      shell: "from-orange-50 via-white to-blue-50 dark:from-[#2e1d0f] dark:via-[#161b22] dark:to-[#121d2f] dark:border-[#21262d]",
+      iconWrap: "bg-orange-100 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400",
+      badge: "text-orange-600 bg-white/70 dark:bg-[#30363d] dark:text-orange-400",
+      button: "bg-[#526fae] hover:bg-[#46629d] shadow-blue-900/20 dark:bg-[#1f6feb] dark:hover:bg-[#388bfd]",
       icon: AlertTriangle,
       label: "PERHATIAN",
     },
@@ -145,11 +145,11 @@ export default function GlobalAlert() {
                 {theme.label}
               </div>
 
-              <h3 className="mt-3 text-2xl font-black leading-tight text-slate-950">
+              <h3 className="mt-3 text-2xl font-black leading-tight text-slate-950 dark:text-white">
                 {alert.title}
               </h3>
 
-              <p className="mt-2 text-sm font-bold leading-6 text-slate-600">
+              <p className="mt-2 text-sm font-bold leading-6 text-slate-600 dark:text-slate-400">
                 {alert.message}
               </p>
             </div>
@@ -157,14 +157,14 @@ export default function GlobalAlert() {
             <button
               type="button"
               onClick={closeAlert}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/70 text-slate-500 shadow-sm transition hover:bg-white hover:text-slate-800 active:scale-[0.96]"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-transparent text-red-500 hover:text-red-700 dark:text-red-500 dark:hover:text-red-400 transition active:scale-[0.92]"
             >
               <X size={22} strokeWidth={2.8} />
             </button>
           </div>
         </div>
 
-        <div className="border-t border-white/60 bg-white/70 p-4">
+        <div className="border-t border-white/60 dark:border-slate-800/80 bg-white/70 dark:bg-slate-900/90 p-4">
           <button
             type="button"
             onClick={closeAlert}

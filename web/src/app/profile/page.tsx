@@ -424,21 +424,21 @@ function SectionRow({
     <button
       type="button"
       onClick={onClick}
-      className="profile-row-enter w-full border-b border-slate-100 transition hover:bg-[#f8fbff] active:scale-[0.99]"
+      className="profile-row-enter w-full border-b border-slate-100 dark:border-[#30363d]/50 transition hover:bg-[#f8fbff] dark:hover:bg-[#30363d]/30 active:scale-[0.99]"
       style={{ animationDelay: delay }}
     >
       <div className="flex w-full items-center gap-4 py-5">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eef5ff] text-[#123c8c]">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eef5ff] dark:bg-[#21262d] text-[#123c8c] dark:text-[#58a6ff]">
           <Icon size={24} strokeWidth={2.7} />
         </div>
 
         <div className="min-w-0 flex-1 text-left">
-          <p className="text-base font-black text-slate-950 md:text-lg">
+          <p className="text-base font-black text-slate-950 dark:text-white md:text-lg">
             {title}
           </p>
 
           {subtitle ? (
-            <p className="mt-1 line-clamp-1 text-sm font-semibold text-slate-400">
+            <p className="mt-1 line-clamp-1 text-sm font-semibold text-slate-400 dark:text-slate-500">
               {subtitle}
             </p>
           ) : null}
@@ -447,7 +447,7 @@ function SectionRow({
         <ChevronRight
           size={24}
           strokeWidth={2.8}
-          className="shrink-0 text-[#123c8c]"
+          className="shrink-0 text-[#123c8c] dark:text-[#58a6ff]"
         />
       </div>
     </button>
@@ -469,19 +469,19 @@ function DetailItem({
 }: DetailItemProps) {
   return (
     <div
-      className="profile-row-enter rounded-3xl border border-blue-100 bg-white p-5 shadow-sm shadow-slate-200/40 transition duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-slate-300/40 md:p-6"
+      className="profile-row-enter rounded-3xl border border-blue-100 dark:border-[#30363d] bg-white dark:bg-[#161b22] p-5 shadow-sm shadow-slate-200/40 transition duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-slate-300/40 md:p-6"
       style={{ animationDelay: delay }}
     >
       <div className="flex items-start gap-4">
         {Icon ? (
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#eef5ff] text-[#123c8c]">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#eef5ff] dark:bg-[#21262d] text-[#123c8c] dark:text-[#58a6ff]">
             <Icon size={22} strokeWidth={2.7} />
           </div>
         ) : null}
 
-        <div className="min-w-0">
-          <p className="text-sm font-bold text-slate-400">{label}</p>
-          <p className="mt-2 break-words text-lg font-black leading-7 text-[#123456]">
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold text-slate-400 dark:text-slate-500">{label}</p>
+          <p className="mt-2 break-words text-lg font-black leading-7 text-[#123456] dark:text-[#c9d1d9]">
             {value || "-"}
           </p>
         </div>
@@ -1108,7 +1108,7 @@ export default function ProfilePage() {
         />
       </div>
 
-      <main className="min-h-dvh bg-white pb-28 text-slate-950 md:bg-gradient-to-br md:from-[#f6f8ff] md:via-white md:to-[#eef4ff]">
+      <main className="w-full max-w-full text-slate-950 pb-28">
         {loading ? (
           <section className="profile-enter mx-auto max-w-5xl px-5 pt-8 md:px-10">
             <div className="flex items-center gap-3 rounded-3xl border border-blue-100 bg-[#f8fbff] p-5 text-sm font-bold text-slate-500">
@@ -1130,12 +1130,12 @@ export default function ProfilePage() {
               <button
                 type="button"
                 onClick={() => setActiveView("menu")}
-                className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-[#123456] transition hover:bg-[#f8fbff] active:scale-[0.96]"
+                className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white dark:bg-[#21262d] text-[#123456] dark:text-[#58a6ff] transition hover:bg-[#f8fbff] dark:hover:bg-[#30363d] active:scale-[0.96]"
               >
                 <ArrowLeft size={25} strokeWidth={2.8} />
               </button>
 
-              <h1 className="text-xl font-black text-[#123456]">
+              <h1 className="text-xl font-black text-[#123456] dark:text-white">
                 Detail Personal
               </h1>
             </div>
@@ -1144,7 +1144,7 @@ export default function ProfilePage() {
               <button
                 type="button"
                 onClick={() => setActiveView("menu")}
-                className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#123456] shadow-sm shadow-slate-200 transition hover:-translate-y-0.5 hover:bg-[#f8fbff] active:scale-[0.96]"
+                className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white dark:bg-[#21262d] text-[#123456] dark:text-[#58a6ff] shadow-sm shadow-slate-200 dark:shadow-none transition hover:-translate-y-0.5 hover:bg-[#f8fbff] dark:hover:bg-[#30363d] active:scale-[0.96]"
               >
                 <ArrowLeft size={25} strokeWidth={2.8} />
               </button>
@@ -1154,7 +1154,7 @@ export default function ProfilePage() {
                   Data Pribadi
                 </p>
 
-                <h1 className="mt-1 text-3xl font-black text-[#123456]">
+                <h1 className="mt-1 text-3xl font-black text-[#123456] dark:text-white">
                   Detail Personal
                 </h1>
               </div>
@@ -1166,7 +1166,7 @@ export default function ProfilePage() {
             >
               <ProfileAvatar user={user} initials={initials} size="md" />
 
-              <h2 className="mt-5 text-center text-2xl font-black text-[#123456] md:text-3xl">
+              <h2 className="mt-5 text-center text-2xl font-black text-[#123456] dark:text-white md:text-3xl">
                 {user.name}
               </h2>
 
@@ -1243,7 +1243,7 @@ export default function ProfilePage() {
                 Data Pribadi
               </h3>
 
-              <div className="mt-5 overflow-hidden rounded-[1.8rem] bg-white md:border md:border-blue-100 md:p-2 md:shadow-xl md:shadow-slate-200/50">
+              <div className="mt-5 overflow-hidden rounded-[1.8rem] bg-white dark:bg-[#161b22] md:border md:border-blue-100 dark:md:border-[#21262d] md:p-2 md:shadow-xl md:shadow-slate-200/50">
                 <SectionRow
                   icon={UserRound}
                   title="Info Pribadi"
@@ -1253,7 +1253,7 @@ export default function ProfilePage() {
                 />
 
                 <label
-                  className={`profile-row-enter block w-full border-b border-slate-100 transition hover:bg-[#f8fbff] active:scale-[0.99] ${
+                  className={`profile-row-enter block w-full border-b border-slate-100 dark:border-[#30363d]/50 transition hover:bg-[#f8fbff] dark:hover:bg-[#30363d]/30 active:scale-[0.99] ${
                     isUploadingPhoto
                       ? "cursor-not-allowed opacity-60"
                       : "cursor-pointer"
@@ -1261,7 +1261,7 @@ export default function ProfilePage() {
                   style={{ animationDelay: "160ms" }}
                 >
                   <div className="flex w-full items-center gap-4 py-5">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eef5ff] text-[#123c8c]">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eef5ff] dark:bg-[#21262d] text-[#123c8c] dark:text-[#58a6ff]">
                       {isUploadingPhoto ? (
                         <Loader2 size={23} className="animate-spin" />
                       ) : (
@@ -1270,11 +1270,11 @@ export default function ProfilePage() {
                     </div>
 
                     <div className="min-w-0 flex-1 text-left">
-                      <p className="text-base font-black text-slate-950 md:text-lg">
+                      <p className="text-base font-black text-slate-950 dark:text-white md:text-lg">
                         Foto Data Pribadi
                       </p>
 
-                      <p className="mt-1 line-clamp-1 text-sm font-semibold text-slate-400">
+                      <p className="mt-1 line-clamp-1 text-sm font-semibold text-slate-400 dark:text-slate-500">
                         {isUploadingPhoto
                           ? "Mengupload foto..."
                           : "Ubah foto profil akun"}
@@ -1284,7 +1284,7 @@ export default function ProfilePage() {
                     <Upload
                       size={24}
                       strokeWidth={2.8}
-                      className="shrink-0 text-[#123c8c]"
+                      className="shrink-0 text-[#123c8c] dark:text-[#58a6ff]"
                     />
                   </div>
 
@@ -1624,7 +1624,7 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={closeProfileAlert}
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/70 text-slate-500 shadow-sm transition hover:bg-white hover:text-slate-800 active:scale-[0.96]"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-transparent text-red-500 hover:text-red-700 dark:text-red-500 dark:hover:text-red-400 transition active:scale-[0.92]"
                 >
                   <X size={22} strokeWidth={2.8} />
                 </button>

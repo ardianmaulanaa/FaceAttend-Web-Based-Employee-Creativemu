@@ -661,7 +661,7 @@ function ActionButton({
           <span
             className={cn(
               "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl",
-              primary ? "bg-white/15" : "bg-blue-50",
+              primary ? "bg-[rgba(255,255,255,0.15)]" : "bg-blue-50 dark:bg-[#21262d]",
             )}
           >
             {icon}
@@ -997,7 +997,7 @@ function CustomAttendanceAlert({
           <button
             type="button"
             onClick={onClose}
-            className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-2xl bg-white/60 text-slate-500 shadow-sm ring-1 ring-white/70 transition hover:bg-white hover:text-slate-700 active:scale-95"
+            className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-2xl bg-transparent text-red-500 transition hover:text-red-700 dark:hover:text-red-400 active:scale-90"
             aria-label="Tutup alert"
           >
             <X size={19} strokeWidth={2.7} />

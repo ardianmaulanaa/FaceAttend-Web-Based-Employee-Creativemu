@@ -12,12 +12,12 @@ function cn(...classes: Array<string | false | null | undefined>) {
 
 const buttonVariantClass: Record<Variant, string> = {
   primary:
-    "bg-[#123c8c] text-white shadow-lg shadow-blue-900/20 hover:bg-[#0f347a]",
+    "bg-[#123c8c] text-white shadow-lg shadow-blue-900/20 hover:bg-[#0f347a] dark:bg-[#1f6feb] dark:hover:bg-[#388bfd]",
   secondary:
-    "border border-blue-100 bg-white text-[#123c8c] shadow-sm hover:bg-blue-50",
-  danger: "bg-rose-50 text-rose-600 ring-1 ring-rose-100 hover:bg-rose-100",
-  ghost: "bg-transparent text-[#123c8c] hover:bg-blue-50",
-  soft: "bg-[#eaf1ff] text-[#123c8c] ring-1 ring-blue-100 hover:bg-blue-100",
+    "border border-blue-100 bg-white text-[#123c8c] shadow-sm hover:bg-blue-50 dark:border-[#30363d] dark:bg-[#21262d] dark:text-[#c9d1d9] dark:hover:bg-[#30363d]",
+  danger: "bg-rose-50 text-rose-600 ring-1 ring-rose-100 hover:bg-rose-100 dark:bg-rose-950/20 dark:text-rose-400 dark:ring-rose-900/30 dark:hover:bg-rose-950/30",
+  ghost: "bg-transparent text-[#123c8c] hover:bg-blue-50 dark:text-[#58a6ff] dark:hover:bg-[#21262d]",
+  soft: "bg-[#eaf1ff] text-[#123c8c] ring-1 ring-blue-100 hover:bg-blue-100 dark:bg-[#21262d] dark:text-[#58a6ff] dark:ring-[#30363d] dark:hover:bg-[#30363d]",
 };
 
 const buttonSizeClass: Record<Size, string> = {
@@ -476,7 +476,7 @@ export function AppAnimatedActionButton({
         disabled={isDisabled}
         onClick={handleClick}
         className={cn(
-          "group relative inline-flex items-center justify-center gap-4 overflow-hidden rounded-[1.8rem] bg-white dark:bg-[#123c8c] px-6 py-5 text-[#123c8c] dark:text-white shadow-2xl shadow-blue-950/20 ring-1 ring-white/70 dark:ring-0 transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-50 dark:hover:bg-blue-800 hover:shadow-blue-950/25 active:scale-[0.98] disabled:cursor-wait disabled:opacity-80",
+          "group relative inline-flex items-center justify-center gap-4 overflow-hidden rounded-[1.8rem] bg-white dark:bg-[#21262d] px-6 py-5 text-[#123c8c] dark:text-[#58a6ff] shadow-2xl shadow-blue-950/20 ring-1 ring-white/70 dark:ring-0 transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-50 dark:hover:bg-[#30363d] hover:shadow-blue-950/25 active:scale-[0.98] disabled:cursor-wait disabled:opacity-80",
           full && "w-full",
           fullOnMobile && "w-full md:w-auto",
           !full && !fullOnMobile && "w-auto",

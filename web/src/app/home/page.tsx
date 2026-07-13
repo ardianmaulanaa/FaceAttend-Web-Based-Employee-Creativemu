@@ -427,10 +427,10 @@ function AttendanceButton({
       }}
       className={`flex h-14 items-center justify-center rounded-2xl text-sm font-black transition md:h-20 md:text-lg ${
         disabled
-          ? "cursor-not-allowed border-slate-100 bg-slate-100 text-slate-300"
+          ? "cursor-not-allowed border-slate-100 bg-slate-100 text-slate-300 dark:border-[#30363d] dark:bg-[#161b22]/40 dark:text-[#30363d]"
           : variant === "primary"
-            ? "bg-[#123c8c] text-white shadow-lg shadow-blue-900/20 hover:-translate-y-0.5 hover:bg-[#0f3274] active:scale-[0.98]"
-            : "border border-blue-100 bg-white text-[#123c8c] hover:-translate-y-0.5 hover:bg-[#eaf1ff] active:scale-[0.98]"
+            ? "bg-[#123c8c] text-white shadow-lg shadow-blue-900/20 hover:-translate-y-0.5 hover:bg-[#0f3274] active:scale-[0.98] dark:bg-[#1f6feb] dark:hover:bg-[#388bfd] dark:shadow-none"
+            : "border border-blue-100 bg-white text-[#123c8c] hover:-translate-y-0.5 hover:bg-[#eaf1ff] active:scale-[0.98] dark:border-[#30363d] dark:bg-[#21262d] dark:text-[#c9d1d9] dark:hover:bg-[#30363d]"
       }`}
     >
       {label}
@@ -613,11 +613,8 @@ export default function HomePage() {
     <MobileShell
       variant="employee"
       withBottomPadding={false}
-      className="bg-white md:bg-[#f6f8ff]"
     >
       <HomeMotionStyles />
-
-      <div className="min-h-dvh bg-white">
         <div className="hidden md:block">
           <AppHeader
             title="Home"
@@ -627,12 +624,12 @@ export default function HomePage() {
           />
         </div>
 
-        <main className="min-h-dvh overflow-x-hidden bg-white text-slate-950 md:bg-gradient-to-br md:from-[#f6f8ff] md:via-white md:to-[#eef4ff] md:pb-28">
+        <main className="w-full max-w-full overflow-x-hidden text-slate-950 md:pb-28">
           <div className="home-float-glow pointer-events-none fixed -left-32 top-24 hidden h-72 w-72 rounded-full bg-orange-200/20 blur-3xl md:block" />
           <div className="home-float-glow pointer-events-none fixed -right-32 bottom-24 hidden h-72 w-72 rounded-full bg-blue-300/20 blur-3xl md:block" />
 
           <section
-            className="home-enter bg-white md:hidden"
+            className="home-enter bg-transparent md:hidden"
             style={{
               paddingTop: "env(safe-area-inset-top, 0px)",
             }}
@@ -765,7 +762,7 @@ export default function HomePage() {
             </div>
           </section>
 
-          <section className="mx-auto w-full max-w-7xl bg-white px-5 pb-[8.5rem] pt-2 md:mt-8 md:rounded-[2.5rem] md:px-8 md:pb-10 md:pt-8 lg:px-10">
+          <section className="mx-auto w-full max-w-7xl bg-transparent md:bg-white/80 md:dark:bg-[#161b22]/85 md:backdrop-blur-xl md:border md:border-white/50 md:dark:border-[#21262d]/50 px-5 pb-[8.5rem] pt-2 md:mt-8 md:rounded-[2.5rem] md:px-8 md:pb-10 md:pt-8 lg:px-10">
             <div className="mb-6 md:mb-8">
               <QuickMenuGrid />
             </div>
@@ -859,7 +856,6 @@ export default function HomePage() {
 
           <BottomNav />
         </main>
-      </div>
     </MobileShell>
   );
 }
