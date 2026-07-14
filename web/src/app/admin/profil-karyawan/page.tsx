@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, Suspense } from "react";
 import Image from "next/image";
 import {
   BriefcaseBusiness,
@@ -20,6 +20,7 @@ import {
 import AppHeader from "@/components/AppHeader";
 import MobileShell from "@/components/MobileShell";
 import BottomNav from "@/components/BottomNav";
+import { useSearchParams } from "next/navigation";
 
 type Employee = {
   id: string;
@@ -39,11 +40,12 @@ type Employee = {
 
 const DEFAULT_AVATAR = "/images/creativemu-logo/creativemu.png";
 
-export default function AdminEmployeeProfilesPage() {
+function AdminEmployeeProfilesContent() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     async function fetchEmployees() {
@@ -53,6 +55,19 @@ export default function AdminEmployeeProfilesPage() {
         const data = await response.json();
         if (data.success && data.employees) {
           setEmployees(data.employees);
+          
+          // Auto select if id param exists
+          const idParam = searchParams.get("id");
+          if (idParam) {
+            const found = data.employees.find((e: Employee) => e.id === idParam);
+            if (found) setSelectedEmployee(found);
+          }
+          
+          // Auto fill search if search param exists
+          const searchParam = searchParams.get("search");
+          if (searchParam) {
+            setSearchQuery(searchParam);
+          }
         }
       } catch (error) {
         console.error("FETCH_EMPLOYEES_ERROR:", error);
@@ -61,7 +76,7 @@ export default function AdminEmployeeProfilesPage() {
       }
     }
     void fetchEmployees();
-  }, []);
+  }, [searchParams]);
 
   const filteredEmployees = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
@@ -301,5 +316,27 @@ export default function AdminEmployeeProfilesPage() {
         <BottomNav variant="admin" />
       </main>
     </MobileShell>
+  );
+}
+
+export default function AdminEmployeeProfilesPage() {
+  return (
+    <Suspense fallback={
+      <MobileShell variant="admin">
+        <main className="min-h-screen bg-[#f8fbff] pb-24">
+          <AppHeader
+            title="Profil Karyawan"
+            subtitle="Admin Panel / Manajemen Karyawan / Detail Profil"
+            variant="admin"
+          />
+          <div className="flex min-h-[400px] items-center justify-center">
+            <Loader2 className="animate-spin text-[#123c8c]" size={36} />
+          </div>
+          <BottomNav variant="admin" />
+        </main>
+      </MobileShell>
+    }>
+      <AdminEmployeeProfilesContent />
+    </Suspense>
   );
 }

@@ -28,6 +28,7 @@ import {
   X,
   Moon,
   Sun,
+  Search,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 
@@ -140,6 +141,35 @@ const operationalMenus = [
   },
 ];
 
+const employeeSuggestions = [
+  { href: "/home", label: "Home", icon: Home, category: "Menu Utama", keywords: ["home", "beranda", "dashboard", "utama"] },
+  { href: "/attendance", label: "Attendance / Absen", icon: ScanFace, category: "Menu Utama", keywords: ["attendance", "absen", "kehadiran", "scan wajah", "face recognition", "masuk", "pulang"] },
+  { href: "/history", label: "History Kehadiran", icon: History, category: "Menu Utama", keywords: ["history", "riwayat", "kehadiran", "presensi", "log", "daftar"] },
+  { href: "/cuti", label: "Pengajuan Cuti / Izin", icon: CalendarDays, category: "Menu Utama", keywords: ["cuti", "izin", "sakit", "pengajuan", "leave", "sakit", "permohonan"] },
+  { href: "/pengumuman", label: "Info Pengumuman", icon: Megaphone, category: "Menu Utama", keywords: ["pengumuman", "info", "informasi", "megafon", "announcement", "kabar"] },
+  { href: "/profile", label: "Profile Saya", icon: UserRound, category: "Menu Utama", keywords: ["profile", "profil", "akun", "saya", "user", "pengaturan", "data diri"] },
+];
+
+const adminSuggestions = [
+  // Menu Utama
+  { href: "/admin/dashboard", label: "Dashboard Admin", icon: LayoutDashboard, category: "Menu Utama", keywords: ["dashboard", "beranda", "ringkasan", "summary", "admin"] },
+  { href: "/admin/monitor_perusahaan", label: "Monitor Perusahaan", icon: BarChart3, category: "Menu Utama", keywords: ["monitor perusahaan", "pemantauan", "kehadiran real-time", "karyawan", "live", "pantau"] },
+  { href: "/admin/pengumuman", label: "Pengumuman Admin", icon: Megaphone, category: "Menu Utama", keywords: ["pengumuman", "info", "buat pengumuman", "broadcast", "pengumuman baru"] },
+
+  // Master Data
+  { href: "/admin/shifts", label: "Shift Kerja", icon: Clock3, category: "Master Data", keywords: ["shift", "jadwal", "piket", "jam kerja", "waktu", "pagi", "siang", "malam"] },
+  { href: "/admin/work-schedules", label: "Jam Kerja Schedule", icon: CalendarClock, category: "Master Data", keywords: ["jam kerja", "jadwal kerja", "schedule", "work schedule", "hari kerja"] },
+  { href: "/admin/kantor", label: "Kantor & Lokasi", icon: Building2, category: "Master Data", keywords: ["kantor", "lokasi", "gps", "koordinat", "cabang", "alamat", "radius"] },
+  { href: "/admin/departments", label: "Divisi / Department", icon: Network, category: "Master Data", keywords: ["divisi", "department", "departemen", "bagian", "struktur"] },
+  { href: "/admin/units", label: "Unit Kerja", icon: Building2, category: "Master Data", keywords: ["unit", "unit kerja", "bagian", "kelompok", "cabang"] },
+  { href: "/admin/positions", label: "Jabatan Pekerjaan", icon: UserRoundCog, category: "Master Data", keywords: ["jabatan", "posisi", "role", "pangkat", "job", "title"] },
+
+  // Operasional
+  { href: "/admin/employees", label: "Register Employee", icon: UserPlus, category: "Operasional", keywords: ["register employee", "tambah karyawan", "daftar karyawan baru", "pendaftaran", "buat akun"] },
+  { href: "/admin/laporan-kehadiran", label: "Laporan Kehadiran", icon: FileImage, category: "Operasional", keywords: ["laporan kehadiran", "rekap", "excel", "kehadiran", "presensi", "export"] },
+  { href: "/admin/cuti", label: "Laporan & Approval Cuti", icon: CalendarDays, category: "Operasional", keywords: ["laporan cuti", "persetujuan cuti", "approval cuti", "pengajuan", "izin"] },
+  { href: "/admin/profil-karyawan", label: "Profil Karyawan", icon: UserRound, category: "Operasional", keywords: ["profil karyawan", "daftar karyawan", "data karyawan", "edit karyawan", "list user"] },
+];
 
 function isActivePath(pathname: string, href: string) {
   if (href === "/history") {
@@ -212,6 +242,16 @@ export default function AppHeader({
   const bellMenuRef = useRef<HTMLDivElement | null>(null);
   const [notificationCount, setNotificationCount] = useState(0);
 
+  // Search State & Refs
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const searchContainerRef = useRef<HTMLDivElement | null>(null);
+  const mobileSearchInputRef = useRef<HTMLInputElement | null>(null);
+
   const resolvedVariant = useMemo(() => {
     if (pathname === "/admin" || pathname.startsWith("/admin/")) {
       return "admin";
@@ -220,6 +260,127 @@ export default function AppHeader({
   }, [pathname, variant]);
 
   const isAdmin = resolvedVariant === "admin";
+
+  // Load search history from localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("faceattend_search_history");
+      if (stored) {
+        setSearchHistory(JSON.parse(stored));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
+  // Sync search input with the URL query param
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const searchVal = params.get("search") || "";
+    setSearchQuery(searchVal);
+  }, [pathname]);
+
+  // Save query to search history
+  const saveSearchQuery = (query: string) => {
+    const trimmed = query.trim();
+    if (!trimmed) return;
+    const updated = [trimmed, ...searchHistory.filter((q) => q !== trimmed)].slice(0, 8);
+    setSearchHistory(updated);
+    localStorage.setItem("faceattend_search_history", JSON.stringify(updated));
+  };
+
+  // Delete item from search history
+  const deleteHistoryItem = (e: React.MouseEvent, item: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const updated = searchHistory.filter((q) => q !== item);
+    setSearchHistory(updated);
+    localStorage.setItem("faceattend_search_history", JSON.stringify(updated));
+  };
+
+  // Trigger search action by updating URL query param and redirecting to search page
+  const triggerSearch = (query: string) => {
+    saveSearchQuery(query);
+    const targetPath = isAdmin ? "/admin/search" : "/search";
+    router.push(`${targetPath}?search=${encodeURIComponent(query.trim())}`);
+  };
+
+  const filteredHistory = useMemo(() => {
+    if (!searchQuery.trim()) return searchHistory;
+    const query = searchQuery.toLowerCase();
+    return searchHistory.filter((item) => item.toLowerCase().includes(query));
+  }, [searchHistory, searchQuery]);
+
+  // Focus search with Ctrl+K or Cmd+K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        if (window.innerWidth >= 768) {
+          searchInputRef.current?.focus();
+        } else {
+          setIsMobileSearchOpen(true);
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target as Node)
+      ) {
+        setIsSearchFocused(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    setActiveSuggestionIndex(-1);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (isMobileSearchOpen) {
+      setTimeout(() => {
+        mobileSearchInputRef.current?.focus();
+      }, 50);
+    }
+  }, [isMobileSearchOpen]);
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, isMobile = false) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveSuggestionIndex((prev) =>
+        prev < filteredHistory.length - 1 ? prev + 1 : 0
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveSuggestionIndex((prev) =>
+        prev > 0 ? prev - 1 : filteredHistory.length - 1
+      );
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      let targetQuery = searchQuery;
+      if (activeSuggestionIndex >= 0 && activeSuggestionIndex < filteredHistory.length) {
+        targetQuery = filteredHistory[activeSuggestionIndex];
+      }
+      triggerSearch(targetQuery);
+      setIsSearchFocused(false);
+      if (isMobile) setIsMobileSearchOpen(false);
+      searchInputRef.current?.blur();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setIsSearchFocused(false);
+      if (isMobile) setIsMobileSearchOpen(false);
+      searchInputRef.current?.blur();
+    }
+  };
 
   const [readNotifIds, setReadNotifIds] = useState<string[]>([]);
 
@@ -357,8 +518,8 @@ export default function AppHeader({
     <>
       <header
         className={`fixed inset-x-0 top-0 z-[999] border-b px-5 py-4 backdrop-blur-2xl transition-all duration-300 md:px-10 lg:px-16 ${hasScrolled
-            ? "border-blue-100/80 bg-white/95 dark:border-[#21262d] dark:bg-[#161b22]/95 shadow-lg shadow-slate-300/30 dark:shadow-black/20"
-            : "border-white/60 bg-white/90 dark:border-[#21262d]/60 dark:bg-[#161b22]/90 shadow-sm shadow-slate-200/40 dark:shadow-none"
+          ? "border-blue-100/80 bg-white/95 dark:border-[#21262d] dark:bg-[#161b22]/95 shadow-lg shadow-slate-300/30 dark:shadow-black/20"
+          : "border-white/60 bg-white/90 dark:border-[#21262d]/60 dark:bg-[#161b22]/90 shadow-sm shadow-slate-200/40 dark:shadow-none"
           }`}
       >
         <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
@@ -395,7 +556,119 @@ export default function AppHeader({
             </div>
           </div>
 
+          {/* Quick Search Bar (Desktop) */}
+          <div ref={searchContainerRef} className="relative hidden md:block w-full max-w-md lg:max-w-xl xl:max-w-2xl mx-4 z-50">
+            <div className="relative flex items-center">
+              <Search className={`absolute left-4 h-4 w-4 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-400'}`} />
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setIsSearchFocused(true)}
+                onKeyDown={(e) => handleSearchKeyDown(e, false)}
+                placeholder="Cari data..."
+                className={`w-full rounded-2xl py-2.5 pl-11 pr-12 text-sm font-semibold border outline-none transition-all duration-200 ${theme === 'dark'
+                  ? 'bg-[#21262d]/50 border-[#30363d] text-slate-100 placeholder-slate-500 focus:bg-[#161b22] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]'
+                  : 'bg-[#f6f8ff] border-blue-100 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-[#123c8c] focus:ring-1 focus:ring-[#123c8c]'
+                  }`}
+              />
+              <button
+                type="button"
+                onClick={() => triggerSearch(searchQuery)}
+                className={`absolute right-3 p-1.5 rounded-xl transition ${theme === 'dark'
+                  ? 'text-slate-400 hover:text-[#58a6ff] hover:bg-[#30363d]'
+                  : 'text-slate-500 hover:text-[#123c8c] hover:bg-blue-50'
+                  }`}
+                aria-label="Cari"
+              >
+                <Search size={16} strokeWidth={2.5} />
+              </button>
+            </div>
+
+            {/* Suggestions Dropdown */}
+            {isSearchFocused && (
+              <div className={`absolute left-0 right-0 mt-2 max-h-[300px] overflow-y-auto rounded-2xl border p-2 shadow-2xl transition-all duration-200 ${theme === 'dark'
+                ? 'border-[#30363d] bg-[#161b22] shadow-black/40'
+                : 'border-blue-100 bg-white shadow-slate-300/40'
+                }`}>
+                <div className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'
+                  }`}>
+                  Riwayat Pencarian
+                </div>
+
+                {filteredHistory.length === 0 ? (
+                  <div className="p-4 text-center text-sm font-semibold text-slate-400">
+                    Tidak ada riwayat pencarian
+                  </div>
+                ) : (
+                  <div className="space-y-0.5">
+                    {filteredHistory.map((item, index) => {
+                      const isActive = index === activeSuggestionIndex;
+                      return (
+                        <div
+                          key={item}
+                          onMouseEnter={() => setActiveSuggestionIndex(index)}
+                          className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold transition-all duration-150 cursor-pointer ${isActive
+                            ? theme === 'dark'
+                              ? 'bg-[#1f6feb] text-white'
+                              : 'bg-[#123c8c] text-white shadow-md shadow-blue-900/10'
+                            : theme === 'dark'
+                              ? 'text-slate-300 hover:bg-[#21262d] hover:text-[#58a6ff]'
+                              : 'text-slate-600 hover:bg-[#eaf1ff] hover:text-[#123c8c]'
+                            }`}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setSearchQuery(item);
+                            triggerSearch(item);
+                            setIsSearchFocused(false);
+                          }}
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <Clock3 size={16} strokeWidth={2.5} className="shrink-0 opacity-60" />
+                            <span className="truncate">{item}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onMouseDown={(e) => {
+                              // Prevent closing dropdown when clicking delete icon
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }}
+                            onClick={(e) => deleteHistoryItem(e, item)}
+                            className={`p-1 rounded-lg transition-all ${isActive
+                              ? 'text-white/80 hover:text-white hover:bg-white/10'
+                              : theme === 'dark'
+                                ? 'text-slate-500 hover:text-red-400 hover:bg-red-500/10'
+                                : 'text-slate-400 hover:text-red-600 hover:bg-red-50'
+                              }`}
+                            title="Hapus dari riwayat"
+                          >
+                            <X size={14} strokeWidth={3} />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="flex shrink-0 items-center justify-end gap-3">
+            {/* Mobile Search Trigger Button */}
+            <button
+              type="button"
+              onClick={() => setIsMobileSearchOpen(true)}
+              className={`flex md:hidden h-12 w-12 items-center justify-center rounded-2xl shadow-lg ring-1 transition hover:scale-[1.05] active:scale-[0.96] ${theme === "dark"
+                ? "bg-[#21262d] text-[#58a6ff] ring-[#30363d] shadow-black/20"
+                : "bg-[#eaf1ff] text-[#123c8c] ring-blue-100 shadow-slate-200/70 hover:bg-blue-50"
+                }`}
+              aria-label="Cari menu"
+            >
+              <Search size={20} strokeWidth={2.5} />
+            </button>
+
             {/* Header Theme Toggle Button */}
             <button
               type="button"
@@ -758,6 +1031,119 @@ export default function AppHeader({
 
         </div>
       </aside>
+
+      {/* Mobile Search Modal/Overlay */}
+      {isMobileSearchOpen && (
+        <div className="fixed inset-0 z-[1100] flex flex-col bg-slate-900/40 dark:bg-black/60 backdrop-blur-md">
+          <div className={`flex flex-col h-full max-h-[85vh] w-full rounded-b-3xl border-b p-5 shadow-2xl transition-all duration-300 ${theme === 'dark'
+            ? 'border-[#30363d] bg-[#161b22]'
+            : 'border-blue-100 bg-white'
+            }`}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="relative flex-1 flex items-center">
+                <Search className={`absolute left-4 h-4 w-4 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-400'}`} />
+                <input
+                  ref={mobileSearchInputRef}
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => handleSearchKeyDown(e, true)}
+                  placeholder="Cari data..."
+                  className={`w-full rounded-2xl py-2.5 pl-11 pr-12 text-sm font-semibold border outline-none transition-all duration-200 ${theme === 'dark'
+                    ? 'bg-[#21262d] border-[#30363d] text-slate-100 placeholder-slate-500 focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]'
+                    : 'bg-[#f6f8ff] border-blue-100 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-[#123c8c] focus:ring-1 focus:ring-[#123c8c]'
+                    }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    triggerSearch(searchQuery);
+                    setIsMobileSearchOpen(false);
+                  }}
+                  className={`absolute right-3 p-1.5 rounded-xl transition ${theme === 'dark'
+                    ? 'text-slate-400 hover:text-[#58a6ff] hover:bg-[#30363d]'
+                    : 'text-slate-500 hover:text-[#123c8c] hover:bg-blue-50'
+                    }`}
+                  aria-label="Cari"
+                >
+                  <Search size={16} strokeWidth={2.5} />
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsMobileSearchOpen(false)}
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition active:scale-[0.96] ${theme === 'dark'
+                  ? 'bg-[#21262d] text-slate-300 hover:bg-[#30363d]'
+                  : 'bg-[#eaf1ff] text-[#123c8c] hover:bg-blue-100'
+                  }`}
+                aria-label="Tutup pencarian"
+              >
+                <X size={20} strokeWidth={2.8} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-4">
+              <div className={`px-2 py-1 text-[10px] font-black uppercase tracking-wider ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'
+                }`}>
+                Riwayat Pencarian
+              </div>
+
+              {filteredHistory.length === 0 ? (
+                <div className="p-8 text-center text-sm font-semibold text-slate-400">
+                  Tidak ada riwayat pencarian
+                </div>
+              ) : (
+                <div className="space-y-1 pb-4">
+                  {filteredHistory.map((item, index) => {
+                    const isActive = index === activeSuggestionIndex;
+                    return (
+                      <div
+                        key={item}
+                        className={`flex items-center justify-between rounded-2xl px-4 py-3 text-left text-sm font-semibold transition-all duration-150 cursor-pointer ${isActive
+                          ? theme === 'dark'
+                            ? 'bg-[#1f6feb] text-white'
+                            : 'bg-[#123c8c] text-white shadow-md shadow-blue-900/10'
+                          : theme === 'dark'
+                            ? 'bg-[#21262d]/40 text-slate-300 hover:bg-[#21262d]'
+                            : 'bg-[#f6f8ff] text-slate-600 hover:bg-[#eaf1ff]'
+                          }`}
+                        onClick={() => {
+                          setSearchQuery(item);
+                          triggerSearch(item);
+                          setIsMobileSearchOpen(false);
+                        }}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <Clock3 size={18} strokeWidth={2.5} className="shrink-0 opacity-60" />
+                          <span className="truncate">{item}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            deleteHistoryItem(e, item);
+                          }}
+                          className={`p-1.5 rounded-xl transition-all ${isActive
+                            ? 'text-white/80 hover:text-white hover:bg-white/10'
+                            : theme === 'dark'
+                              ? 'text-slate-500 hover:text-red-400 hover:bg-red-500/10'
+                              : 'text-slate-400 hover:text-red-600 hover:bg-red-50'
+                            }`}
+                          title="Hapus dari riwayat"
+                        >
+                          <X size={16} strokeWidth={3} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="flex-1" onClick={() => setIsMobileSearchOpen(false)} />
+        </div>
+      )}
     </>
   );
 }
