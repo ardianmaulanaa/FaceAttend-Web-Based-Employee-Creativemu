@@ -160,6 +160,7 @@ const adminSuggestions = [
   // Menu Utama
   { href: "/admin/dashboard", label: "Dashboard Admin", icon: LayoutDashboard, category: "Menu Utama", keywords: ["dashboard", "beranda", "ringkasan", "summary", "admin"] },
   { href: "/admin/monitor_perusahaan", label: "Monitor Perusahaan", icon: BarChart3, category: "Menu Utama", keywords: ["monitor perusahaan", "pemantauan", "kehadiran real-time", "karyawan", "live", "pantau"] },
+  { href: "/admin/analytics", label: "HR Analytics Dashboard", icon: TrendingUp, category: "Menu Utama", keywords: ["hr analytics", "analitik", "grafik", "prediksi", "kedisiplinan", "reward", "sanksi", "promosi"] },
   { href: "/admin/pengumuman", label: "Pengumuman Admin", icon: Megaphone, category: "Menu Utama", keywords: ["pengumuman", "info", "buat pengumuman", "broadcast", "pengumuman baru"] },
 
   // Master Data
