@@ -34,7 +34,6 @@ html {
   min-height: 100vh !important;
   height: auto !important;
   overflow-y: auto !important;
-  overscroll-behavior: none;
   background-color: #eef3ff !important;
   background:
     radial-gradient(
@@ -56,8 +55,7 @@ body {
   max-width: 100%;
   min-height: 100vh !important;
   height: auto !important;
-  overflow-y: auto !important;
-  overscroll-behavior: none;
+  overflow: visible !important;
   background-color: #eef3ff !important;
   background:
     radial-gradient(
