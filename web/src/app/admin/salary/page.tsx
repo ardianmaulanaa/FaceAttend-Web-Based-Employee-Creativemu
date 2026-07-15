@@ -46,6 +46,25 @@ export default function AdminSalaryPage() {
     try {
       setIsGenerating(true);
       setAutoStatus("Menghubungkan data kehadiran...");
+
+      // Parse month and year from autoPeriod (e.g., "Juli 2026")
+      const monthNames = ["januari", "februari", "maret", "april", "mei", "juni", "juli", "agustus", "september", "oktober", "november", "desember"];
+      const match = autoPeriod.toLowerCase().match(/([a-z]+)\s+(\d+)/);
+      let queryMonth = new Date().getMonth() + 1;
+      let queryYear = new Date().getFullYear();
+      if (match) {
+        const mIdx = monthNames.indexOf(match[1]);
+        if (mIdx !== -1) queryMonth = mIdx + 1;
+        queryYear = Number(match[2]);
+      }
+
+      // Fetch actual attendance reports for the period from database
+      const reportsResponse = await fetch(`/api/admin/attendance-reports?month=${queryMonth}&year=${queryYear}`, {
+        method: "GET",
+        cache: "no-store",
+      });
+      const reportsData = await reportsResponse.json();
+      const attendanceReports: any[] = reportsData.success ? (reportsData.reports || []) : [];
       
       // Load approved travel reimbursements
       const rawReimbursements = localStorage.getItem("faceattend_reimbursements");
@@ -65,10 +84,15 @@ export default function AdminSalaryPage() {
           .filter((c) => c.attendanceId === emp.id || c.employeeName === emp.name)
           .reduce((sum, c) => sum + Number(c.amount), 0);
 
-        // Deduct late arrivals
-        // Mocking: Employee 1 has 1 late day, others have 2 late days
-        const isEmployee1 = emp.id === firstEmployeeId;
-        const lateCount = isEmployee1 ? 1 : 2;
+        // Calculate actual late check-ins from database reports
+        const empReports = attendanceReports.filter(
+          (r) => r.employeeName === emp.name || r.employeeCode === emp.email
+        );
+        const lateCount = empReports.filter(
+          (r) => String(r.status || "").toLowerCase().includes("late") || 
+                 String(r.statusLabel || "").toLowerCase().includes("lambat")
+        ).length;
+        
         const lateDeduction = lateCount * 50000;
 
         // EOM Bonus (Rp 200,000)
@@ -89,7 +113,7 @@ export default function AdminSalaryPage() {
           reimbursement: empReimbursement,
           bonus,
           pph,
-          noteText: `Gaji Bulanan Otomatis (${autoPeriod})`,
+          noteText: `Gaji Bulanan Otomatis (${autoPeriod}) - ${lateCount}x Terlambat`,
         });
 
         await fetch("/api/salary", {
