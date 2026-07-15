@@ -159,17 +159,32 @@ export default function RewardsPage() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
+          {/* LEADERBOARD CARD */}
           <div className="rounded-[2rem] border border-amber-200 bg-white p-6 shadow-xl shadow-slate-200/50">
-            <h2 className="text-xl font-black text-slate-950">Leaderboard</h2>
+            <h2 className="text-xl font-black text-slate-950 flex items-center gap-2">
+              <Trophy className="text-amber-500" size={20} />
+              Leaderboard
+            </h2>
             <div className="mt-4 space-y-2">
               {leaderboard.map((item, index) => (
                 <div
                   key={item.id}
-                  className="flex items-center justify-between rounded-xl bg-amber-50/60 px-3 py-2"
+                  className={`flex items-center justify-between rounded-xl px-3 py-2 ${
+                    index === 0
+                      ? "bg-amber-100/70 border border-amber-200 ring-2 ring-amber-400/25"
+                      : "bg-amber-50/60"
+                  }`}
                 >
-                  <p className="text-sm font-semibold text-slate-700">
-                    #{index + 1} {item.name}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-slate-700">
+                      #{index + 1} {item.name}
+                    </p>
+                    {index === 0 && (
+                      <span className="inline-flex items-center gap-0.5 rounded-full bg-yellow-500 px-2 py-0.5 text-[9px] font-black uppercase text-white shadow-sm">
+                        👑 EOM
+                      </span>
+                    )}
+                  </div>
                   <p className="text-sm font-black text-amber-700">
                     {item.rewardPoints} poin
                   </p>
@@ -178,10 +193,33 @@ export default function RewardsPage() {
             </div>
           </div>
 
-          <div className="rounded-[2rem] border border-indigo-200 bg-white p-6 shadow-xl shadow-slate-200/50">
-            <h2 className="text-xl font-black text-slate-950">
-              Notifikasi Saya
+          {/* POINTS RULE CARD */}
+          <div className="rounded-[2rem] border border-blue-200 bg-white p-6 shadow-xl shadow-slate-200/50 space-y-4">
+            <h2 className="text-xl font-black text-slate-950 flex items-center gap-2">
+              <Gift className="text-blue-500" size={20} />
+              Panduan Poin Kehadiran
             </h2>
+            <div className="space-y-2.5 text-sm text-slate-600 font-semibold">
+              <div className="flex items-center justify-between bg-blue-50/50 rounded-xl p-3">
+                <span>Check-in Tepat Waktu (ON_TIME)</span>
+                <span className="text-blue-700 font-black">+10 Poin</span>
+              </div>
+              <div className="flex items-center justify-between bg-blue-50/50 rounded-xl p-3">
+                <span>Kunjungan Klien (Visit) Selesai</span>
+                <span className="text-blue-700 font-black">+15 Poin</span>
+              </div>
+              <p className="text-[11px] font-bold text-slate-400 mt-1 leading-snug">
+                Poin bulanan tertinggi otomatis berhak mendapatkan tunjangan reward "Employee of the Month" senilai Rp200.000 pada slip gaji berikutnya.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* NOTIFIKASI CARD */}
+        <div className="rounded-[2rem] border border-indigo-200 bg-white p-6 shadow-xl shadow-slate-200/50">
+          <h2 className="text-xl font-black text-slate-950">
+            Notifikasi Saya
+          </h2>
             <div className="mt-4 space-y-3">
               {notifications.length === 0 ? (
                 <p className="text-sm text-slate-500">Belum ada notifikasi.</p>
@@ -212,10 +250,9 @@ export default function RewardsPage() {
               )}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <BottomNav />
-    </MobileShell>
-  );
-}
+        <BottomNav />
+      </MobileShell>
+    );
+  }

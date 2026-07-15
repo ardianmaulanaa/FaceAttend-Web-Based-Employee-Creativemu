@@ -10,6 +10,7 @@ import {
   Loader2,
   Search,
   UserRound,
+  Coins,
 } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import MobileShell from "@/components/MobileShell";
@@ -34,6 +35,17 @@ type AttendanceReport = {
   workModeLabel: string;
   hasPhoto: boolean;
   hasLocation: boolean;
+};
+
+type ReimbursementClaim = {
+  id: string;
+  attendanceId: string;
+  date: string;
+  amount: number;
+  note: string;
+  status: "pending" | "approved" | "rejected";
+  employeeName?: string;
+  employeeCode?: string;
 };
 
 type AttendanceReportResponse = {
@@ -236,6 +248,41 @@ export default function AdminAttendanceReportPage() {
   const [month, setMonth] = useState(getCurrentMonth());
   const [year, setYear] = useState(getCurrentYear());
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  
+  // New States
+  const [activeTab, setActiveTab] = useState<"attendance" | "reimbursement">("attendance");
+  const [reimbursements, setReimbursements] = useState<ReimbursementClaim[]>([]);
+
+  // Load reimbursements on tab change
+  useEffect(() => {
+    if (activeTab === "reimbursement") {
+      const raw = localStorage.getItem("faceattend_reimbursements");
+      if (raw) {
+        const claims: ReimbursementClaim[] = JSON.parse(raw);
+        // Map with simulated employee names if not present
+        const mapped = claims.map((c) => ({
+          ...c,
+          employeeName: c.employeeName || (reports.find((r) => r.id === c.attendanceId)?.employeeName || "Karyawan FaceAttend"),
+          employeeCode: c.employeeCode || (reports.find((r) => r.id === c.attendanceId)?.employeeCode || "EMP-01"),
+        }));
+        setReimbursements(mapped);
+      }
+    }
+  }, [activeTab, reports]);
+
+  function handleReimbursementStatus(claimId: string, newStatus: "approved" | "rejected") {
+    const raw = localStorage.getItem("faceattend_reimbursements");
+    if (raw) {
+      const claims: ReimbursementClaim[] = JSON.parse(raw);
+      const updated = claims.map((c) => (c.id === claimId ? { ...c, status: newStatus } : c));
+      localStorage.setItem("faceattend_reimbursements", JSON.stringify(updated));
+      
+      // Update local state
+      setReimbursements((prev) =>
+        prev.map((c) => (c.id === claimId ? { ...c, status: newStatus } : c))
+      );
+    }
+  }
 
   async function getAttendanceReports() {
     try {
@@ -415,248 +462,345 @@ export default function AdminAttendanceReportPage() {
             </div>
           </div>
 
-          <div
-            className="attendance-report-enter rounded-[2rem] border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-6"
-            style={{ animationDelay: "100ms" }}
-          >
-            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.22em] text-[#123c8c]">
-                  Filter Data
-                </p>
-
-                <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">
-                  Cari Rekap Kehadiran
-                </h2>
-              </div>
-            </div>
-
-            <form
-              onSubmit={handleSearchSubmit}
-              className="mt-6 grid gap-3 lg:grid-cols-[1.3fr_0.9fr_0.6fr_0.6fr_0.8fr_auto]"
+          {/* TAB NAVIGATION */}
+          <div className="flex gap-3 mb-6">
+            <button
+              onClick={() => setActiveTab("attendance")}
+              className={`rounded-2xl px-5 py-3 text-sm font-black transition-all ${
+                activeTab === "attendance"
+                  ? "bg-[#123c8c] text-white shadow-lg shadow-blue-900/25"
+                  : "bg-white text-slate-600 border border-blue-100 hover:bg-[#eaf1ff]"
+              }`}
             >
-              <div className="relative">
-                <Search
-                  size={18}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                />
-
-                <input
-                  value={searchKeyword}
-                  onChange={(event) => setSearchKeyword(event.target.value)}
-                  placeholder="Cari nama / kode karyawan..."
-                  className="attendance-report-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
-                />
-              </div>
-
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(event) => setSelectedDate(event.target.value)}
-                className="attendance-report-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
-              />
-
-              <input
-                type="number"
-                value={month}
-                min={1}
-                max={12}
-                onChange={(event) => setMonth(Number(event.target.value))}
-                disabled={Boolean(selectedDate)}
-                placeholder="Bulan"
-                className="attendance-report-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
-              />
-
-              <input
-                type="number"
-                value={year}
-                onChange={(event) => setYear(Number(event.target.value))}
-                disabled={Boolean(selectedDate)}
-                placeholder="Tahun"
-                className="attendance-report-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
-              />
-
-              <select
-                value={statusFilter}
-                onChange={(event) =>
-                  setStatusFilter(event.target.value as StatusFilter)
-                }
-                className="attendance-report-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
-              >
-                {statusOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-
-              <button
-                type="submit"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#123c8c] px-5 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#0f3274] active:scale-[0.98]"
-              >
-                <Search size={17} />
-                Cari
-              </button>
-            </form>
+              Laporan Kehadiran
+            </button>
+            <button
+              onClick={() => setActiveTab("reimbursement")}
+              className={`rounded-2xl px-5 py-3 text-sm font-black transition-all flex items-center gap-2 ${
+                activeTab === "reimbursement"
+                  ? "bg-[#123c8c] text-white shadow-lg shadow-blue-900/25"
+                  : "bg-white text-slate-600 border border-blue-100 hover:bg-[#eaf1ff]"
+              }`}
+            >
+              <Coins size={16} />
+              Reimbursement Kunjungan
+              {reimbursements.filter((r) => r.status === "pending").length > 0 && (
+                <span className="bg-orange-500 text-white rounded-full text-[9px] px-2 py-0.5 font-bold animate-pulse">
+                  {reimbursements.filter((r) => r.status === "pending").length}
+                </span>
+              )}
+            </button>
           </div>
 
-          {errorMessage ? (
-            <div className="attendance-report-row-enter rounded-3xl border border-red-100 bg-red-50 p-5 text-sm font-bold text-red-700">
-              {errorMessage}
-            </div>
-          ) : null}
-
-          <div
-            className="attendance-report-enter rounded-[2rem] border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-6"
-            style={{ animationDelay: "150ms" }}
-          >
-            <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.22em] text-[#123c8c]">
-                  Rekap Absensi
+          {activeTab === "reimbursement" ? (
+            <div className="attendance-report-enter rounded-[2rem] border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-6">
+              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-6">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.22em] text-[#123c8c]">
+                    Persetujuan Klaim
+                  </p>
+                  <h2 className="text-2xl font-black tracking-tight text-slate-950">
+                    Reimbursement Bensin / Makan
+                  </h2>
+                </div>
+                <p className="text-sm font-bold text-slate-500">
+                  {reimbursements.length} Pengajuan Diajukan
                 </p>
-
-                <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">
-                  Nama Karyawan per Tanggal
-                </h2>
               </div>
 
-              <p className="text-sm font-semibold text-slate-500">
-                {reports.length} data ditemukan
-              </p>
-            </div>
-
-            <div className="mt-6">
-              {isLoading ? (
-                <div className="attendance-report-row-enter flex items-center justify-center gap-2 rounded-3xl border border-blue-100 bg-[#f8fbff] px-5 py-12 text-sm font-bold text-slate-500">
-                  <Loader2 size={18} className="animate-spin text-[#123c8c]" />
-                  Memuat rekap kehadiran...
-                </div>
-              ) : groupedReports.length === 0 ? (
-                <div className="attendance-report-row-enter rounded-3xl border border-dashed border-blue-100 bg-[#f8fbff] px-5 py-12 text-center">
-                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
-                    <ImageIcon size={26} strokeWidth={2.6} />
-                  </div>
-
-                  <p className="mt-4 text-sm font-black text-slate-500">
-                    Belum ada rekap kehadiran pada filter ini.
-                  </p>
+              {reimbursements.length === 0 ? (
+                <div className="text-center py-12 bg-slate-50 rounded-3xl border border-slate-100">
+                  <Coins className="mx-auto text-slate-400 mb-3" size={32} />
+                  <p className="text-sm font-semibold text-slate-500">Belum ada pengajuan reimbursement kunjungan kerja.</p>
                 </div>
               ) : (
-                <div className="space-y-5">
-                  {groupedReports.map((group, groupIndex) => (
-                    <section
-                      key={group.dateLabel}
-                      className="attendance-report-row-enter rounded-[2rem] border border-blue-100 bg-[#f8fbff] dark:border-slate-800 dark:bg-[#0d1117] p-4 md:p-5"
-                      style={{
-                        animationDelay: `${groupIndex * 70}ms`,
-                      }}
-                    >
-                      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
-                            <CalendarDays size={22} strokeWidth={2.6} />
-                          </div>
-
-                          <div>
-                            <h3 className="text-xl font-black text-slate-950">
-                              {group.dateLabel}
-                            </h3>
-
-                            <p className="text-sm font-semibold text-slate-500">
-                              {group.items.length} karyawan memiliki rekap
-                            </p>
-                          </div>
+                <div className="space-y-4">
+                  {reimbursements.map((claim) => (
+                    <div key={claim.id} className="rounded-3xl border border-blue-50 bg-[#f8fbff] p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-base font-black text-slate-800">{claim.employeeName}</h4>
+                          <span className="text-xs font-semibold text-slate-400">({claim.employeeCode})</span>
                         </div>
+                        <p className="text-xs font-bold text-slate-500 mt-1">Tanggal: {claim.date} • Keterangan: {claim.note || "-"}</p>
+                        <p className="text-lg font-black text-[#123c8c] mt-2">Rp {claim.amount.toLocaleString("id-ID")}</p>
                       </div>
-
-                      <div className="mt-4 space-y-3">
-                        {group.items.map((item, index) => (
-                          <Link
-                            key={item.id}
-                            href={`/admin/laporan-kehadiran/${item.id}`}
-                            className="attendance-report-row-enter group block rounded-[1.6rem] border border-blue-100 bg-white dark:border-slate-800 dark:bg-[#161b22] px-4 py-4 shadow-sm shadow-slate-200/60 transition duration-200 hover:-translate-y-0.5 hover:border-[#123c8c]/30 hover:bg-[#fbfdff] dark:hover:bg-[#1c212a] hover:shadow-xl hover:shadow-slate-300/40 active:scale-[0.99] md:px-5"
-                            style={{
-                              animationDelay: `${index * 45}ms`,
-                            }}
-                          >
-                            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                              <div className="flex min-w-0 items-center gap-3 md:w-[260px]">
-                                <EmployeeProfileAvatar item={item} />
-
-                                <div className="min-w-0">
-                                  <h4 className="truncate text-base font-black text-slate-950">
-                                    {item.employeeName}
-                                  </h4>
-
-                                  <p className="mt-1 truncate text-xs font-bold text-slate-400">
-                                    {item.employeeCode || item.workModeLabel}
-                                  </p>
-                                </div>
-                              </div>
-
-                              <div className="grid grid-cols-2 gap-2 text-xs font-bold text-slate-500 md:w-[260px]">
-                                <div className="rounded-2xl bg-[#f8fbff] px-4 py-3">
-                                  <p className="text-slate-400">Masuk</p>
-                                  <p className="mt-1 font-black text-slate-800">
-                                    {item.checkIn}
-                                  </p>
-                                </div>
-
-                                <div className="rounded-2xl bg-[#f8fbff] px-4 py-3">
-                                  <p className="text-slate-400">Keluar</p>
-                                  <p className="mt-1 font-black text-slate-800">
-                                    {item.checkOut}
-                                  </p>
-                                </div>
-                              </div>
-
-                              <div className="flex flex-1 flex-wrap items-center gap-2">
-                                <span
-                                  className={`rounded-full px-3 py-1 text-[11px] font-black ring-1 ${getStatusStyle(
-                                    item.status,
-                                  )}`}
-                                >
-                                  {item.statusLabel}
-                                </span>
-
-                                <span className="rounded-full bg-blue-50 px-3 py-1 text-[11px] font-black text-[#123c8c]">
-                                  {item.workModeLabel}
-                                </span>
-
-                                {item.hasPhoto ? (
-                                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-black text-emerald-700">
-                                    Ada Foto
-                                  </span>
-                                ) : (
-                                  <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-black text-slate-500">
-                                    Tanpa Foto
-                                  </span>
-                                )}
-
-                                {item.hasLocation ? (
-                                  <span className="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-black text-amber-700">
-                                    Ada Lokasi
-                                  </span>
-                                ) : null}
-                              </div>
-
-                              <div className="flex shrink-0 items-center justify-start md:w-[220px] md:justify-end">
-                                <span className="inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-blue-100 bg-white px-4 text-xs font-black text-[#123c8c] transition group-hover:bg-[#eaf1ff]">
-                                  <Eye size={15} />
-                                  Lihat detail
-                                </span>
-                              </div>
-                            </div>
-                          </Link>
-                        ))}
+                      
+                      <div className="flex items-center gap-2">
+                        {claim.status === "pending" ? (
+                          <>
+                            <button
+                              onClick={() => handleReimbursementStatus(claim.id, "approved")}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-4 py-2 text-xs font-black"
+                            >
+                              Setujui
+                            </button>
+                            <button
+                              onClick={() => handleReimbursementStatus(claim.id, "rejected")}
+                              className="bg-red-600 hover:bg-red-700 text-white rounded-xl px-4 py-2 text-xs font-black"
+                            >
+                              Tolak
+                            </button>
+                          </>
+                        ) : (
+                          <span className={`rounded-xl px-3 py-1.5 text-xs font-black uppercase ${
+                            claim.status === "approved" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
+                          }`}>
+                            {claim.status === "approved" ? "Disetujui" : "Ditolak"}
+                          </span>
+                        )}
                       </div>
-                    </section>
+                    </div>
                   ))}
                 </div>
               )}
             </div>
-          </div>
+          ) : (
+            <>
+              <div
+                className="attendance-report-enter rounded-[2rem] border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-6"
+                style={{ animationDelay: "100ms" }}
+              >
+                <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.22em] text-[#123c8c]">
+                      Filter Data
+                    </p>
+
+                    <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">
+                      Cari Rekap Kehadiran
+                    </h2>
+                  </div>
+                </div>
+
+                <form
+                  onSubmit={handleSearchSubmit}
+                  className="mt-6 grid gap-3 lg:grid-cols-[1.3fr_0.9fr_0.6fr_0.6fr_0.8fr_auto]"
+                >
+                  <div className="relative">
+                    <Search
+                      size={18}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+
+                    <input
+                      value={searchKeyword}
+                      onChange={(event) => setSearchKeyword(event.target.value)}
+                      placeholder="Cari nama / kode karyawan..."
+                      className="attendance-report-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                    />
+                  </div>
+
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(event) => setSelectedDate(event.target.value)}
+                    className="attendance-report-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                  />
+
+                  <input
+                    type="number"
+                    value={month}
+                    min={1}
+                    max={12}
+                    onChange={(event) => setMonth(Number(event.target.value))}
+                    disabled={Boolean(selectedDate)}
+                    placeholder="Bulan"
+                    className="attendance-report-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+
+                  <input
+                    type="number"
+                    value={year}
+                    onChange={(event) => setYear(Number(event.target.value))}
+                    disabled={Boolean(selectedDate)}
+                    placeholder="Tahun"
+                    className="attendance-report-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+
+                  <select
+                    value={statusFilter}
+                    onChange={(event) =>
+                      setStatusFilter(event.target.value as StatusFilter)
+                    }
+                    className="attendance-report-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                  >
+                    {statusOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+
+                  <button
+                    type="submit"
+                    className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#123c8c] px-5 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#0f3274] active:scale-[0.98]"
+                  >
+                    <Search size={17} />
+                    Cari
+                  </button>
+                </form>
+              </div>
+
+              {errorMessage ? (
+                <div className="attendance-report-row-enter rounded-3xl border border-red-100 bg-red-50 p-5 text-sm font-bold text-red-700">
+                  {errorMessage}
+                </div>
+              ) : null}
+
+              <div
+                className="attendance-report-enter rounded-[2rem] border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-6"
+                style={{ animationDelay: "150ms" }}
+              >
+                <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.22em] text-[#123c8c]">
+                      Rekap Absensi
+                    </p>
+
+                    <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">
+                      Nama Karyawan per Tanggal
+                    </h2>
+                  </div>
+
+                  <p className="text-sm font-semibold text-slate-500">
+                    {reports.length} data ditemukan
+                  </p>
+                </div>
+
+                <div className="mt-6">
+                  {isLoading ? (
+                    <div className="attendance-report-row-enter flex items-center justify-center gap-2 rounded-3xl border border-blue-100 bg-[#f8fbff] px-5 py-12 text-sm font-bold text-slate-500">
+                      <Loader2 size={18} className="animate-spin text-[#123c8c]" />
+                      Memuat rekap kehadiran...
+                    </div>
+                  ) : groupedReports.length === 0 ? (
+                    <div className="attendance-report-row-enter rounded-3xl border border-dashed border-blue-100 bg-[#f8fbff] px-5 py-12 text-center">
+                      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
+                        <ImageIcon size={26} strokeWidth={2.6} />
+                      </div>
+
+                      <p className="mt-4 text-sm font-black text-slate-500">
+                        Belum ada rekap kehadiran pada filter ini.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-5">
+                      {groupedReports.map((group, groupIndex) => (
+                        <section
+                          key={group.dateLabel}
+                          className="attendance-report-row-enter rounded-[2rem] border border-blue-100 bg-[#f8fbff] dark:border-slate-800 dark:bg-[#0d1117] p-4 md:p-5"
+                          style={{
+                            animationDelay: `${groupIndex * 70}ms`,
+                          }}
+                        >
+                          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
+                                <CalendarDays size={22} strokeWidth={2.6} />
+                              </div>
+
+                              <div>
+                                <h3 className="text-xl font-black text-slate-950">
+                                  {group.dateLabel}
+                                </h3>
+
+                                <p className="text-sm font-semibold text-slate-500">
+                                  {group.items.length} karyawan memiliki rekap
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 space-y-3">
+                            {group.items.map((item, index) => (
+                              <Link
+                                key={item.id}
+                                href={`/admin/laporan-kehadiran/${item.id}`}
+                                className="attendance-report-row-enter group block rounded-[1.6rem] border border-blue-100 bg-white dark:border-slate-800 dark:bg-[#161b22] px-4 py-4 shadow-sm shadow-slate-200/60 transition duration-200 hover:-translate-y-0.5 hover:border-[#123c8c]/30 hover:bg-[#fbfdff] dark:hover:bg-[#1c212a] hover:shadow-xl hover:shadow-slate-300/40 active:scale-[0.99] md:px-5"
+                                style={{
+                                  animationDelay: `${index * 45}ms`,
+                                }}
+                              >
+                                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                                  <div className="flex min-w-0 items-center gap-3 md:w-[260px]">
+                                    <EmployeeProfileAvatar item={item} />
+
+                                    <div className="min-w-0">
+                                      <h4 className="truncate text-base font-black text-slate-950">
+                                        {item.employeeName}
+                                      </h4>
+
+                                      <p className="mt-1 truncate text-xs font-bold text-slate-400">
+                                        {item.employeeCode || item.workModeLabel}
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  <div className="grid grid-cols-2 gap-2 text-xs font-bold text-slate-500 md:w-[260px]">
+                                    <div className="rounded-2xl bg-[#f8fbff] px-4 py-3">
+                                      <p className="text-slate-400">Masuk</p>
+                                      <p className="mt-1 font-black text-slate-800">
+                                        {item.checkIn}
+                                      </p>
+                                    </div>
+
+                                    <div className="rounded-2xl bg-[#f8fbff] px-4 py-3">
+                                      <p className="text-slate-400">Keluar</p>
+                                      <p className="mt-1 font-black text-slate-800">
+                                        {item.checkOut}
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex flex-1 flex-wrap items-center gap-2">
+                                    <span
+                                      className={`rounded-full px-3 py-1 text-[11px] font-black ring-1 ${getStatusStyle(
+                                        item.status,
+                                      )}`}
+                                    >
+                                      {item.statusLabel}
+                                    </span>
+
+                                    <span className="rounded-full bg-blue-50 px-3 py-1 text-[11px] font-black text-[#123c8c]">
+                                      {item.workModeLabel}
+                                    </span>
+
+                                    {item.hasPhoto ? (
+                                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-black text-emerald-700">
+                                        Ada Foto
+                                      </span>
+                                    ) : (
+                                      <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-black text-slate-500">
+                                        Tanpa Foto
+                                      </span>
+                                    )}
+
+                                    {item.hasLocation ? (
+                                      <span className="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-black text-amber-700">
+                                        Ada Lokasi
+                                      </span>
+                                    ) : null}
+                                  </div>
+
+                                  <div className="flex shrink-0 items-center justify-start md:w-[220px] md:justify-end">
+                                    <span className="inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-blue-100 bg-white px-4 text-xs font-black text-[#123c8c] transition group-hover:bg-[#eaf1ff]">
+                                      <Eye size={15} />
+                                      Lihat detail
+                                    </span>
+                                  </div>
+                                </div>
+                              </Link>
+                            ))}
+                          </div>
+                        </section>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </section>
       </main>
     </MobileShell>

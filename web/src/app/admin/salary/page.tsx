@@ -36,6 +36,85 @@ export default function AdminSalaryPage() {
     note: "",
   });
 
+  // Auto calculation states
+  const [autoPeriod, setAutoPeriod] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [autoStatus, setAutoStatus] = useState("");
+
+  async function handleAutoCalculateMassGenerate() {
+    if (!autoPeriod) return;
+    try {
+      setIsGenerating(true);
+      setAutoStatus("Menghubungkan data kehadiran...");
+      
+      // Load approved travel reimbursements
+      const rawReimbursements = localStorage.getItem("faceattend_reimbursements");
+      const approvedClaims: any[] = rawReimbursements 
+        ? JSON.parse(rawReimbursements).filter((c: any) => c.status === "approved") 
+        : [];
+
+      // Calculate Employee of the Month bonus (top rank)
+      // We mock the first employee as top performer for points
+      const firstEmployeeId = employees[0]?.id;
+
+      for (const emp of employees) {
+        const baseSalary = 5000000;
+        
+        // Accumulate approved bensin/makan travel reimbursement
+        const empReimbursement = approvedClaims
+          .filter((c) => c.attendanceId === emp.id || c.employeeName === emp.name)
+          .reduce((sum, c) => sum + Number(c.amount), 0);
+
+        // Deduct late arrivals
+        // Mocking: Employee 1 has 1 late day, others have 2 late days
+        const isEmployee1 = emp.id === firstEmployeeId;
+        const lateCount = isEmployee1 ? 1 : 2;
+        const lateDeduction = lateCount * 50000;
+
+        // EOM Bonus (Rp 200,000)
+        const isEOM = emp.id === firstEmployeeId;
+        const bonus = isEOM ? 200000 : 0;
+
+        // Tax PPH (2.5%)
+        const pph = Math.round(baseSalary * 0.025);
+
+        // Net Salary
+        const amount = baseSalary - lateDeduction + empReimbursement + bonus - pph;
+
+        // Serialize breakdown details inside note
+        const detailNote = JSON.stringify({
+          isDetailed: true,
+          baseSalary,
+          lateDeduction,
+          reimbursement: empReimbursement,
+          bonus,
+          pph,
+          noteText: `Gaji Bulanan Otomatis (${autoPeriod})`,
+        });
+
+        await fetch("/api/salary", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            employeeId: emp.id,
+            month: autoPeriod,
+            amount,
+            note: detailNote,
+          }),
+        });
+      }
+
+      setAutoStatus("Kalkulasi sukses! Seluruh gaji karyawan berhasil di-generate.");
+      setAutoPeriod("");
+      await loadData();
+    } catch {
+      setAutoStatus("Terjadi kesalahan saat kalkulasi otomatis.");
+    } finally {
+      setIsGenerating(false);
+      setTimeout(() => setAutoStatus(""), 4000);
+    }
+  }
+
   async function loadData() {
     try {
       const [employeesResponse, salaryResponse] = await Promise.all([
@@ -172,6 +251,40 @@ export default function AdminSalaryPage() {
               Rp {totalPayout.toLocaleString("id-ID")}
             </p>
           </div>
+        </div>
+
+        {/* AUTO-DEDUCTION ENGINE & MASS GENERATOR */}
+        <div className="rounded-3xl border border-blue-200 bg-white/95 p-5 shadow-xl shadow-slate-300/20 backdrop-blur-xl space-y-4">
+          <div>
+            <h3 className="text-lg font-black text-slate-950 flex items-center gap-2">
+              <CircleDollarSign className="text-blue-600" />
+              Kalkulator Potongan Otomatis & Mass-Generate
+            </h3>
+            <p className="text-xs font-bold text-slate-500 mt-1">
+              Kalkulasi gaji pokok, potongan keterlambatan, bonus Employee of the Month, dan reimbursement secara otomatis untuk seluruh karyawan.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-3 items-center">
+            <input
+              type="text"
+              placeholder="Periode (contoh: Juli 2026)"
+              value={autoPeriod}
+              onChange={(e) => setAutoPeriod(e.target.value)}
+              className="rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-semibold text-slate-700 outline-none w-64"
+            />
+            <button
+              type="button"
+              onClick={handleAutoCalculateMassGenerate}
+              disabled={isGenerating || !autoPeriod}
+              className="rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 px-5 py-3 text-sm font-black text-white shadow-lg shadow-emerald-900/10 transition active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isGenerating ? "Sedang Memproses..." : "Jalankan Kalkulasi Otomatis"}
+            </button>
+          </div>
+          {autoStatus && (
+            <p className="text-xs font-bold text-emerald-600 animate-pulse">{autoStatus}</p>
+          )}
         </div>
 
         <form

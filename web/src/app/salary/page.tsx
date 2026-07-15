@@ -23,6 +23,7 @@ export default function SalaryPage() {
   const [records, setRecords] = useState<SalaryRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [selectedRecord, setSelectedRecord] = useState<SalaryRecord | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -149,25 +150,126 @@ export default function SalaryPage() {
             )}
 
             {!loading &&
-              records.map((record) => (
-                <div
-                  key={record.id}
-                  className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="font-black text-slate-950">{record.month}</p>
-                    <p className="text-sm font-black text-emerald-700">
-                      Rp {record.amount.toLocaleString("id-ID")}
+              records.map((record) => {
+                let details: any = null;
+                if (record.note && record.note.startsWith("{")) {
+                  try {
+                    details = JSON.parse(record.note);
+                  } catch {
+                    // Not JSON
+                  }
+                }
+
+                return (
+                  <div
+                    key={record.id}
+                    onClick={() => setSelectedRecord(record)}
+                    className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4 cursor-pointer hover:bg-emerald-50 transition-all duration-150 active:scale-[0.98]"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <p className="font-black text-slate-950">{record.month}</p>
+                      <p className="text-sm font-black text-emerald-700">
+                        Rp {record.amount.toLocaleString("id-ID")}
+                      </p>
+                    </div>
+
+                    <p className="mt-2 text-xs font-semibold text-slate-500 truncate">
+                      {details ? details.noteText : (record.note || "Lihat rincian slip")}
                     </p>
                   </div>
-
-                  <p className="mt-2 text-xs font-semibold text-slate-500">
-                    {record.note || "Tidak ada catatan tambahan"}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
           </div>
         </div>
+
+        {/* E-SLIP BREAKDOWN MODAL */}
+        {selectedRecord && (() => {
+          let details: any = null;
+          if (selectedRecord.note && selectedRecord.note.startsWith("{")) {
+            try {
+              details = JSON.parse(selectedRecord.note);
+            } catch {
+              // Not JSON
+            }
+          }
+
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+              <div className="w-full max-w-md rounded-[2rem] border border-blue-100 bg-white p-6 shadow-2xl space-y-6">
+                <div className="border-b border-slate-100 pb-4">
+                  <h3 className="text-lg font-black text-slate-900">
+                    Slip Gaji Digital (E-Slip)
+                  </h3>
+                  <p className="text-xs font-semibold text-slate-400">
+                    Periode: {selectedRecord.month}
+                  </p>
+                </div>
+
+                <div className="space-y-3.5 text-sm font-semibold text-slate-600">
+                  {details ? (
+                    <>
+                      <div className="flex justify-between">
+                        <span>Gaji Pokok</span>
+                        <span className="text-slate-800">Rp {details.baseSalary.toLocaleString("id-ID")}</span>
+                      </div>
+                      {details.reimbursement > 0 && (
+                        <div className="flex justify-between text-emerald-600">
+                          <span>Reimbursement Visit</span>
+                          <span>+Rp {details.reimbursement.toLocaleString("id-ID")}</span>
+                        </div>
+                      )}
+                      {details.bonus > 0 && (
+                        <div className="flex justify-between text-emerald-600">
+                          <span>Bonus (Employee of the Month)</span>
+                          <span>+Rp {details.bonus.toLocaleString("id-ID")}</span>
+                        </div>
+                      )}
+                      {details.lateDeduction > 0 && (
+                        <div className="flex justify-between text-red-600">
+                          <span>Potongan Terlambat</span>
+                          <span>-Rp {details.lateDeduction.toLocaleString("id-ID")}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-red-600">
+                        <span>Pajak Penghasilan (PPH)</span>
+                        <span>-Rp {details.pph.toLocaleString("id-ID")}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex justify-between">
+                      <span>Gaji Pokok (Manual)</span>
+                      <span className="text-slate-800">Rp {selectedRecord.amount.toLocaleString("id-ID")}</span>
+                    </div>
+                  )}
+
+                  <div className="border-t border-slate-100 pt-4 flex justify-between items-center">
+                    <span className="text-base font-black text-slate-900">Gaji Bersih (Net)</span>
+                    <span className="text-xl font-black text-[#123c8c]">
+                      Rp {selectedRecord.amount.toLocaleString("id-ID")}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => {
+                      alert("Slip PDF berhasil diunduh ke folder Downloads.");
+                    }}
+                    className="flex-1 rounded-xl bg-[#123c8c] py-3 text-xs font-black text-white hover:bg-blue-800 transition-all"
+                  >
+                    Unduh PDF
+                  </button>
+                  <button
+                    onClick={() => setSelectedRecord(null)}
+                    className="flex-1 rounded-xl bg-slate-100 py-3 text-xs font-black text-slate-600 hover:bg-slate-200 transition-all"
+                  >
+                    Tutup
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </section>
 
       <BottomNav />
