@@ -29,6 +29,7 @@ import {
   Moon,
   Sun,
   Search,
+  TrendingUp,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 
@@ -77,6 +78,11 @@ const adminMenus = [
     href: "/admin/monitor_perusahaan",
     label: "Monitor Perusahaan",
     icon: BarChart3,
+  },
+  {
+    href: "/admin/analytics",
+    label: "HR Analytics",
+    icon: TrendingUp,
   },
   {
     href: "/admin/pengumuman",
