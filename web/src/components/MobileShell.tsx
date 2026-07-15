@@ -24,7 +24,7 @@ export default function MobileShell({
 
   return (
     <div
-      className={`relative min-h-dvh overflow-hidden bg-gradient-to-br ${backgroundGlow} ${bottomPaddingClass} ${className}`}
+      className={`relative min-h-dvh overflow-x-hidden bg-gradient-to-br ${backgroundGlow} ${bottomPaddingClass} ${className}`}
     >
       {/* Decorative Glow Circles and Watermark behind content (z-0) */}
       <div

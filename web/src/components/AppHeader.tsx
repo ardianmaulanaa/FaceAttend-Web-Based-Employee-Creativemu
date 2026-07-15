@@ -29,6 +29,8 @@ import {
   Moon,
   Sun,
   Search,
+  TrendingUp,
+  Coins,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 
@@ -77,6 +79,11 @@ const adminMenus = [
     href: "/admin/monitor_perusahaan",
     label: "Monitor Perusahaan",
     icon: BarChart3,
+  },
+  {
+    href: "/admin/analytics",
+    label: "HR Analytics",
+    icon: TrendingUp,
   },
   {
     href: "/admin/pengumuman",
@@ -135,6 +142,11 @@ const operationalMenus = [
     icon: CalendarDays,
   },
   {
+    href: "/admin/salary",
+    label: "Gaji & Payroll",
+    icon: Coins,
+  },
+  {
     href: "/admin/profil-karyawan",
     label: "Profil Karyawan",
     icon: UserRound,
@@ -154,6 +166,7 @@ const adminSuggestions = [
   // Menu Utama
   { href: "/admin/dashboard", label: "Dashboard Admin", icon: LayoutDashboard, category: "Menu Utama", keywords: ["dashboard", "beranda", "ringkasan", "summary", "admin"] },
   { href: "/admin/monitor_perusahaan", label: "Monitor Perusahaan", icon: BarChart3, category: "Menu Utama", keywords: ["monitor perusahaan", "pemantauan", "kehadiran real-time", "karyawan", "live", "pantau"] },
+  { href: "/admin/analytics", label: "HR Analytics Dashboard", icon: TrendingUp, category: "Menu Utama", keywords: ["hr analytics", "analitik", "grafik", "prediksi", "kedisiplinan", "reward", "sanksi", "promosi"] },
   { href: "/admin/pengumuman", label: "Pengumuman Admin", icon: Megaphone, category: "Menu Utama", keywords: ["pengumuman", "info", "buat pengumuman", "broadcast", "pengumuman baru"] },
 
   // Master Data
@@ -168,6 +181,7 @@ const adminSuggestions = [
   { href: "/admin/employees", label: "Register Employee", icon: UserPlus, category: "Operasional", keywords: ["register employee", "tambah karyawan", "daftar karyawan baru", "pendaftaran", "buat akun"] },
   { href: "/admin/laporan-kehadiran", label: "Laporan Kehadiran", icon: FileImage, category: "Operasional", keywords: ["laporan kehadiran", "rekap", "excel", "kehadiran", "presensi", "export"] },
   { href: "/admin/cuti", label: "Laporan & Approval Cuti", icon: CalendarDays, category: "Operasional", keywords: ["laporan cuti", "persetujuan cuti", "approval cuti", "pengajuan", "izin"] },
+  { href: "/admin/salary", label: "Gaji & Payroll Admin", icon: Coins, category: "Operasional", keywords: ["salary", "gaji", "payroll", "slip", "potongan", "pph", "slip gaji", "massal", "kalkulasi"] },
   { href: "/admin/profil-karyawan", label: "Profil Karyawan", icon: UserRound, category: "Operasional", keywords: ["profil karyawan", "daftar karyawan", "data karyawan", "edit karyawan", "list user"] },
 ];
 
