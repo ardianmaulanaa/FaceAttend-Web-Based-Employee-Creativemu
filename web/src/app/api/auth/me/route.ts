@@ -11,6 +11,10 @@ import {
   updateDemoUserProfile,
 } from "@/lib/demoStore";
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> 288ff78a93f501f36015c7a4e22e640f8d5ccbda
 function getJwtSecret() {
   const secret = process.env.JWT_SECRET;
 
@@ -95,6 +99,12 @@ async function getUserIdFromToken() {
 
   return String(userId);
 }
+<<<<<<< HEAD
+=======
+
+=======
+>>>>>>> d41006d0c75ea82b0aa138e4a625ca0bac30762c
+>>>>>>> 288ff78a93f501f36015c7a4e22e640f8d5ccbda
 function serializeOffice(
   office:
     | {
@@ -141,9 +151,19 @@ export async function GET(req: NextRequest) {
     }
 
     const user = await prisma.user.findUnique({
+<<<<<<< HEAD
       where: {
         id: authUser.id,
       },
+=======
+<<<<<<< HEAD
+      where: { id: userId },
+=======
+      where: {
+        id: authUser.id,
+      },
+>>>>>>> d41006d0c75ea82b0aa138e4a625ca0bac30762c
+>>>>>>> 288ff78a93f501f36015c7a4e22e640f8d5ccbda
       select: {
         id: true,
         employee_code: true,
