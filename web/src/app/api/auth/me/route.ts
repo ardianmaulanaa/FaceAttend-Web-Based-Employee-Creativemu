@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
+import { requireAuth } from "@/lib/api-auth";
+import { getApiErrorMessage, getApiErrorStatus } from "@/lib/api-errors";
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/auth";
 import {
@@ -9,6 +11,7 @@ import {
   updateDemoUserProfile,
 } from "@/lib/demoStore";
 
+<<<<<<< HEAD
 function getJwtSecret() {
   const secret = process.env.JWT_SECRET;
 
@@ -94,6 +97,8 @@ async function getUserIdFromToken() {
   return String(userId);
 }
 
+=======
+>>>>>>> d41006d0c75ea82b0aa138e4a625ca0bac30762c
 function serializeOffice(
   office:
     | {
@@ -119,22 +124,9 @@ function serializeOffice(
   };
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const userId = await getUserIdFromToken();
-
-    if (!userId) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Unauthorized",
-          error: "Token tidak ditemukan atau tidak valid.",
-        },
-        {
-          status: 401,
-        }
-      );
-    }
+    const authUser = await requireAuth(req);
 
     if (isDemoUserId(userId)) {
       const demoUser = findDemoUserById(userId);
@@ -153,7 +145,13 @@ export async function GET() {
     }
 
     const user = await prisma.user.findUnique({
+<<<<<<< HEAD
       where: { id: userId },
+=======
+      where: {
+        id: authUser.id,
+      },
+>>>>>>> d41006d0c75ea82b0aa138e4a625ca0bac30762c
       select: {
         id: true,
         employee_code: true,
@@ -270,11 +268,11 @@ export async function GET() {
     return NextResponse.json(
       {
         success: false,
-        message: "Gagal mengambil data user.",
-        error: "Gagal mengambil data user.",
+        message: getApiErrorMessage(error, "Gagal mengambil data user."),
+        error: getApiErrorMessage(error, "Gagal mengambil data user."),
       },
       {
-        status: 500,
+        status: getApiErrorStatus(error),
       }
     );
   }

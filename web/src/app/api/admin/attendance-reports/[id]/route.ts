@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireOwner } from "@/lib/api-auth";
+import { getApiErrorMessage, getApiErrorStatus } from "@/lib/api-errors";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -357,7 +359,7 @@ function resolveCheckOutWorkMode(row: AttendanceDetailRow) {
 }
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   context: {
     params: Promise<{
       id: string;
@@ -365,6 +367,8 @@ export async function GET(
   },
 ) {
   try {
+    await requireOwner(req);
+
     const params = await context.params;
     const id = String(params.id || "").trim();
 
@@ -591,13 +595,13 @@ export async function GET(
     return NextResponse.json(
       {
         success: false,
-        message:
-          error instanceof Error
-            ? error.message
-            : "Gagal mengambil detail laporan kehadiran.",
+        message: getApiErrorMessage(
+          error,
+          "Gagal mengambil detail laporan kehadiran.",
+        ),
         report: null,
       },
-      { status: 500 },
+      { status: getApiErrorStatus(error) },
     );
   }
 }

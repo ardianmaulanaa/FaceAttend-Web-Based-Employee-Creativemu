@@ -1,39 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/api-auth";
 import { verifyPassword } from "@/lib/auth";
 import { getApiErrorMessage, getApiErrorStatus } from "@/lib/api-errors";
 
 export const runtime = "nodejs";
 
 type JsonBody = Record<string, unknown>;
-
-async function getUserIdFromRequest(req: NextRequest) {
-  const token = req.cookies.get("faceattend_token")?.value;
-
-  if (!token) {
-    throw new Error("Token login tidak ditemukan.");
-  }
-
-  if (!process.env.JWT_SECRET) {
-    throw new Error("JWT_SECRET belum ada di file .env");
-  }
-
-  const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-  const { payload } = await jwtVerify(token, secret);
-
-  const userId =
-    (payload.id as string | undefined) ||
-    (payload.userId as string | undefined) ||
-    (payload.sub as string | undefined);
-
-  if (!userId) {
-    throw new Error("User ID tidak ditemukan di token.");
-  }
-
-  return userId;
-}
 
 function normalizeKey(key: string) {
   return key.replace(/[_\-\s]/g, "").toLowerCase();
@@ -442,7 +416,7 @@ async function handleUpdateProfile(userId: string, body: JsonBody) {
 
 export async function GET(req: NextRequest) {
   try {
-    const userId = await getUserIdFromRequest(req);
+    const { id: userId } = await requireAuth(req);
     const user = await getSafeUser(userId);
 
     if (!user) {
@@ -474,7 +448,7 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const userId = await getUserIdFromRequest(req);
+    const { id: userId } = await requireAuth(req);
     const body = (await req.json()) as JsonBody;
 
     const isPasswordRequest = hasAnyKey(body, [

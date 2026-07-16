@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/api-auth";
 import { getApiErrorMessage, getApiErrorStatus } from "@/lib/api-errors";
 
 export const runtime = "nodejs";
@@ -9,31 +9,11 @@ export const dynamic = "force-dynamic";
 const EMPLOYEE_NOTIFICATION_TYPES = ["leave_status", "announcement", "salary", "reward"];
 
 async function getCurrentUser(req: NextRequest) {
-  const token = req.cookies.get("faceattend_token")?.value;
-
-  if (!token) {
-    throw new Error("Token login tidak ditemukan. Silakan login ulang.");
-  }
-
-  if (!process.env.JWT_SECRET) {
-    throw new Error("JWT_SECRET belum ada di file .env.");
-  }
-
-  const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-  const { payload } = await jwtVerify(token, secret);
-
-  const userId =
-    (payload.id as string | undefined) ||
-    (payload.userId as string | undefined) ||
-    (payload.sub as string | undefined);
-
-  if (!userId) {
-    throw new Error("User ID tidak ditemukan di token.");
-  }
+  const authUser = await requireAuth(req);
 
   const user = await prisma.user.findUnique({
     where: {
-      id: userId,
+      id: authUser.id,
     },
     select: {
       id: true,

@@ -1,43 +1,18 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from "next/server";
-import { jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
+import { requireAuth, requireOwner } from "@/lib/api-auth";
+import { jsonApiError } from "@/lib/api-response";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-async function getUserIdFromRequest(req: NextRequest) {
-  const token = req.cookies.get("faceattend_token")?.value;
-
-  if (!token) {
-    throw new Error("Token login tidak ditemukan.");
-  }
-
-  if (!process.env.JWT_SECRET) {
-    throw new Error("JWT_SECRET belum ada di file .env");
-  }
-
-  const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-  const { payload } = await jwtVerify(token, secret);
-
-  const userId =
-    (payload.id as string | undefined) ||
-    (payload.userId as string | undefined) ||
-    (payload.sub as string | undefined);
-
-  if (!userId) {
-    throw new Error("User ID tidak ditemukan di token.");
-  }
-
-  return userId;
-}
-
 async function getAdminUser(req: NextRequest) {
-  const userId = await getUserIdFromRequest(req);
+  const authUser = await requireOwner(req);
 
   const user = await prisma.user.findUnique({
     where: {
-      id: userId,
+      id: authUser.id,
     },
     select: {
       id: true,
@@ -49,10 +24,6 @@ async function getAdminUser(req: NextRequest) {
 
   if (!user) {
     throw new Error("User tidak ditemukan.");
-  }
-
-  if (user.role !== "owner") {
-    throw new Error("Akses hanya untuk owner.");
   }
 
   return user;
@@ -70,6 +41,10 @@ function normalizeStatus(status: unknown) {
   if (value === "published") return "published";
 
   return "published";
+}
+
+function jsonError(error: unknown, fallback: string) {
+  return jsonApiError(error, fallback);
 }
 
 function formatAnnouncement(item: any) {
@@ -104,6 +79,7 @@ export async function GET(req: NextRequest) {
     const where: any = {};
 
     if (audience === "employee") {
+      await requireAuth(req);
       where.status = "published";
     } else {
       await getAdminUser(req);
@@ -162,6 +138,7 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error("GET_ANNOUNCEMENTS_ERROR:", error);
 
+<<<<<<< HEAD
     return NextResponse.json(
       {
         success: false,
@@ -174,6 +151,9 @@ export async function GET(req: NextRequest) {
       },
       { status: 500 },
     );
+=======
+    return jsonError(error, "Gagal mengambil pengumuman.");
+>>>>>>> d41006d0c75ea82b0aa138e4a625ca0bac30762c
   }
 }
 
@@ -249,6 +229,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("POST_ANNOUNCEMENT_ERROR:", error);
 
+<<<<<<< HEAD
     return NextResponse.json(
       {
         success: false,
@@ -259,6 +240,9 @@ export async function POST(req: NextRequest) {
       },
       { status: 500 },
     );
+=======
+    return jsonError(error, "Gagal menyimpan pengumuman.");
+>>>>>>> d41006d0c75ea82b0aa138e4a625ca0bac30762c
   }
 }
 
@@ -337,16 +321,7 @@ export async function PATCH(req: NextRequest) {
   } catch (error) {
     console.error("PATCH_ANNOUNCEMENT_ERROR:", error);
 
-    return NextResponse.json(
-      {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Gagal memperbarui pengumuman.",
-      },
-      { status: 500 },
-    );
+    return jsonApiError(error, "Gagal memperbarui pengumuman.");
   }
 }
 
@@ -380,6 +355,7 @@ export async function DELETE(req: NextRequest) {
   } catch (error) {
     console.error("DELETE_ANNOUNCEMENT_ERROR:", error);
 
+<<<<<<< HEAD
     return NextResponse.json(
       {
         success: false,
@@ -390,5 +366,8 @@ export async function DELETE(req: NextRequest) {
       },
       { status: 500 },
     );
+=======
+    return jsonError(error, "Gagal menghapus pengumuman.");
+>>>>>>> d41006d0c75ea82b0aa138e4a625ca0bac30762c
   }
 }

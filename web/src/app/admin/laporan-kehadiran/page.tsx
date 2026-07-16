@@ -6,6 +6,7 @@ import {
   CalendarDays,
   Camera,
   Eye,
+  FileDown,
   ImageIcon,
   Loader2,
   Search,
@@ -87,6 +88,14 @@ function getCurrentMonth() {
 
 function getCurrentYear() {
   return new Date().getFullYear();
+}
+
+function getMonthLabel(month: number) {
+  const date = new Date(getCurrentYear(), Math.max(0, month - 1), 1);
+
+  return new Intl.DateTimeFormat("id-ID", {
+    month: "long",
+  }).format(date);
 }
 
 async function readJsonResponse(response: Response) {
@@ -326,6 +335,33 @@ export default function AdminAttendanceReportPage() {
   function handleSearchSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     void getAttendanceReports();
+  }
+
+  function handleExportPdf() {
+    if (!reports.length || isLoading) return;
+
+    const params = new URLSearchParams();
+
+    if (selectedDate) {
+      params.set("date", selectedDate);
+    } else {
+      params.set("month", String(month));
+      params.set("year", String(year));
+    }
+
+    if (searchKeyword.trim()) {
+      params.set("search", searchKeyword.trim());
+    }
+
+    if (statusFilter !== "all") {
+      params.set("status", statusFilter);
+    }
+
+    window.open(
+      `/admin/laporan-kehadiran/print?${params.toString()}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
   }
 
   useEffect(() => {
@@ -600,12 +636,22 @@ export default function AdminAttendanceReportPage() {
 
                     <button
                       type="button"
-                      onClick={handlePrintPDF}
-                      disabled={reports.length === 0}
+                      onClick={handleExportPdf}
+                      disabled={isLoading || reports.length === 0}
                       className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#123c8c] px-4 text-xs font-black text-white shadow-md shadow-blue-900/10 transition hover:bg-[#0f3274] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
+                      <FileDown size={15} />
+                      Unduh PDF
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handlePrintPDF}
+                      disabled={reports.length === 0}
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-blue-100 bg-white text-[#123c8c] px-4 text-xs font-black shadow-md shadow-blue-900/5 transition hover:bg-slate-50 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
                       <Printer size={15} />
-                      Cetak PDF
+                      Cetak Layar
                     </button>
                   </div>
                 </div>

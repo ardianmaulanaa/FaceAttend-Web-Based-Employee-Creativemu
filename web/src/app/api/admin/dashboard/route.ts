@@ -1,4 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { requireOwner } from "@/lib/api-auth";
+import { getApiErrorMessage, getApiErrorStatus } from "@/lib/api-errors";
 import { prisma } from "@/lib/prisma";
 
 function getTodayRangeWIB() {
@@ -71,8 +73,10 @@ function getActivityTime(attendance: {
   );
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    await requireOwner(req);
+
     const { start, end } = getTodayRangeWIB();
 
     const employees = await prisma.user.findMany({
@@ -218,10 +222,13 @@ export async function GET() {
 
     return NextResponse.json(
       {
-        message: "Gagal mengambil data dashboard admin.",
+        message: getApiErrorMessage(
+          error,
+          "Gagal mengambil data dashboard admin.",
+        ),
       },
       {
-        status: 500,
+        status: getApiErrorStatus(error),
       },
     );
   }

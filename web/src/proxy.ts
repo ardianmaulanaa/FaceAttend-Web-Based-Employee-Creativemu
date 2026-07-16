@@ -90,11 +90,11 @@ export async function proxy(req: NextRequest) {
       return redirectToHome(req);
     }
 
-    if (
-      employeePage &&
-      !EMPLOYEE_ROLES.has(role) &&
-      !ADMIN_ROLES.has(role)
-    ) {
+    if (employeePage && ADMIN_ROLES.has(role)) {
+      return redirectToAdmin(req);
+    }
+
+    if (employeePage && !EMPLOYEE_ROLES.has(role)) {
       return redirectToLogin(req, pathname);
     }
 

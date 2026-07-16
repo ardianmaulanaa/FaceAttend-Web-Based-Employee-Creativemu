@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireOwner } from "@/lib/api-auth";
+import { getApiErrorMessage, getApiErrorStatus } from "@/lib/api-errors";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -275,6 +277,8 @@ function calculateDuration(
 
 export async function GET(req: NextRequest) {
   try {
+    await requireOwner(req);
+
     const { searchParams } = new URL(req.url);
 
     const search = String(searchParams.get("search") || "").trim();
@@ -486,14 +490,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        message:
-          error instanceof Error
-            ? error.message
-            : "Gagal mengambil laporan kehadiran.",
+        message: getApiErrorMessage(
+          error,
+          "Gagal mengambil laporan kehadiran.",
+        ),
         reports: [],
       },
       {
-        status: 500,
+        status: getApiErrorStatus(error),
       },
     );
   }

@@ -1,34 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
-
-async function getUserIdFromRequest(req: NextRequest) {
-  const token = req.cookies.get("faceattend_token")?.value;
-
-  if (!token) {
-    throw new Error("Token login tidak ditemukan.");
-  }
-
-  if (!process.env.JWT_SECRET) {
-    throw new Error("JWT_SECRET belum ada di file .env");
-  }
-
-  const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-  const { payload } = await jwtVerify(token, secret);
-
-  const userId =
-    (payload.id as string | undefined) ||
-    (payload.userId as string | undefined) ||
-    (payload.sub as string | undefined);
-
-  if (!userId) {
-    throw new Error("User ID tidak ditemukan di token.");
-  }
-
-  return userId;
-}
 
 function getJakartaDateRange() {
   const todayJakarta = new Intl.DateTimeFormat("en-CA", {
@@ -79,7 +53,7 @@ function formatStatus(status?: string | null) {
 
 export async function GET(req: NextRequest) {
   try {
-    const userId = await getUserIdFromRequest(req);
+    const { id: userId } = await requireAuth(req);
     const { start, end } = getJakartaDateRange();
 
     const attendance = await prisma.attendance.findFirst({

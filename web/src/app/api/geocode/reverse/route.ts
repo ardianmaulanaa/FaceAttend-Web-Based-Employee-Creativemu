@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/api-auth";
+import { getApiErrorMessage, getApiErrorStatus } from "@/lib/api-errors";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -96,6 +98,8 @@ function buildShortName(data: NominatimResponse) {
 
 export async function GET(req: NextRequest) {
   try {
+    await requireAuth(req);
+
     const { searchParams } = new URL(req.url);
 
     const latRaw = searchParams.get("lat");
@@ -199,10 +203,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        message: "Gagal mengambil alamat lokasi.",
-        error: error instanceof Error ? error.message : String(error),
+        message: getApiErrorMessage(error, "Gagal mengambil alamat lokasi."),
       },
-      { status: 500 },
+      { status: getApiErrorStatus(error) },
     );
   }
 }
