@@ -481,9 +481,6 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
-    const restoreDarkMode = document.documentElement.classList.contains("dark");
-    document.documentElement.classList.remove("dark");
-
     const hintTimer = setTimeout(() => setIntroHintVisible(true), 900);
     const autoCloseTimer = setTimeout(() => {
       setIntroLeaving(true);
@@ -493,11 +490,12 @@ export default function LoginPage() {
     return () => {
       clearTimeout(hintTimer);
       clearTimeout(autoCloseTimer);
-      if (restoreDarkMode || localStorage.getItem("theme") === "dark") {
-        document.documentElement.classList.add("dark");
-      }
     };
   }, []);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", theme === "dark");
+  }, [theme]);
 
   useEffect(() => {
     if (!loginRetryAt) return;
