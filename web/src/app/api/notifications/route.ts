@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
+import { getApiErrorMessage, getApiErrorStatus } from "@/lib/api-errors";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -182,10 +183,8 @@ export async function GET(req: NextRequest) {
     console.error("GET /api/notifications error:", error);
 
     return jsonError(
-      error instanceof Error
-        ? error.message
-        : "Gagal mengambil notifikasi.",
-      500
+      getApiErrorMessage(error, "Gagal mengambil notifikasi."),
+      getApiErrorStatus(error)
     );
   }
 }
@@ -240,10 +239,8 @@ export async function PATCH(req: NextRequest) {
     console.error("PATCH /api/notifications error:", error);
 
     return jsonError(
-      error instanceof Error
-        ? error.message
-        : "Gagal memperbarui notifikasi.",
-      500
+      getApiErrorMessage(error, "Gagal memperbarui notifikasi."),
+      getApiErrorStatus(error)
     );
   }
 }

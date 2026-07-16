@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 import { Buffer } from "node:buffer";
 import { prisma } from "@/lib/prisma";
+import { getApiErrorMessage, getApiErrorStatus } from "@/lib/api-errors";
 
 export const runtime = "nodejs";
 
@@ -29,6 +30,18 @@ type OfficeGeofence = {
   longitude: number;
   radius_meters: number;
 };
+
+function isMobileAttendanceRequest(req: NextRequest) {
+  const secChMobile = req.headers.get("sec-ch-ua-mobile");
+
+  if (secChMobile === "?1") return true;
+
+  const userAgent = (req.headers.get("user-agent") || "").toLowerCase();
+
+  return /iphone|ipod|android.*mobile|blackberry|iemobile|opera mini|mobile/.test(
+    userAgent,
+  );
+}
 
 async function getUserIdFromRequest(req: NextRequest) {
   const token = req.cookies.get("faceattend_token")?.value;
@@ -346,6 +359,16 @@ async function parseAttendanceBody(
 export async function POST(req: NextRequest) {
   try {
     const userId = await getUserIdFromRequest(req);
+
+    if (!isMobileAttendanceRequest(req)) {
+      return NextResponse.json(
+        {
+          error:
+            "Absensi hanya dapat dilakukan melalui browser HP. Laptop atau desktop tidak diizinkan.",
+        },
+        { status: 403 },
+      );
+    }
 
     const { photoBuffer, photoMime, latitude, longitude, accuracy } =
       await parseAttendanceBody(req);
@@ -705,8 +728,8 @@ export async function POST(req: NextRequest) {
     console.error("CHECK_OUT_ERROR:", error);
 
     return NextResponse.json(
-      { error: "Gagal melakukan check-out." },
-      { status: 500 },
+      { error: getApiErrorMessage(error, "Gagal melakukan check-out.") },
+      { status: getApiErrorStatus(error) },
     );
   }
 }

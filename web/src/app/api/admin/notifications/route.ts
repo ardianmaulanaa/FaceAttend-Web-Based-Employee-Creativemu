@@ -4,10 +4,10 @@ import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
-type AllowedRole = "owner" | "admin" | "cs";
+type AllowedRole = "owner";
 type NotificationType = "sick" | "leave" | "permission" | "wfh" | "wfc" | "visit";
 
-const VIEW_ROLES: AllowedRole[] = ["owner", "admin", "cs"];
+const VIEW_ROLES: AllowedRole[] = ["owner"];
 
 async function getCurrentUser(req: NextRequest) {
   const token = req.cookies.get("faceattend_token")?.value;

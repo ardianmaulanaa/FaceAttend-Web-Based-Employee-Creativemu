@@ -45,8 +45,8 @@ async function getAdminFromRequest(req: NextRequest) {
     throw new Error("User ID tidak ditemukan di token.");
   }
 
-  if (role !== "admin") {
-    throw new Error("Akses hanya untuk admin.");
+  if (role !== "owner") {
+    throw new Error("Akses hanya untuk owner.");
   }
 
   return userId;

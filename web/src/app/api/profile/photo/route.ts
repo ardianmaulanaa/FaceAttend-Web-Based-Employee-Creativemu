@@ -5,6 +5,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { Buffer } from "node:buffer";
 import { prisma } from "@/lib/prisma";
+import { getApiErrorMessage, getApiErrorStatus } from "@/lib/api-errors";
 
 export const runtime = "nodejs";
 
@@ -370,9 +371,9 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        message: "Gagal memperbarui foto profil.",
+        message: getApiErrorMessage(error, "Gagal memperbarui foto profil."),
       },
-      { status: 500 }
+      { status: getApiErrorStatus(error) }
     );
   }
 }

@@ -50,8 +50,8 @@ async function getAdminUser(req: NextRequest) {
     throw new Error("User tidak ditemukan.");
   }
 
-  if (user.role !== "admin") {
-    throw new Error("Akses hanya untuk admin.");
+  if (user.role !== "owner") {
+    throw new Error("Akses hanya untuk owner.");
   }
 
   return user;

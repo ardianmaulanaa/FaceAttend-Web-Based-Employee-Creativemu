@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
+import { getApiErrorMessage, getApiErrorStatus } from "@/lib/api-errors";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -80,7 +81,7 @@ function jsonError(message: string, status = 400) {
 }
 
 function canManageLeave(role: string) {
-  return ["owner", "admin", "cs"].includes(role.toLowerCase());
+  return ["owner"].includes(role.toLowerCase());
 }
 
 function normalizeDateOnly(value: string) {
@@ -300,10 +301,8 @@ export async function GET(req: NextRequest) {
     console.error("GET /api/leave-requests error:", error);
 
     return jsonError(
-      error instanceof Error
-        ? error.message
-        : "Gagal mengambil data pengajuan cuti.",
-      500
+      getApiErrorMessage(error, "Gagal mengambil data pengajuan cuti."),
+      getApiErrorStatus(error)
     );
   }
 }
@@ -440,10 +439,8 @@ export async function POST(req: NextRequest) {
     console.error("POST /api/leave-requests error:", error);
 
     return jsonError(
-      error instanceof Error
-        ? error.message
-        : "Gagal mengirim pengajuan cuti.",
-      500
+      getApiErrorMessage(error, "Gagal mengirim pengajuan cuti."),
+      getApiErrorStatus(error)
     );
   }
 }
@@ -527,10 +524,8 @@ export async function PATCH(req: NextRequest) {
     console.error("PATCH /api/leave-requests error:", error);
 
     return jsonError(
-      error instanceof Error
-        ? error.message
-        : "Gagal memperbarui pengajuan cuti.",
-      500
+      getApiErrorMessage(error, "Gagal memperbarui pengajuan cuti."),
+      getApiErrorStatus(error)
     );
   }
 }

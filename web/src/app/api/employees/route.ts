@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
+import { getApiErrorMessage, getApiErrorStatus } from "@/lib/api-errors";
 
 export const runtime = "nodejs";
 
-type AllowedRole = "owner" | "admin" | "cs";
+type AllowedRole = "owner";
 
-const VIEW_ROLES: AllowedRole[] = ["owner", "admin", "cs"];
-const MANAGE_ROLES: AllowedRole[] = ["owner", "admin"];
+const VIEW_ROLES: AllowedRole[] = ["owner"];
+const MANAGE_ROLES: AllowedRole[] = ["owner"];
 
 const officeSelect = {
   id: true,
@@ -374,12 +375,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        message:
-          error instanceof Error
-            ? error.message
-            : "Gagal mengambil data karyawan.",
+        message: getApiErrorMessage(error, "Gagal mengambil data karyawan."),
       },
-      { status: 500 }
+      { status: getApiErrorStatus(error) }
     );
   }
 }
@@ -393,7 +391,7 @@ export async function POST(req: NextRequest) {
       !canAccess(currentUser.role, MANAGE_ROLES)
     ) {
       return jsonError(
-        "Akses ditolak. Hanya owner atau admin yang dapat menambah karyawan.",
+        "Akses ditolak. Hanya owner yang dapat menambah karyawan.",
         403
       );
     }
@@ -514,12 +512,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        message:
-          error instanceof Error
-            ? error.message
-            : "Gagal menambahkan karyawan.",
+        message: getApiErrorMessage(error, "Gagal menambahkan karyawan."),
       },
-      { status: 500 }
+      { status: getApiErrorStatus(error) }
     );
   }
 }
@@ -533,7 +528,7 @@ export async function PATCH(req: NextRequest) {
       !canAccess(currentUser.role, MANAGE_ROLES)
     ) {
       return jsonError(
-        "Akses ditolak. Hanya owner atau admin yang dapat mengubah karyawan.",
+        "Akses ditolak. Hanya owner yang dapat mengubah karyawan.",
         403
       );
     }
@@ -692,12 +687,9 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        message:
-          error instanceof Error
-            ? error.message
-            : "Gagal memperbarui karyawan.",
+        message: getApiErrorMessage(error, "Gagal memperbarui karyawan."),
       },
-      { status: 500 }
+      { status: getApiErrorStatus(error) }
     );
   }
 }
@@ -711,7 +703,7 @@ export async function DELETE(req: NextRequest) {
       !canAccess(currentUser.role, MANAGE_ROLES)
     ) {
       return jsonError(
-        "Akses ditolak. Hanya owner atau admin yang dapat menghapus karyawan.",
+        "Akses ditolak. Hanya owner yang dapat menghapus karyawan.",
         403
       );
     }
@@ -781,10 +773,9 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        message:
-          error instanceof Error ? error.message : "Gagal menghapus karyawan.",
+        message: getApiErrorMessage(error, "Gagal menghapus karyawan."),
       },
-      { status: 500 }
+      { status: getApiErrorStatus(error) }
     );
   }
 }

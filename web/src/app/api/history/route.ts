@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 import { Buffer } from "node:buffer";
 import { prisma } from "@/lib/prisma";
+import { getApiErrorMessage, getApiErrorStatus } from "@/lib/api-errors";
 
 export const runtime = "nodejs";
 
@@ -257,8 +258,8 @@ export async function GET(req: NextRequest) {
     console.error("GET_HISTORY_ERROR:", error);
 
     return NextResponse.json(
-      { error: "Gagal mengambil riwayat absensi." },
-      { status: 500 }
+      { error: getApiErrorMessage(error, "Gagal mengambil riwayat absensi.") },
+      { status: getApiErrorStatus(error) }
     );
   }
 }

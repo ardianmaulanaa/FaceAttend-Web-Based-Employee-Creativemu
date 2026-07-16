@@ -1,9 +1,15 @@
 import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 
-const secret = new TextEncoder().encode(
-  process.env.JWT_SECRET || "faceattend_secret_dev"
-);
+function getJwtSecret() {
+  const secret = process.env.JWT_SECRET;
+
+  if (!secret) {
+    throw new Error("JWT_SECRET belum diatur di .env");
+  }
+
+  return new TextEncoder().encode(secret);
+}
 
 export async function hashPassword(password: string) {
   return bcrypt.hash(password, 10);
@@ -22,11 +28,11 @@ export async function createToken(payload: {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("7d")
-    .sign(secret);
+    .sign(getJwtSecret());
 }
 
 export async function verifyToken(token: string) {
-  const result = await jwtVerify(token, secret);
+  const result = await jwtVerify(token, getJwtSecret());
 
   return result.payload as {
     id: string;

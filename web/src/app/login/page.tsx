@@ -1,20 +1,20 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { AlertCircle, Loader2, LogIn, ShieldCheck, X } from "lucide-react";
 import MobileShell from "@/components/MobileShell";
 import { AppButton, AppCard, AppInput } from "@/components/ui/AppUI";
 
-const ADMIN_DEMO_EMAIL = "admin@creativemu.com";
-const ADMIN_DEMO_PASSWORD = "admin123456";
-const ALLOWED_EMAIL_DOMAIN = "@creativemu.com";
+const OWNER_DEMO_EMAIL = "owner@creativemu.co.id";
+const OWNER_DEMO_PASSWORD = "123456";
 
 type LoginResponse = {
   success?: boolean;
   message?: string;
   redirectTo?: string;
+  retryAfterSeconds?: number;
 };
 
 type AlertState = {
@@ -38,7 +38,11 @@ function isValidEmailFormat(email: string) {
 }
 
 function isCreativemuEmail(email: string) {
-  return email.trim().toLowerCase().endsWith(ALLOWED_EMAIL_DOMAIN);
+  const normalized = email.trim().toLowerCase();
+  return (
+    normalized.endsWith("@creativemu.co.id") ||
+    normalized.endsWith("@creativemu.com")
+  );
 }
 
 function LoginMotionStyles() {
@@ -117,6 +121,50 @@ function LoginMotionStyles() {
         }
       }
 
+      @keyframes introLogoPulse {
+        0%,
+        100% {
+          transform: scale(1);
+          filter: drop-shadow(0 8px 18px rgba(18, 60, 140, 0.12));
+        }
+
+        50% {
+          transform: scale(1.045);
+          filter: drop-shadow(0 14px 26px rgba(255, 138, 0, 0.18));
+        }
+      }
+
+      @keyframes introScanLine {
+        0% {
+          transform: translateY(-84px);
+          opacity: 0;
+        }
+
+        12%,
+        88% {
+          opacity: 1;
+        }
+
+        100% {
+          transform: translateY(84px);
+          opacity: 0;
+        }
+      }
+
+      @keyframes introTextIn {
+        0% {
+          opacity: 0;
+          transform: translateY(12px);
+          filter: blur(5px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+          filter: blur(0);
+        }
+      }
+
       .login-enter {
         animation: loginEnter 360ms ease-out both;
       }
@@ -142,6 +190,18 @@ function LoginMotionStyles() {
         animation: loginBackgroundFloat 6s ease-in-out infinite;
       }
 
+      .intro-logo-pulse {
+        animation: introLogoPulse 2.2s ease-in-out infinite;
+      }
+
+      .intro-scan-line {
+        animation: introScanLine 2.4s ease-in-out infinite;
+      }
+
+      .intro-text-in {
+        animation: introTextIn 560ms ease-out both;
+      }
+
       .login-field-smooth input {
         transition:
           border-color 180ms ease,
@@ -160,7 +220,10 @@ function LoginMotionStyles() {
         .login-logo-pop,
         .login-text-reveal,
         .login-field-enter,
-        .login-bg-float {
+        .login-bg-float,
+        .intro-logo-pulse,
+        .intro-scan-line,
+        .intro-text-in {
           animation: none !important;
           opacity: 1 !important;
           transform: none !important;
@@ -289,15 +352,69 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showIntro, setShowIntro] = useState(true);
+  const [introLeaving, setIntroLeaving] = useState(false);
+  const [introHintVisible, setIntroHintVisible] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
   const [isAdminDemoLoading, setIsAdminDemoLoading] = useState(false);
+  const [loginRetryAt, setLoginRetryAt] = useState<number | null>(null);
+  const [loginRetrySeconds, setLoginRetrySeconds] = useState(0);
 
   const [alert, setAlert] = useState<AlertState>({
     open: false,
     title: "",
     message: "",
   });
+
+  useEffect(() => {
+    const restoreDarkMode = document.documentElement.classList.contains("dark");
+    document.documentElement.classList.remove("dark");
+
+    const hintTimer = setTimeout(() => setIntroHintVisible(true), 900);
+    const autoCloseTimer = setTimeout(() => {
+      setIntroLeaving(true);
+      setTimeout(() => setShowIntro(false), 420);
+    }, 2400);
+
+    return () => {
+      clearTimeout(hintTimer);
+      clearTimeout(autoCloseTimer);
+      if (restoreDarkMode || localStorage.getItem("theme") === "dark") {
+        document.documentElement.classList.add("dark");
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!loginRetryAt) return;
+
+    const updateCountdown = () => {
+      const remainingSeconds = Math.max(
+        0,
+        Math.ceil((loginRetryAt - Date.now()) / 1000),
+      );
+
+      setLoginRetrySeconds(remainingSeconds);
+
+      if (remainingSeconds <= 0) {
+        setLoginRetryAt(null);
+      }
+    };
+
+    updateCountdown();
+
+    const timer = window.setInterval(updateCountdown, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [loginRetryAt]);
+
+  function dismissIntro() {
+    if (introLeaving) return;
+
+    setIntroLeaving(true);
+    setTimeout(() => setShowIntro(false), 420);
+  }
 
   function showAlert(title: string, message: string) {
     setAlert({
@@ -318,8 +435,16 @@ export default function LoginPage() {
   async function loginUser(
     loginEmail: string,
     loginPassword: string,
-    mode: "manual" | "admin-demo" = "manual",
+    mode: "manual" | "owner-demo" = "manual",
   ) {
+    if (loginRetrySeconds > 0) {
+      showAlert(
+        "Tunggu 1 menit",
+        `Tunggu ${loginRetrySeconds} detik hingga kamu bisa mencoba kembali.`,
+      );
+      return;
+    }
+
     const normalizedEmail = loginEmail.trim().toLowerCase();
 
     if (!normalizedEmail || !loginPassword.trim()) {
@@ -330,7 +455,7 @@ export default function LoginPage() {
     if (!isValidEmailFormat(normalizedEmail)) {
       showAlert(
         "Format email salah",
-        "Masukkan email dengan format yang benar, contoh: nama@creativemu.com.",
+        "Masukkan email dengan format yang benar, contoh: nama@creativemu.com",
       );
       return;
     }
@@ -338,13 +463,13 @@ export default function LoginPage() {
     if (!isCreativemuEmail(normalizedEmail)) {
       showAlert(
         "Email tidak valid",
-        "Login hanya dapat menggunakan email resmi @creativemu.com.",
+        "Login hanya dapat menggunakan email resmi Creativemu.",
       );
       return;
     }
 
     try {
-      if (mode === "admin-demo") {
+      if (mode === "owner-demo") {
         setIsAdminDemoLoading(true);
       } else {
         setIsLoading(true);
@@ -364,6 +489,21 @@ export default function LoginPage() {
       const result: LoginResponse = await readJsonResponse(response);
 
       if (!response.ok) {
+        if (response.status === 429) {
+          const retryAfterHeader = Number(response.headers.get("Retry-After"));
+          const retryAfterSeconds =
+            result.retryAfterSeconds || retryAfterHeader || 60;
+
+          setLoginRetryAt(Date.now() + retryAfterSeconds * 1000);
+          setLoginRetrySeconds(retryAfterSeconds);
+
+          showAlert(
+            "Tunggu 1 menit",
+            `Tunggu ${retryAfterSeconds} detik hingga kamu bisa mencoba kembali.`,
+          );
+          return;
+        }
+
         showAlert("Login gagal", result.message || "Login gagal.");
         return;
       }
@@ -380,7 +520,7 @@ export default function LoginPage() {
           : "Terjadi kesalahan saat login.",
       );
     } finally {
-      if (mode === "admin-demo") {
+      if (mode === "owner-demo") {
         setIsAdminDemoLoading(false);
       } else {
         setIsLoading(false);
@@ -394,14 +534,73 @@ export default function LoginPage() {
   }
 
   async function handleAdminDemoLogin() {
-    await loginUser(ADMIN_DEMO_EMAIL, ADMIN_DEMO_PASSWORD, "admin-demo");
+    await loginUser(OWNER_DEMO_EMAIL, OWNER_DEMO_PASSWORD, "owner-demo");
   }
 
-  const formIsBusy = isLoading || isAdminDemoLoading;
+  const formIsBusy = isLoading || isAdminDemoLoading || loginRetrySeconds > 0;
+  const alertMessage =
+    loginRetrySeconds > 0 && alert.title === "Tunggu 1 menit"
+      ? `Tunggu ${loginRetrySeconds} detik hingga kamu bisa mencoba kembali.`
+      : alert.message;
 
   return (
     <MobileShell variant="auth" withBottomPadding={false}>
       <LoginMotionStyles />
+
+      {showIntro ? (
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={dismissIntro}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              dismissIntro();
+            }
+          }}
+          className={`fixed inset-0 z-[999] flex cursor-pointer select-none flex-col items-center justify-center overflow-hidden px-6 transition-all duration-500 ${
+            introLeaving ? "scale-105 opacity-0 blur-md" : "opacity-100"
+          } bg-[#f6f8ff]`}
+          aria-label="Lanjut ke halaman login"
+        >
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,138,0,0.16),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(18,60,140,0.18),transparent_38%)]" />
+
+          <div className="relative flex h-56 w-56 items-center justify-center md:h-72 md:w-72">
+            <div className="absolute inset-3 rounded-[2rem] border border-[#123c8c]/10 bg-white/25 shadow-2xl shadow-slate-300/30 backdrop-blur-xl" />
+            <div className="intro-scan-line absolute left-8 right-8 top-1/2 z-20 h-0.5 bg-gradient-to-r from-transparent via-[#ff8a00] to-transparent shadow-[0_0_14px_rgba(255,138,0,0.72)]" />
+
+            <div className="relative z-10 flex h-32 w-32 items-center justify-center overflow-hidden rounded-[2rem] border border-white/80 bg-white p-5 shadow-[0_24px_58px_rgba(18,60,140,0.14)] md:h-40 md:w-40 md:p-7">
+              <Image
+                src="/images/creativemu-logo/creativemu.png"
+                alt="Creativemu Logo"
+                width={140}
+                height={140}
+                className="intro-logo-pulse h-full w-full object-contain"
+                priority
+              />
+            </div>
+          </div>
+
+          <div className="relative mt-9 text-center md:mt-12">
+            <h2 className="intro-text-in text-3xl font-black uppercase tracking-[0.18em] text-slate-950 md:text-5xl">
+              Creativemu
+            </h2>
+            <p
+              className="intro-text-in mt-3 text-xs font-black uppercase tracking-[0.28em] text-[#ff8a00] md:text-sm"
+              style={{ animationDelay: "160ms" }}
+            >
+              Face Attend System
+            </p>
+          </div>
+
+          <p
+            className={`relative mt-14 text-sm font-semibold text-slate-400 transition-opacity duration-300 md:mt-16 ${
+              introHintVisible ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            Tap di mana saja untuk melanjutkan
+          </p>
+        </div>
+      ) : null}
 
       <section className="relative min-h-dvh w-full overflow-hidden bg-[#f6f8ff]">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,138,0,0.16),transparent_32%),radial-gradient(circle_at_top_right,rgba(18,60,140,0.18),transparent_36%)]" />
@@ -506,9 +705,10 @@ export default function LoginPage() {
                       inputMode="email"
                       value={email}
                       onChange={(event) => setEmail(event.target.value)}
-                      placeholder="nama@creativemu.com"
+                      placeholder="nama@creativemu.co.id"
                       autoComplete="email"
                       disabled={formIsBusy}
+                      className="border-blue-100 bg-[#f8fbff] text-slate-700 placeholder:text-slate-400 focus:border-[#123c8c] focus:bg-white focus:ring-blue-100/50 dark:border-blue-100 dark:bg-[#f8fbff] dark:text-slate-700 dark:placeholder:text-slate-400 dark:focus:border-[#123c8c] dark:focus:bg-white dark:focus:ring-blue-100/50"
                     />
                   </div>
 
@@ -527,6 +727,7 @@ export default function LoginPage() {
                       placeholder="••••••••"
                       autoComplete="current-password"
                       disabled={formIsBusy}
+                      className="border-blue-100 bg-[#f8fbff] text-slate-700 placeholder:text-slate-400 focus:border-[#123c8c] focus:bg-white focus:ring-blue-100/50 dark:border-blue-100 dark:bg-[#f8fbff] dark:text-slate-700 dark:placeholder:text-slate-400 dark:focus:border-[#123c8c] dark:focus:bg-white dark:focus:ring-blue-100/50"
                     />
                   </div>
                 </div>
@@ -541,10 +742,12 @@ export default function LoginPage() {
                     <AppButton
                       type="submit"
                       full
-                      disabled={isLoading || isAdminDemoLoading}
+                      disabled={formIsBusy}
                       leftIcon={<LogIn size={18} />}
                     >
-                      {isLoading ? (
+                      {loginRetrySeconds > 0 ? (
+                        `Tunggu ${loginRetrySeconds} detik`
+                      ) : isLoading ? (
                         <>
                           <Loader2 size={18} className="animate-spin" />
                           Memproses...
@@ -567,7 +770,7 @@ export default function LoginPage() {
                       variant="soft"
                       disabled={formIsBusy}
                       onClick={handleAdminDemoLogin}
-                      className="bg-[#fff4e6] text-[#ff8a00] ring-orange-100 hover:bg-[#ffe8cc]"
+                      className="bg-[#fff4e6] text-[#ff8a00] ring-orange-100 hover:bg-[#ffe8cc] dark:bg-[#fff4e6] dark:text-[#ff8a00] dark:ring-orange-100 dark:hover:bg-[#ffe8cc]"
                       leftIcon={
                         isAdminDemoLoading ? (
                           <Loader2 size={18} className="animate-spin" />
@@ -577,8 +780,8 @@ export default function LoginPage() {
                       }
                     >
                       {isAdminDemoLoading
-                        ? "Masuk sebagai Admin..."
-                        : "Masuk sebagai Admin Demo"}
+                        ? "Masuk sebagai Owner..."
+                        : "Masuk sebagai Owner Demo"}
                     </AppButton>
                   </div>
                 </div>
@@ -599,7 +802,7 @@ export default function LoginPage() {
         <FloatingAlert
           open={alert.open}
           title={alert.title}
-          message={alert.message}
+          message={alertMessage}
           onClose={closeAlert}
         />
       </section>

@@ -3,6 +3,7 @@ import { jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/auth";
+import { getApiErrorMessage, getApiErrorStatus } from "@/lib/api-errors";
 
 export const runtime = "nodejs";
 
@@ -276,9 +277,9 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        message: "Gagal mengubah kata sandi.",
+        message: getApiErrorMessage(error, "Gagal mengubah kata sandi."),
       },
-      { status: 500 }
+      { status: getApiErrorStatus(error) }
     );
   }
 }

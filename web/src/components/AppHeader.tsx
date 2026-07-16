@@ -271,6 +271,22 @@ export default function AppHeader({
     router.push(href);
   }
 
+  async function handleLogout() {
+    setIsSidebarOpen(false);
+
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        cache: "no-store",
+      });
+    } finally {
+      window.localStorage.removeItem("faceattend_read_announcement_id");
+      window.sessionStorage.clear();
+      router.replace("/login");
+      router.refresh();
+    }
+  }
+
   return (
     <>
       <header
@@ -543,16 +559,18 @@ export default function AppHeader({
             )}
           </div>
 
-          <div className="border-t border-blue-50 p-4">
-            <Link
-              href="/login"
-              onClick={() => setIsSidebarOpen(false)}
-              className="flex items-center justify-center gap-2 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-black text-rose-600 transition hover:bg-rose-100 active:scale-[0.98]"
-            >
-              <LogOut size={18} strokeWidth={2.5} />
-              Logout
-            </Link>
-          </div>
+          {isAdmin ? (
+            <div className="border-t border-blue-50 p-4">
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-black text-rose-600 transition hover:bg-rose-100 active:scale-[0.98]"
+              >
+                <LogOut size={18} strokeWidth={2.5} />
+                Logout
+              </button>
+            </div>
+          ) : null}
         </div>
       </aside>
     </>

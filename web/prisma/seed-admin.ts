@@ -16,28 +16,28 @@ const adapter = new PrismaMariaDb({
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  const password_hash = await bcrypt.hash("admin123456", 10);
+  const password_hash = await bcrypt.hash("123456", 10);
 
   await prisma.user.upsert({
     where: {
-      email: "admin@creativemu.com",
+      email: "owner@creativemu.com",
     },
     update: {
-      name: "Admin Creativemu",
+      name: "Owner Creativemu",
       password_hash,
-      role: "admin",
+      role: "owner",
       status: "active",
     },
     create: {
-      name: "Admin Creativemu",
-      email: "admin@creativemu.com",
+      name: "Owner Creativemu",
+      email: "owner@creativemu.com",
       password_hash,
-      role: "admin",
+      role: "owner",
       status: "active",
     },
   });
 
-  console.log("Admin berhasil dibuat");
+  console.log("Owner berhasil dibuat");
 }
 
 main()

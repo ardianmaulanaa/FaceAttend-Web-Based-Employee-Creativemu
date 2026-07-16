@@ -3,6 +3,7 @@ import { jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/auth";
+import { getApiErrorMessage, getApiErrorStatus } from "@/lib/api-errors";
 
 export const runtime = "nodejs";
 
@@ -442,9 +443,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        message: "Gagal mengambil profil.",
+        message: getApiErrorMessage(error, "Gagal mengambil profil."),
       },
-      { status: 500 }
+      { status: getApiErrorStatus(error) }
     );
   }
 }
@@ -490,9 +491,9 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        message: "Gagal memperbarui profil.",
+        message: getApiErrorMessage(error, "Gagal memperbarui profil."),
       },
-      { status: 500 }
+      { status: getApiErrorStatus(error) }
     );
   }
 }

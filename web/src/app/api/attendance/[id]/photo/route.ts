@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
+import { getApiErrorMessage, getApiErrorStatus } from "@/lib/api-errors";
 
 export const runtime = "nodejs";
 
@@ -89,10 +90,9 @@ export async function GET(
 
     return NextResponse.json(
       {
-        message: "Gagal mengambil foto absensi.",
-        error: error instanceof Error ? error.message : String(error),
+        message: getApiErrorMessage(error, "Gagal mengambil foto absensi."),
       },
-      { status: 500 }
+      { status: getApiErrorStatus(error) }
     );
   }
 }

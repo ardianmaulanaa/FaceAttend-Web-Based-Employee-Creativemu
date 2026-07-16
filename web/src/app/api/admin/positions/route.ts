@@ -4,10 +4,10 @@ import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
-type AllowedRole = "owner" | "admin" | "cs";
+type AllowedRole = "owner";
 
-const VIEW_ROLES: AllowedRole[] = ["owner", "admin", "cs"];
-const MANAGE_ROLES: AllowedRole[] = ["owner", "admin"];
+const VIEW_ROLES: AllowedRole[] = ["owner"];
+const MANAGE_ROLES: AllowedRole[] = ["owner"];
 
 const officeSelect = {
   id: true,
@@ -264,7 +264,7 @@ export async function POST(req: NextRequest) {
       !canAccess(currentUser.role, MANAGE_ROLES)
     ) {
       return jsonError(
-        "Akses ditolak. Hanya owner atau admin yang dapat menambah jabatan.",
+        "Akses ditolak. Hanya owner yang dapat menambah jabatan.",
         403,
       );
     }
@@ -354,7 +354,7 @@ export async function PATCH(req: NextRequest) {
       !canAccess(currentUser.role, MANAGE_ROLES)
     ) {
       return jsonError(
-        "Akses ditolak. Hanya owner atau admin yang dapat mengubah jabatan.",
+        "Akses ditolak. Hanya owner yang dapat mengubah jabatan.",
         403,
       );
     }
@@ -465,7 +465,7 @@ export async function DELETE(req: NextRequest) {
       !canAccess(currentUser.role, MANAGE_ROLES)
     ) {
       return jsonError(
-        "Akses ditolak. Hanya owner atau admin yang dapat menghapus jabatan.",
+        "Akses ditolak. Hanya owner yang dapat menghapus jabatan.",
         403,
       );
     }

@@ -4,10 +4,10 @@ import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
-type AllowedRole = "owner" | "admin" | "cs";
+type AllowedRole = "owner";
 
-const VIEW_ROLES: AllowedRole[] = ["owner", "admin", "cs"];
-const MANAGE_ROLES: AllowedRole[] = ["owner", "admin"];
+const VIEW_ROLES: AllowedRole[] = ["owner"];
+const MANAGE_ROLES: AllowedRole[] = ["owner"];
 
 async function getCurrentUser(req: NextRequest) {
   const token = req.cookies.get("faceattend_token")?.value;
@@ -289,7 +289,7 @@ export async function POST(req: NextRequest) {
         {
           success: false,
           message:
-            "Akses ditolak. Hanya owner atau admin yang dapat menambah unit.",
+            "Akses ditolak. Hanya owner yang dapat menambah unit.",
         },
         { status: 403 }
       );
@@ -511,7 +511,7 @@ export async function PATCH(req: NextRequest) {
         {
           success: false,
           message:
-            "Akses ditolak. Hanya owner atau admin yang dapat mengubah unit.",
+            "Akses ditolak. Hanya owner yang dapat mengubah unit.",
         },
         { status: 403 }
       );
@@ -769,7 +769,7 @@ export async function DELETE(req: NextRequest) {
         {
           success: false,
           message:
-            "Akses ditolak. Hanya owner atau admin yang dapat menghapus unit.",
+            "Akses ditolak. Hanya owner yang dapat menghapus unit.",
         },
         { status: 403 }
       );
