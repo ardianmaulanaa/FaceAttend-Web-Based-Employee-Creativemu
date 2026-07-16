@@ -20,6 +20,7 @@ export type * from './prismaNamespace'
 export const Decimal = runtime.Decimal
 export const ModelName = {
   User: 'User',
+  LoginRateLimit: 'LoginRateLimit',
   Department: 'Department',
   Unit: 'Unit',
   Position: 'Position',
@@ -78,6 +79,17 @@ export const UserScalarFieldEnum = {
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const LoginRateLimitScalarFieldEnum = {
+  rate_limit_key: 'rate_limit_key',
+  attempt_count: 'attempt_count',
+  reset_at: 'reset_at',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type LoginRateLimitScalarFieldEnum = (typeof LoginRateLimitScalarFieldEnum)[keyof typeof LoginRateLimitScalarFieldEnum]
 
 
 export const DepartmentScalarFieldEnum = {
@@ -423,6 +435,13 @@ export const UserOrderByRelevanceFieldEnum = {
 } as const
 
 export type UserOrderByRelevanceFieldEnum = (typeof UserOrderByRelevanceFieldEnum)[keyof typeof UserOrderByRelevanceFieldEnum]
+
+
+export const LoginRateLimitOrderByRelevanceFieldEnum = {
+  rate_limit_key: 'rate_limit_key'
+} as const
+
+export type LoginRateLimitOrderByRelevanceFieldEnum = (typeof LoginRateLimitOrderByRelevanceFieldEnum)[keyof typeof LoginRateLimitOrderByRelevanceFieldEnum]
 
 
 export const DepartmentOrderByRelevanceFieldEnum = {

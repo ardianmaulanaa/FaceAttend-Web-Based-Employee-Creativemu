@@ -22,6 +22,11 @@ export * from './enums';
  */
 export type User = Prisma.UserModel
 /**
+ * Model LoginRateLimit
+ * 
+ */
+export type LoginRateLimit = Prisma.LoginRateLimitModel
+/**
  * Model Department
  * 
  */

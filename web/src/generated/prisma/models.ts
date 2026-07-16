@@ -8,6 +8,7 @@
  * 🟢 You can import this file directly.
  */
 export type * from './models/User'
+export type * from './models/LoginRateLimit'
 export type * from './models/Department'
 export type * from './models/Unit'
 export type * from './models/Position'

@@ -45,20 +45,15 @@ function toTime(value: Date | string) {
   return value instanceof Date ? value.getTime() : new Date(value).getTime();
 }
 
+// Global in-memory cache for rate limits
+const rateLimitCache = new Map<string, { attempt_count: number; reset_at: number }>();
+
 async function getActiveAttempt(key: string) {
-  const rows = await prisma.$queryRaw<LoginAttempt[]>`
-    SELECT attempt_count, reset_at
-    FROM login_rate_limits
-    WHERE rate_limit_key = ${key}
-    LIMIT 1
-  `;
-
-  const attempt = rows[0];
-
+  const attempt = rateLimitCache.get(key);
   if (!attempt) return null;
 
-  if (toTime(attempt.reset_at) <= Date.now()) {
-    await clearFailedLogin(key);
+  if (attempt.reset_at <= Date.now()) {
+    rateLimitCache.delete(key);
     return null;
   }
 
@@ -70,38 +65,30 @@ async function isRateLimited(key: string) {
 
   if (
     !attempt ||
-    Number(attempt.attempt_count) < LOGIN_RATE_LIMIT_MAX_ATTEMPTS
+    attempt.attempt_count < LOGIN_RATE_LIMIT_MAX_ATTEMPTS
   ) {
     return null;
   }
 
-  return getRetryAfterSeconds(toTime(attempt.reset_at));
+  return getRetryAfterSeconds(attempt.reset_at);
 }
 
 async function recordFailedLogin(key: string) {
-  const resetAt = new Date(Date.now() + LOGIN_RATE_LIMIT_WINDOW_MS);
+  const now = Date.now();
+  const attempt = rateLimitCache.get(key);
 
-  await prisma.$executeRaw`
-    INSERT INTO login_rate_limits (
-      rate_limit_key,
-      attempt_count,
-      reset_at,
-      created_at,
-      updated_at
-    )
-    VALUES (${key}, 1, ${resetAt}, NOW(3), NOW(3))
-    ON DUPLICATE KEY UPDATE
-      attempt_count = IF(reset_at <= NOW(3), 1, attempt_count + 1),
-      reset_at = IF(reset_at <= NOW(3), VALUES(reset_at), reset_at),
-      updated_at = NOW(3)
-  `;
+  if (attempt && attempt.reset_at > now) {
+    attempt.attempt_count += 1;
+  } else {
+    rateLimitCache.set(key, {
+      attempt_count: 1,
+      reset_at: now + LOGIN_RATE_LIMIT_WINDOW_MS,
+    });
+  }
 }
 
 async function clearFailedLogin(key: string) {
-  await prisma.$executeRaw`
-    DELETE FROM login_rate_limits
-    WHERE rate_limit_key = ${key}
-  `;
+  rateLimitCache.delete(key);
 }
 
 function rateLimitResponse(retryAfterSeconds: number) {

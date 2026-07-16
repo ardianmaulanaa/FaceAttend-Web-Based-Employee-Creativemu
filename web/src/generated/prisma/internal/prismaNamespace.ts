@@ -390,6 +390,7 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 export const ModelName = {
   User: 'User',
+  LoginRateLimit: 'LoginRateLimit',
   Department: 'Department',
   Unit: 'Unit',
   Position: 'Position',
@@ -422,7 +423,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "department" | "unit" | "position" | "shift" | "workSchedule" | "officeLocation" | "attendance" | "attendanceMonthlySummary" | "employeeVisit" | "wfhRequest" | "leaveRequest" | "announcement" | "adminNotification" | "payroll" | "payrollItem" | "permission" | "rolePermission"
+    modelProps: "user" | "loginRateLimit" | "department" | "unit" | "position" | "shift" | "workSchedule" | "officeLocation" | "attendance" | "attendanceMonthlySummary" | "employeeVisit" | "wfhRequest" | "leaveRequest" | "announcement" | "adminNotification" | "payroll" | "payrollItem" | "permission" | "rolePermission"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -489,6 +490,72 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.UserCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.UserCountAggregateOutputType> | number
+        }
+      }
+    }
+    LoginRateLimit: {
+      payload: Prisma.$LoginRateLimitPayload<ExtArgs>
+      fields: Prisma.LoginRateLimitFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.LoginRateLimitFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoginRateLimitPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.LoginRateLimitFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoginRateLimitPayload>
+        }
+        findFirst: {
+          args: Prisma.LoginRateLimitFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoginRateLimitPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.LoginRateLimitFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoginRateLimitPayload>
+        }
+        findMany: {
+          args: Prisma.LoginRateLimitFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoginRateLimitPayload>[]
+        }
+        create: {
+          args: Prisma.LoginRateLimitCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoginRateLimitPayload>
+        }
+        createMany: {
+          args: Prisma.LoginRateLimitCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        delete: {
+          args: Prisma.LoginRateLimitDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoginRateLimitPayload>
+        }
+        update: {
+          args: Prisma.LoginRateLimitUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoginRateLimitPayload>
+        }
+        deleteMany: {
+          args: Prisma.LoginRateLimitDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.LoginRateLimitUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        upsert: {
+          args: Prisma.LoginRateLimitUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LoginRateLimitPayload>
+        }
+        aggregate: {
+          args: Prisma.LoginRateLimitAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateLoginRateLimit>
+        }
+        groupBy: {
+          args: Prisma.LoginRateLimitGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.LoginRateLimitGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.LoginRateLimitCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.LoginRateLimitCountAggregateOutputType> | number
         }
       }
     }
@@ -1679,6 +1746,17 @@ export const UserScalarFieldEnum = {
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
 
 
+export const LoginRateLimitScalarFieldEnum = {
+  rate_limit_key: 'rate_limit_key',
+  attempt_count: 'attempt_count',
+  reset_at: 'reset_at',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+} as const
+
+export type LoginRateLimitScalarFieldEnum = (typeof LoginRateLimitScalarFieldEnum)[keyof typeof LoginRateLimitScalarFieldEnum]
+
+
 export const DepartmentScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -2022,6 +2100,13 @@ export const UserOrderByRelevanceFieldEnum = {
 } as const
 
 export type UserOrderByRelevanceFieldEnum = (typeof UserOrderByRelevanceFieldEnum)[keyof typeof UserOrderByRelevanceFieldEnum]
+
+
+export const LoginRateLimitOrderByRelevanceFieldEnum = {
+  rate_limit_key: 'rate_limit_key'
+} as const
+
+export type LoginRateLimitOrderByRelevanceFieldEnum = (typeof LoginRateLimitOrderByRelevanceFieldEnum)[keyof typeof LoginRateLimitOrderByRelevanceFieldEnum]
 
 
 export const DepartmentOrderByRelevanceFieldEnum = {
@@ -2388,6 +2473,7 @@ export interface PrismaClientOptions {
 }
 export type GlobalOmitConfig = {
   user?: Prisma.UserOmit
+  loginRateLimit?: Prisma.LoginRateLimitOmit
   department?: Prisma.DepartmentOmit
   unit?: Prisma.UnitOmit
   position?: Prisma.PositionOmit
