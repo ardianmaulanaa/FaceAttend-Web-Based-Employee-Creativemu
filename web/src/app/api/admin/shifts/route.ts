@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
+import { addAuditLog } from "@/lib/jsonDb";
 
 export const runtime = "nodejs";
 
@@ -61,6 +62,8 @@ async function getCurrentUser(req: NextRequest) {
       id: true,
       role: true,
       status: true,
+      name: true,
+      email: true,
     },
   });
 
@@ -233,6 +236,13 @@ export async function PATCH(req: NextRequest) {
         updated_at: true,
       },
     });
+
+    await addAuditLog(
+      currentUser.email,
+      currentUser.name || "Admin",
+      "UPDATE_SHIFT",
+      `Berhasil memperbarui shift ${shift.name}: toleransi ${toleranceMinutes} menit, status ${status}`
+    );
 
     return NextResponse.json({
       message: "Shift berhasil diperbarui.",

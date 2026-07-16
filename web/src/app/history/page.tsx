@@ -545,6 +545,104 @@ function AttendanceRecordCard({
   );
 }
 
+function CalendarView({
+  records,
+  month,
+  year,
+}: {
+  records: AttendanceRecord[];
+  month: number;
+  year: number;
+}) {
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const firstDayIndexRaw = new Date(year, month - 1, 1).getDay();
+  const firstDayIndex = firstDayIndexRaw === 0 ? 6 : firstDayIndexRaw - 1;
+
+  const weekdays = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
+
+  const calendarDays = [];
+  for (let i = 0; i < firstDayIndex; i++) {
+    calendarDays.push(null);
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    calendarDays.push(d);
+  }
+
+  return (
+    <div className="rounded-[2rem] border border-blue-50 bg-[#f8fbff] p-4 md:p-6 shadow-sm">
+      <div className="grid grid-cols-7 gap-2 mb-4 text-center">
+        {weekdays.map(day => (
+          <div key={day} className="text-xs font-black text-slate-400 py-1 uppercase tracking-wider">
+            {day}
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-2 md:gap-3">
+        {calendarDays.map((day, idx) => {
+          if (day === null) {
+            return <div key={`empty-${idx}`} className="aspect-square bg-transparent" />;
+          }
+
+          const dateKey = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+          const record = records.find(r => r.date === dateKey);
+
+          let bgClass = "bg-white text-slate-700 hover:bg-slate-50 border border-slate-100";
+          let statusLabel = "";
+
+          if (record) {
+            const status = String(record.status || "").toLowerCase();
+            if (status.includes("hadir") || status === "present") {
+              bgClass = "bg-emerald-500 text-white hover:bg-emerald-600 shadow-md shadow-emerald-500/10";
+              statusLabel = "Hadir";
+            } else if (status.includes("terlambat") || status === "late") {
+              bgClass = "bg-orange-500 text-white hover:bg-orange-600 shadow-md shadow-orange-500/10";
+              statusLabel = "Telat";
+            } else if (status.includes("cuti") || status.includes("sakit") || status.includes("izin")) {
+              bgClass = "bg-purple-500 text-white hover:bg-purple-600 shadow-md shadow-purple-500/10";
+              statusLabel = "Cuti/Izin";
+            } else {
+              bgClass = "bg-rose-500 text-white hover:bg-rose-600 shadow-md shadow-rose-500/10";
+              statusLabel = "Absen";
+            }
+          }
+
+          const content = (
+            <div className="flex flex-col h-full justify-between p-2">
+              <span className="text-sm font-black">{day}</span>
+              {record && (
+                <span className="hidden sm:inline text-[9px] font-black uppercase tracking-wider opacity-90 truncate">
+                  {statusLabel || record.checkIn}
+                </span>
+              )}
+            </div>
+          );
+
+          if (record) {
+            return (
+              <Link
+                key={dateKey}
+                href={`/history/${record.id}`}
+                className={`aspect-square rounded-2xl transition cursor-pointer select-none ${bgClass}`}
+              >
+                {content}
+              </Link>
+            );
+          }
+
+          return (
+            <div
+              key={dateKey}
+              className={`aspect-square rounded-2xl transition ${bgClass}`}
+            >
+              {content}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function HistoryContent({
   isLoading,
   records,
@@ -593,6 +691,7 @@ export default function HistoryPage() {
   const [sort, setSort] = useState<"desc" | "asc">("desc");
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
 
   const currentMonthLabel = useMemo(
     () => months.find((item) => item.value === month)?.label || "",
@@ -623,8 +722,6 @@ export default function HistoryPage() {
       setIsLoading(false);
     }
   }
-
-
 
   useEffect(() => {
     void getHistory();
@@ -678,13 +775,45 @@ export default function HistoryPage() {
             <StatCard label="Tahun" value={year} delay="140ms" />
           </div>
 
+          {/* Toggle View Mode */}
+          <div className="mt-6 flex gap-2">
+            <button
+              onClick={() => setViewMode("list")}
+              className={`rounded-2xl px-4 py-2.5 text-xs font-black transition-all ${
+                viewMode === "list"
+                  ? "bg-[#123c8c] text-white shadow-md shadow-blue-900/10"
+                  : "bg-[#f8fbff] text-slate-600 border border-blue-50 hover:bg-blue-50/50"
+              }`}
+            >
+              Tampilan Daftar
+            </button>
+            <button
+              onClick={() => setViewMode("calendar")}
+              className={`rounded-2xl px-4 py-2.5 text-xs font-black transition-all ${
+                viewMode === "calendar"
+                  ? "bg-[#123c8c] text-white shadow-md shadow-blue-900/10"
+                  : "bg-[#f8fbff] text-slate-600 border border-blue-50 hover:bg-blue-50/50"
+              }`}
+            >
+              Tampilan Kalender
+            </button>
+          </div>
+
           <div className="mt-6 space-y-4">
-            <HistoryContent
-              isLoading={isLoading}
-              records={records}
-              monthLabel={currentMonthLabel}
-              year={year}
-            />
+            {viewMode === "list" ? (
+              <HistoryContent
+                isLoading={isLoading}
+                records={records}
+                monthLabel={currentMonthLabel}
+                year={year}
+              />
+            ) : (
+              <CalendarView
+                records={records}
+                month={month}
+                year={year}
+              />
+            )}
           </div>
         </section>
 

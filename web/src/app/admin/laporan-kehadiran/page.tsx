@@ -10,7 +10,8 @@ import {
   Loader2,
   Search,
   UserRound,
-  Coins,
+  Download,
+  Printer,
 } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import MobileShell from "@/components/MobileShell";
@@ -239,8 +240,35 @@ export default function AdminAttendanceReportPage() {
   const [month, setMonth] = useState(getCurrentMonth());
   const [year, setYear] = useState(getCurrentYear());
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  
 
+  function handleExportCSV() {
+    if (reports.length === 0) return;
+    const headers = ["Tanggal", "Nama Karyawan", "Kode/Email", "Jam Masuk", "Jam Keluar", "Durasi Kerja", "Mode Kerja", "Status"];
+    const rows = reports.map((item) => [
+      item.dateLabel,
+      item.employeeName,
+      item.employeeCode || "",
+      item.checkIn,
+      item.checkOut,
+      item.duration,
+      item.workModeLabel,
+      item.statusLabel
+    ]);
+    const csvContent = "\uFEFF" + "sep=,\n" + [headers.join(","), ...rows.map(e => e.map(val => `"${val.replace(/"/g, '""')}"`).join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Laporan_Kehadiran_FaceAttend_${new Date().toISOString().split("T")[0]}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  function handlePrintPDF() {
+    window.print();
+  }
 
   async function getAttendanceReports() {
     try {
@@ -513,10 +541,38 @@ export default function AdminAttendanceReportPage() {
               ) : null}
 
               <div
+                id="print-area-container"
                 className="attendance-report-enter rounded-[2rem] border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-6"
                 style={{ animationDelay: "150ms" }}
               >
-                <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                <style>{`
+                  @media print {
+                    body * {
+                      visibility: hidden;
+                    }
+                    #print-area-container, #print-area-container * {
+                      visibility: visible;
+                    }
+                    #print-area-container {
+                      position: absolute;
+                      left: 0;
+                      top: 0;
+                      width: 100%;
+                      border: none !important;
+                      box-shadow: none !important;
+                      background: transparent !important;
+                      padding: 0 !important;
+                    }
+                  }
+                `}</style>
+
+                {/* Print Only Header */}
+                <div className="hidden print:block text-center mb-6">
+                  <h1 className="text-2xl font-black uppercase text-[#123c8c]">Laporan Kehadiran Karyawan</h1>
+                  <p className="text-sm font-bold text-slate-500">Aplikasi FaceAttend - Dicetak pada {new Date().toLocaleDateString("id-ID")}</p>
+                </div>
+
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div>
                     <p className="text-xs font-black uppercase tracking-[0.22em] text-[#123c8c]">
                       Rekap Absensi
@@ -527,9 +583,31 @@ export default function AdminAttendanceReportPage() {
                     </h2>
                   </div>
 
-                  <p className="text-sm font-semibold text-slate-500">
-                    {reports.length} data ditemukan
-                  </p>
+                  <div className="flex flex-wrap items-center gap-3 print:hidden">
+                    <p className="text-sm font-semibold text-slate-500 mr-2">
+                      {reports.length} data ditemukan
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={handleExportCSV}
+                      disabled={reports.length === 0}
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 text-xs font-black text-white shadow-md shadow-emerald-900/10 transition hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Download size={15} />
+                      Ekspor CSV
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handlePrintPDF}
+                      disabled={reports.length === 0}
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#123c8c] px-4 text-xs font-black text-white shadow-md shadow-blue-900/10 transition hover:bg-[#0f3274] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Printer size={15} />
+                      Cetak PDF
+                    </button>
+                  </div>
                 </div>
 
                 <div className="mt-6">
@@ -549,8 +627,9 @@ export default function AdminAttendanceReportPage() {
                       </p>
                     </div>
                   ) : (
-                    <div className="space-y-5">
-                      {groupedReports.map((group, groupIndex) => (
+                    <>
+                      <div className="space-y-5 print:hidden">
+                        {groupedReports.map((group, groupIndex) => (
                         <section
                           key={group.dateLabel}
                           className="attendance-report-row-enter rounded-[2rem] border border-blue-100 bg-[#f8fbff] dark:border-slate-800 dark:bg-[#0d1117] p-4 md:p-5"
@@ -660,6 +739,38 @@ export default function AdminAttendanceReportPage() {
                         </section>
                       ))}
                     </div>
+
+                    <div className="hidden print:block mt-6">
+                      <table className="w-full border-collapse border border-slate-300 text-sm">
+                        <thead>
+                          <tr className="bg-slate-100">
+                            <th className="border border-slate-300 px-3 py-2 text-left font-black">Tanggal</th>
+                            <th className="border border-slate-300 px-3 py-2 text-left font-black">Nama Karyawan</th>
+                            <th className="border border-slate-300 px-3 py-2 text-left font-black">Kode Karyawan</th>
+                            <th className="border border-slate-300 px-3 py-2 text-left font-black">Jam Masuk</th>
+                            <th className="border border-slate-300 px-3 py-2 text-left font-black">Jam Keluar</th>
+                            <th className="border border-slate-300 px-3 py-2 text-left font-black">Durasi</th>
+                            <th className="border border-slate-300 px-3 py-2 text-left font-black">Mode</th>
+                            <th className="border border-slate-300 px-3 py-2 text-left font-black">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {reports.map((item) => (
+                            <tr key={item.id}>
+                              <td className="border border-slate-300 px-3 py-2">{item.dateLabel}</td>
+                              <td className="border border-slate-300 px-3 py-2 font-bold">{item.employeeName}</td>
+                              <td className="border border-slate-300 px-3 py-2">{item.employeeCode || "-"}</td>
+                              <td className="border border-slate-300 px-3 py-2">{item.checkIn}</td>
+                              <td className="border border-slate-300 px-3 py-2">{item.checkOut}</td>
+                              <td className="border border-slate-300 px-3 py-2">{item.duration}</td>
+                              <td className="border border-slate-300 px-3 py-2">{item.workModeLabel}</td>
+                              <td className="border border-slate-300 px-3 py-2 font-bold">{item.statusLabel}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
                   )}
                 </div>
               </div>

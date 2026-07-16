@@ -179,11 +179,29 @@ export default function LeaveRequestPage() {
   const [visitAddress, setVisitAddress] = useState("");
   const [visitLatitude, setVisitLatitude] = useState("");
   const [visitLongitude, setVisitLongitude] = useState("");
+  const [fileBase64, setFileBase64] = useState("");
 
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
   const [stats, setStats] = useState<LeaveStats>(emptyStats);
 
   const [isLoading, setIsLoading] = useState(true);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Ukuran file maksimal adalah 2MB.");
+      e.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setFileBase64(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [pageAlert, setPageAlert] = useState<PageAlert>(null);
@@ -281,7 +299,7 @@ export default function LeaveRequestPage() {
           leaveType,
           startDate,
           endDate,
-          reason: reason.trim(),
+          reason: fileBase64 ? `${reason.trim()} | Attachment: ${fileBase64}` : reason.trim(),
           requestedWorkMode,
           locationUnlockRequested,
           visitLocationName,
@@ -307,6 +325,7 @@ export default function LeaveRequestPage() {
       setStartDate("");
       setEndDate("");
       setReason("");
+      setFileBase64("");
       setRequestedWorkMode("office");
       setLocationUnlockRequested(false);
       setVisitLocationName("");
@@ -561,6 +580,25 @@ export default function LeaveRequestPage() {
               />
             </div>
 
+            <div>
+              <label className="text-sm font-black text-slate-700">
+                Bukti Lampiran (Foto/PDF, Maks 2MB - Opsional)
+              </label>
+
+              <input
+                type="file"
+                accept="image/*,application/pdf"
+                onChange={handleFileChange}
+                className="mt-2 block w-full text-xs font-bold text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-[#123c8c]/10 file:text-[#123c8c] hover:file:bg-[#123c8c]/20"
+              />
+
+              {fileBase64 && (
+                <p className="mt-2 text-xs font-semibold text-emerald-600">
+                  ✓ Dokumen berhasil dilampirkan.
+                </p>
+              )}
+            </div>
+
             <button
               type="submit"
               disabled={isSubmitting}
@@ -675,9 +713,42 @@ export default function LeaveRequestPage() {
                       </div>
                     </div>
 
-                    <p className="mt-4 rounded-2xl bg-[#f8fbff] p-4 text-sm font-semibold leading-6 text-slate-600">
-                      {item.reason}
-                    </p>
+                    {(() => {
+                      const [displayReason, attachmentUrl] = item.reason.split(" | Attachment: ");
+                      return (
+                        <>
+                          <p className="mt-4 rounded-2xl bg-[#f8fbff] p-4 text-sm font-semibold leading-6 text-slate-600">
+                            {displayReason}
+                          </p>
+
+                          {attachmentUrl && (
+                            <div className="mt-3">
+                              {attachmentUrl.startsWith("data:image/") || /\.(png|jpe?g|gif|webp)$/i.test(attachmentUrl) ? (
+                                <div className="mt-2 max-w-xs rounded-xl overflow-hidden border border-slate-100 bg-slate-50 p-2">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img
+                                    src={attachmentUrl}
+                                    alt="Bukti Dokumen Cuti"
+                                    className="w-full max-h-40 object-contain rounded-lg"
+                                  />
+                                </div>
+                              ) : (
+                                <a
+                                  href={attachmentUrl}
+                                  download={`bukti-${item.leaveType}-${item.startDate}.pdf`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1.5 text-xs font-black text-[#123c8c] hover:underline bg-[#123c8c]/5 px-3 py-1.5 rounded-xl transition"
+                                >
+                                  <FileText size={14} />
+                                  Lihat/Unduh Bukti Lampiran
+                                </a>
+                              )}
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
 
                     {item.locationUnlockRequested ? (
                       <p className="mt-3 rounded-2xl bg-amber-50 p-4 text-sm font-semibold leading-6 text-amber-700">

@@ -508,6 +508,42 @@ export default function HomePage() {
     null,
   );
 
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+
+    const checkReminders = () => {
+      const now = new Date();
+      const hours = now.getHours();
+      const minutes = now.getMinutes();
+
+      if (hours === 8 && minutes === 0 && attendanceToday.checkIn === "--:--") {
+        new Notification("Peringatan Presensi Masuk (FaceAttend)", {
+          body: "Sudah pukul 08:00 WIB! Jangan lupa lakukan check-in presensi masuk Anda hari ini.",
+          icon: "/images/creativemu-logo/creativemu.png"
+        });
+      }
+
+      if (hours === 17 && minutes === 0 && attendanceToday.checkIn !== "--:--" && attendanceToday.checkOut === "--:--") {
+        new Notification("Peringatan Presensi Pulang (FaceAttend)", {
+          body: "Sudah pukul 17:00 WIB! Jangan lupa lakukan check-out presensi pulang Anda hari ini.",
+          icon: "/images/creativemu-logo/creativemu.png"
+        });
+      }
+    };
+
+    const timer = setInterval(checkReminders, 60000);
+    return () => clearInterval(timer);
+  }, [attendanceToday]);
+
   useEffect(() => {
     function updateTime() {
       const now = new Date();
@@ -621,6 +657,13 @@ export default function HomePage() {
     if (!latestAnnouncementId || typeof window === "undefined") return;
     window.localStorage.setItem(READ_ANNOUNCEMENT_KEY, latestAnnouncementId);
     setReadAnnouncementId(latestAnnouncementId);
+
+    // Call read receipt API
+    void fetch("/api/announcements/read", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ announcementId: latestAnnouncementId }),
+    });
   }
 
   return (

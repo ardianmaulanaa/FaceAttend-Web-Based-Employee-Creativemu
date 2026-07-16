@@ -21,6 +21,11 @@ import {
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import MobileShell from "@/components/MobileShell";
+import dynamic from "next/dynamic";
+
+const AttendanceMap = dynamic(() => import("@/components/AttendanceMap"), {
+  ssr: false,
+});
 import {
   AppButton,
   AppCard,
@@ -63,6 +68,14 @@ type CurrentUser = {
     name?: string | null;
     tolerance_minutes?: number | null;
     toleranceMinutes?: number | null;
+  } | null;
+  registered_office?: {
+    id?: string;
+    name?: string | null;
+    address?: string | null;
+    latitude: number;
+    longitude: number;
+    radius_meters?: number | null;
   } | null;
 };
 
@@ -1395,6 +1408,20 @@ export default function AttendancePage() {
     void loadCurrentUser();
     void loadTodayAttendance();
 
+    async function initLocation() {
+      try {
+        if (!navigator.geolocation) return;
+        navigator.geolocation.getCurrentPosition((pos) => {
+          if (mountedRef.current) {
+            setLastLatitude(pos.coords.latitude);
+            setLastLongitude(pos.coords.longitude);
+            setLastAccuracy(pos.coords.accuracy);
+          }
+        }, null, { enableHighAccuracy: true });
+      } catch (err) {}
+    }
+    void initLocation();
+
     if (blocked) {
       safeSetStatus(
         "Absensi hanya lewat HP",
@@ -2490,6 +2517,22 @@ export default function AttendancePage() {
                 onClick={requestCheckOut}
               />
             </div>
+
+            {currentUser?.registered_office && (
+              <div className="mt-4 print:hidden">
+                <p className="text-xs font-black uppercase tracking-[0.24em] text-[#123c8c] mb-2">
+                  Live Geofence Map
+                </p>
+                <AttendanceMap
+                  userLat={lastLatitude || 0}
+                  userLng={lastLongitude || 0}
+                  officeLat={currentUser.registered_office.latitude}
+                  officeLng={currentUser.registered_office.longitude}
+                  officeRadius={currentUser.registered_office.radius_meters || 100}
+                  officeName={currentUser.registered_office.name || "Kantor Asal"}
+                />
+              </div>
+            )}
 
             <LastPhoto url={lastPhotoUrl} />
           </AppCard>

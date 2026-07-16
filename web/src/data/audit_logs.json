@@ -1,0 +1,10 @@
+[
+  {
+    "id": "LOG-1784186163812-e49jeadz3",
+    "actorEmail": "admin@creativemu.co.id",
+    "actorName": "Admin Creativemu",
+    "action": "UPDATE_SHIFT",
+    "details": "Berhasil memperbarui shift UTAMA: toleransi 6 menit, status active",
+    "timestamp": 1784186163812
+  }
+]

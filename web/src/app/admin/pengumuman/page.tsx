@@ -9,10 +9,12 @@ import {
   Search,
   Trash2,
   X,
+  Loader2,
 } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import MobileShell from "@/components/MobileShell";
+import { AppCard } from "@/components/ui/AppUI";
 
 type AnnouncementStatus = "draft" | "published" | "archived";
 
@@ -169,6 +171,26 @@ export default function AdminAnnouncementsPage() {
     string | null
   >(null);
   const [form, setForm] = useState<AnnouncementForm>(initialForm);
+
+  const [readers, setReaders] = useState<{ userName: string; userEmail: string; timestamp: number }[]>([]);
+  const [activeReadersAnnouncementId, setActiveReadersAnnouncementId] = useState<string | null>(null);
+  const [isReadersLoading, setIsReadersLoading] = useState(false);
+
+  async function openReadersModal(announcementId: string) {
+    setActiveReadersAnnouncementId(announcementId);
+    setIsReadersLoading(true);
+    try {
+      const res = await fetch(`/api/announcements/read?announcementId=${announcementId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setReaders(data.readers || []);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsReadersLoading(false);
+    }
+  }
 
   async function readJsonResponse(response: Response) {
     const text = await response.text();
@@ -560,6 +582,12 @@ export default function AdminAnnouncementsPage() {
                       <p className="mt-1 text-xs font-semibold text-slate-400">
                         {formatDate(announcement.created_at)}
                       </p>
+                      <button
+                        onClick={() => openReadersModal(announcement.id)}
+                        className="mt-2 text-xs font-black text-[#123c8c] hover:underline inline-flex items-center gap-1 bg-[#123c8c]/5 px-2.5 py-1 rounded-xl"
+                      >
+                        Lihat Pembaca
+                      </button>
                       {(announcement.attachment_url || announcement.attachmentUrl) && (
                         <div className="mt-2 max-w-[120px] overflow-hidden rounded-xl border border-slate-100 bg-slate-50 p-1">
                           {/\.(mp4|webm|ogg|mov)$/i.test(announcement.attachment_url || announcement.attachmentUrl || "") ? (
@@ -576,13 +604,12 @@ export default function AdminAnnouncementsPage() {
                     </p>
 
                     <span
-                      className={`w-fit rounded-full px-3 py-1 text-xs font-black ${
-                        announcement.status === "published"
-                          ? "bg-emerald-50 text-emerald-700"
-                          : announcement.status === "draft"
-                            ? "bg-amber-50 text-amber-700"
-                            : "bg-slate-100 text-slate-600"
-                      }`}
+                      className={`w-fit rounded-full px-3 py-1 text-xs font-black ${announcement.status === "published"
+                        ? "bg-emerald-50 text-emerald-700"
+                        : announcement.status === "draft"
+                          ? "bg-amber-50 text-amber-700"
+                          : "bg-slate-100 text-slate-600"
+                        }`}
                     >
                       {formatStatus(announcement.status)}
                     </span>
@@ -717,7 +744,7 @@ export default function AdminAnnouncementsPage() {
                 <label className="mb-2 block text-sm font-black text-slate-700">
                   Media Pengumuman (Foto/Video, Maks 50MB)
                 </label>
-                
+
                 {form.attachmentUrl ? (
                   <div className="relative overflow-hidden rounded-2xl border border-blue-100 bg-slate-50 p-2">
                     {/\.(mp4|webm|ogg|mov)$/i.test(form.attachmentUrl) ? (
@@ -725,7 +752,7 @@ export default function AdminAnnouncementsPage() {
                     ) : (
                       <img src={form.attachmentUrl} alt="Preview Attachment" className="max-h-60 w-full rounded-xl object-contain bg-slate-100" />
                     )}
-                    
+
                     <button
                       type="button"
                       onClick={() => setForm(prev => ({ ...prev, attachmentUrl: null }))}
@@ -830,6 +857,56 @@ export default function AdminAnnouncementsPage() {
               </div>
             </form>
           </div>
+        </div>
+      )}
+      {activeReadersAnnouncementId && (
+        <div className="fixed inset-0 z-[85] flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm">
+          <AppCard className="w-full max-w-md overflow-hidden bg-white p-6 shadow-2xl rounded-[2rem]">
+            <div className="flex items-center justify-between border-b border-blue-50 pb-4 mb-4">
+              <h3 className="text-lg font-black text-slate-900">Daftar Pembaca</h3>
+              <button
+                onClick={() => setActiveReadersAnnouncementId(null)}
+                className="text-slate-400 hover:text-slate-600 transition"
+              >
+                <X size={20} strokeWidth={2.6} />
+              </button>
+            </div>
+
+            {isReadersLoading ? (
+              <div className="flex h-44 flex-col items-center justify-center gap-2">
+                <Loader2 className="animate-spin text-[#123c8c]" size={28} />
+                <p className="text-xs font-semibold text-slate-500">Memuat pembaca...</p>
+              </div>
+            ) : readers.length === 0 ? (
+              <div className="py-10 text-center">
+                <p className="text-sm font-semibold text-slate-500">Belum ada karyawan yang membaca pengumuman ini.</p>
+              </div>
+            ) : (
+              <div className="max-h-60 overflow-y-auto space-y-3 pr-2">
+                {readers.map((reader, idx) => (
+                  <div key={idx} className="flex justify-between items-center bg-slate-50 p-3 rounded-2xl">
+                    <div>
+                      <p className="text-sm font-black text-slate-900">{reader.userName}</p>
+                      <p className="text-xs text-slate-400 font-semibold">{reader.userEmail}</p>
+                    </div>
+                    <span className="text-[10px] font-semibold text-slate-400">
+                      {new Date(reader.timestamp).toLocaleTimeString("id-ID", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })} WIB
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <button
+              onClick={() => setActiveReadersAnnouncementId(null)}
+              className="mt-6 w-full rounded-2xl bg-[#123c8c] py-3 text-sm font-black text-white shadow-md transition hover:bg-[#0f3274]"
+            >
+              Tutup
+            </button>
+          </AppCard>
         </div>
       )}
 

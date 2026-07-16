@@ -87,6 +87,11 @@ const adminMenus = [
     label: "Pengumuman",
     icon: Megaphone,
   },
+  {
+    href: "/admin/audit-logs",
+    label: "Audit Logs",
+    icon: History,
+  },
 ];
 
 const masterDataMenus = [
@@ -883,7 +888,7 @@ export default function AppHeader({
                                       headers: { "Content-Type": "application/json" },
                                       body: JSON.stringify({ id: notif.id }),
                                     }).catch(console.error);
-                                    
+
                                     setEmployeeNotifications(prev =>
                                       prev.map(n => n.id === notif.id ? { ...n, isRead: true, status: "read" } : n)
                                     );
@@ -893,11 +898,10 @@ export default function AppHeader({
                                   setIsBellMenuOpen(false);
                                   router.push(notif.href || "/notifikasi");
                                 }}
-                                className={`rounded-xl p-3 border transition text-left cursor-pointer ${
-                                  !isRead
+                                className={`rounded-xl p-3 border transition text-left cursor-pointer ${!isRead
                                     ? "bg-blue-50/50 hover:bg-blue-50 border-blue-100/50 text-slate-900 dark:text-white"
                                     : "bg-slate-50/50 hover:bg-slate-50 border-slate-100/50 text-slate-700 dark:text-slate-300"
-                                }`}
+                                  }`}
                               >
                                 <div className="flex items-center justify-between gap-1.5">
                                   <p className="text-xs font-black text-[#123c8c] dark:text-blue-400">{notif.title}</p>
@@ -1077,7 +1081,7 @@ export default function AppHeader({
                 <p className="px-3 text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
                   Menu Karyawan
                 </p>
- 
+
                 <nav className="mt-3 space-y-2">
                   {employeeNav.map((menu) => {
                     const Icon = menu.icon;

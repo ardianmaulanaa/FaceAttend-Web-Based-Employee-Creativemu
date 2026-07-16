@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
+import fs from "node:fs";
+import path from "node:path";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -387,6 +389,35 @@ export async function POST(req: NextRequest) {
 
     const totalDays = calculateTotalDays(startDate, endDate);
 
+    let finalReason = reason;
+    if (reason.includes(" | Attachment: ")) {
+      const [textReason, base64Part] = reason.split(" | Attachment: ");
+      if (base64Part && base64Part.includes(";base64,")) {
+        try {
+          const [mimePart, rawBase64] = base64Part.split(";base64,");
+          const mime = mimePart.split(":")[1];
+          let ext = "bin";
+          if (mime.includes("png")) ext = "png";
+          else if (mime.includes("jpeg") || mime.includes("jpg")) ext = "jpg";
+          else if (mime.includes("pdf")) ext = "pdf";
+          else if (mime.includes("gif")) ext = "gif";
+
+          const buffer = Buffer.from(rawBase64, "base64");
+          const filename = `leave-${currentUser.id}-${Date.now()}.${ext}`;
+          const uploadDir = path.join(process.cwd(), "public", "uploads", "leaves");
+          
+          if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+          }
+          
+          fs.writeFileSync(path.join(uploadDir, filename), buffer);
+          finalReason = `${textReason} | Attachment: /uploads/leaves/${filename}`;
+        } catch (err) {
+          console.error("Gagal menyimpan file lampiran cuti:", err);
+        }
+      }
+    }
+
     const leaveRequest = await prisma.leaveRequest.create({
       data: {
         user_id: currentUser.id,
@@ -394,7 +425,7 @@ export async function POST(req: NextRequest) {
         start_date: startDate,
         end_date: endDate,
         total_days: totalDays,
-        reason,
+        reason: finalReason,
         requested_work_mode: requestedWorkMode,
         location_unlock_requested: locationUnlockRequested,
         location_unlock_approved: false,

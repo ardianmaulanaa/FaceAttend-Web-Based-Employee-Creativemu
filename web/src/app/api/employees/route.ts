@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { jwtVerify } from "jose";
 import { prisma as prismaClient } from "@/lib/prisma";
 const prisma = prismaClient as any;
+import { addAuditLog } from "@/lib/jsonDb";
 
 export const runtime = "nodejs";
 
@@ -128,6 +129,8 @@ async function getCurrentUser(req: NextRequest) {
       id: true,
       role: true,
       status: true,
+      name: true,
+      email: true,
     },
   });
 
@@ -509,6 +512,13 @@ export async function POST(req: NextRequest) {
       },
       select: employeeSelect,
     });
+
+    await addAuditLog(
+      currentUser.email,
+      currentUser.name || "Admin",
+      "REGISTRASI_KARYAWAN",
+      `Berhasil mendaftarkan karyawan baru: ${name} (${email})`
+    );
 
     return NextResponse.json({
       success: true,

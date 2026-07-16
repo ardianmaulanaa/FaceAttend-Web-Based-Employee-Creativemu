@@ -647,15 +647,50 @@ export default function AdminLeaveReportPage() {
                           </div>
                         </div>
 
-                        <div className="mt-4 rounded-3xl bg-[#f8fbff] p-4">
-                          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
-                            Alasan
-                          </p>
+                        {(() => {
+                          const [displayReason, attachmentUrl] = item.reason.split(" | Attachment: ");
+                          return (
+                            <>
+                              <div className="mt-4 rounded-3xl bg-[#f8fbff] p-4">
+                                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
+                                  Alasan
+                                </p>
 
-                          <p className="mt-2 break-words text-sm font-semibold leading-7 text-slate-600">
-                            {item.reason}
-                          </p>
-                        </div>
+                                <p className="mt-2 break-words text-sm font-semibold leading-7 text-slate-600">
+                                  {displayReason}
+                                </p>
+                              </div>
+
+                              {attachmentUrl && (
+                                <div className="mt-3">
+                                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
+                                    Dokumen Pendukung
+                                  </p>
+                                  {attachmentUrl.startsWith("data:image/") || /\.(png|jpe?g|gif|webp)$/i.test(attachmentUrl) ? (
+                                    <div className="mt-2 max-w-sm rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 p-2">
+                                      <img
+                                        src={attachmentUrl}
+                                        alt="Bukti Dokumen Cuti"
+                                        className="w-full max-h-60 object-contain rounded-xl"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <a
+                                      href={attachmentUrl}
+                                      download={`bukti-${item.leaveType}-${item.employeeName}.pdf`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="mt-2 inline-flex items-center gap-1.5 text-xs font-black text-[#123c8c] hover:underline bg-[#123c8c]/5 px-3 py-1.5 rounded-xl transition"
+                                    >
+                                      <FileText size={14} />
+                                      Lihat/Unduh Bukti Dokumen
+                                    </a>
+                                  )}
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
 
                         {item.adminNote ? (
                           <div className="mt-3 rounded-3xl bg-blue-50 p-4">
