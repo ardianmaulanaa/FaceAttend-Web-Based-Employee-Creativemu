@@ -497,10 +497,24 @@ function AnimatedHistogram({
             box-shadow: 0 14px 30px rgba(18, 60, 140, 0.22);
           }
         }
+
+        .chart-scroll-container::-webkit-scrollbar {
+          height: 6px;
+        }
+        .chart-scroll-container::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .chart-scroll-container::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 9999px;
+        }
+        .chart-scroll-container::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.35);
+        }
       `}</style>
 
-      <div className="monitor-row-enter mt-6 overflow-x-auto overflow-y-visible rounded-[1.65rem] border border-blue-100 bg-[#123c8c] p-3 text-white shadow-xl shadow-blue-900/15 md:rounded-[2rem] md:p-5">
-        <div className="min-w-[760px] md:min-w-[900px]">
+      <div className="monitor-row-enter mt-6 rounded-[1.65rem] border border-blue-100 bg-[#123c8c] p-3 text-white shadow-xl shadow-blue-900/15 md:rounded-[2rem] md:p-5 w-full">
+        <div className="w-full">
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div className="min-w-0">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-100 md:text-xs">
@@ -518,91 +532,96 @@ function AnimatedHistogram({
           </div>
 
           <div className="relative mt-5 h-[255px] rounded-[1.35rem] border border-white/10 bg-[#0f3578] px-4 pb-12 pt-6 shadow-inner md:h-[300px] md:rounded-[1.6rem] md:px-5 md:pb-14 md:pt-8">
-            {/* Grid Lines Container */}
-            <div className="pointer-events-none absolute inset-x-4 bottom-12 h-[120px] md:inset-x-5 md:bottom-14 md:h-[160px]">
-              {Array.from({ length: 5 }).map((_, index) => {
-                const percent = index * 25;
-                const value = Math.round((safeMaxValue * percent) / 100);
+            {/* Scrollable container for the actual chart bars & grid */}
+            <div className="chart-scroll-container overflow-x-auto w-full h-[calc(100%-1rem)] pb-4">
+              <div className="min-w-[640px] md:min-w-[850px] h-full relative">
+                {/* Grid Lines Container */}
+                <div className="pointer-events-none absolute inset-x-4 bottom-12 h-[120px] md:inset-x-5 md:bottom-14 md:h-[160px]">
+                  {Array.from({ length: 5 }).map((_, index) => {
+                    const percent = index * 25;
+                    const value = Math.round((safeMaxValue * percent) / 100);
 
-                return (
-                  <div
-                    key={percent}
-                    className="absolute left-0 right-0 border-t border-white/14"
-                    style={{ bottom: `${percent}%` }}
-                  >
-                    <span className="absolute -top-2 right-0 rounded-full bg-[#0f3578] px-1.5 text-[9px] font-black text-blue-100/75 md:px-2 md:text-[10px]">
-                      {value}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+                    return (
+                      <div
+                        key={percent}
+                        className="absolute left-0 right-0 border-t border-white/14"
+                        style={{ bottom: `${percent}%` }}
+                      >
+                        <span className="absolute -top-2 right-0 rounded-full bg-[#0f3578] px-1.5 text-[9px] font-black text-blue-100/75 md:px-2 md:text-[10px]">
+                          {value}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
 
-            {/* Bars Flex Container */}
-            <div className="absolute z-10 flex h-[120px] items-end gap-1 inset-x-4 bottom-12 md:inset-x-5 md:bottom-14 md:h-[160px] md:gap-4">
-              {points.map((point, index) => {
-                const heightPercent = Math.max(
-                  (point.value / safeMaxValue) * 100,
-                  point.value > 0 ? 8 : 2.5
-                );
-                const isActive = activeIndex === index;
+                {/* Bars Flex Container */}
+                <div className="absolute z-10 flex h-[120px] items-end gap-1 inset-x-4 bottom-12 md:inset-x-5 md:bottom-14 md:h-[160px] md:gap-4">
+                  {points.map((point, index) => {
+                    const heightPercent = Math.max(
+                      (point.value / safeMaxValue) * 100,
+                      point.value > 0 ? 8 : 2.5
+                    );
+                    const isActive = activeIndex === index;
 
-                return (
-                  <div
-                    key={`${metricLabel}-${point.label}`}
-                    className="relative flex h-full w-3 shrink-0 flex-col items-center justify-end md:w-4"
-                  >
-                    <button
-                      type="button"
-                      onMouseEnter={() => setActiveIndex(index)}
-                      onMouseLeave={() => setActiveIndex(null)}
-                      onFocus={() => setActiveIndex(index)}
-                      onBlur={() => setActiveIndex(null)}
-                      onClick={() => setActiveIndex(index)}
-                      className={`monitor-bar-enter relative w-full rounded-t-md outline-none transition duration-300 ease-out ${
-                        isActive
-                          ? "scale-x-110 bg-blue-200"
-                          : "bg-blue-300/95 hover:bg-blue-200"
-                      }`}
-                      style={{
-                        height: `${heightPercent}%`,
-                        animationDelay: `${index * 18}ms`,
-                        animationName: isActive ? "histogramBarGlow" : undefined,
-                        animationDuration: isActive ? "160ms" : undefined,
-                        animationTimingFunction: isActive ? "ease-out" : undefined,
-                        animationFillMode: isActive ? "forwards" : undefined,
-                      }}
-                      aria-label={`${metricLabel} tanggal ${point.label}: ${point.value} ${unit}`}
-                    >
-                      {isActive ? (
-                        <div
-                          className="absolute left-1/2 z-30 w-24 -translate-x-1/2 rounded-xl border border-white/40 bg-white/70 px-2 py-1.5 text-center shadow-lg shadow-blue-950/10 backdrop-blur-md"
+                    return (
+                      <div
+                        key={`${metricLabel}-${point.label}`}
+                        className="relative flex h-full w-3 shrink-0 flex-col items-center justify-end md:w-4"
+                      >
+                        <button
+                          type="button"
+                          onMouseEnter={() => setActiveIndex(index)}
+                          onMouseLeave={() => setActiveIndex(null)}
+                          onFocus={() => setActiveIndex(index)}
+                          onBlur={() => setActiveIndex(null)}
+                          onClick={() => setActiveIndex(index)}
+                          className={`monitor-bar-enter relative w-full rounded-t-md outline-none transition duration-300 ease-out ${
+                            isActive
+                              ? "scale-x-110 bg-blue-200"
+                              : "bg-blue-300/95 hover:bg-blue-200"
+                          }`}
                           style={{
-                            bottom: `calc(${heightPercent}% + 10px)`,
-                            animation:
-                              "histogramTooltipIn 160ms ease-out forwards",
+                            height: `${heightPercent}%`,
+                            animationDelay: `${index * 18}ms`,
+                            animationName: isActive ? "histogramBarGlow" : undefined,
+                            animationDuration: isActive ? "160ms" : undefined,
+                            animationTimingFunction: isActive ? "ease-out" : undefined,
+                            animationFillMode: isActive ? "forwards" : undefined,
                           }}
+                          aria-label={`${metricLabel} tanggal ${point.label}: ${point.value} ${unit}`}
                         >
-                          <p className="text-base font-black leading-none text-[#123c8c]">
-                            {point.value}
-                          </p>
-                          <p className="mt-0.5 text-[9px] font-black uppercase tracking-[0.12em] text-slate-500">
-                            {unit}
-                          </p>
-                        </div>
-                      ) : null}
-                    </button>
+                          {isActive ? (
+                            <div
+                              className="absolute left-1/2 z-30 w-24 -translate-x-1/2 rounded-xl border border-white/40 bg-white/70 px-2 py-1.5 text-center shadow-lg shadow-blue-950/10 backdrop-blur-md"
+                              style={{
+                                bottom: `calc(${heightPercent}% + 10px)`,
+                                animation:
+                                  "histogramTooltipIn 160ms ease-out forwards",
+                              }}
+                            >
+                              <p className="text-base font-black leading-none text-[#123c8c]">
+                                {point.value}
+                              </p>
+                              <p className="mt-0.5 text-[9px] font-black uppercase tracking-[0.12em] text-slate-500">
+                                {unit}
+                              </p>
+                            </div>
+                          ) : null}
+                        </button>
 
-                    <p className="mt-2 text-[8px] font-bold text-blue-50/80 md:text-[9px]">
-                      {point.label}
-                    </p>
+                        <p className="mt-2 text-[8px] font-bold text-blue-50/80 md:text-[9px]">
+                          {point.label}
+                        </p>
 
-                    <p className="text-[8px] font-black text-white md:text-[9px]">
-                      {point.value}
-                    </p>
-                  </div>
-                );
-              })}
+                        <p className="text-[8px] font-black text-white md:text-[9px]">
+                          {point.value}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
 
             {activePoint ? (

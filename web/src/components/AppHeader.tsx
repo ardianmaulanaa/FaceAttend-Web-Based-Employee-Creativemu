@@ -620,12 +620,12 @@ export default function AppHeader({
             </button>
 
             <div className="min-w-0">
-              <h1 className="mt-0.5 text-sm sm:text-base md:text-2xl lg:text-3xl font-black tracking-tight text-slate-950 leading-tight whitespace-nowrap">
+              <h1 className="mt-0.5 text-sm sm:text-base md:text-2xl lg:text-3xl font-black tracking-tight text-slate-950 leading-tight truncate max-w-[150px] sm:max-w-[240px] md:max-w-[400px] lg:max-w-none">
                 {title}
               </h1>
 
               {subtitle ? (
-                <p className="mt-0.5 text-[9px] sm:text-xs md:text-sm font-semibold leading-tight text-slate-500 whitespace-nowrap">
+                <p className="mt-0.5 text-[9px] sm:text-xs md:text-sm font-semibold leading-tight text-slate-500 truncate max-w-[150px] sm:max-w-[240px] md:max-w-[400px] lg:max-w-none">
                   {subtitle}
                 </p>
               ) : null}

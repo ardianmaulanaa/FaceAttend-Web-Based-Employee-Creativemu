@@ -1,5 +1,21 @@
 [
   {
+    "id": "LOG-1784253771222-30r0945ye",
+    "actorEmail": "owner@creativemu.co.id",
+    "actorName": "Owner Creativemu",
+    "action": "REGISTRASI_KARYAWAN",
+    "details": "Berhasil mendaftarkan karyawan baru: q d (a@creativemu.com)",
+    "timestamp": 1784253771222
+  },
+  {
+    "id": "LOG-1784192010530-wn8v45iko",
+    "actorEmail": "owner@creativemu.co.id",
+    "actorName": "Owner Creativemu",
+    "action": "REGISTRASI_KARYAWAN",
+    "details": "Berhasil mendaftarkan karyawan baru: qaz ad (q@creativemu.com)",
+    "timestamp": 1784192010530
+  },
+  {
     "id": "LOG-1784186163812-e49jeadz3",
     "actorEmail": "admin@creativemu.co.id",
     "actorName": "Admin Creativemu",

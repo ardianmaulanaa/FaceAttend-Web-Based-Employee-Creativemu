@@ -437,7 +437,7 @@ export default function LeaveRequestPage() {
                 suppressHydrationWarning
                 value={leaveType}
                 onChange={(event) => setLeaveType(event.target.value)}
-                className="mt-2 min-h-[52px] w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px- py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                className="mt-2 min-h-[52px] w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
               >
                 <option value="annual">Cuti Tahunan</option>
                 <option value="permission">Izin</option>
