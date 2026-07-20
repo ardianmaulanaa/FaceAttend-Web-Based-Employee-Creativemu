@@ -18,7 +18,7 @@ echo "========================================"
 echo "Menjalankan Prisma generate dan build"
 echo "========================================"
 
-npm run build
+npm run build:standalone
 
 if [ ! -f "$STANDALONE_DIR/server.js" ]; then
   echo ""
