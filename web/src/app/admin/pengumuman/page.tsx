@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import {
   Edit,
   Megaphone,
@@ -59,6 +59,16 @@ function formatDate(value: string) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value));
+}
+
+async function readJsonResponse(response: Response) {
+  const text = await response.text();
+
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch {
+    throw new Error("Response API bukan JSON.");
+  }
 }
 
 function AnnouncementMotionStyles() {
@@ -166,17 +176,7 @@ export default function AdminAnnouncementsPage() {
   >(null);
   const [form, setForm] = useState<AnnouncementForm>(initialForm);
 
-  async function readJsonResponse(response: Response) {
-    const text = await response.text();
-
-    try {
-      return text ? JSON.parse(text) : {};
-    } catch {
-      throw new Error("Response API bukan JSON.");
-    }
-  }
-
-  async function loadAnnouncements() {
+  const loadAnnouncements = useCallback(async () => {
     try {
       setIsLoading(true);
       setErrorMessage("");
@@ -205,11 +205,11 @@ export default function AdminAnnouncementsPage() {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     void loadAnnouncements();
-  }, []);
+  }, [loadAnnouncements]);
 
   const filteredAnnouncements = useMemo(() => {
     return announcements.filter((announcement) => {

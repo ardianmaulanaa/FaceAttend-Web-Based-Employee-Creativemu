@@ -244,7 +244,6 @@ function EmployeeProfileAvatar({ employee }: { employee: Employee }) {
   if (profilePhoto && !imageError) {
     return (
       <div className="employee-detail-avatar-enter h-28 w-28 overflow-hidden rounded-[2rem] bg-white/15 ring-4 ring-white/20">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={profilePhoto}
           alt={`Foto profil ${employee.name}`}

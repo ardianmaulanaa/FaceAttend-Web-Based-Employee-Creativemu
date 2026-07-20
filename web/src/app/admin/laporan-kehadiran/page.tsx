@@ -79,14 +79,6 @@ function getCurrentYear() {
   return new Date().getFullYear();
 }
 
-function getMonthLabel(month: number) {
-  const date = new Date(getCurrentYear(), Math.max(0, month - 1), 1);
-
-  return new Intl.DateTimeFormat("id-ID", {
-    month: "long",
-  }).format(date);
-}
-
 async function readJsonResponse(response: Response) {
   const text = await response.text();
 
@@ -210,7 +202,6 @@ function EmployeeProfileAvatar({ item }: { item: AttendanceReport }) {
   if (profilePhoto && !imageError) {
     return (
       <div className="attendance-report-avatar-enter h-12 w-12 shrink-0 overflow-hidden rounded-2xl bg-[#eaf1ff] ring-1 ring-blue-100">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={profilePhoto}
           alt={`Foto profil ${item.employeeName}`}

@@ -32,11 +32,36 @@ export function getDistanceInMeters(from: GeoPoint, to: GeoPoint) {
   return earthRadius * c;
 }
 
+export function isValidGpsCoordinate(point: GeoPoint) {
+  return (
+    Number.isFinite(point.lat) &&
+    Number.isFinite(point.lng) &&
+    point.lat >= -90 &&
+    point.lat <= 90 &&
+    point.lng >= -180 &&
+    point.lng <= 180
+  );
+}
+
+export function isValidGeofence(office: OfficeGeofence) {
+  return (
+    isValidGpsCoordinate({
+      lat: office.latitude,
+      lng: office.longitude,
+    }) &&
+    Number.isFinite(office.radius_meters) &&
+    office.radius_meters > 0
+  );
+}
+
 export function findNearestValidOffice(
   userLocation: GeoPoint,
   offices: OfficeGeofence[]
 ) {
+  if (!isValidGpsCoordinate(userLocation)) return null;
+
   const validOffices = offices
+    .filter(isValidGeofence)
     .map((office) => {
       const distance = getDistanceInMeters(userLocation, {
         lat: office.latitude,
@@ -56,5 +81,9 @@ export function findNearestValidOffice(
 }
 
 export function isGpsAccuracyAllowed(accuracy: number, maxAccuracy = 100) {
-  return Number.isFinite(accuracy) && accuracy <= maxAccuracy;
+  return (
+    Number.isFinite(accuracy) &&
+    accuracy > 0 &&
+    accuracy <= maxAccuracy
+  );
 }

@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
+const distDir = process.env.NEXT_DIST_DIR ?? ".next";
+
 const nextConfig: NextConfig = {
+  distDir,
   output: "standalone",
 
   // Membatasi workspace Next.js ke folder web ini

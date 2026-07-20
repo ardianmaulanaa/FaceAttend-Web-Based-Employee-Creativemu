@@ -3,12 +3,9 @@
 import { FormEvent, useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { AlertCircle, Loader2, LogIn, ShieldCheck, X } from "lucide-react";
+import { AlertCircle, Loader2, LogIn, X } from "lucide-react";
 import MobileShell from "@/components/MobileShell";
 import { AppButton, AppCard, AppInput } from "@/components/ui/AppUI";
-
-const OWNER_DEMO_EMAIL = "owner@creativemu.co.id";
-const OWNER_DEMO_PASSWORD = "123456";
 
 type LoginResponse = {
   success?: boolean;
@@ -363,7 +360,6 @@ export default function LoginPage() {
   const [currentTime, setCurrentTime] = useState("");
 
   const [isLoading, setIsLoading] = useState(false);
-  const [isAdminDemoLoading, setIsAdminDemoLoading] = useState(false);
   const [loginRetryAt, setLoginRetryAt] = useState<number | null>(null);
   const [loginRetrySeconds, setLoginRetrySeconds] = useState(0);
 
@@ -458,11 +454,7 @@ export default function LoginPage() {
     });
   }
 
-  async function loginUser(
-    loginEmail: string,
-    loginPassword: string,
-    mode: "manual" | "owner-demo" = "manual",
-  ) {
+  async function loginUser(loginEmail: string, loginPassword: string) {
     if (loginRetrySeconds > 0) {
       showAlert(
         "Tunggu 1 menit",
@@ -495,11 +487,7 @@ export default function LoginPage() {
     }
 
     try {
-      if (mode === "owner-demo") {
-        setIsAdminDemoLoading(true);
-      } else {
-        setIsLoading(true);
-      }
+      setIsLoading(true);
 
       const response = await fetch("/api/auth/login", {
         method: "POST",
@@ -546,24 +534,16 @@ export default function LoginPage() {
           : "Terjadi kesalahan saat login.",
       );
     } finally {
-      if (mode === "owner-demo") {
-        setIsAdminDemoLoading(false);
-      } else {
-        setIsLoading(false);
-      }
+      setIsLoading(false);
     }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    await loginUser(email, password, "manual");
+    await loginUser(email, password);
   }
 
-  async function handleAdminDemoLogin() {
-    await loginUser(OWNER_DEMO_EMAIL, OWNER_DEMO_PASSWORD, "owner-demo");
-  }
-
-  const formIsBusy = isLoading || isAdminDemoLoading || loginRetrySeconds > 0;
+  const formIsBusy = isLoading || loginRetrySeconds > 0;
   const alertMessage =
     loginRetrySeconds > 0 && alert.title === "Tunggu 1 menit"
       ? `Tunggu ${loginRetrySeconds} detik hingga kamu bisa mencoba kembali.`
@@ -769,7 +749,7 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                <div className="mt-6 space-y-3">
+                <div className="mt-6">
                   <div
                     className="login-field-enter"
                     style={{
@@ -792,33 +772,6 @@ export default function LoginPage() {
                       ) : (
                         "Masuk"
                       )}
-                    </AppButton>
-                  </div>
-
-                  <div
-                    className="login-field-enter"
-                    style={{
-                      animationDelay: "230ms",
-                    }}
-                  >
-                    <AppButton
-                      type="button"
-                      full
-                      variant="soft"
-                      disabled={formIsBusy}
-                      onClick={handleAdminDemoLogin}
-                      className="bg-[#fff4e6] text-[#ff8a00] ring-orange-100 hover:bg-[#ffe8cc] dark:bg-[#fff4e6] dark:text-[#ff8a00] dark:ring-orange-100 dark:hover:bg-[#ffe8cc]"
-                      leftIcon={
-                        isAdminDemoLoading ? (
-                          <Loader2 size={18} className="animate-spin" />
-                        ) : (
-                          <ShieldCheck size={18} strokeWidth={2.6} />
-                        )
-                      }
-                    >
-                      {isAdminDemoLoading
-                        ? "Masuk sebagai Owner..."
-                        : "Masuk sebagai Owner Demo"}
                     </AppButton>
                   </div>
                 </div>

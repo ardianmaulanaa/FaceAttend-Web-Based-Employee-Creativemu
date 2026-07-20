@@ -462,7 +462,6 @@ function PhotoCard({
       <div className="p-5">
         {isAvailable ? (
           <div className="overflow-hidden rounded-3xl bg-slate-100">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={imageUrl}
               alt={subtitle}

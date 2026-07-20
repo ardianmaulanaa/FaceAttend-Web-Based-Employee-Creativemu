@@ -15,6 +15,7 @@ import {
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import MobileShell from "@/components/MobileShell";
+import { isGpsAccuracyAllowed, isValidGpsCoordinate } from "@/lib/geo";
 
 type AttendanceAction = "check-in" | "check-out";
 
@@ -280,6 +281,14 @@ export default function AttendancePage() {
       const longitude = position.coords.longitude;
       const accuracy = position.coords.accuracy;
 
+      if (!isValidGpsCoordinate({ lat: latitude, lng: longitude })) {
+        throw new Error("Koordinat GPS tidak valid.");
+      }
+
+      if (!isGpsAccuracyAllowed(accuracy, 100)) {
+        throw new Error("Akurasi GPS terlalu rendah.");
+      }
+
       setLastLatitude(latitude);
       setLastLongitude(longitude);
       setLastAccuracy(accuracy);
@@ -337,10 +346,14 @@ export default function AttendancePage() {
 
       setStatusTitle("Attendance Failed");
       setStatusText(
-        "Gagal melakukan absensi. Pastikan kamera dan lokasi GPS diizinkan."
+        error instanceof Error
+          ? error.message
+          : "Gagal melakukan absensi. Pastikan kamera dan lokasi GPS diizinkan."
       );
       alert(
-        "Gagal melakukan absensi. Pastikan kamera dan lokasi GPS diizinkan."
+        error instanceof Error
+          ? error.message
+          : "Gagal melakukan absensi. Pastikan kamera dan lokasi GPS diizinkan."
       );
     } finally {
       setLoading(false);

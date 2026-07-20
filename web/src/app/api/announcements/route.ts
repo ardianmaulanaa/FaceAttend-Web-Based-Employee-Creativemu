@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireAuth, requireOwner } from "@/lib/api-auth";
 import { jsonApiError } from "@/lib/api-response";
@@ -46,7 +47,22 @@ function jsonError(error: unknown, fallback: string) {
   return jsonApiError(error, fallback);
 }
 
-function formatAnnouncement(item: any) {
+type AnnouncementWithAuthor = {
+  id: string;
+  title: string;
+  content: string;
+  target: string;
+  status: string;
+  created_at: Date;
+  updated_at: Date;
+  author: {
+    id: string;
+    name: string;
+    email: string;
+  } | null;
+};
+
+function formatAnnouncement(item: AnnouncementWithAuthor) {
   return {
     id: item.id,
     title: item.title,
@@ -73,7 +89,7 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get("status") || "all";
     const search = searchParams.get("search") || "";
 
-    const where: any = {};
+    const where: Prisma.AnnouncementWhereInput = {};
 
     if (audience === "employee") {
       await requireAuth(req);
@@ -142,7 +158,7 @@ export async function POST(req: NextRequest) {
   try {
     const admin = await getAdminUser(req);
 
-    const body = await req.json();
+    const body = (await req.json()) as Record<string, unknown>;
 
     const title = String(body.title || "").trim();
     const content = String(body.content || "").trim();
@@ -216,7 +232,7 @@ export async function PATCH(req: NextRequest) {
 
     const body = await req.json();
 
-    const id = body.id;
+    const id = typeof body.id === "string" ? body.id : "";
 
     if (!id) {
       return NextResponse.json(
@@ -228,7 +244,7 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    const data: any = {
+    const data: Prisma.AnnouncementUpdateInput = {
       target: "all",
     };
 

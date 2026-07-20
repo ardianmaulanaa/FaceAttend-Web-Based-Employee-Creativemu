@@ -21,6 +21,12 @@ web/node_modules/
 # =========================
 coverage/
 web/coverage/
+test-results/
+web/test-results/
+playwright-report/
+web/playwright-report/
+.npm-cache/
+web/.npm-cache/
 
 /coverage
 
@@ -29,6 +35,8 @@ web/coverage/
 # =========================
 .next/
 web/.next/
+.next-build/
+web/.next-build/
 
 out/
 web/out/
@@ -177,6 +185,8 @@ out/
 
 # Deployment
 *.zip
+public/uploads/
+web/public/uploads/
 
 # Logs and macOS
 *.log

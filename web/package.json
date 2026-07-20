@@ -4,10 +4,21 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "dev:clean": "rm -rf .next/dev .next/cache && next dev",
+    "build": "prisma generate && NEXT_DIST_DIR=.next-build next build",
     "start": "next start",
-    "lint": "eslint",
-    "start:standalone": "node .next/standalone/server.js",
+    "lint": "eslint --max-warnings=0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --coverage",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "check:lockfile": "npm ci --ignore-scripts --dry-run",
+    "audit:deps": "npm audit --audit-level=moderate",
+    "check:secrets": "bash scripts/check-secrets.sh",
+    "check:artifacts": "bash scripts/check-artifacts.sh",
+    "prepare:standalone": "bash scripts/prepare-standalone-assets.sh",
+    "quality": "npm run check:lockfile && npm run lint && npm run typecheck && npm run test && npm run audit:deps && npm run check:secrets && npm run check:artifacts && npm run build && npm run prepare:standalone && npm run check:artifacts && npm run test:e2e",
+    "start:standalone": "node .next-build/standalone/server.js",
     "deploy:standalone": "bash scripts/build-standalone.sh"
   },
   "dependencies": {
@@ -25,15 +36,22 @@
     "react-leaflet": "^5.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4",
     "@types/leaflet": "^1.9.21",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^4.1.10",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.10"
+  },
+  "overrides": {
+    "@hono/node-server": "1.19.13",
+    "postcss": "^8.5.10"
   },
   "engines": {
     "node": "24.x"

@@ -3,12 +3,14 @@
 set -euo pipefail
 
 ZIP_NAME="faceattend-office.zip"
+BUILD_DIR="${NEXT_DIST_DIR:-.next-build}"
+STANDALONE_DIR="$BUILD_DIR/standalone"
 
 echo "========================================"
 echo "Membersihkan build lama"
 echo "========================================"
 
-rm -rf .next
+rm -rf "$BUILD_DIR"
 rm -f "$ZIP_NAME"
 
 echo ""
@@ -18,9 +20,9 @@ echo "========================================"
 
 npm run build
 
-if [ ! -f ".next/standalone/server.js" ]; then
+if [ ! -f "$STANDALONE_DIR/server.js" ]; then
   echo ""
-  echo "ERROR: .next/standalone/server.js tidak ditemukan."
+  echo "ERROR: $STANDALONE_DIR/server.js tidak ditemukan."
   echo "Pastikan output: \"standalone\" ada di next.config.ts."
   exit 1
 fi
@@ -30,21 +32,7 @@ echo "========================================"
 echo "Menyalin public dan static"
 echo "========================================"
 
-rm -rf .next/standalone/public
-rm -rf .next/standalone/.next/static
-
-if [ -d "public" ]; then
-  cp -R public .next/standalone/public
-fi
-
-mkdir -p .next/standalone/.next
-
-if [ -d ".next/static" ]; then
-  cp -R .next/static .next/standalone/.next/static
-fi
-
-find .next/standalone -name ".DS_Store" -delete
-find .next/standalone -name "*.log" -delete
+bash scripts/prepare-standalone-assets.sh
 
 echo ""
 echo "========================================"
@@ -52,14 +40,18 @@ echo "Membuat ZIP deployment"
 echo "========================================"
 
 (
-  cd .next/standalone
+  cd "$STANDALONE_DIR"
 
   zip -qr "../../$ZIP_NAME" . \
     -x ".env" \
        ".env.*" \
+       "public/uploads/*" \
+       "public/uploads/**" \
        "*.DS_Store" \
        "*.log"
 )
+
+bash scripts/check-artifacts.sh
 
 echo ""
 echo "========================================"
@@ -67,7 +59,7 @@ echo "BUILD STANDALONE BERHASIL"
 echo "========================================"
 
 echo "Ukuran standalone setelah diekstrak:"
-du -sh .next/standalone
+du -sh "$STANDALONE_DIR"
 
 echo ""
 echo "Ukuran ZIP untuk upload:"

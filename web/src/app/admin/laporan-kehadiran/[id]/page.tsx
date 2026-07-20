@@ -443,7 +443,6 @@ function PhotoCard({
       {imageUrl ? (
         <div className="bg-[#f8fbff] p-4">
           <div className="mx-auto max-w-[320px] overflow-hidden rounded-[1.3rem] bg-slate-950 shadow-lg shadow-slate-300/40">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={imageUrl}
               alt={title}
@@ -891,7 +890,6 @@ export default function AdminAttendanceReportDetailPage() {
                       <div className="attendance-detail-avatar-enter flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/15 ring-1 ring-white/20">
                         {getEmployeeProfilePhoto(report) ? (
                           <>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={getEmployeeProfilePhoto(report)}
                               alt={report.employeeName}

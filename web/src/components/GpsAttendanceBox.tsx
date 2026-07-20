@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   findNearestValidOffice,
   isGpsAccuracyAllowed,
+  isValidGpsCoordinate,
   type OfficeGeofence,
 } from "@/lib/geo";
 
@@ -75,8 +76,13 @@ export default function GpsAttendanceBox() {
   const isAccuracyAllowed = location
     ? isGpsAccuracyAllowed(location.accuracy, 100)
     : false;
+  const isCoordinateAllowed = location
+    ? isValidGpsCoordinate({ lat: location.lat, lng: location.lng })
+    : false;
 
-  const canAttend = Boolean(location && matchedOffice && isAccuracyAllowed);
+  const canAttend = Boolean(
+    location && matchedOffice && isAccuracyAllowed && isCoordinateAllowed,
+  );
 
   function getCurrentLocation() {
     setErrorMessage("");
@@ -241,6 +247,12 @@ export default function GpsAttendanceBox() {
               {!isAccuracyAllowed ? (
                 <p className="mt-1 text-sm font-semibold">
                   Akurasi GPS terlalu besar. Maksimal disarankan ±100 meter.
+                </p>
+              ) : null}
+
+              {!isCoordinateAllowed ? (
+                <p className="mt-1 text-sm font-semibold">
+                  Koordinat GPS tidak valid. Coba ambil lokasi ulang.
                 </p>
               ) : null}
             </div>

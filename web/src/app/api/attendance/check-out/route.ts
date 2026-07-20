@@ -6,6 +6,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCloudinary } from "@/lib/cloudinary";
 import { prisma } from "@/lib/prisma";
 import { getApiErrorMessage, getApiErrorStatus } from "@/lib/api-errors";
+import {
+  getDistanceInMeters,
+  isGpsAccuracyAllowed,
+  isValidGeofence,
+  isValidGpsCoordinate,
+  type OfficeGeofence,
+} from "@/lib/geo";
 
 export const runtime = "nodejs";
 
@@ -27,19 +34,6 @@ type ParsedAttendanceBody = {
   latitude: number | null;
   longitude: number | null;
   accuracy: number | null;
-};
-
-type GeoPoint = {
-  lat: number;
-  lng: number;
-};
-
-type OfficeGeofence = {
-  id: string;
-  name: string;
-  latitude: number;
-  longitude: number;
-  radius_meters: number;
 };
 
 function isMobileAttendanceRequest(req: NextRequest) {
@@ -289,27 +283,6 @@ async function deleteCloudinaryPhoto(publicId: string | null | undefined) {
   }
 }
 
-function getDistanceInMeters(from: GeoPoint, to: GeoPoint) {
-  const earthRadius = 6371000;
-
-  const lat1 = (from.lat * Math.PI) / 180;
-  const lat2 = (to.lat * Math.PI) / 180;
-
-  const deltaLat = ((to.lat - from.lat) * Math.PI) / 180;
-  const deltaLng = ((to.lng - from.lng) * Math.PI) / 180;
-
-  const a =
-    Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
-    Math.cos(lat1) *
-      Math.cos(lat2) *
-      Math.sin(deltaLng / 2) *
-      Math.sin(deltaLng / 2);
-
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-  return earthRadius * c;
-}
-
 async function parseAttendanceBody(
   req: NextRequest,
 ): Promise<ParsedAttendanceBody> {
@@ -369,7 +342,11 @@ async function parseAttendanceBody(
     };
   }
 
-  const body = (await req.json()) as Record<string, any>;
+  const body = (await req.json()) as Record<string, unknown>;
+  const location =
+    typeof body.location === "object" && body.location !== null
+      ? (body.location as Record<string, unknown>)
+      : {};
 
   const photoDataUrl =
     typeof body.photo === "string"
@@ -383,15 +360,15 @@ async function parseAttendanceBody(
             : null;
 
   const latitude = toNumber(
-    body.latitude ?? body.checkOutLatitude ?? body.location?.latitude,
+    body.latitude ?? body.checkOutLatitude ?? location.latitude,
   );
 
   const longitude = toNumber(
-    body.longitude ?? body.checkOutLongitude ?? body.location?.longitude,
+    body.longitude ?? body.checkOutLongitude ?? location.longitude,
   );
 
   const accuracy = toNumber(
-    body.accuracy ?? body.checkOutAccuracy ?? body.location?.accuracy,
+    body.accuracy ?? body.checkOutAccuracy ?? location.accuracy,
   );
 
   if (!photoDataUrl) {
@@ -467,7 +444,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (accuracy > MAX_GPS_ACCURACY_METERS) {
+    if (!isValidGpsCoordinate({ lat: latitude, lng: longitude })) {
+      return NextResponse.json(
+        { error: "Koordinat GPS check-out tidak valid." },
+        { status: 400 },
+      );
+    }
+
+    if (!isGpsAccuracyAllowed(accuracy, MAX_GPS_ACCURACY_METERS)) {
       return NextResponse.json(
         {
           error: `Akurasi GPS terlalu rendah. Maksimal ±${MAX_GPS_ACCURACY_METERS} meter.`,
@@ -611,6 +595,26 @@ export async function POST(req: NextRequest) {
             error: "Data titik GPS kantor belum lengkap.",
             message:
               "Latitude, longitude, atau radius kantor belum lengkap di master data kantor.",
+          },
+          { status: 400 },
+        );
+      }
+
+      if (
+        !isValidGeofence({
+          id: registeredOffice.id,
+          name: registeredOffice.name,
+          latitude: officeLatitude,
+          longitude: officeLongitude,
+          radius_meters: officeRadius,
+        })
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Data geofence kantor tidak valid.",
+            message:
+              "Latitude harus -90 sampai 90, longitude -180 sampai 180, dan radius kantor harus lebih dari 0 meter.",
           },
           { status: 400 },
         );

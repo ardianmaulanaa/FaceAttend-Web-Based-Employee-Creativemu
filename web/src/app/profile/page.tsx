@@ -390,7 +390,6 @@ function ProfileAvatar({ user, initials, size = "md" }: ProfileAvatarProps) {
     >
       {user.profile_photo ? (
         <>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={user.profile_photo}
             alt={user.name}
@@ -940,10 +939,7 @@ export default function ProfilePage() {
     };
   }, []);
 
-  const initials = useMemo(() => {
-    if (!user?.name) return "";
-    return getInitials(user.name);
-  }, [user?.name]);
+  const initials = user?.name ? getInitials(user.name) : "";
 
   const subtitleInfo = useMemo(() => {
     if (!user) return "";

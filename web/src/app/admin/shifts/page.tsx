@@ -306,11 +306,6 @@ export default function ShiftsPage() {
     setIsModalOpen(false);
   }
 
-  function resetFilter() {
-    setSearch("");
-    setShiftFilter("all");
-  }
-
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
