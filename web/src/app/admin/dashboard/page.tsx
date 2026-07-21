@@ -13,6 +13,7 @@ import {
   Settings,
   Megaphone,
   ArrowUpRight,
+  TrendingUp,
 } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
@@ -391,13 +392,13 @@ export default function AdminDashboardPage() {
             </a>
 
             <a
-              href="/admin/master-data/hierarchy"
+              href="/admin/hr-analytics"
               className="flex flex-col items-center justify-center text-center p-4 bg-white dark:bg-[#0d1117] rounded-2xl border border-blue-100/50 dark:border-slate-850 hover:-translate-y-0.5 hover:shadow-md dark:hover:shadow-none hover:border-[#123c8c] transition duration-200"
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400 mb-2.5">
-                <Settings size={20} />
+                <TrendingUp size={20} />
               </div>
-              <span className="text-[11px] font-black text-slate-800 dark:text-slate-200">Data Master</span>
+              <span className="text-[11px] font-black text-slate-800 dark:text-slate-200">Analitik HR</span>
             </a>
 
             <a
