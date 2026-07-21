@@ -239,13 +239,13 @@ export default function AdminDashboardPage() {
         icon: UsersRound,
       },
       {
-        label: "Check-in",
+        label: "Masuk",
         value: String(dashboardStats?.checkInToday ?? 0),
         description: "Sudah masuk hari ini",
         icon: LogIn,
       },
       {
-        label: "Check-out",
+        label: "Keluar",
         value: String(dashboardStats?.checkOutToday ?? 0),
         description: "Sudah keluar hari ini",
         icon: LogOut,
@@ -284,7 +284,7 @@ export default function AdminDashboardPage() {
     <MobileShell variant="admin">
       <DashboardMotionStyles />
 
-      <AppHeader title="Admin Dashboard" variant="admin" />
+      <AppHeader title="Dashboard Admin" variant="admin" />
 
       <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 pb-28 md:px-10 lg:px-16">
         <div className="dashboard-enter overflow-hidden rounded-3xl border border-blue-100 dark:border-slate-800 bg-white dark:bg-[#161b22] shadow-xl shadow-slate-300/30">
@@ -297,7 +297,7 @@ export default function AdminDashboardPage() {
 
                 <div>
                   <h2 className="mt-1 text-3xl font-black tracking-tight md:text-4xl">
-                    Attendance Overview
+                    Ringkasan Kehadiran
                   </h2>
                 </div>
               </div>
@@ -308,7 +308,7 @@ export default function AdminDashboardPage() {
                 const item = stats[statIdx];
                 if (!item) return null;
                 const Icon = item.icon;
-                const isCheckIn = item.label === "Check-in";
+                const isCheckIn = item.label === "Masuk";
                 const isLate = item.label === "Terlambat";
                 const textStyle = isCheckIn ? "text-emerald-600 dark:text-emerald-400" : isLate ? "text-red-600 dark:text-red-400" : "text-[#123c8c] dark:text-blue-450";
 
@@ -372,12 +372,12 @@ export default function AdminDashboardPage() {
 
             <a
               href="/admin/laporan-kehadiran"
-              className="flex flex-col items-center justify-center text-center p-4 bg-white rounded-2xl border border-blue-100/50 hover:-translate-y-0.5 hover:shadow-md hover:border-[#123c8c] transition duration-200"
+              className="flex flex-col items-center justify-center text-center p-4 bg-white dark:bg-[#0d1117] rounded-2xl border border-blue-100/50 dark:border-slate-850 hover:-translate-y-0.5 hover:shadow-md dark:hover:shadow-none hover:border-[#123c8c] transition duration-200"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 mb-2.5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-950/20 text-[#123c8c] dark:text-blue-400 mb-2.5">
                 <FileText size={20} />
               </div>
-              <span className="text-[11px] font-black text-slate-800">Laporan Absensi</span>
+              <span className="text-[11px] font-black text-slate-800 dark:text-slate-200">Laporan Absensi</span>
             </a>
 
             <a
@@ -427,11 +427,11 @@ export default function AdminDashboardPage() {
           <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.22em] text-[#123c8c] dark:text-blue-400">
-                Today Report
+                Laporan Hari Ini
               </p>
 
               <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 dark:text-white">
-                Recent Attendance
+                Kehadiran Terbaru
               </h2>
             </div>
           </div>
@@ -439,9 +439,9 @@ export default function AdminDashboardPage() {
           <div className="mt-6 overflow-hidden rounded-2xl border border-blue-100 dark:border-slate-800">
             <div className="hidden grid-cols-[0.9fr_1.4fr_0.8fr_0.8fr_0.8fr_0.8fr] bg-[#eaf1ff] dark:bg-[#0d1117] px-5 py-3 text-xs font-black uppercase tracking-wide text-[#123c8c] dark:text-blue-400 md:grid">
               <p>ID</p>
-              <p>Employee</p>
-              <p>Check-in</p>
-              <p>Check-out</p>
+              <p>Karyawan</p>
+              <p>Jam Masuk</p>
+              <p>Jam Keluar</p>
               <p>Durasi</p>
               <p>Status</p>
             </div>
