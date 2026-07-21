@@ -6,8 +6,10 @@ export type AppRole = "owner" | "employee";
 
 export type AuthUser = {
   id: string;
+  name: string;
   email: string;
   role: AppRole | string;
+  status: string | null;
 };
 
 export type DbAuthUser = {
@@ -20,7 +22,7 @@ export function getAuthToken(req: NextRequest) {
   return req.cookies.get("faceattend_token")?.value || "";
 }
 
-export async function requireAuth(req: NextRequest): Promise<AuthUser> {
+async function getTokenUser(req: NextRequest) {
   const token = getAuthToken(req);
 
   if (!token) {
@@ -41,27 +43,8 @@ export async function requireAuth(req: NextRequest): Promise<AuthUser> {
   };
 }
 
-export async function requireRole(req: NextRequest, roles: AppRole[]) {
-  const user = await requireAuth(req);
-  const allowedRoles = new Set(roles.map((role) => role.toLowerCase()));
-
-  if (!allowedRoles.has(String(user.role).toLowerCase())) {
-    throw new Error("Akses ditolak.");
-  }
-
-  return user;
-}
-
-export function requireOwner(req: NextRequest) {
-  return requireRole(req, ["owner"]);
-}
-
-export function requireEmployee(req: NextRequest) {
-  return requireRole(req, ["employee"]);
-}
-
-export async function requireDbUser(req: NextRequest, roles?: AppRole[]) {
-  const authUser = await requireAuth(req);
+export async function requireAuth(req: NextRequest): Promise<AuthUser> {
+  const authUser = await getTokenUser(req);
 
   const user = await prisma.user.findUnique({
     where: {
@@ -69,6 +52,8 @@ export async function requireDbUser(req: NextRequest, roles?: AppRole[]) {
     },
     select: {
       id: true,
+      name: true,
+      email: true,
       role: true,
       status: true,
     },
@@ -82,15 +67,43 @@ export async function requireDbUser(req: NextRequest, roles?: AppRole[]) {
     throw new Error("Akun tidak aktif.");
   }
 
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: String(user.role || "").toLowerCase(),
+    status: user.status,
+  };
+}
+
+export async function requireRole(req: NextRequest, roles: AppRole[]) {
+  return requireDbUser(req, roles);
+}
+
+export function requireOwner(req: NextRequest) {
+  return requireRole(req, ["owner"]);
+}
+
+export function requireEmployee(req: NextRequest) {
+  return requireRole(req, ["employee"]);
+}
+
+export async function requireDbUser(req: NextRequest, roles?: AppRole[]) {
+  const authUser = await requireAuth(req);
+
   if (roles?.length) {
     const allowedRoles = new Set(roles.map((role) => role.toLowerCase()));
 
-    if (!allowedRoles.has(String(user.role || "").toLowerCase())) {
+    if (!allowedRoles.has(String(authUser.role || "").toLowerCase())) {
       throw new Error("Akses ditolak.");
     }
   }
 
-  return user;
+  return {
+    id: authUser.id,
+    role: String(authUser.role || "").toLowerCase(),
+    status: authUser.status,
+  };
 }
 
 export function requireOwnerUser(req: NextRequest) {

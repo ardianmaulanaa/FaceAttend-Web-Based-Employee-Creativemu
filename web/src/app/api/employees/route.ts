@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
+import { requireOwner } from "@/lib/api-auth";
 import { getApiErrorMessage, getApiErrorStatus } from "@/lib/api-errors";
 
 export const runtime = "nodejs";
@@ -97,45 +97,8 @@ const employeeSelect = {
   },
 } as const;
 
-async function getCurrentUser(req: NextRequest) {
-  const token = req.cookies.get("faceattend_token")?.value;
-
-  if (!token) {
-    throw new Error("Token login tidak ditemukan.");
-  }
-
-  if (!process.env.JWT_SECRET) {
-    throw new Error("JWT_SECRET belum ada di file .env");
-  }
-
-  const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-  const { payload } = await jwtVerify(token, secret);
-
-  const userId =
-    (payload.id as string | undefined) ||
-    (payload.userId as string | undefined) ||
-    (payload.sub as string | undefined);
-
-  if (!userId) {
-    throw new Error("User ID tidak ditemukan di token.");
-  }
-
-  const user = await prisma.user.findUnique({
-    where: {
-      id: userId,
-    },
-    select: {
-      id: true,
-      role: true,
-      status: true,
-    },
-  });
-
-  if (!user) {
-    throw new Error("User tidak ditemukan.");
-  }
-
-  return user;
+function getCurrentUser(req: NextRequest) {
+  return requireOwner(req);
 }
 
 function canAccess(role: string, roles: AllowedRole[]) {

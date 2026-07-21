@@ -1,9 +1,9 @@
 import { Buffer } from "node:buffer";
 
 import type { UploadApiResponse } from "cloudinary";
-import { jwtVerify } from "jose";
 import { NextRequest, NextResponse } from "next/server";
 
+import { requireAuth } from "@/lib/api-auth";
 import { getCloudinary } from "@/lib/cloudinary";
 import { prisma } from "@/lib/prisma";
 
@@ -35,41 +35,21 @@ class ApiError extends Error {
 }
 
 async function getUserIdFromRequest(req: NextRequest) {
-  const token = req.cookies.get("faceattend_token")?.value;
-
-  if (!token) {
-    throw new ApiError(401, "Sesi login tidak ditemukan.");
-  }
-
-  const jwtSecret = process.env.JWT_SECRET;
-
-  if (!jwtSecret) {
-    throw new ApiError(500, "JWT_SECRET belum dikonfigurasi.");
-  }
-
   try {
-    const secret = new TextEncoder().encode(jwtSecret);
-    const { payload } = await jwtVerify(token, secret);
-
-    const userId =
-      (payload.id as string | undefined) ||
-      (payload.userId as string | undefined) ||
-      (payload.sub as string | undefined);
-
-    if (!userId) {
-      throw new ApiError(401, "User ID tidak ditemukan pada sesi login.");
-    }
-
-    return userId;
+    const { id } = await requireAuth(req);
+    return id;
   } catch (error) {
     if (error instanceof ApiError) {
       throw error;
     }
 
-    throw new ApiError(
-      401,
-      "Sesi login tidak valid atau sudah kedaluwarsa.",
-    );
+    const message = error instanceof Error ? error.message.toLowerCase() : "";
+
+    if (message.includes("aktif") || message.includes("akses")) {
+      throw new ApiError(403, "Akun kamu sedang tidak aktif.");
+    }
+
+    throw new ApiError(401, "Sesi login tidak valid atau sudah kedaluwarsa.");
   }
 }
 

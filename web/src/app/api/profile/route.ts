@@ -316,26 +316,17 @@ async function handleUpdateProfile(userId: string, body: JsonBody) {
     );
   }
 
-  if (email) {
-    const duplicateEmail = await prisma.$queryRawUnsafe<Array<{ id: string }>>(
-      "SELECT id FROM users WHERE email = ? AND id <> ? LIMIT 1",
-      email,
-      userId
+  if (email !== undefined) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Email terdaftar hanya dapat diubah oleh admin.",
+      },
+      { status: 403 }
     );
-
-    if (duplicateEmail.length > 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Email sudah digunakan oleh akun lain.",
-        },
-        { status: 400 }
-      );
-    }
   }
 
   addUpdate("name", name);
-  addUpdate("email", email);
 
   addUpdate("phone", phone);
   addUpdate("phone_number", phone);

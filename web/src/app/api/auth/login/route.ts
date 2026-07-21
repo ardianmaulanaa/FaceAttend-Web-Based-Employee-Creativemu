@@ -36,6 +36,10 @@ function getRateLimitKey(req: Request, email: string) {
   return `${getClientIp(req)}:${email}`;
 }
 
+function getRateLimitKeys(req: Request, email: string) {
+  return [getRateLimitKey(req, email), `email:${email}`];
+}
+
 function getRetryAfterSeconds(resetAt: number) {
   return Math.max(1, Math.ceil((resetAt - Date.now()) / 1000));
 }
@@ -77,6 +81,17 @@ async function isRateLimited(key: string) {
   return getRetryAfterSeconds(toTime(attempt.reset_at));
 }
 
+async function getRateLimitedRetryAfter(keys: string[]) {
+  const retryAfterValues = await Promise.all(keys.map(isRateLimited));
+  const activeRetryAfterValues = retryAfterValues.filter(
+    (value): value is number => value !== null,
+  );
+
+  if (activeRetryAfterValues.length === 0) return null;
+
+  return Math.max(...activeRetryAfterValues);
+}
+
 async function recordFailedLogin(key: string) {
   const resetAt = new Date(Date.now() + LOGIN_RATE_LIMIT_WINDOW_MS);
 
@@ -103,6 +118,14 @@ async function clearFailedLogin(key: string) {
   `;
 }
 
+async function recordFailedLogins(keys: string[]) {
+  await Promise.all(keys.map(recordFailedLogin));
+}
+
+async function clearFailedLogins(keys: string[]) {
+  await Promise.all(keys.map(clearFailedLogin));
+}
+
 function rateLimitResponse(retryAfterSeconds: number) {
   return NextResponse.json(
     {
@@ -125,7 +148,7 @@ export async function POST(req: Request) {
 
     const normalizedEmail = String(email || "").trim().toLowerCase();
     const normalizedPassword = String(password || "");
-    const rateLimitKey = getRateLimitKey(req, normalizedEmail || "unknown");
+    const rateLimitKeys = getRateLimitKeys(req, normalizedEmail || "unknown");
 
     if (!normalizedEmail || !normalizedPassword) {
       return NextResponse.json(
@@ -144,7 +167,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const retryAfterSeconds = await isRateLimited(rateLimitKey);
+    const retryAfterSeconds = await getRateLimitedRetryAfter(rateLimitKeys);
 
     if (retryAfterSeconds) {
       return rateLimitResponse(retryAfterSeconds);
@@ -157,7 +180,7 @@ export async function POST(req: Request) {
     });
 
     if (!user) {
-      await recordFailedLogin(rateLimitKey);
+      await recordFailedLogins(rateLimitKeys);
 
       return NextResponse.json(
         { success: false, message: "Email atau password salah" },
@@ -178,7 +201,7 @@ export async function POST(req: Request) {
     );
 
     if (!isValidPassword) {
-      await recordFailedLogin(rateLimitKey);
+      await recordFailedLogins(rateLimitKeys);
 
       return NextResponse.json(
         { success: false, message: "Email atau password salah" },
@@ -186,7 +209,7 @@ export async function POST(req: Request) {
       );
     }
 
-    await clearFailedLogin(rateLimitKey);
+    await clearFailedLogins(rateLimitKeys);
 
     const token = await createToken({
       id: user.id,

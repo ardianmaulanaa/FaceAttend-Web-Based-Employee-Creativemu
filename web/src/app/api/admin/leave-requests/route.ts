@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { jwtVerify } from "jose";
 import { prisma } from "@/lib/prisma";
+import { requireOwner } from "@/lib/api-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -38,51 +38,12 @@ function jsonError(message: string, status = 400) {
   );
 }
 
-async function getCurrentUser(req: NextRequest) {
-  const token = req.cookies.get("faceattend_token")?.value;
-
-  if (!token) {
-    throw new Error("Token login tidak ditemukan. Silakan login ulang.");
-  }
-
-  if (!process.env.JWT_SECRET) {
-    throw new Error("JWT_SECRET belum ada di file .env.");
-  }
-
-  const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-  const { payload } = await jwtVerify(token, secret);
-
-  const userId =
-    (payload.id as string | undefined) ||
-    (payload.userId as string | undefined) ||
-    (payload.sub as string | undefined);
-
-  if (!userId) {
-    throw new Error("User ID tidak ditemukan di token.");
-  }
-
-  const user = await prisma.user.findUnique({
-    where: {
-      id: userId,
-    },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      status: true,
-    },
-  });
-
-  if (!user) {
-    throw new Error("User tidak ditemukan.");
-  }
-
-  return user;
+function getCurrentUser(req: NextRequest) {
+  return requireOwner(req);
 }
 
 function canManageLeave(role: string) {
-  return ["owner"].includes(role.toLowerCase());
+  return role.toLowerCase() === "owner";
 }
 
 function toIsoDate(value: Date | string | null | undefined) {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { jwtVerify } from "jose";
-import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/api-auth";
 import { getApiErrorMessage, getApiErrorStatus } from "@/lib/api-errors";
+import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
@@ -89,32 +89,6 @@ function calculateEarlyLeaveMinutes(
   return early > 0 ? early : 0;
 }
 
-async function getUserIdFromRequest(req: NextRequest) {
-  const token = req.cookies.get("faceattend_token")?.value;
-
-  if (!token) {
-    throw new Error("Token login tidak ditemukan.");
-  }
-
-  if (!process.env.JWT_SECRET) {
-    throw new Error("JWT_SECRET belum ada di file .env");
-  }
-
-  const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-  const { payload } = await jwtVerify(token, secret);
-
-  const userId =
-    (payload.id as string | undefined) ||
-    (payload.userId as string | undefined) ||
-    (payload.sub as string | undefined);
-
-  if (!userId) {
-    throw new Error("User ID tidak ditemukan di token.");
-  }
-
-  return userId;
-}
-
 function formatTime(date?: Date | null) {
   if (!date) return "--:--";
 
@@ -169,7 +143,7 @@ export async function GET(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const userId = await getUserIdFromRequest(req);
+    const { id: userId } = await requireAuth(req);
     const { id } = await context.params;
 
     const attendance = await prisma.attendance.findFirst({

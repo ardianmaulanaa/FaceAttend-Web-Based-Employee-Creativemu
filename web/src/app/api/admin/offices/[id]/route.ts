@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { jwtVerify } from "jose";
+import { requireOwner } from "@/lib/api-auth";
+import { getApiErrorMessage, getApiErrorStatus } from "@/lib/api-errors";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -19,38 +20,6 @@ type RouteContext = {
     id: string;
   }>;
 };
-
-async function getAdminFromRequest(req: NextRequest) {
-  const token = req.cookies.get("faceattend_token")?.value;
-
-  if (!token) {
-    throw new Error("Token login tidak ditemukan.");
-  }
-
-  if (!process.env.JWT_SECRET) {
-    throw new Error("JWT_SECRET belum ada di file .env");
-  }
-
-  const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-  const { payload } = await jwtVerify(token, secret);
-
-  const userId =
-    (payload.id as string | undefined) ||
-    (payload.userId as string | undefined) ||
-    (payload.sub as string | undefined);
-
-  const role = String(payload.role || "");
-
-  if (!userId) {
-    throw new Error("User ID tidak ditemukan di token.");
-  }
-
-  if (role !== "owner") {
-    throw new Error("Akses hanya untuk owner.");
-  }
-
-  return userId;
-}
 
 function toNumber(value: unknown) {
   if (value === null || value === undefined || value === "") return null;
@@ -110,7 +79,7 @@ function validateOfficeBody(body: OfficeBody) {
 
 export async function GET(req: NextRequest, context: RouteContext) {
   try {
-    await getAdminFromRequest(req);
+    await requireOwner(req);
 
     const { id } = await context.params;
 
@@ -149,17 +118,16 @@ export async function GET(req: NextRequest, context: RouteContext) {
     return NextResponse.json(
       {
         success: false,
-        message:
-          error instanceof Error ? error.message : "Gagal mengambil data kantor.",
+        message: getApiErrorMessage(error, "Gagal mengambil data kantor."),
       },
-      { status: 500 }
+      { status: getApiErrorStatus(error) }
     );
   }
 }
 
 export async function PATCH(req: NextRequest, context: RouteContext) {
   try {
-    await getAdminFromRequest(req);
+    await requireOwner(req);
 
     const { id } = await context.params;
     const body = (await req.json()) as OfficeBody;
@@ -202,17 +170,16 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     return NextResponse.json(
       {
         success: false,
-        message:
-          error instanceof Error ? error.message : "Gagal memperbarui kantor.",
+        message: getApiErrorMessage(error, "Gagal memperbarui kantor."),
       },
-      { status: 500 }
+      { status: getApiErrorStatus(error) }
     );
   }
 }
 
 export async function DELETE(req: NextRequest, context: RouteContext) {
   try {
-    await getAdminFromRequest(req);
+    await requireOwner(req);
 
     const { id } = await context.params;
 
@@ -245,10 +212,9 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
     return NextResponse.json(
       {
         success: false,
-        message:
-          error instanceof Error ? error.message : "Gagal menghapus kantor.",
+        message: getApiErrorMessage(error, "Gagal menghapus kantor."),
       },
-      { status: 500 }
+      { status: getApiErrorStatus(error) }
     );
   }
 }
