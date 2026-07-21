@@ -380,7 +380,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "Absensi hanya dapat dilakukan melalui browser HP. Laptop atau desktop tidak diizinkan.",
+            "Presensi hanya dapat dilakukan melalui browser HP. Laptop atau desktop tidak diizinkan.",
         },
         { status: 403 },
       );

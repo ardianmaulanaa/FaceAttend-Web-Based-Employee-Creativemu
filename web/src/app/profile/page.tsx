@@ -49,7 +49,7 @@ type ProfileUser = {
   phone: string | null;
   status: string;
   profile_photo: string | null;
-  unit?: {
+  jabatan?: {
     id: string;
     name: string;
   } | null;
@@ -133,14 +133,14 @@ function getInitials(name: string) {
 
 function formatRole(role: string) {
   const roleMap: Record<string, string> = {
-    owner: "Owner",
+    owner: "Pemilik",
     admin: "Admin",
     cs: "CS",
-    employee: "Employee",
-    OWNER: "Owner",
+    employee: "Karyawan",
+    OWNER: "Pemilik",
     ADMIN: "Admin",
     CS: "CS",
-    EMPLOYEE: "Employee",
+    EMPLOYEE: "Karyawan",
   };
 
   return roleMap[role] || role;
@@ -945,9 +945,9 @@ export default function ProfilePage() {
     if (!user) return "";
 
     return [
-      cleanValue(user.position?.name),
-      cleanValue(user.unit?.name),
       cleanValue(user.department?.name),
+      cleanValue(user.jabatan?.name),
+      cleanValue(user.position?.name),
     ]
       .filter(Boolean)
       .join(" • ");
@@ -989,9 +989,9 @@ export default function ProfilePage() {
         icon: ShieldCheck,
       },
       {
-        label: "Unit Kerja",
-        value: user.unit?.name || "-",
-        icon: Building2,
+        label: "Kantor Terdaftar",
+        value: user.registered_office?.name || "-",
+        icon: MapPin,
       },
       {
         label: "Divisi",
@@ -1000,6 +1000,11 @@ export default function ProfilePage() {
       },
       {
         label: "Jabatan",
+        value: user.jabatan?.name || "-",
+        icon: Building2,
+      },
+      {
+        label: "Posisi",
         value: user.position?.name || "-",
         icon: BriefcaseBusiness,
       },
@@ -1012,11 +1017,6 @@ export default function ProfilePage() {
         label: "Jam Kerja",
         value: workSchedule || "-",
         icon: Clock3,
-      },
-      {
-        label: "Kantor Terdaftar",
-        value: user.registered_office?.name || "-",
-        icon: MapPin,
       },
       {
         label: "Alamat Kantor",
@@ -1038,7 +1038,7 @@ export default function ProfilePage() {
       <div className="hidden md:block">
         <AppHeader
           title={
-            activeView === "personal-detail" ? "Detail Personal" : "Profile"
+            activeView === "personal-detail" ? "Detail Personal" : "Profil"
           }
           subtitle={
             activeView === "personal-detail"
@@ -1150,7 +1150,7 @@ export default function ProfilePage() {
 
                 <div className="min-w-0">
                   <p className="text-xs font-black uppercase tracking-[0.28em] text-[#123c8c]">
-                    Profile
+                    Profil
                   </p>
 
                   <h1 className="mt-1 text-3xl font-black tracking-tight text-[#123456] md:text-4xl">
@@ -1375,7 +1375,7 @@ export default function ProfilePage() {
                   className="profile-row-enter rounded-2xl border border-blue-100 bg-[#f8fbff] p-4 text-xs font-semibold leading-6 text-slate-500"
                   style={{ animationDelay: "80ms" }}
                 >
-                  Email, status, role, unit, divisi, jabatan, shift, dan kantor
+                  Email, status, role, kantor, divisi, jabatan, posisi, dan shift
                   terdaftar hanya dapat diubah oleh admin.
                 </div>
 

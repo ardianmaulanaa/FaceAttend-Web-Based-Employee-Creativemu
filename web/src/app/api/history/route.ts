@@ -246,7 +246,7 @@ export async function GET(req: NextRequest) {
     console.error("GET_HISTORY_ERROR:", error);
 
     return NextResponse.json(
-      { error: getApiErrorMessage(error, "Gagal mengambil riwayat absensi.") },
+      { error: getApiErrorMessage(error, "Gagal mengambil riwayat presensi.") },
       { status: getApiErrorStatus(error) }
     );
   }

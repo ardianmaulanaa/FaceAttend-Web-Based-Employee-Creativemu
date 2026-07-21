@@ -301,7 +301,7 @@ function OfficeCard({
             type="button"
             onClick={() => onEdit(office)}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-[#123c8c] transition hover:bg-[#eaf1ff] active:scale-95"
-            aria-label="Edit kantor"
+            aria-label="Ubah kantor"
           >
             <Edit3 size={18} strokeWidth={2.6} />
           </button>
@@ -724,7 +724,7 @@ export default function AdminOfficePage() {
                 <div className="flex min-w-0 flex-col gap-5 md:flex-row md:items-center md:justify-between">
                   <div className="min-w-0 flex-1">
                     <p className="break-words text-xs font-black uppercase tracking-[0.24em] text-blue-100">
-                      Office Location
+                      Lokasi Kantor
                     </p>
 
                     <h1 className="mt-2 break-words text-3xl font-black tracking-tight md:text-4xl">
@@ -733,7 +733,7 @@ export default function AdminOfficePage() {
 
                     <p className="mt-3 max-w-2xl break-words text-sm font-semibold leading-7 text-blue-100">
                       Titik lokasi kantor digunakan untuk menentukan apakah
-                      karyawan berada di dalam radius saat absensi.
+                      karyawan berada di dalam radius saat presensi.
                     </p>
                   </div>
                 </div>
@@ -792,7 +792,7 @@ export default function AdminOfficePage() {
                   <AppEmptyState
                     icon={<Building2 size={30} strokeWidth={2.6} />}
                     title="Belum ada data kantor"
-                    description="Tambahkan kantor pertama agar validasi GPS absensi bisa berjalan."
+                    description="Tambahkan kantor pertama agar validasi GPS presensi bisa berjalan."
                   />
                 </div>
               ) : (

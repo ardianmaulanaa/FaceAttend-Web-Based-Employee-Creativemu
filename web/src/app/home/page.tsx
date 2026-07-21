@@ -38,7 +38,7 @@ type CurrentUser = {
   profile_photo?: string | null;
   position?: UserRelation;
   department?: UserRelation;
-  unit?: UserRelation;
+  jabatan?: UserRelation;
   shift?: UserRelation;
 };
 
@@ -60,15 +60,15 @@ const defaultUser: CurrentUser = {
   profile_photo: null,
   position: null,
   department: null,
-  unit: null,
+  jabatan: null,
   shift: null,
 };
 
 const defaultAttendance: AttendanceToday = {
   checkIn: "--:--",
   checkOut: "--:--",
-  status: "Pending",
-  description: "Menunggu absensi",
+  status: "Menunggu",
+  description: "Menunggu presensi",
   schedule: "",
 };
 
@@ -76,25 +76,25 @@ const quickMenus = [
   {
     href: "/history",
     label: "Laporan\nPresensi",
-    description: "Lihat riwayat absensi dan detail kehadiran.",
+    description: "Riwayat kehadiran",
     icon: History,
   },
   {
     href: "/attendance",
     label: "Presensi",
-    description: "Lakukan check-in atau check-out dengan verifikasi wajah.",
+    description: "Check-in/out",
     icon: ScanFace,
   },
   {
     href: "/profile",
     label: "Profil",
-    description: "Lihat data akun, unit, divisi, jabatan, dan shift.",
+    description: "Data akun",
     icon: UserRound,
   },
   {
     href: "/cuti",
     label: "Izin/Cuti",
-    description: "Ajukan cuti, izin, sakit, atau keperluan lainnya.",
+    description: "Ajukan izin",
     icon: FileText,
   },
 ];
@@ -279,7 +279,7 @@ function ProfileAvatar({
     return (
       <img
         src={user.profile_photo}
-        alt={user.name || "Profile"}
+        alt={user.name || "Profil"}
         className={`home-icon-pop ${sizeClass} shrink-0 rounded-full object-cover ${
           size === "desktop" ? "ring-4 ring-white/70" : "ring-4 ring-white"
         }`}
@@ -553,15 +553,15 @@ export default function HomePage() {
         profile_photo: profile.profile_photo || null,
         position: profile.position || null,
         department: profile.department || null,
-        unit: profile.unit || null,
+        jabatan: profile.jabatan || null,
         shift: profile.shift || null,
       });
 
       setAttendanceToday({
         checkIn: normalizeTime(today.checkIn || "--:--"),
         checkOut: normalizeTime(today.checkOut || "--:--"),
-        status: today.status || "Pending",
-        description: today.description || "Menunggu absensi",
+        status: today.status || "Menunggu",
+        description: today.description || "Menunggu presensi",
         schedule:
           today.schedule || today.workSchedule || today.shiftSchedule || "",
       });
@@ -620,8 +620,7 @@ export default function HomePage() {
       <div className="min-h-dvh bg-white">
         <div className="hidden md:block">
           <AppHeader
-            title="Home"
-            subtitle="Dashboard Absensi"
+            title="Beranda"
             rightLabel={mainRoleLabel || undefined}
             variant="employee"
           />
@@ -735,22 +734,12 @@ export default function HomePage() {
                       {firstName ? `Halo, ${firstName}` : "Memuat profil..."}
                     </h1>
 
-                    <p
-                      className="home-text-reveal mt-3 max-w-2xl text-sm font-semibold leading-7 text-blue-100"
-                      style={{
-                        animationDelay: "80ms",
-                      }}
-                    >
-                      Kelola kehadiran, riwayat presensi, profil, dan pengajuan
-                      izin dalam satu dashboard karyawan.
-                    </p>
-
                     <RoleBadges
                       items={[
-                        user.shift?.name,
-                        employeeTitle,
-                        user.unit?.name,
                         user.department?.name,
+                        user.jabatan?.name,
+                        employeeTitle,
+                        user.shift?.name,
                       ]}
                     />
                   </div>
@@ -833,10 +822,6 @@ export default function HomePage() {
                 <h2 className="text-2xl font-black text-slate-950 md:text-2xl">
                   Pengumuman
                 </h2>
-
-                <p className="mt-1 hidden text-sm font-semibold text-slate-500 md:block">
-                  Informasi terbaru dari perusahaan.
-                </p>
               </div>
 
               <Link

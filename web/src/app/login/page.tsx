@@ -481,7 +481,7 @@ export default function LoginPage() {
     if (!isCreativemuEmail(normalizedEmail)) {
       showAlert(
         "Email tidak valid",
-        "Login hanya dapat menggunakan email resmi Creativemu.",
+        "Masuk hanya dapat menggunakan email resmi Creativemu.",
       );
       return;
     }
@@ -518,7 +518,7 @@ export default function LoginPage() {
           return;
         }
 
-        showAlert("Login gagal", result.message || "Login gagal.");
+        showAlert("Masuk gagal", result.message || "Masuk gagal.");
         return;
       }
 
@@ -594,7 +594,7 @@ export default function LoginPage() {
               className="intro-text-in mt-3 text-xs font-black uppercase tracking-[0.28em] text-[#ff8a00] md:text-sm"
               style={{ animationDelay: "160ms" }}
             >
-              Face Attend System
+              Sistem Presensi Wajah
             </p>
           </div>
 
@@ -618,7 +618,7 @@ export default function LoginPage() {
           <div className="login-enter relative flex flex-col px-6 py-7 md:px-12 lg:justify-between lg:px-20 lg:py-14">
             <Image
               src="/images/creativemu-logo/creativemu.png"
-              alt="Creativemu Background Logo"
+              alt="Logo Latar Creativemu"
               width={620}
               height={620}
               className="pointer-events-none absolute -left-20 top-1/2 hidden -translate-y-1/2 opacity-[0.045] lg:block"
@@ -627,7 +627,7 @@ export default function LoginPage() {
 
             <Image
               src="/images/creativemu-logo/creativemu.png"
-              alt="Creativemu Background Logo"
+              alt="Logo Latar Creativemu"
               width={300}
               height={300}
               className="pointer-events-none absolute -right-20 top-24 opacity-[0.04] lg:hidden"
@@ -661,7 +661,7 @@ export default function LoginPage() {
                     animationDelay: "120ms",
                   }}
                 >
-                  Welcome Back
+                  Selamat Datang Kembali
                 </p>
 
                 <h2
@@ -671,7 +671,7 @@ export default function LoginPage() {
                   }}
                 >
                   <span className="typewriter-title login-presence-title">
-                    Creativemu Presence
+                    Presensi Creativemu
                   </span>
                 </h2>
 
@@ -704,7 +704,7 @@ export default function LoginPage() {
               <form suppressHydrationWarning noValidate onSubmit={handleSubmit}>
                 <div className="login-field-enter mb-7 md:mb-8">
                   <h3 className="mt-2 text-3xl font-black tracking-tight text-slate-950">
-                    Sign In
+                    Masuk
                   </h3>
                 </div>
 
@@ -737,7 +737,7 @@ export default function LoginPage() {
                   >
                     <AppInput
                       suppressHydrationWarning
-                      label="Password"
+                      label="Kata Sandi"
                       type="password"
                       value={password}
                       onChange={(event) => setPassword(event.target.value)}

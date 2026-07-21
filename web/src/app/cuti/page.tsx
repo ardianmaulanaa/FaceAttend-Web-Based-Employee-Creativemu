@@ -79,7 +79,7 @@ async function readJsonResponse(response: Response): Promise<LeaveResponse> {
     return {
       success: false,
       message:
-        "Response API kosong. Restart server dan pastikan route /api/leave-requests mengembalikan NextResponse.json.",
+        "Response API kosong. Restart server dan pastikan route /api/leave-requests mengembalikan BerikutnyaResponse.json.",
       error:
         "Response API kosong. Restart server dan pastikan route /api/leave-requests mengembalikan NextResponse.json.",
       requests: [],
@@ -95,7 +95,7 @@ async function readJsonResponse(response: Response): Promise<LeaveResponse> {
     return {
       success: false,
       message:
-        "API mengembalikan HTML/error page. Cek terminal Next.js untuk detail error.",
+        "API mengembalikan HTML/error page. Cek terminal Berikutnya.js untuk detail error.",
       error:
         "API mengembalikan HTML/error page. Cek terminal Next.js untuk detail error.",
       requests: [],
@@ -317,11 +317,7 @@ export default function LeaveRequestPage() {
 
   return (
     <MobileShell variant="employee">
-      <AppHeader
-        title="Pengajuan Cuti"
-        subtitle="Ajukan cuti, izin, atau sakit kepada admin"
-        rightLabel="Cuti"
-      />
+      <AppHeader title="Pengajuan Cuti" rightLabel="Cuti" />
 
       <section className="mx-auto grid max-w-7xl items-start gap-6 px-5 py-6 pb-28 md:px-10 lg:grid-cols-[0.85fr_1.15fr] lg:px-16">
         <form
@@ -496,11 +492,6 @@ export default function LeaveRequestPage() {
                 <h2 className="mt-1 text-2xl font-black">Pengajuan Saya</h2>
               </div>
             </div>
-
-            <p className="mt-4 text-sm font-semibold leading-6 text-blue-100">
-              Status pengajuan akan berubah setelah admin melakukan persetujuan
-              atau penolakan.
-            </p>
           </div>
 
           <div className="grid gap-3 md:grid-cols-3">
@@ -515,7 +506,7 @@ export default function LeaveRequestPage() {
 
             <div className="rounded-2xl border border-amber-100 bg-white p-4 shadow-sm">
               <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">
-                Pending
+                Menunggu
               </p>
               <p className="mt-1 text-2xl font-black text-amber-700">
                 {stats.pending}

@@ -36,7 +36,7 @@ export async function GET(
 
     if (!attendance) {
       return NextResponse.json(
-        { message: "Data absensi tidak ditemukan." },
+        { message: "Data presensi tidak ditemukan." },
         { status: 404 },
       );
     }
@@ -59,7 +59,7 @@ export async function GET(
 
     if (!photo) {
       return NextResponse.json(
-        { message: "Foto absensi tidak tersedia." },
+        { message: "Foto presensi tidak tersedia." },
         { status: 404 },
       );
     }
@@ -75,7 +75,7 @@ export async function GET(
 
     return NextResponse.json(
       {
-        message: getApiErrorMessage(error, "Gagal mengambil foto absensi."),
+        message: getApiErrorMessage(error, "Gagal mengambil foto presensi."),
       },
       { status: getApiErrorStatus(error) },
     );

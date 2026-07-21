@@ -391,7 +391,7 @@ export async function GET(
       return NextResponse.json(
         {
           success: false,
-          message: "ID absensi wajib dikirim.",
+          message: "ID presensi wajib dikirim.",
           report: null,
         },
         { status: 400 },
@@ -526,7 +526,7 @@ export async function GET(
       return NextResponse.json(
         {
           success: false,
-          message: "Data absensi tidak ditemukan.",
+          message: "Data presensi tidak ditemukan.",
           report: null,
         },
         { status: 404 },

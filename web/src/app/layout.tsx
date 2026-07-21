@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "FaceAttend",
-  description: "Employee Attendance System for Creativemu",
+  description: "Sistem Presensi Karyawan Creativemu",
   other: {
     google: "notranslate",
   },

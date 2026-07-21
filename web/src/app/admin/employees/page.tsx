@@ -55,7 +55,7 @@ type DepartmentRelation = {
   office?: OfficeMiniRelation;
 } | null;
 
-type UnitRelation = {
+type JabatanRelation = {
   id: string;
   name: string;
   department_id?: string | null;
@@ -65,8 +65,8 @@ type UnitRelation = {
 type PositionRelation = {
   id: string;
   name: string;
-  unit_id?: string | null;
-  unit?: UnitRelation;
+  jabatan_id?: string | null;
+  jabatan?: JabatanRelation;
 } | null;
 
 type DepartmentOption = {
@@ -82,7 +82,7 @@ type DepartmentOption = {
   } | null;
 };
 
-type UnitOption = {
+type JabatanOption = {
   id: string;
   name: string;
   department_id: string | null;
@@ -103,9 +103,9 @@ type UnitOption = {
 type PositionOption = {
   id: string;
   name: string;
-  unit_id: string | null;
+  jabatan_id: string | null;
   status: string;
-  unit?: {
+  jabatan?: {
     id: string;
     name: string;
     department_id?: string | null;
@@ -162,7 +162,7 @@ type Employee = {
   name: string;
   email: string;
   role: string;
-  unit: UnitRelation;
+  jabatan: JabatanRelation;
   department: DepartmentRelation;
   position: PositionRelation;
   shift: ShiftRelation;
@@ -181,7 +181,7 @@ type EmployeeForm = {
   name: string;
   email: string;
   department_id: string;
-  unit_id: string;
+  jabatan_id: string;
   position_id: string;
   shift_id: string;
   registered_office_id: string;
@@ -200,7 +200,7 @@ const initialForm: EmployeeForm = {
   name: "",
   email: "",
   department_id: "",
-  unit_id: "",
+  jabatan_id: "",
   position_id: "",
   shift_id: "",
   registered_office_id: "",
@@ -224,7 +224,7 @@ function getShortEmployeeId(id: string) {
 }
 
 function formatStatus(status: "active" | "inactive") {
-  return status === "active" ? "Active" : "Inactive";
+  return status === "active" ? "Aktif" : "Nonaktif";
 }
 
 function isValidEmail(email: string) {
@@ -294,7 +294,7 @@ function EmployeeAvatar({ employee }: { employee: Employee }) {
 
 function getRelationName(
   item:
-    | UnitRelation
+    | JabatanRelation
     | DepartmentRelation
     | PositionRelation
     | ShiftRelation
@@ -309,26 +309,26 @@ function getDepartmentOfficeId(
   return department?.office_id || department?.office?.id || "";
 }
 
-function getUnitDepartmentId(unit?: UnitOption | UnitRelation) {
-  return unit?.department_id || unit?.department?.id || "";
+function getJabatanDepartmentId(jabatan?: JabatanOption | JabatanRelation) {
+  return jabatan?.department_id || jabatan?.department?.id || "";
 }
 
-function getUnitOfficeId(unit?: UnitOption | UnitRelation) {
-  return unit?.department?.office_id || unit?.department?.office?.id || "";
+function getJabatanOfficeId(jabatan?: JabatanOption | JabatanRelation) {
+  return jabatan?.department?.office_id || jabatan?.department?.office?.id || "";
 }
 
-function getPositionUnitId(position?: PositionOption | PositionRelation) {
-  return position?.unit_id || position?.unit?.id || "";
+function getPositionJabatanId(position?: PositionOption | PositionRelation) {
+  return position?.jabatan_id || position?.jabatan?.id || "";
 }
 
 function getPositionDepartmentId(position?: PositionOption | PositionRelation) {
-  return position?.unit?.department_id || position?.unit?.department?.id || "";
+  return position?.jabatan?.department_id || position?.jabatan?.department?.id || "";
 }
 
 function getPositionOfficeId(position?: PositionOption | PositionRelation) {
   return (
-    position?.unit?.department?.office_id ||
-    position?.unit?.department?.office?.id ||
+    position?.jabatan?.department?.office_id ||
+    position?.jabatan?.department?.office?.id ||
     ""
   );
 }
@@ -464,7 +464,7 @@ export default function AdminEmployeesPage() {
 
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<DepartmentOption[]>([]);
-  const [units, setUnits] = useState<UnitOption[]>([]);
+  const [jabatans, setJabatans] = useState<JabatanOption[]>([]);
   const [positions, setPositions] = useState<PositionOption[]>([]);
   const [shifts, setShifts] = useState<ShiftOption[]>([]);
   const [offices, setOffices] = useState<OfficeOption[]>([]);
@@ -536,7 +536,7 @@ export default function AdminEmployeesPage() {
 
       setEmployees(result.employees || result.data || []);
       setDepartments(result.departments || []);
-      setUnits(result.units || []);
+      setJabatans(result.jabatans || []);
       setPositions(result.positions || []);
       setShifts(result.shifts || []);
       setOffices(result.offices || result.officeLocations || []);
@@ -581,27 +581,27 @@ export default function AdminEmployeesPage() {
     });
   }, [departments, form.registered_office_id]);
 
-  const filteredUnits = useMemo(() => {
+  const filteredJabatans = useMemo(() => {
     if (!form.department_id) return [];
 
-    return units.filter((unit) => {
+    return jabatans.filter((jabatan) => {
       return (
-        unit.status === "active" &&
-        getUnitDepartmentId(unit) === form.department_id
+        jabatan.status === "active" &&
+        getJabatanDepartmentId(jabatan) === form.department_id
       );
     });
-  }, [units, form.department_id]);
+  }, [jabatans, form.department_id]);
 
   const filteredPositions = useMemo(() => {
-    if (!form.unit_id) return [];
+    if (!form.jabatan_id) return [];
 
     return positions.filter((position) => {
       return (
         position.status === "active" &&
-        getPositionUnitId(position) === form.unit_id
+        getPositionJabatanId(position) === form.jabatan_id
       );
     });
-  }, [positions, form.unit_id]);
+  }, [positions, form.jabatan_id]);
 
   const activeShifts = useMemo(() => {
     return shifts.filter((shift) => shift.status === "active");
@@ -616,7 +616,7 @@ export default function AdminEmployeesPage() {
         ${employee.registered_office?.name || ""}
         ${employee.registered_office?.address || ""}
         ${employee.department?.name || ""}
-        ${employee.unit?.name || ""}
+        ${employee.jabatan?.name || ""}
         ${employee.position?.name || ""}
         ${employee.shift?.name || ""}
         ${employee.status}
@@ -646,20 +646,20 @@ export default function AdminEmployeesPage() {
       employee.department?.office_id ||
       employee.department?.office?.id ||
       getPositionOfficeId(employee.position) ||
-      getUnitOfficeId(employee.unit) ||
+      getJabatanOfficeId(employee.jabatan) ||
       "";
 
     const departmentId =
       employee.department?.id ||
-      employee.unit?.department_id ||
-      employee.unit?.department?.id ||
+      employee.jabatan?.department_id ||
+      employee.jabatan?.department?.id ||
       getPositionDepartmentId(employee.position) ||
       "";
 
-    const unitId =
-      employee.unit?.id ||
-      employee.position?.unit_id ||
-      employee.position?.unit?.id ||
+    const jabatanId =
+      employee.jabatan?.id ||
+      employee.position?.jabatan_id ||
+      employee.position?.jabatan?.id ||
       "";
 
     const positionId = employee.position?.id || "";
@@ -670,7 +670,7 @@ export default function AdminEmployeesPage() {
       email: employee.email,
       registered_office_id: officeId,
       department_id: departmentId,
-      unit_id: unitId,
+      jabatan_id: jabatanId,
       position_id: positionId,
       shift_id: employee.shift?.id || "",
       temporaryPassword: "",
@@ -699,13 +699,13 @@ export default function AdminEmployeesPage() {
       !email ||
       !form.registered_office_id ||
       !form.department_id ||
-      !form.unit_id ||
+      !form.jabatan_id ||
       !form.position_id ||
       !form.shift_id
     ) {
       showEmployeeAlert(
         "Data belum lengkap",
-        "Nama, email, kantor, divisi, unit, jabatan, dan shift wajib diisi.",
+        "Nama, email, kantor, divisi, jabatan, posisi, dan shift wajib diisi.",
         "warning",
       );
       return;
@@ -773,7 +773,7 @@ export default function AdminEmployeesPage() {
             : temporaryPassword,
           registered_office_id: form.registered_office_id,
           department_id: form.department_id,
-          unit_id: form.unit_id,
+          jabatan_id: form.jabatan_id,
           position_id: form.position_id,
           shift_id: form.shift_id,
           status: form.status,
@@ -798,7 +798,7 @@ export default function AdminEmployeesPage() {
       await loadEmployees();
 
       showEmployeeAlert(
-        isEditing ? "Employee diperbarui" : "Employee berhasil dibuat",
+        isEditing ? "Karyawan diperbarui" : "Karyawan berhasil dibuat",
         isEditing
           ? "Data employee berhasil diperbarui dan sudah tersimpan di database."
           : "Akun employee baru berhasil dibuat dan siap digunakan untuk login.",
@@ -845,7 +845,7 @@ export default function AdminEmployeesPage() {
       await loadEmployees();
 
       showEmployeeAlert(
-        "Employee berhasil dihapus",
+        "Karyawan berhasil dihapus",
         "Data employee berhasil dihapus dari database.",
         "success",
       );
@@ -869,7 +869,7 @@ export default function AdminEmployeesPage() {
     <MobileShell variant="admin">
       <EmployeeMotionStyles />
 
-      <AppHeader title="Employees" variant="admin" />
+      <AppHeader title="Karyawan" variant="admin" />
 
       <main className="mx-auto max-w-7xl px-5 py-6 pb-28 md:px-10 lg:px-16">
         <section className="employee-enter relative overflow-hidden rounded-[2.2rem] bg-[#123c8c] p-6 text-white shadow-2xl shadow-blue-900/25 md:p-8">
@@ -880,7 +880,7 @@ export default function AdminEmployeesPage() {
             <div>
               <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-blue-100">
                 <ShieldCheck size={15} />
-                Employee Management
+                Manajemen Karyawan
               </div>
 
               <h2 className="mt-5 text-3xl font-black tracking-tight md:text-4xl">
@@ -890,7 +890,7 @@ export default function AdminEmployeesPage() {
 
             <AppAnimatedActionButton
               icon={<Plus size={27} strokeWidth={3} />}
-              title="Register Employee"
+              title="Daftar Karyawan"
               loadingTitle="Opening..."
               onClick={openRegisterModal}
             />
@@ -905,7 +905,7 @@ export default function AdminEmployeesPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-bold text-slate-500">
-                  Total Employee
+                  Total Karyawan
                 </p>
                 <h3 className="mt-2 text-3xl font-black text-slate-950">
                   {employees.length}
@@ -925,7 +925,7 @@ export default function AdminEmployeesPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-bold text-slate-500">
-                  Active Account
+                  Akun Aktif
                 </p>
                 <h3 className="mt-2 text-3xl font-black text-slate-950">
                   {activeEmployees}
@@ -945,7 +945,7 @@ export default function AdminEmployeesPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-bold text-slate-500">
-                  Inactive Account
+                  Akun Nonaktif
                 </p>
                 <h3 className="mt-2 text-3xl font-black text-slate-950">
                   {inactiveEmployees}
@@ -966,7 +966,7 @@ export default function AdminEmployeesPage() {
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <h3 className="text-xl font-black text-slate-950">
-                Employee List
+                Daftar Karyawan
               </h3>
               <p className="mt-1 text-sm text-slate-500">
                 Total {employees.length} karyawan terdaftar
@@ -982,7 +982,7 @@ export default function AdminEmployeesPage() {
                 <input
                   value={keyword}
                   onChange={(event) => setKeyword(event.target.value)}
-                  placeholder="Search employee..."
+                  placeholder="Cari karyawan..."
                   className="employee-field w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 />
               </div>
@@ -1001,12 +1001,12 @@ export default function AdminEmployeesPage() {
           <div className="mt-5 overflow-x-auto rounded-3xl border border-blue-100 bg-white">
             <div className="md:min-w-[1180px]">
               <div className="hidden grid-cols-[1.15fr_minmax(180px,1fr)_0.9fr_0.75fr_0.8fr_0.95fr_0.7fr_0.65fr_0.85fr] items-center bg-[#f6f8ff] px-5 py-4 text-[11px] font-black uppercase tracking-[0.18em] text-[#123c8c] md:grid">
-                <p>Employee</p>
+                <p>Karyawan</p>
                 <p>Email</p>
                 <p>Kantor</p>
                 <p>Divisi</p>
-                <p>Unit</p>
                 <p>Jabatan</p>
+                <p>Posisi</p>
                 <p>Shift</p>
                 <p>Status</p>
                 <p className="text-center">Aksi</p>
@@ -1072,7 +1072,7 @@ export default function AdminEmployeesPage() {
                       </p>
 
                       <p className="min-w-0 truncate text-sm font-semibold text-slate-600">
-                        {getRelationName(employee.unit)}
+                        {getRelationName(employee.jabatan)}
                       </p>
 
                       <p className="min-w-0 line-clamp-2 text-sm font-semibold leading-5 text-slate-600">
@@ -1147,7 +1147,7 @@ export default function AdminEmployeesPage() {
               <div>
                 <div className="inline-flex items-center gap-2 rounded-full bg-[#eaf1ff] px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[#123c8c]">
                   <Plus size={15} strokeWidth={3} />
-                  {editingEmployee ? "Edit Employee" : "Register Employee"}
+                  {editingEmployee ? "Ubah Karyawan" : "Daftar Karyawan"}
                 </div>
 
                 <h2 className="mt-4 text-2xl font-black text-slate-950">
@@ -1158,8 +1158,8 @@ export default function AdminEmployeesPage() {
 
                 <p className="mt-1 text-sm leading-6 text-slate-500">
                   {editingEmployee
-                    ? "Ubah data karyawan dengan alur kantor, divisi, unit, jabatan, shift, dan status."
-                    : "Pilih kantor dulu, lalu divisi, unit, jabatan, dan shift."}
+                    ? "Ubah data karyawan dengan alur kantor, divisi, jabatan, posisi, shift, dan status."
+                    : "Pilih kantor dulu, lalu divisi, jabatan, posisi, dan shift."}
                 </p>
               </div>
 
@@ -1247,7 +1247,7 @@ export default function AdminEmployeesPage() {
                           ...prev,
                           registered_office_id: event.target.value,
                           department_id: "",
-                          unit_id: "",
+                          jabatan_id: "",
                           position_id: "",
                         }))
                       }
@@ -1278,7 +1278,7 @@ export default function AdminEmployeesPage() {
                         setForm((prev) => ({
                           ...prev,
                           department_id: event.target.value,
-                          unit_id: "",
+                          jabatan_id: "",
                           position_id: "",
                         }))
                       }
@@ -1301,7 +1301,7 @@ export default function AdminEmployeesPage() {
 
                 <div>
                   <label className="mb-2 block text-sm font-black text-slate-700">
-                    Unit
+                    Jabatan
                   </label>
                   <div className="app-field-smooth relative rounded-2xl">
                     <Building2
@@ -1309,11 +1309,11 @@ export default function AdminEmployeesPage() {
                       className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
                     />
                     <select
-                      value={form.unit_id}
+                      value={form.jabatan_id}
                       onChange={(event) =>
                         setForm((prev) => ({
                           ...prev,
-                          unit_id: event.target.value,
+                          jabatan_id: event.target.value,
                           position_id: "",
                         }))
                       }
@@ -1322,12 +1322,12 @@ export default function AdminEmployeesPage() {
                     >
                       <option value="">
                         {form.department_id
-                          ? "Pilih Unit"
+                          ? "Pilih Jabatan"
                           : "Pilih Divisi dulu"}
                       </option>
-                      {filteredUnits.map((unit) => (
-                        <option key={unit.id} value={unit.id}>
-                          {unit.name}
+                      {filteredJabatans.map((jabatan) => (
+                        <option key={jabatan.id} value={jabatan.id}>
+                          {jabatan.name}
                         </option>
                       ))}
                     </select>
@@ -1336,7 +1336,7 @@ export default function AdminEmployeesPage() {
 
                 <div>
                   <label className="mb-2 block text-sm font-black text-slate-700">
-                    Jabatan
+                    Posisi
                   </label>
                   <div className="app-field-smooth relative rounded-2xl">
                     <BriefcaseBusiness
@@ -1351,11 +1351,11 @@ export default function AdminEmployeesPage() {
                           position_id: event.target.value,
                         }))
                       }
-                      disabled={!form.unit_id}
+                      disabled={!form.jabatan_id}
                       className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
                     >
                       <option value="">
-                        {form.unit_id ? "Pilih Jabatan" : "Pilih Unit dulu"}
+                        {form.jabatan_id ? "Pilih Posisi" : "Pilih Jabatan dulu"}
                       </option>
                       {filteredPositions.map((position) => (
                         <option key={position.id} value={position.id}>
@@ -1411,27 +1411,27 @@ export default function AdminEmployeesPage() {
                 </AppFormReveal>
               ) : null}
 
-              {form.department_id && filteredUnits.length === 0 ? (
+              {form.department_id && filteredJabatans.length === 0 ? (
                 <AppFormReveal delay={80}>
                   <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
                     <p className="text-sm font-black text-amber-700">
-                      Unit belum tersedia untuk divisi ini
+                      Jabatan belum tersedia untuk divisi ini
                     </p>
                     <p className="mt-1 text-sm leading-6 text-amber-700/80">
-                      Tambahkan Unit terlebih dahulu pada divisi yang dipilih.
+                      Tambahkan Jabatan terlebih dahulu pada divisi yang dipilih.
                     </p>
                   </div>
                 </AppFormReveal>
               ) : null}
 
-              {form.unit_id && filteredPositions.length === 0 ? (
+              {form.jabatan_id && filteredPositions.length === 0 ? (
                 <AppFormReveal delay={80}>
                   <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
                     <p className="text-sm font-black text-amber-700">
-                      Jabatan belum tersedia untuk unit ini
+                      Posisi belum tersedia untuk jabatan ini
                     </p>
                     <p className="mt-1 text-sm leading-6 text-amber-700/80">
-                      Tambahkan Jabatan terlebih dahulu pada unit yang dipilih.
+                      Tambahkan Posisi terlebih dahulu pada jabatan yang dipilih.
                     </p>
                   </div>
                 </AppFormReveal>
@@ -1505,8 +1505,8 @@ export default function AdminEmployeesPage() {
                       }
                       className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                     >
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
+                      <option value="active">Aktif</option>
+                      <option value="inactive">Nonaktif</option>
                     </select>
                   </div>
                 </div>
@@ -1515,12 +1515,12 @@ export default function AdminEmployeesPage() {
               <AppFormReveal delay={120}>
                 <div className="rounded-2xl border border-blue-100 bg-[#f6f8ff] p-4">
                   <p className="text-sm font-black text-[#123c8c]">
-                    Catatan Employee
+                    Catatan Karyawan
                   </p>
                   <p className="mt-1 text-sm leading-6 text-slate-500">
                     Kantor dipilih terlebih dahulu. Setelah itu sistem hanya
-                    menampilkan Divisi milik kantor tersebut. Unit mengikuti
-                    Divisi, Jabatan mengikuti Unit, sedangkan Shift tetap
+                    menampilkan Divisi milik kantor tersebut. Jabatan mengikuti
+                    Divisi, Posisi mengikuti Jabatan, sedangkan Shift tetap
                     global.
                   </p>
                 </div>
@@ -1535,7 +1535,7 @@ export default function AdminEmployeesPage() {
                   onClick={closeRegisterModal}
                   className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-black text-slate-600 transition hover:bg-slate-200"
                 >
-                  Cancel
+                  Batal
                 </button>
 
                 <button
@@ -1546,8 +1546,8 @@ export default function AdminEmployeesPage() {
                   {isSaving
                     ? "Saving..."
                     : editingEmployee
-                      ? "Update Employee"
-                      : "Save Employee"}
+                      ? "Perbarui Karyawan"
+                      : "Simpan Karyawan"}
                 </button>
               </AppFormReveal>
             </form>

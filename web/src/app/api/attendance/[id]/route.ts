@@ -207,7 +207,7 @@ export async function GET(
     if (!attendance) {
       return NextResponse.json(
         {
-          message: "Data absensi tidak ditemukan.",
+          message: "Data presensi tidak ditemukan.",
         },
         { status: 404 },
       );
@@ -303,7 +303,7 @@ export async function GET(
 
     return NextResponse.json(
       {
-        message: getApiErrorMessage(error, "Gagal mengambil detail absensi."),
+        message: getApiErrorMessage(error, "Gagal mengambil detail presensi."),
       },
       { status: getApiErrorStatus(error) },
     );

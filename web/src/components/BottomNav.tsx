@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  CalendarCheck,
   History,
   Home,
-  ScanFace,
+  Megaphone,
   UserRound,
   type LucideIcon,
 } from "lucide-react";
@@ -21,10 +22,11 @@ type MenuItem = {
 };
 
 const menus: MenuItem[] = [
-  { href: "/home", label: "Home", icon: Home },
-  { href: "/attendance", label: "Attend", icon: ScanFace },
-  { href: "/history", label: "History", icon: History },
-  { href: "/profile", label: "Profile", icon: UserRound },
+  { href: "/home", label: "Beranda", icon: Home },
+  { href: "/attendance", label: "Presensi", icon: CalendarCheck },
+  { href: "/pengumuman", label: "Pengumuman", icon: Megaphone },
+  { href: "/history", label: "Riwayat", icon: History },
+  { href: "/profile", label: "Profil", icon: UserRound },
 ];
 
 function cn(...classes: Array<string | false | null | undefined>) {
@@ -167,9 +169,9 @@ export default function BottomNav({ variant = "employee" }: BottomNavProps) {
         className="h-[calc(5.8rem+env(safe-area-inset-bottom))] shrink-0 md:hidden"
       />
 
-      <nav className="fixed bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] left-1/2 z-50 w-[calc(100%-2rem)] max-w-[32rem] -translate-x-1/2 md:hidden">
+      <nav className="fixed bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] left-1/2 z-50 w-[calc(100%-2rem)] max-w-[35rem] -translate-x-1/2 md:hidden">
         <div className="bottom-nav-shell-in overflow-hidden rounded-[1.75rem] border border-white/80 bg-white/90 px-2.5 py-2.5 shadow-2xl shadow-slate-400/25 backdrop-blur-2xl">
-          <div className="grid w-full grid-cols-4 gap-2">
+          <div className="grid w-full grid-cols-5 gap-1.5">
             {menus.map((menu) => (
               <NavItem
                 key={menu.href}

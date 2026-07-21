@@ -479,7 +479,7 @@ function PhotoCard({
             </h4>
 
             <p className="mt-2 max-w-xs text-sm font-semibold leading-6 text-slate-400">
-              Foto absensi belum tersimpan pada data ini.
+              Foto presensi belum tersimpan pada data ini.
             </p>
           </div>
         )}
@@ -524,7 +524,7 @@ function LocationCard({
 
           <div>
             <p className="text-xs font-black uppercase tracking-[0.2em] text-[#123c8c]">
-              GPS Location
+              Lokasi GPS
             </p>
 
             <h3 className="mt-1 text-lg font-black text-slate-950">{title}</h3>
@@ -557,7 +557,7 @@ function LocationCard({
 
             <p className="mt-2 break-words text-sm font-bold leading-6 text-slate-600">
               {locationText ||
-                "Koordinat GPS absensi berhasil tercatat. Klik tombol di bawah untuk membuka titik lokasi pada Google Maps."}
+                "Koordinat GPS presensi berhasil tercatat. Klik tombol di bawah untuk membuka titik lokasi pada Google Maps."}
             </p>
 
             <div className="mt-4 flex flex-wrap gap-2">
@@ -599,7 +599,7 @@ function LocationCard({
           </h4>
 
           <p className="mt-2 max-w-xs text-sm font-semibold leading-6 text-slate-400">
-            Data lokasi belum tersimpan untuk absensi ini.
+            Data lokasi belum tersimpan untuk presensi ini.
           </p>
         </div>
       )}
@@ -666,7 +666,7 @@ export default function HistoryDetailPage() {
         const data = (await response.json()) as AttendanceDetail;
         setAttendance(data);
       } catch (error) {
-        console.error("Gagal mengambil detail absensi:", error);
+        console.error("Gagal mengambil detail presensi:", error);
         setAttendance(null);
       } finally {
         setIsLoading(false);
@@ -682,11 +682,7 @@ export default function HistoryDetailPage() {
     <MobileShell variant="employee">
       <HistoryDetailMotionStyles />
 
-      <AppHeader
-        title="Attendance Detail"
-        subtitle="Foto dan lokasi GPS absensi"
-        rightLabel="Detail"
-      />
+      <AppHeader title="Detail Presensi" rightLabel="Detail" />
 
       <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 md:px-10 lg:px-16">
         <Link
@@ -706,11 +702,11 @@ export default function HistoryDetailPage() {
             </div>
 
             <h2 className="mt-5 text-2xl font-black text-slate-950">
-              Data absensi tidak ditemukan
+              Data presensi tidak ditemukan
             </h2>
 
             <p className="mx-auto mt-2 max-w-md text-sm font-semibold leading-6 text-slate-500">
-              Data absensi ini tidak tersedia, sudah dihapus, atau tidak sesuai
+              Data presensi ini tidak tersedia, sudah dihapus, atau tidak sesuai
               dengan akun yang sedang login.
             </p>
 
@@ -731,7 +727,7 @@ export default function HistoryDetailPage() {
                 <div>
                   <div className="history-detail-row-enter inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-blue-100 ring-1 ring-white/15">
                     <ShieldCheck size={16} />
-                    Attendance Record
+                    Catatan Presensi
                   </div>
 
                   <h2
@@ -783,7 +779,7 @@ export default function HistoryDetailPage() {
 
             <div className="grid gap-5 md:grid-cols-3">
               <MetricCard
-                label="Work Time"
+                label="Waktu Kerja"
                 value={formatMinutes(attendance.workMinutes)}
                 description="Total durasi kerja tercatat"
                 icon={Timer}
@@ -791,7 +787,7 @@ export default function HistoryDetailPage() {
               />
 
               <MetricCard
-                label="Late"
+                label="Terlambat"
                 value={formatMinutes(attendance.lateMinutes)}
                 description="Keterlambatan check-in"
                 icon={Clock3}
@@ -799,7 +795,7 @@ export default function HistoryDetailPage() {
               />
 
               <MetricCard
-                label="Early Leave"
+                label="Pulang Cepat"
                 value={formatMinutes(attendance.earlyLeaveMinutes)}
                 description="Pulang lebih awal"
                 icon={CheckCircle2}
@@ -809,16 +805,16 @@ export default function HistoryDetailPage() {
 
             <div className="grid gap-5 lg:grid-cols-2">
               <PhotoCard
-                title="Check-in Photo"
-                subtitle="Foto absensi masuk"
+                title="Foto Check-in"
+                subtitle="Foto presensi masuk"
                 imageUrl={`/api/attendance/${attendance.id}/photo?type=check-in`}
                 isAvailable={attendance.hasCheckInPhoto}
                 delay="180ms"
               />
 
               <PhotoCard
-                title="Check-out Photo"
-                subtitle="Foto absensi pulang"
+                title="Foto Check-out"
+                subtitle="Foto presensi pulang"
                 imageUrl={`/api/attendance/${attendance.id}/photo?type=check-out`}
                 isAvailable={attendance.hasCheckOutPhoto}
                 delay="220ms"

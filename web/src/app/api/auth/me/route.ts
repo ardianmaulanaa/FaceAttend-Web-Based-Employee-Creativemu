@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
         status: true,
         profile_photo: true,
 
-        unit: {
+        jabatan: {
           select: {
             id: true,
             name: true,
@@ -121,7 +121,7 @@ export async function GET(req: NextRequest) {
         status: user.status,
         profile_photo: user.profile_photo,
 
-        unit: user.unit,
+        jabatan: user.jabatan,
         department: user.department,
         position: user.position,
         shift: user.shift,

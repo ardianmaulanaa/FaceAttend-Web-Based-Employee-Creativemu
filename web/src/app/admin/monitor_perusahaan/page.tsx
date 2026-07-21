@@ -901,7 +901,7 @@ export default function AdminCompanyMonitorPage() {
           "wfh",
           flexibleModeTotals,
         ),
-        description: "Monitoring absensi kerja dari rumah.",
+        description: "Monitoring presensi kerja dari rumah.",
       },
       {
         key: "visit",
@@ -912,7 +912,7 @@ export default function AdminCompanyMonitorPage() {
           "visit",
           flexibleModeTotals,
         ),
-        description: "Monitoring absensi kunjungan lapangan / client.",
+        description: "Monitoring presensi kunjungan lapangan / client.",
       },
     ];
   }, [data, flexibleModeTotals]);
@@ -1282,7 +1282,7 @@ export default function AdminCompanyMonitorPage() {
                       "wfh",
                       flexibleModeTotals,
                     )}
-                    description="Proporsi absensi WFH pada periode monitor."
+                    description="Proporsi presensi WFH pada periode monitor."
                     icon={<Home size={20} strokeWidth={2.5} />}
                   />
 
@@ -1298,7 +1298,7 @@ export default function AdminCompanyMonitorPage() {
                       "visit",
                       flexibleModeTotals,
                     )}
-                    description="Proporsi absensi kunjungan pada periode monitor."
+                    description="Proporsi presensi kunjungan pada periode monitor."
                     icon={<BriefcaseBusiness size={20} strokeWidth={2.5} />}
                   />
                 </div>

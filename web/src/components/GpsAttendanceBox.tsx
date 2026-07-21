@@ -137,10 +137,10 @@ export default function GpsAttendanceBox() {
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.3em] text-blue-800">
-            GPS Attendance
+            Presensi GPS
           </p>
           <h2 className="mt-2 text-xl font-black text-slate-950">
-            Validasi Lokasi Absensi
+            Validasi Lokasi Presensi
           </h2>
           <p className="mt-1 text-sm font-medium text-slate-500">
             Ambil lokasi karyawan dan cocokkan dengan radius kantor aktif.

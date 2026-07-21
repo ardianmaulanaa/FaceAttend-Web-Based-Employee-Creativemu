@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
     const officeId = searchParams.get("office_id") || "all";
     const departmentId = searchParams.get("department_id") || "all";
 
-    const units = await prisma.unit.findMany({
+    const jabatans = await prisma.jabatan.findMany({
       where: {
         AND: [
           search
@@ -222,18 +222,18 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      units,
+      jabatans,
       departments,
       offices,
     });
   } catch (error) {
-    console.error("GET /api/admin/units error:", error);
+    console.error("GET /api/admin/jabatans error:", error);
 
     return NextResponse.json(
       {
         success: false,
         message:
-          error instanceof Error ? error.message : "Gagal mengambil data unit.",
+          error instanceof Error ? error.message : "Gagal mengambil data jabatan.",
       },
       { status: 500 }
     );
@@ -252,7 +252,7 @@ export async function POST(req: NextRequest) {
         {
           success: false,
           message:
-            "Akses ditolak. Hanya owner yang dapat menambah unit.",
+            "Akses ditolak. Hanya owner yang dapat menambah jabatan.",
         },
         { status: 403 }
       );
@@ -279,7 +279,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          message: "Divisi unit wajib dipilih.",
+          message: "Divisi jabatan wajib dipilih.",
         },
         { status: 400 }
       );
@@ -289,7 +289,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          message: "Nama unit wajib diisi.",
+          message: "Nama jabatan wajib diisi.",
         },
         { status: 400 }
       );
@@ -299,7 +299,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          message: "Status unit tidak valid.",
+          message: "Status jabatan tidak valid.",
         },
         { status: 400 }
       );
@@ -375,7 +375,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const duplicate = await prisma.unit.findFirst({
+    const duplicate = await prisma.jabatan.findFirst({
       where: {
         department_id: departmentId,
         name,
@@ -389,13 +389,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          message: "Nama unit sudah ada pada divisi yang dipilih.",
+          message: "Nama jabatan sudah ada pada divisi yang dipilih.",
         },
         { status: 409 }
       );
     }
 
-    const unit = await prisma.unit.create({
+    const jabatan = await prisma.jabatan.create({
       data: {
         name,
         department_id: departmentId,
@@ -435,17 +435,17 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: "Unit berhasil dibuat.",
-      unit,
+      message: "Jabatan berhasil dibuat.",
+      jabatan,
     });
   } catch (error) {
-    console.error("POST /api/admin/units error:", error);
+    console.error("POST /api/admin/jabatans error:", error);
 
     if (isPrismaUniqueError(error)) {
       return NextResponse.json(
         {
           success: false,
-          message: "Nama unit sudah ada pada divisi yang dipilih.",
+          message: "Nama jabatan sudah ada pada divisi yang dipilih.",
         },
         { status: 409 }
       );
@@ -455,7 +455,7 @@ export async function POST(req: NextRequest) {
       {
         success: false,
         message:
-          error instanceof Error ? error.message : "Gagal menambahkan unit.",
+          error instanceof Error ? error.message : "Gagal menambahkan jabatan.",
       },
       { status: 500 }
     );
@@ -474,7 +474,7 @@ export async function PATCH(req: NextRequest) {
         {
           success: false,
           message:
-            "Akses ditolak. Hanya owner yang dapat mengubah unit.",
+            "Akses ditolak. Hanya owner yang dapat mengubah jabatan.",
         },
         { status: 403 }
       );
@@ -492,7 +492,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          message: "ID unit wajib dikirim.",
+          message: "ID jabatan wajib dikirim.",
         },
         { status: 400 }
       );
@@ -512,7 +512,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          message: "Divisi unit wajib dipilih.",
+          message: "Divisi jabatan wajib dipilih.",
         },
         { status: 400 }
       );
@@ -522,7 +522,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          message: "Nama unit wajib diisi.",
+          message: "Nama jabatan wajib diisi.",
         },
         { status: 400 }
       );
@@ -532,13 +532,13 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          message: "Status unit tidak valid.",
+          message: "Status jabatan tidak valid.",
         },
         { status: 400 }
       );
     }
 
-    const existingUnit = await prisma.unit.findUnique({
+    const existingJabatan = await prisma.jabatan.findUnique({
       where: {
         id,
       },
@@ -547,11 +547,11 @@ export async function PATCH(req: NextRequest) {
       },
     });
 
-    if (!existingUnit) {
+    if (!existingJabatan) {
       return NextResponse.json(
         {
           success: false,
-          message: "Unit tidak ditemukan.",
+          message: "Jabatan tidak ditemukan.",
         },
         { status: 404 }
       );
@@ -627,7 +627,7 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    const duplicate = await prisma.unit.findFirst({
+    const duplicate = await prisma.jabatan.findFirst({
       where: {
         department_id: departmentId,
         name,
@@ -644,13 +644,13 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          message: "Nama unit sudah ada pada divisi yang dipilih.",
+          message: "Nama jabatan sudah ada pada divisi yang dipilih.",
         },
         { status: 409 }
       );
     }
 
-    const unit = await prisma.unit.update({
+    const jabatan = await prisma.jabatan.update({
       where: {
         id,
       },
@@ -693,17 +693,17 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: "Unit berhasil diperbarui.",
-      unit,
+      message: "Jabatan berhasil diperbarui.",
+      jabatan,
     });
   } catch (error) {
-    console.error("PATCH /api/admin/units error:", error);
+    console.error("PATCH /api/admin/jabatans error:", error);
 
     if (isPrismaUniqueError(error)) {
       return NextResponse.json(
         {
           success: false,
-          message: "Nama unit sudah ada pada divisi yang dipilih.",
+          message: "Nama jabatan sudah ada pada divisi yang dipilih.",
         },
         { status: 409 }
       );
@@ -713,7 +713,7 @@ export async function PATCH(req: NextRequest) {
       {
         success: false,
         message:
-          error instanceof Error ? error.message : "Gagal memperbarui unit.",
+          error instanceof Error ? error.message : "Gagal memperbarui jabatan.",
       },
       { status: 500 }
     );
@@ -732,7 +732,7 @@ export async function DELETE(req: NextRequest) {
         {
           success: false,
           message:
-            "Akses ditolak. Hanya owner yang dapat menghapus unit.",
+            "Akses ditolak. Hanya owner yang dapat menghapus jabatan.",
         },
         { status: 403 }
       );
@@ -744,13 +744,13 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          message: "ID unit wajib dikirim.",
+          message: "ID jabatan wajib dikirim.",
         },
         { status: 400 }
       );
     }
 
-    const unit = await prisma.unit.findUnique({
+    const jabatan = await prisma.jabatan.findUnique({
       where: {
         id,
       },
@@ -766,28 +766,28 @@ export async function DELETE(req: NextRequest) {
       },
     });
 
-    if (!unit) {
+    if (!jabatan) {
       return NextResponse.json(
         {
           success: false,
-          message: "Unit tidak ditemukan.",
+          message: "Jabatan tidak ditemukan.",
         },
         { status: 404 }
       );
     }
 
-    if (unit._count.users > 0 || unit._count.positions > 0) {
+    if (jabatan._count.users > 0 || jabatan._count.positions > 0) {
       return NextResponse.json(
         {
           success: false,
           message:
-            "Unit tidak bisa dihapus karena masih memiliki jabatan atau karyawan. Ubah status menjadi Nonaktif.",
+            "Jabatan tidak bisa dihapus karena masih memiliki posisi atau karyawan. Ubah status menjadi Nonaktif.",
         },
         { status: 400 }
       );
     }
 
-    await prisma.unit.delete({
+    await prisma.jabatan.delete({
       where: {
         id,
       },
@@ -795,17 +795,17 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: "Unit berhasil dihapus.",
+      message: "Jabatan berhasil dihapus.",
     });
   } catch (error) {
-    console.error("DELETE /api/admin/units error:", error);
+    console.error("DELETE /api/admin/jabatans error:", error);
 
     if (isPrismaForeignKeyError(error)) {
       return NextResponse.json(
         {
           success: false,
           message:
-            "Unit tidak bisa dihapus karena masih memiliki relasi. Ubah status menjadi Nonaktif.",
+            "Jabatan tidak bisa dihapus karena masih memiliki relasi. Ubah status menjadi Nonaktif.",
         },
         { status: 400 }
       );
@@ -815,7 +815,7 @@ export async function DELETE(req: NextRequest) {
       {
         success: false,
         message:
-          error instanceof Error ? error.message : "Gagal menghapus unit.",
+          error instanceof Error ? error.message : "Gagal menghapus jabatan.",
       },
       { status: 500 }
     );

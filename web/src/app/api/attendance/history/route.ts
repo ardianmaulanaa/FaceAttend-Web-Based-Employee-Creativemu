@@ -97,7 +97,7 @@ export async function GET(req: NextRequest) {
     }));
 
     return NextResponse.json({
-      message: "Riwayat absensi berhasil diambil.",
+      message: "Riwayat presensi berhasil diambil.",
       records,
     });
   } catch (error) {
@@ -105,7 +105,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(
       {
-        message: getApiErrorMessage(error, "Gagal mengambil riwayat absensi."),
+        message: getApiErrorMessage(error, "Gagal mengambil riwayat presensi."),
       },
       { status: getApiErrorStatus(error) }
     );

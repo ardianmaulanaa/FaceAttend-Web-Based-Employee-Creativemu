@@ -8,6 +8,7 @@ import {
   BarChart3,
   Bell,
   Building2,
+  CalendarCheck,
   CalendarClock,
   CalendarDays,
   Clock3,
@@ -20,7 +21,6 @@ import {
   Menu,
   Network,
   PhoneCall,
-  ScanFace,
   Settings,
   UserPlus,
   UserRound,
@@ -54,18 +54,18 @@ type NotificationResponse = {
 };
 
 const employeeNav = [
-  { href: "/home", label: "Home", icon: Home },
-  { href: "/attendance", label: "Attendance", icon: ScanFace },
-  { href: "/history", label: "History", icon: History },
+  { href: "/home", label: "Beranda", icon: Home },
+  { href: "/attendance", label: "Presensi", icon: CalendarCheck },
+  { href: "/pengumuman", label: "Pengumuman", icon: Megaphone },
+  { href: "/history", label: "Riwayat", icon: History },
   { href: "/cuti", label: "Cuti", icon: CalendarDays },
-  { href: "/pengumuman", label: "Info", icon: Megaphone },
-  { href: "/profile", label: "Profile", icon: UserRound },
+  { href: "/profile", label: "Profil", icon: UserRound },
 ];
 
 const adminMenus = [
   {
     href: "/admin/dashboard",
-    label: "Dashboard",
+    label: "Dasbor",
     icon: LayoutDashboard,
   },
   {
@@ -97,18 +97,18 @@ const masterDataMenus = [
     icon: Building2,
   },
   {
-    href: "/admin/departments",
+    href: "/admin/divisi",
     label: "Divisi",
     icon: Network,
   },
   {
-    href: "/admin/units",
-    label: "Unit",
+    href: "/admin/jabatans",
+    label: "Jabatan",
     icon: Building2,
   },
   {
     href: "/admin/positions",
-    label: "Jabatan",
+    label: "Posisi",
     icon: UserRoundCog,
   },
 ];
@@ -116,7 +116,7 @@ const masterDataMenus = [
 const operationalMenus = [
   {
     href: "/admin/employees",
-    label: "Register Employee",
+    label: "Daftar Karyawan",
     icon: UserPlus,
   },
   {
@@ -423,7 +423,7 @@ export default function AppHeader({
                 </p>
 
                 <h2 className="mt-1 text-xl font-black tracking-tight text-slate-950">
-                  {isAdmin ? "Admin Panel" : "Employee Menu"}
+                  {isAdmin ? "Panel Admin" : "Menu Karyawan"}
                 </h2>
               </div>
             </div>
@@ -567,7 +567,7 @@ export default function AppHeader({
                 className="flex w-full items-center justify-center gap-2 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-black text-rose-600 transition hover:bg-rose-100 active:scale-[0.98]"
               >
                 <LogOut size={18} strokeWidth={2.5} />
-                Logout
+                Keluar
               </button>
             </div>
           ) : null}

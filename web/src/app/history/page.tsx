@@ -270,11 +270,6 @@ function DesktopHero({
                 Riwayat Presensi
               </h1>
 
-              <p className="mt-3 max-w-2xl text-sm font-semibold leading-7 text-blue-100">
-                Lihat daftar absensi, status kehadiran, jam masuk, jam keluar,
-                dan durasi kerja berdasarkan periode yang dipilih.
-              </p>
-
               <div className="mt-4 flex flex-wrap gap-2">
                 <HeroBadge delay="80ms">
                   {monthLabel} {year}
@@ -527,7 +522,7 @@ function HistoryContent({
   if (isLoading) {
     return (
       <div className="history-row-enter">
-        <AppLoadingState text="Memuat riwayat absensi..." />
+        <AppLoadingState text="Memuat riwayat presensi..." />
       </div>
     );
   }
@@ -537,8 +532,8 @@ function HistoryContent({
       <div className="history-row-enter">
         <AppEmptyState
           icon={<CalendarDays size={28} strokeWidth={2.6} />}
-          title="Belum ada data absensi"
-          description={`Data absensi untuk periode ${monthLabel} ${year} belum tersedia.`}
+          title="Belum ada data presensi"
+          description={`Data presensi untuk periode ${monthLabel} ${year} belum tersedia.`}
         />
       </div>
     );
@@ -599,8 +594,7 @@ export default function HistoryPage() {
 
       <div className="hidden md:block">
         <AppHeader
-          title="History"
-          subtitle="Riwayat absensi karyawan"
+          title="Riwayat"
           rightLabel={`${currentMonthLabel} ${year}`}
           variant="employee"
         />

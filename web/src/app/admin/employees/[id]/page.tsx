@@ -38,7 +38,7 @@ type DepartmentRelation = {
   office?: OfficeMiniRelation;
 } | null;
 
-type UnitRelation = {
+type JabatanRelation = {
   id: string;
   name: string;
   department_id?: string | null;
@@ -48,8 +48,8 @@ type UnitRelation = {
 type PositionRelation = {
   id: string;
   name: string;
-  unit_id?: string | null;
-  unit?: UnitRelation;
+  jabatan_id?: string | null;
+  jabatan?: JabatanRelation;
 } | null;
 
 type ShiftRelation = {
@@ -74,7 +74,7 @@ type Employee = {
   name: string;
   email: string;
   role: string;
-  unit: UnitRelation;
+  jabatan: JabatanRelation;
   department: DepartmentRelation;
   position: PositionRelation;
   shift: ShiftRelation;
@@ -111,7 +111,7 @@ function getInitialName(name: string) {
 
 function getRelationName(
   item:
-    | UnitRelation
+    | JabatanRelation
     | DepartmentRelation
     | PositionRelation
     | ShiftRelation
@@ -169,7 +169,7 @@ function formatDate(value?: string | null) {
 }
 
 function formatStatus(status: "active" | "inactive") {
-  return status === "active" ? "Active" : "Inactive";
+  return status === "active" ? "Aktif" : "Nonaktif";
 }
 
 function EmployeeDetailMotionStyles() {
@@ -402,7 +402,7 @@ export default function AdminEmployeeDetailPage() {
           className="employee-detail-enter inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-black text-[#123c8c] shadow-sm ring-1 ring-blue-100 transition hover:bg-[#f8fbff] active:scale-[0.98]"
         >
           <ArrowLeft size={18} strokeWidth={2.7} />
-          Kembali ke Employees
+          Kembali ke Karyawan
         </Link>
 
         {isLoading ? (
@@ -434,7 +434,7 @@ export default function AdminEmployeeDetailPage() {
                       style={{ animationDelay: "80ms" }}
                     >
                       <p className="text-xs font-black uppercase tracking-[0.24em] text-blue-100">
-                        Employee Profile
+                        Profil Karyawan
                       </p>
 
                       <h1 className="mt-2 break-words text-4xl font-black tracking-tight">
@@ -475,7 +475,7 @@ export default function AdminEmployeeDetailPage() {
                     icon={Mail}
                     label="Email"
                     value={employee.email}
-                    description="Email login karyawan"
+                    description="Email masuk karyawan"
                     delay={80}
                   />
 
@@ -489,7 +489,7 @@ export default function AdminEmployeeDetailPage() {
 
                   <DetailCard
                     icon={IdCard}
-                    label="Employee ID"
+                    label="ID Karyawan"
                     value={employee.id}
                     description="ID unik akun di database"
                     delay={160}
@@ -512,7 +512,7 @@ export default function AdminEmployeeDetailPage() {
             >
               <SectionTitle
                 title="Struktur Organisasi"
-                subtitle="Kantor, divisi, unit, jabatan, dan shift"
+                subtitle="Kantor, divisi, jabatan, posisi, dan shift"
               />
 
               <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -533,14 +533,14 @@ export default function AdminEmployeeDetailPage() {
 
                 <DetailCard
                   icon={Building2}
-                  label="Unit"
-                  value={getRelationName(employee.unit)}
+                  label="Jabatan"
+                  value={getRelationName(employee.jabatan)}
                   delay={160}
                 />
 
                 <DetailCard
                   icon={BriefcaseBusiness}
-                  label="Jabatan"
+                  label="Posisi"
                   value={getRelationName(employee.position)}
                   delay={200}
                 />
@@ -563,7 +563,7 @@ export default function AdminEmployeeDetailPage() {
                   value={formatStatus(employee.status)}
                   description={
                     employee.status === "active"
-                      ? "Akun dapat digunakan untuk login dan absensi."
+                      ? "Akun dapat digunakan untuk login dan presensi."
                       : "Akun sedang nonaktif."
                   }
                   delay={280}
@@ -619,7 +619,7 @@ export default function AdminEmployeeDetailPage() {
                     <BriefcaseBusiness size={24} strokeWidth={2.7} />
                   </div>
                   <p className="mt-4 text-xs font-black uppercase tracking-[0.18em] text-slate-400">
-                    Jabatan
+                    Posisi
                   </p>
                   <p className="mt-2 break-words text-lg font-black text-slate-950">
                     {getRelationName(employee.position)}

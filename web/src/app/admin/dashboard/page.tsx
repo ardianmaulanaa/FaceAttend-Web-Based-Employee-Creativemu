@@ -258,7 +258,7 @@ export default function AdminDashboardPage() {
     <MobileShell variant="admin">
       <DashboardMotionStyles />
 
-      <AppHeader title="Admin Dashboard" variant="admin" />
+      <AppHeader title="Admin Dasbor" variant="admin" />
 
       <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 pb-28 md:px-10 lg:px-16">
         <div className="dashboard-enter overflow-hidden rounded-3xl border border-blue-100 bg-white shadow-xl shadow-slate-300/30">
@@ -271,7 +271,7 @@ export default function AdminDashboardPage() {
 
                 <div>
                   <h2 className="mt-1 text-3xl font-black tracking-tight md:text-4xl">
-                    Attendance Overview
+                    Ringkasan Presensi
                   </h2>
                 </div>
               </div>
@@ -338,7 +338,7 @@ export default function AdminDashboardPage() {
               </p>
 
               <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">
-                Recent Attendance
+                Presensi Terbaru
               </h2>
             </div>
           </div>
@@ -346,7 +346,7 @@ export default function AdminDashboardPage() {
           <div className="mt-6 overflow-hidden rounded-2xl border border-blue-100">
             <div className="hidden grid-cols-[0.9fr_1.4fr_0.8fr_0.8fr_0.8fr_0.8fr] bg-[#eaf1ff] px-5 py-3 text-xs font-black uppercase tracking-wide text-[#123c8c] md:grid">
               <p>ID</p>
-              <p>Employee</p>
+              <p>Karyawan</p>
               <p>Check-in</p>
               <p>Check-out</p>
               <p>Durasi</p>
@@ -357,7 +357,7 @@ export default function AdminDashboardPage() {
               {isLoading ? (
                 <div className="dashboard-row-enter flex items-center justify-center gap-2 px-5 py-10 text-sm font-bold text-slate-500">
                   <Loader2 size={18} className="animate-spin" />
-                  Mengambil data absensi...
+                  Mengambil data presensi...
                 </div>
               ) : data?.recentAttendance.length ? (
                 data.recentAttendance.map((item, index) => (

@@ -525,10 +525,10 @@ function StatusPill({
       {laptopBlocked
         ? "Mobile Only"
         : cameraReady
-          ? "Camera Active"
+          ? "Kamera Aktif"
           : cameraStarting
             ? "Starting..."
-            : "Camera Off"}
+            : "Kamera Mati"}
     </span>
   );
 }
@@ -571,10 +571,10 @@ function CameraEmptyState({
 
         <p className="mt-4 text-sm font-black text-white">
           {laptopBlocked
-            ? "Absensi Mobile Only"
+            ? "Presensi khusus HP"
             : cameraStarting
-              ? "Starting Camera"
-              : "Camera Preview"}
+              ? "Menyalakan Kamera"
+              : "Pratinjau Kamera"}
         </p>
 
         <p className="mt-1 text-xs font-semibold leading-5 text-slate-400">
@@ -693,7 +693,7 @@ function LastPhoto({ url }: { url: string | null }) {
 
       <img
         src={url}
-        alt="Last attendance capture"
+        alt="Last presensi capture"
         className="h-36 w-36 rounded-2xl object-cover shadow-md"
       />
     </div>
@@ -720,7 +720,7 @@ function ProofCard({
 
           <div>
             <p className="text-xs font-black uppercase tracking-[0.24em] text-blue-100">
-              Attendance Proof
+              Bukti Presensi
             </p>
 
             <h2 className="mt-1 text-2xl font-black tracking-tight md:text-3xl">
@@ -769,7 +769,7 @@ function WorkModeFilter({
   return (
     <div className="attendance-row-enter grid grid-cols-[1fr_auto] items-end gap-2 rounded-[1.6rem] border border-blue-100 bg-[#f8fbff] p-3">
       <AppSelect
-        label="Mode Attendance"
+        label="Mode Presensi"
         value={value}
         onChange={(event) => onChange(event.target.value as WorkMode)}
         disabled={disabled}
@@ -863,7 +863,7 @@ function VisitDataModal({
 
                   <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">
                     Khusus mode kunjungan, tempat, alamat, dan keperluan wajib
-                    diisi sebelum absensi dikirim.
+                    diisi sebelum presensi dikirim.
                   </p>
                 </div>
               </div>
@@ -1240,7 +1240,7 @@ function LateReasonModal({
 
                   <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">
                     Kamu sudah melewati batas toleransi shift. Isi alasan
-                    terlebih dahulu sebelum melanjutkan absensi.
+                    terlebih dahulu sebelum melanjutkan presensi.
                   </p>
                 </div>
               </div>
@@ -1288,7 +1288,7 @@ function LateReasonModal({
               />
 
               <p className="mt-2 text-xs font-semibold text-slate-400">
-                Alasan ini akan tersimpan di laporan absensi admin.
+                Alasan ini akan tersimpan di laporan presensi admin.
               </p>
             </div>
 
@@ -1368,7 +1368,7 @@ export default function AttendancePage() {
 
   const [statusTitle, setStatusTitle] = useState("Waiting for Camera");
   const [statusText, setStatusText] = useState(
-    "Pilih mode attendance, aktifkan kamera, lalu izinkan lokasi GPS sebelum melakukan absensi.",
+    "Pilih mode presensi, aktifkan kamera, lalu izinkan lokasi GPS sebelum melakukan presensi.",
   );
 
   const shiftStartTime = getShiftStartTime(currentUser?.shift?.name);
@@ -1391,7 +1391,7 @@ export default function AttendancePage() {
 
     if (blocked) {
       safeSetStatus(
-        "Absensi hanya lewat HP",
+        "Presensi hanya lewat HP",
         "Check-in dan check-out tidak dapat dilakukan melalui laptop atau desktop.",
       );
 
@@ -1444,7 +1444,7 @@ export default function AttendancePage() {
 
   function showLaptopBlockedAlert() {
     showCustomAlert(
-      "Absensi hanya lewat HP",
+      "Presensi hanya lewat HP",
       "Untuk menjaga validasi kamera dan lokasi, check-in/check-out tidak dapat dilakukan melalui laptop atau desktop. Silakan buka FaceAttend melalui browser HP.",
       "warning",
     );
@@ -1471,14 +1471,14 @@ export default function AttendancePage() {
         setVisitForm(emptyVisitForm);
 
         showCustomAlert(
-          "Absensi hari ini sudah selesai",
-          `Kamu sudah check-in dan check-out hari ini dengan mode ${modeLabel}. Mode attendance tidak bisa diubah lagi.`,
+          "Presensi hari ini sudah selesai",
+          `Kamu sudah check-in dan check-out hari ini dengan mode ${modeLabel}. Mode presensi tidak bisa diubah lagi.`,
           "warning",
         );
 
         safeSetStatus(
-          "Absensi Selesai",
-          `Absensi hari ini sudah selesai dengan mode ${modeLabel}.`,
+          "Presensi Selesai",
+          `Presensi hari ini sudah selesai dengan mode ${modeLabel}.`,
         );
 
         return;
@@ -1510,13 +1510,13 @@ export default function AttendancePage() {
       setVisitForm(emptyVisitForm);
 
       showCustomAlert(
-        "Mode attendance terkunci",
-        `Kamu sudah check-in hari ini dengan mode ${modeLabel}. Kamu tidak bisa mengganti mode check-in setelah absensi masuk.`,
+        "Mode presensi terkunci",
+        `Kamu sudah check-in hari ini dengan mode ${modeLabel}. Kamu tidak bisa mengganti mode check-in setelah presensi masuk.`,
         "warning",
       );
 
       safeSetStatus(
-        "Mode Attendance Terkunci",
+        "Mode Presensi Terkunci",
         `Kamu sudah check-in hari ini dengan mode ${modeLabel}. Jika ada kunjungan di tengah pekerjaan, pilih mode Kunjungan lalu lakukan Check-out.`,
       );
 
@@ -1551,7 +1551,7 @@ export default function AttendancePage() {
 
       showCustomAlert(
         "Data kunjungan belum lengkap",
-        "Isi nama/tempat kunjungan, alamat kunjungan, dan keperluan kunjungan terlebih dahulu sebelum melanjutkan absensi.",
+        "Isi nama/tempat kunjungan, alamat kunjungan, dan keperluan kunjungan terlebih dahulu sebelum melanjutkan presensi.",
         "warning",
       );
 
@@ -1631,7 +1631,7 @@ export default function AttendancePage() {
           setWorkMode(mode);
 
           safeSetStatus(
-            "Mode Attendance Terkunci",
+            "Mode Presensi Terkunci",
             `Kamu sudah check-in hari ini dengan mode ${getWorkModeLabel(
               mode,
             )}. Mode tidak bisa diubah sampai check-out.`,
@@ -1667,8 +1667,8 @@ export default function AttendancePage() {
 
     if (updateStatus) {
       safeSetStatus(
-        "Camera Off",
-        "Kamera sudah dimatikan. Klik Aktifkan Kamera sebelum melakukan absensi.",
+        "Kamera Mati",
+        "Kamera sudah dimatikan. Klik Aktifkan Kamera sebelum melakukan presensi.",
       );
     }
   }
@@ -1767,7 +1767,7 @@ export default function AttendancePage() {
       startingRef.current = true;
       setCameraReady(false);
       setCameraStarting(true);
-      safeSetStatus("Starting Camera", "Mengaktifkan kamera...");
+      safeSetStatus("Menyalakan Kamera", "Mengaktifkan kamera...");
 
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error("Browser tidak mendukung kamera.");
@@ -1814,7 +1814,7 @@ export default function AttendancePage() {
       if (isPermissionDeniedError(error)) {
         safeSetStatus(
           "Akses Kamera Ditolak",
-          "Akses kamera ditolak. Aktifkan izin kamera di browser untuk melakukan absensi.",
+          "Akses kamera ditolak. Aktifkan izin kamera di browser untuk melakukan presensi.",
         );
 
         showCustomAlert(
@@ -1958,7 +1958,7 @@ export default function AttendancePage() {
 
       safeSetStatus(
         "Kunjungan Bebas Toleransi",
-        "Mode kunjungan tidak terikat jam masuk, shift, atau batas keterlambatan. Absensi akan dikirim sebagai kunjungan.",
+        "Mode kunjungan tidak terikat jam masuk, shift, atau batas keterlambatan. Presensi akan dikirim sebagai kunjungan.",
       );
 
       await handleAttendance("check-in", "");
@@ -2051,12 +2051,12 @@ export default function AttendancePage() {
 
     safeSetStatus(
       "Alasan Siap Dikirim",
-      "Alasan keterlambatan sudah tersimpan sementara. Silakan tekan tombol Check-in untuk mengirim absensi.",
+      "Alasan keterlambatan sudah tersimpan sementara. Silakan tekan tombol Check-in untuk mengirim presensi.",
     );
 
     showCustomAlert(
       "Alasan siap dikirim",
-      "Alasan keterlambatan sudah tersimpan. Silakan tekan tombol Check-in untuk melanjutkan absensi.",
+      "Alasan keterlambatan sudah tersimpan. Silakan tekan tombol Check-in untuk melanjutkan presensi.",
       "success",
     );
   }
@@ -2158,7 +2158,7 @@ export default function AttendancePage() {
       const data = await response.json();
 
       if (!response.ok) {
-        const message = data.error || data.message || "Absensi gagal.";
+        const message = data.error || data.message || "Presensi gagal.";
 
         if (data.requiresLateReason && workMode !== "visit") {
           setIsLateReasonOpen(true);
@@ -2167,12 +2167,12 @@ export default function AttendancePage() {
         }
 
         showCustomAlert(
-          action === "check-out" ? "Check-out belum bisa" : "Absensi gagal",
+          action === "check-out" ? "Check-out belum bisa" : "Presensi gagal",
           message,
           "warning",
         );
 
-        safeSetStatus("Attendance Failed", message);
+        safeSetStatus("Presensi Gagal", message);
         return;
       }
 
@@ -2182,12 +2182,12 @@ export default function AttendancePage() {
       const modeLabel = data.workModeLabel || getWorkModeLabel(workMode);
 
       safeSetStatus(
-        "Attendance Success",
+        "Presensi Berhasil",
         officeName
           ? `${data.message} Mode ${modeLabel}. Lokasi valid di ${officeName}. Jarak ${distance} meter dari kantor, radius ${radius} meter. Akurasi GPS ±${Math.round(
               accuracy,
             )} meter.`
-          : `${data.message || "Absensi berhasil."} Mode ${modeLabel}. GPS tersimpan dengan akurasi ±${Math.round(
+          : `${data.message || "Presensi berhasil."} Mode ${modeLabel}. GPS tersimpan dengan akurasi ±${Math.round(
               accuracy,
             )} meter.`,
       );
@@ -2204,8 +2204,8 @@ export default function AttendancePage() {
       showCustomAlert(
         action === "check-in" ? "Check-in berhasil" : "Check-out berhasil",
         action === "check-in"
-          ? `${data.message || "Absensi berhasil."} Mode: ${modeLabel}.`
-          : data.message || "Absensi berhasil.",
+          ? `${data.message || "Presensi berhasil."} Mode: ${modeLabel}.`
+          : data.message || "Presensi berhasil.",
         "success",
       );
     } catch (error) {
@@ -2213,10 +2213,10 @@ export default function AttendancePage() {
         ? "Izin kamera atau lokasi ditolak. Aktifkan izin kamera dan GPS di browser terlebih dahulu."
         : error instanceof Error
           ? error.message
-          : "Gagal melakukan absensi. Pastikan kamera dan lokasi GPS diizinkan.";
+          : "Gagal melakukan presensi. Pastikan kamera dan lokasi GPS diizinkan.";
 
-      safeSetStatus("Attendance Failed", message);
-      showCustomAlert("Absensi gagal", message, "warning");
+      safeSetStatus("Presensi Gagal", message);
+      showCustomAlert("Presensi gagal", message, "warning");
 
       if (!isPermissionDeniedError(error)) {
         console.warn(
@@ -2239,8 +2239,8 @@ export default function AttendancePage() {
 
       <div className="hidden md:block">
         <AppHeader
-          title="Face Attendance"
-          subtitle="Ambil foto dan lokasi GPS untuk absensi"
+          title="Presensi Wajah"
+          subtitle="Ambil foto dan lokasi GPS untuk presensi"
           rightLabel={
             isLaptopBlocked
               ? "MOBILE ONLY"
@@ -2263,7 +2263,7 @@ export default function AttendancePage() {
               </p>
 
               <h1 className="mt-1 text-2xl font-black tracking-tight text-[#073456]">
-                Face Attendance
+                Presensi Wajah
               </h1>
 
               <p className="mt-1 text-xs font-bold text-slate-500">
@@ -2291,11 +2291,11 @@ export default function AttendancePage() {
                 </p>
 
                 <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">
-                  Attendance Capture
+                  Ambil Presensi
                 </h2>
 
                 <p className="mt-1 text-sm font-medium text-slate-500">
-                  Foto, GPS, dan mode attendance akan disimpan sebagai bukti.
+                  Foto, GPS, dan mode presensi akan disimpan sebagai bukti.
                 </p>
               </div>
 
@@ -2315,7 +2315,7 @@ export default function AttendancePage() {
               onOpenVisit={() => {
                 if (hasCheckedOutToday) {
                   showCustomAlert(
-                    "Absensi hari ini sudah selesai",
+                    "Presensi hari ini sudah selesai",
                     "Kamu sudah check-in dan check-out hari ini. Data kunjungan tidak bisa diubah lagi.",
                     "warning",
                   );
@@ -2352,7 +2352,7 @@ export default function AttendancePage() {
             {hasCheckedInToday ? (
               <div className="attendance-row-enter mt-3 rounded-2xl border border-amber-100 bg-amber-50 p-4 text-xs font-bold leading-5 text-amber-700">
                 {hasCheckedOutToday
-                  ? `Absensi hari ini sudah selesai dengan mode ${getWorkModeLabel(
+                  ? `Presensi hari ini sudah selesai dengan mode ${getWorkModeLabel(
                       lockedWorkMode,
                     )}. Mode attendance tidak bisa diubah lagi.`
                   : `Check-in sudah masuk dengan mode ${getWorkModeLabel(
@@ -2411,10 +2411,10 @@ export default function AttendancePage() {
                     {isLaptopBlocked
                       ? "Mobile Only"
                       : cameraReady
-                        ? "Camera Active"
+                        ? "Kamera Aktif"
                         : cameraStarting
                           ? "Starting..."
-                          : "Camera Off"}
+                          : "Kamera Mati"}
                   </div>
 
                   <div className="attendance-row-enter absolute bottom-4 left-4 z-30 rounded-full bg-white/90 px-3 py-1.5 text-[11px] font-black text-[#123c8c] backdrop-blur-md">
@@ -2494,7 +2494,7 @@ export default function AttendancePage() {
               className="attendance-card-enter rounded-[2rem] border-white/80 bg-white/95 p-5 shadow-2xl shadow-slate-300/30 backdrop-blur-xl md:p-6"
             >
               <p className="text-xs font-black uppercase tracking-[0.24em] text-[#123c8c]">
-                Verification Status
+                Status Verifikasi
               </p>
 
               <div className="attendance-row-enter mt-4 flex items-start gap-4 rounded-3xl border border-blue-100 bg-[#f6f8ff] p-5">
@@ -2542,7 +2542,7 @@ export default function AttendancePage() {
                 </InfoTile>
 
                 <InfoTile
-                  title="GPS Location"
+                  title="Lokasi GPS"
                   icon={<MapPin size={22} className="text-[#123c8c]" />}
                 >
                   {lastLatitude !== null && lastLongitude !== null ? (

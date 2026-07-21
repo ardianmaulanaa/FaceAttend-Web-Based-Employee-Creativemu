@@ -34,7 +34,7 @@ export default function AttendancePage() {
 
   const [statusTitle, setStatusTitle] = useState("Waiting for Camera");
   const [statusText, setStatusText] = useState(
-    "Aktifkan kamera dan izinkan lokasi GPS sebelum melakukan absensi."
+    "Aktifkan kamera dan izinkan lokasi GPS sebelum melakukan presensi."
   );
 
   useEffect(() => {
@@ -69,16 +69,16 @@ export default function AttendancePage() {
     }
 
     if (updateStatus) {
-      setStatusTitle("Camera Off");
+      setStatusTitle("Kamera Mati");
       setStatusText(
-        "Kamera sudah dimatikan. Klik Aktifkan Kamera sebelum melakukan absensi."
+        "Kamera sudah dimatikan. Klik Aktifkan Kamera sebelum melakukan presensi."
       );
     }
   }
 
   async function startCamera() {
     try {
-      setStatusTitle("Starting Camera");
+      setStatusTitle("Menyalakan Kamera");
       setStatusText("Mengaktifkan kamera...");
 
       if (streamRef.current) {
@@ -319,9 +319,9 @@ export default function AttendancePage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setStatusTitle("Attendance Failed");
-        setStatusText(data.error || data.message || "Absensi gagal.");
-        alert(data.error || data.message || "Absensi gagal.");
+        setStatusTitle("Presensi Gagal");
+        setStatusText(data.error || data.message || "Presensi gagal.");
+        alert(data.error || data.message || "Presensi gagal.");
         return;
       }
 
@@ -329,31 +329,31 @@ export default function AttendancePage() {
       const distance = data.office?.distance;
       const radius = data.office?.radius;
 
-      setStatusTitle("Attendance Success");
+      setStatusTitle("Presensi Berhasil");
       setStatusText(
         officeName
           ? `${data.message} Lokasi valid di ${officeName}. Jarak ${distance} meter dari kantor, radius ${radius} meter. Akurasi GPS ±${Math.round(
               accuracy
             )} meter.`
-          : `${data.message || "Absensi berhasil."} Akurasi GPS ±${Math.round(
+          : `${data.message || "Presensi berhasil."} Akurasi GPS ±${Math.round(
               accuracy
             )} meter.`
       );
 
-      alert(data.message || "Absensi berhasil.");
+      alert(data.message || "Presensi berhasil.");
     } catch (error) {
       console.error("ATTENDANCE_ERROR", error);
 
-      setStatusTitle("Attendance Failed");
+      setStatusTitle("Presensi Gagal");
       setStatusText(
         error instanceof Error
           ? error.message
-          : "Gagal melakukan absensi. Pastikan kamera dan lokasi GPS diizinkan."
+          : "Gagal melakukan presensi. Pastikan kamera dan lokasi GPS diizinkan."
       );
       alert(
         error instanceof Error
           ? error.message
-          : "Gagal melakukan absensi. Pastikan kamera dan lokasi GPS diizinkan."
+          : "Gagal melakukan presensi. Pastikan kamera dan lokasi GPS diizinkan."
       );
     } finally {
       setLoading(false);
@@ -363,7 +363,7 @@ export default function AttendancePage() {
   return (
     <MobileShell variant="employee">
       <AppHeader
-        title="Photo Attendance"
+        title="Presensi Foto"
         subtitle="Ambil foto dan lokasi GPS untuk check-in atau check-out"
         rightLabel={cameraReady ? "CAM ON" : "CAM OFF"}
       />
@@ -376,10 +376,10 @@ export default function AttendancePage() {
                 Camera
               </p>
               <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">
-                Attendance Capture
+                Ambil Presensi
               </h2>
               <p className="mt-1 text-sm font-medium text-slate-500">
-                Foto akan disimpan sebagai bukti absensi.
+                Foto akan disimpan sebagai bukti presensi.
               </p>
             </div>
 
@@ -390,7 +390,7 @@ export default function AttendancePage() {
                   : "bg-slate-100 text-slate-500"
               }`}
             >
-              {cameraReady ? "Camera Active" : "Camera Off"}
+              {cameraReady ? "Kamera Aktif" : "Kamera Mati"}
             </span>
           </div>
 
@@ -421,7 +421,7 @@ export default function AttendancePage() {
                     </div>
 
                     <p className="mt-5 text-sm font-black text-white">
-                      Camera Preview
+                      Pratinjau Kamera
                     </p>
 
                     <p className="mt-1 text-xs font-semibold leading-5 text-slate-400">
@@ -470,7 +470,7 @@ export default function AttendancePage() {
 
               <img
                 src={lastPhotoUrl}
-                alt="Last attendance capture"
+                alt="Last presensi capture"
                 className="h-36 w-36 rounded-2xl object-cover shadow-md"
               />
             </div>
@@ -490,7 +490,7 @@ export default function AttendancePage() {
 
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.24em] text-blue-100">
-                    Attendance Proof
+                    Bukti Presensi
                   </p>
                   <h2 className="mt-1 text-3xl font-black tracking-tight">
                     {cameraReady ? "Ready to Capture" : "Camera Standby"}
@@ -536,7 +536,7 @@ export default function AttendancePage() {
 
           <div className="rounded-[2rem] border border-white/80 bg-white/95 p-5 shadow-2xl shadow-slate-300/30 backdrop-blur-xl md:p-6">
             <p className="text-xs font-black uppercase tracking-[0.24em] text-[#123c8c]">
-              Verification Status
+              Status Verifikasi
             </p>
 
             <div className="mt-4 flex items-start gap-4 rounded-3xl border border-blue-100 bg-[#f6f8ff] p-5">
@@ -565,7 +565,7 @@ export default function AttendancePage() {
               <div className="rounded-3xl border border-blue-100 bg-white p-5">
                 <MapPin size={22} className="text-[#123c8c]" />
                 <p className="mt-3 text-sm font-black text-slate-950">
-                  GPS Location
+                  Lokasi GPS
                 </p>
 
                 {lastLatitude !== null && lastLongitude !== null ? (

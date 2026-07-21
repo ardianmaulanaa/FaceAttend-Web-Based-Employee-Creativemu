@@ -27,7 +27,7 @@ model User {
   profile_photo           String? @db.Text
   profile_photo_public_id String? @db.VarChar(255)
 
-  unit_id       String? @db.Char(36)
+  jabatan_id    String? @db.Char(36)
   department_id String? @db.Char(36)
   position_id   String? @db.Char(36)
   shift_id      String? @db.Char(36)
@@ -40,7 +40,7 @@ model User {
   ptkp_status String?  @db.VarChar(20) // TK0, K0, K1, K2, K3
   base_salary Decimal? @db.Decimal(15, 2)
 
-  unit              Unit?           @relation(fields: [unit_id], references: [id], onDelete: SetNull)
+  jabatan           Jabatan?        @relation(fields: [jabatan_id], references: [id], onDelete: SetNull)
   department        Department?     @relation(fields: [department_id], references: [id], onDelete: SetNull)
   position          Position?       @relation(fields: [position_id], references: [id], onDelete: SetNull)
   shift             Shift?          @relation(fields: [shift_id], references: [id], onDelete: SetNull)
@@ -95,8 +95,8 @@ model Department {
   // active, inactive
   status String @default("active") @db.VarChar(20)
 
-  users User[]
-  units Unit[]
+  users    User[]
+  jabatans Jabatan[]
 
   created_at DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
@@ -105,12 +105,12 @@ model Department {
   @@index([office_id])
 }
 
-model Unit {
+model Jabatan {
   id String @id @default(uuid()) @db.Char(36)
 
   name String @db.VarChar(100)
 
-  // Divisi pemilik unit
+  // Divisi pemilik jabatan
   department_id String?     @db.Char(36)
   department    Department? @relation(fields: [department_id], references: [id], onDelete: SetNull)
 
@@ -125,6 +125,7 @@ model Unit {
 
   @@unique([department_id, name])
   @@index([department_id])
+  @@map("jabatans")
 }
 
 model Position {
@@ -132,9 +133,9 @@ model Position {
 
   name String @db.VarChar(100)
 
-  // Unit pemilik jabatan
-  unit_id String? @db.Char(36)
-  unit    Unit?   @relation(fields: [unit_id], references: [id], onDelete: SetNull)
+  // Jabatan pemilik posisi
+  jabatan_id String?  @db.Char(36)
+  jabatan    Jabatan? @relation(fields: [jabatan_id], references: [id], onDelete: SetNull)
 
   // active, inactive
   status String @default("active") @db.VarChar(20)
@@ -144,8 +145,8 @@ model Position {
   created_at DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
 
-  @@unique([unit_id, name])
-  @@index([unit_id])
+  @@unique([jabatan_id, name])
+  @@index([jabatan_id])
 }
 
 model Shift {

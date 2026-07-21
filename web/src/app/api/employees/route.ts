@@ -36,7 +36,7 @@ const departmentSelect = {
   },
 } as const;
 
-const unitSelect = {
+const jabatanSelect = {
   id: true,
   name: true,
   department_id: true,
@@ -49,10 +49,10 @@ const unitSelect = {
 const positionSelect = {
   id: true,
   name: true,
-  unit_id: true,
+  jabatan_id: true,
   status: true,
-  unit: {
-    select: unitSelect,
+  jabatan: {
+    select: jabatanSelect,
   },
 } as const;
 
@@ -65,7 +65,7 @@ const employeeSelect = {
   phone: true,
   status: true,
   profile_photo: true,
-  unit_id: true,
+  jabatan_id: true,
   department_id: true,
   position_id: true,
   shift_id: true,
@@ -75,8 +75,8 @@ const employeeSelect = {
   base_salary: true,
   created_at: true,
   updated_at: true,
-  unit: {
-    select: unitSelect,
+  jabatan: {
+    select: jabatanSelect,
   },
   department: {
     select: departmentSelect,
@@ -166,11 +166,11 @@ async function ensureDefaultShifts() {
 async function validateEmployeeHierarchy(params: {
   registeredOfficeId: string;
   departmentId: string;
-  unitId: string;
+  jabatanId: string;
   positionId: string;
   shiftId: string;
 }) {
-  const { registeredOfficeId, departmentId, unitId, positionId, shiftId } =
+  const { registeredOfficeId, departmentId, jabatanId, positionId, shiftId } =
     params;
 
   const office = await prisma.officeLocation.findUnique({
@@ -206,9 +206,9 @@ async function validateEmployeeHierarchy(params: {
     throw new Error("Divisi tidak sesuai dengan kantor yang dipilih.");
   }
 
-  const unit = await prisma.unit.findUnique({
+  const jabatan = await prisma.jabatan.findUnique({
     where: {
-      id: unitId,
+      id: jabatanId,
     },
     select: {
       id: true,
@@ -217,12 +217,12 @@ async function validateEmployeeHierarchy(params: {
     },
   });
 
-  if (!unit || unit.status !== "active") {
-    throw new Error("Unit tidak ditemukan atau tidak aktif.");
+  if (!jabatan || jabatan.status !== "active") {
+    throw new Error("Jabatan tidak ditemukan atau tidak aktif.");
   }
 
-  if (unit.department_id !== departmentId) {
-    throw new Error("Unit tidak sesuai dengan divisi yang dipilih.");
+  if (jabatan.department_id !== departmentId) {
+    throw new Error("Jabatan tidak sesuai dengan divisi yang dipilih.");
   }
 
   const position = await prisma.position.findUnique({
@@ -231,17 +231,17 @@ async function validateEmployeeHierarchy(params: {
     },
     select: {
       id: true,
-      unit_id: true,
+      jabatan_id: true,
       status: true,
     },
   });
 
   if (!position || position.status !== "active") {
-    throw new Error("Jabatan tidak ditemukan atau tidak aktif.");
+    throw new Error("Posisi tidak ditemukan atau tidak aktif.");
   }
 
-  if (position.unit_id !== unitId) {
-    throw new Error("Jabatan tidak sesuai dengan unit yang dipilih.");
+  if (position.jabatan_id !== jabatanId) {
+    throw new Error("Posisi tidak sesuai dengan jabatan yang dipilih.");
   }
 
   const shift = await prisma.shift.findUnique({
@@ -296,8 +296,8 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    const units = await prisma.unit.findMany({
-      select: unitSelect,
+    const jabatans = await prisma.jabatan.findMany({
+      select: jabatanSelect,
       orderBy: {
         name: "asc",
       },
@@ -328,7 +328,7 @@ export async function GET(req: NextRequest) {
       offices,
       officeLocations: offices,
       departments,
-      units,
+      jabatans,
       positions,
       shifts,
     });
@@ -375,7 +375,7 @@ export async function POST(req: NextRequest) {
       body.registered_office_id || body.office_id || ""
     ).trim();
     const departmentId = String(body.department_id || "").trim();
-    const unitId = String(body.unit_id || "").trim();
+    const jabatanId = String(body.jabatan_id || "").trim();
     const positionId = String(body.position_id || "").trim();
     const shiftId = String(body.shift_id || "").trim();
 
@@ -399,12 +399,12 @@ export async function POST(req: NextRequest) {
     if (
       !registeredOfficeId ||
       !departmentId ||
-      !unitId ||
+      !jabatanId ||
       !positionId ||
       !shiftId
     ) {
       return jsonError(
-        "Kantor, divisi, unit, jabatan, dan shift wajib dipilih."
+        "Kantor, divisi, jabatan, posisi, dan shift wajib dipilih."
       );
     }
 
@@ -419,7 +419,7 @@ export async function POST(req: NextRequest) {
     await validateEmployeeHierarchy({
       registeredOfficeId,
       departmentId,
-      unitId,
+      jabatanId,
       positionId,
       shiftId,
     });
@@ -450,7 +450,7 @@ export async function POST(req: NextRequest) {
         status,
         registered_office_id: registeredOfficeId,
         department_id: departmentId,
-        unit_id: unitId,
+        jabatan_id: jabatanId,
         position_id: positionId,
         shift_id: shiftId,
         npwp_number: npwpNumber,
@@ -513,7 +513,7 @@ export async function PATCH(req: NextRequest) {
       body.registered_office_id || body.office_id || ""
     ).trim();
     const departmentId = String(body.department_id || "").trim();
-    const unitId = String(body.unit_id || "").trim();
+    const jabatanId = String(body.jabatan_id || "").trim();
     const positionId = String(body.position_id || "").trim();
     const shiftId = String(body.shift_id || "").trim();
 
@@ -537,12 +537,12 @@ export async function PATCH(req: NextRequest) {
     if (
       !registeredOfficeId ||
       !departmentId ||
-      !unitId ||
+      !jabatanId ||
       !positionId ||
       !shiftId
     ) {
       return jsonError(
-        "Kantor, divisi, unit, jabatan, dan shift wajib dipilih."
+        "Kantor, divisi, jabatan, posisi, dan shift wajib dipilih."
       );
     }
 
@@ -571,7 +571,7 @@ export async function PATCH(req: NextRequest) {
     await validateEmployeeHierarchy({
       registeredOfficeId,
       departmentId,
-      unitId,
+      jabatanId,
       positionId,
       shiftId,
     });
@@ -600,7 +600,7 @@ export async function PATCH(req: NextRequest) {
       status: string;
       registered_office_id: string;
       department_id: string;
-      unit_id: string;
+      jabatan_id: string;
       position_id: string;
       shift_id: string;
       npwp_number: string | null;
@@ -615,7 +615,7 @@ export async function PATCH(req: NextRequest) {
       status,
       registered_office_id: registeredOfficeId,
       department_id: departmentId,
-      unit_id: unitId,
+      jabatan_id: jabatanId,
       position_id: positionId,
       shift_id: shiftId,
       npwp_number: npwpNumber,
@@ -708,7 +708,7 @@ export async function DELETE(req: NextRequest) {
 
     if (hasRelations) {
       return jsonError(
-        "Karyawan tidak bisa dihapus karena sudah memiliki data absensi, cuti, kunjungan, atau payroll. Ubah status menjadi Nonaktif.",
+        "Karyawan tidak bisa dihapus karena sudah memiliki data presensi, cuti, kunjungan, atau payroll. Ubah status menjadi Nonaktif.",
         400
       );
     }

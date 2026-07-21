@@ -93,7 +93,7 @@ const statusOptions = [
   { value: "all", label: "Semua Status" },
   { value: "unread", label: "Belum Dibaca" },
   { value: "read", label: "Dibaca" },
-  { value: "pending", label: "Pending" },
+  { value: "pending", label: "Menunggu" },
   { value: "approved", label: "Disetujui" },
   { value: "rejected", label: "Ditolak" },
 ];
@@ -370,7 +370,7 @@ export default function AdminNotificationsPage() {
       label: "Cuti / Sakit / Izin",
       value: stats.leave + stats.sick + stats.permission,
       icon: FileClock,
-      description: "Dari LeaveRequest",
+      description: "Dari CutiPengajuan",
     },
     {
       label: "WFH / WFC / Kunjungan",
@@ -530,7 +530,7 @@ export default function AdminNotificationsPage() {
                 }}
                 className="flex h-[58px] w-full items-center justify-center rounded-2xl border border-blue-100 bg-white px-5 text-sm font-black text-[#123c8c] shadow-sm transition hover:bg-blue-50 active:scale-[0.96] lg:w-auto"
               >
-                Reset
+                Atur Ulang
               </button>
             </div>
           </div>

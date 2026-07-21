@@ -671,7 +671,7 @@ export default function ShiftsPage() {
                   onClick={closeModal}
                   className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-black text-slate-600 transition hover:bg-slate-200 active:scale-[0.98]"
                 >
-                  Cancel
+                  Batal
                 </button>
 
                 <button

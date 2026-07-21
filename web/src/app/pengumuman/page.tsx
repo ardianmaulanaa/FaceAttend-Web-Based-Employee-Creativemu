@@ -175,12 +175,7 @@ export default function AnnouncementPage() {
       <AnnouncementMotionStyles />
 
       <div className="hidden md:block">
-        <AppHeader
-          title="Pengumuman"
-          subtitle="Informasi terbaru dari perusahaan"
-          rightLabel="Info"
-          variant="employee"
-        />
+        <AppHeader title="Pengumuman" rightLabel="Info" variant="employee" />
       </div>
 
       <main className="min-h-dvh bg-gradient-to-br from-[#f6f8ff] via-white to-[#eef4ff] pb-[calc(8rem+env(safe-area-inset-bottom))] text-slate-950 md:pb-28">

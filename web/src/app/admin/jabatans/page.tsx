@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
+  Building2,
   Edit,
   Loader2,
   MapPin,
@@ -27,24 +28,34 @@ type Department = {
   name: string;
   office_id: string | null;
   status: string;
+  office?: Office | null;
+};
+
+type Jabatan = {
+  id: string;
+  name: string;
+  department_id: string | null;
+  status: string;
   created_at?: string;
   updated_at?: string;
-  office?: Office | null;
+  department?: Department | null;
   _count?: {
     users: number;
-    units: number;
+    positions: number;
   };
 };
 
-type DepartmentForm = {
+type JabatanForm = {
   name: string;
   office_id: string;
+  department_id: string;
   status: string;
 };
 
-const initialForm: DepartmentForm = {
+const initialForm: JabatanForm = {
   name: "",
   office_id: "",
+  department_id: "",
   status: "active",
 };
 
@@ -80,10 +91,10 @@ async function readJsonResponse(response: Response) {
   }
 }
 
-function DepartmentMotionStyles() {
+function JabatanMotionStyles() {
   return (
     <style>{`
-      @keyframes departmentEnter {
+      @keyframes jabatanEnter {
         0% {
           opacity: 0;
           transform: translateY(14px);
@@ -95,7 +106,7 @@ function DepartmentMotionStyles() {
         }
       }
 
-      @keyframes departmentRowEnter {
+      @keyframes jabatanRowEnter {
         0% {
           opacity: 0;
           transform: translateY(10px);
@@ -107,7 +118,7 @@ function DepartmentMotionStyles() {
         }
       }
 
-      @keyframes departmentModalBackdrop {
+      @keyframes jabatanModalBackdrop {
         0% {
           opacity: 0;
         }
@@ -117,7 +128,7 @@ function DepartmentMotionStyles() {
         }
       }
 
-      @keyframes departmentModalPanel {
+      @keyframes jabatanModalPanel {
         0% {
           opacity: 0;
           transform: translateY(16px) scale(0.985);
@@ -129,25 +140,25 @@ function DepartmentMotionStyles() {
         }
       }
 
-      .department-enter {
-        animation: departmentEnter 320ms ease-out both;
+      .jabatan-enter {
+        animation: jabatanEnter 320ms ease-out both;
       }
 
-      .department-row-enter {
+      .jabatan-row-enter {
         opacity: 0;
-        animation: departmentRowEnter 300ms ease-out both;
+        animation: jabatanRowEnter 300ms ease-out both;
       }
 
-      .department-modal-backdrop {
-        animation: departmentModalBackdrop 180ms ease-out both;
+      .jabatan-modal-backdrop {
+        animation: jabatanModalBackdrop 180ms ease-out both;
       }
 
-      .department-modal-panel {
-        animation: departmentModalPanel 260ms ease-out both;
+      .jabatan-modal-panel {
+        animation: jabatanModalPanel 260ms ease-out both;
         transform-origin: center bottom;
       }
 
-      .department-field {
+      .jabatan-field {
         transition:
           border-color 180ms ease,
           background-color 180ms ease,
@@ -155,10 +166,10 @@ function DepartmentMotionStyles() {
       }
 
       @media (prefers-reduced-motion: reduce) {
-        .department-enter,
-        .department-row-enter,
-        .department-modal-backdrop,
-        .department-modal-panel {
+        .jabatan-enter,
+        .jabatan-row-enter,
+        .jabatan-modal-backdrop,
+        .jabatan-modal-panel {
           animation: none !important;
           opacity: 1 !important;
           transform: none !important;
@@ -168,14 +179,16 @@ function DepartmentMotionStyles() {
   );
 }
 
-export default function DepartmentsPage() {
+export default function JabatansPage() {
+  const [jabatans, setJabatans] = useState<Jabatan[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [offices, setOffices] = useState<Office[]>([]);
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [officeFilter, setOfficeFilter] = useState("all");
-  const [form, setForm] = useState<DepartmentForm>(initialForm);
+  const [departmentFilter, setDepartmentFilter] = useState("all");
+  const [form, setForm] = useState<JabatanForm>(initialForm);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -183,27 +196,55 @@ export default function DepartmentsPage() {
   const [errorMessage, setErrorMessage] = useState("");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingDepartment, setEditingDepartment] = useState<Department | null>(
-    null,
-  );
+  const [editingJabatan, setEditingJabatan] = useState<Jabatan | null>(null);
 
   const activeOffices = useMemo(() => {
     return offices.filter((office) => office.status !== "inactive");
   }, [offices]);
 
-  const filteredDepartments = useMemo(() => {
+  const activeDepartments = useMemo(() => {
+    return departments.filter((department) => department.status === "active");
+  }, [departments]);
+
+  const formDepartments = useMemo(() => {
+    if (!form.office_id) return [];
+
+    return activeDepartments.filter((department) => {
+      const officeId = department.office_id || department.office?.id || "";
+
+      return officeId === form.office_id;
+    });
+  }, [activeDepartments, form.office_id]);
+
+  const filteredDepartmentsForFilter = useMemo(() => {
+    return departments.filter((department) => {
+      const officeId = department.office_id || department.office?.id || "";
+
+      if (officeFilter === "all") return true;
+      if (officeFilter === "none") return !officeId;
+
+      return officeId === officeFilter;
+    });
+  }, [departments, officeFilter]);
+
+  const filteredJabatans = useMemo(() => {
     const keyword = search.toLowerCase().trim();
 
-    return departments.filter((department) => {
-      const departmentName = department.name.toLowerCase();
-      const officeName = department.office?.name?.toLowerCase() || "";
-      const officeAddress = department.office?.address?.toLowerCase() || "";
-      const departmentStatus = department.status.toLowerCase();
-      const departmentOfficeId =
-        department.office_id || department.office?.id || "";
+    return jabatans.filter((jabatan) => {
+      const jabatanName = jabatan.name.toLowerCase();
+      const jabatanStatus = jabatan.status.toLowerCase();
+      const departmentName = jabatan.department?.name?.toLowerCase() || "";
+      const officeName = jabatan.department?.office?.name?.toLowerCase() || "";
+      const officeAddress =
+        jabatan.department?.office?.address?.toLowerCase() || "";
+
+      const jabatanOfficeId =
+        jabatan.department?.office_id || jabatan.department?.office?.id || "";
+      const jabatanDepartmentId = jabatan.department_id || jabatan.department?.id || "";
 
       if (
         keyword &&
+        !jabatanName.includes(keyword) &&
         !departmentName.includes(keyword) &&
         !officeName.includes(keyword) &&
         !officeAddress.includes(keyword)
@@ -211,23 +252,33 @@ export default function DepartmentsPage() {
         return false;
       }
 
-      if (statusFilter !== "all" && departmentStatus !== statusFilter) {
+      if (statusFilter !== "all" && jabatanStatus !== statusFilter) {
         return false;
       }
 
       if (officeFilter !== "all") {
-        if (officeFilter === "none" && departmentOfficeId) return false;
+        if (officeFilter === "none" && jabatanOfficeId) return false;
+        if (officeFilter !== "none" && jabatanOfficeId !== officeFilter) {
+          return false;
+        }
+      }
 
-        if (officeFilter !== "none" && departmentOfficeId !== officeFilter) {
+      if (departmentFilter !== "all") {
+        if (departmentFilter === "none" && jabatanDepartmentId) return false;
+
+        if (
+          departmentFilter !== "none" &&
+          jabatanDepartmentId !== departmentFilter
+        ) {
           return false;
         }
       }
 
       return true;
     });
-  }, [departments, search, statusFilter, officeFilter]);
+  }, [jabatans, search, statusFilter, officeFilter, departmentFilter]);
 
-  async function loadDepartments() {
+  async function loadJabatans() {
     try {
       setIsLoading(true);
       setErrorMessage("");
@@ -236,30 +287,27 @@ export default function DepartmentsPage() {
         search,
         status: statusFilter,
         office_id: officeFilter,
+        department_id: departmentFilter,
       });
 
-      const response = await fetch(
-        `/api/admin/departments?${params.toString()}`,
-        {
-          cache: "no-store",
-        },
-      );
+      const response = await fetch(`/api/admin/jabatans?${params.toString()}`, {
+        cache: "no-store",
+      });
 
       const data = await readJsonResponse(response);
 
       if (!response.ok) {
-        throw new Error(
-          data.error || data.message || "Gagal mengambil divisi.",
-        );
+        throw new Error(data.error || data.message || "Gagal mengambil jabatan.");
       }
 
-      setDepartments(data.departments || data.data || []);
+      setJabatans(data.jabatans || data.data || []);
+      setDepartments(data.departments || []);
       setOffices(data.offices || []);
     } catch (error) {
-      console.error("LOAD_DEPARTMENTS_ERROR:", error);
+      console.error("LOAD_UNITS_ERROR:", error);
 
       setErrorMessage(
-        error instanceof Error ? error.message : "Gagal mengambil data divisi.",
+        error instanceof Error ? error.message : "Gagal mengambil data jabatan.",
       );
     } finally {
       setIsLoading(false);
@@ -267,28 +315,32 @@ export default function DepartmentsPage() {
   }
 
   useEffect(() => {
-    void loadDepartments();
+    void loadJabatans();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function openCreateModal() {
-    setEditingDepartment(null);
+    setEditingJabatan(null);
     setForm(initialForm);
     setIsModalOpen(true);
   }
 
-  function openEditModal(department: Department) {
-    setEditingDepartment(department);
+  function openEditModal(jabatan: Jabatan) {
+    const officeId =
+      jabatan.department?.office_id || jabatan.department?.office?.id || "";
+
+    setEditingJabatan(jabatan);
     setForm({
-      name: department.name,
-      office_id: department.office_id || department.office?.id || "",
-      status: department.status || "active",
+      name: jabatan.name,
+      office_id: officeId,
+      department_id: jabatan.department_id || "",
+      status: jabatan.status || "active",
     });
     setIsModalOpen(true);
   }
 
   function closeModal() {
-    setEditingDepartment(null);
+    setEditingJabatan(null);
     setForm(initialForm);
     setIsModalOpen(false);
   }
@@ -297,6 +349,7 @@ export default function DepartmentsPage() {
     setSearch("");
     setStatusFilter("all");
     setOfficeFilter("all");
+    setDepartmentFilter("all");
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -309,28 +362,34 @@ export default function DepartmentsPage() {
       return;
     }
 
+    if (!form.department_id) {
+      alert("Divisi wajib dipilih.");
+      return;
+    }
+
     if (!name) {
-      alert("Nama divisi wajib diisi.");
+      alert("Nama jabatan wajib diisi.");
       return;
     }
 
     if (!["active", "inactive"].includes(form.status)) {
-      alert("Status divisi tidak valid.");
+      alert("Status jabatan tidak valid.");
       return;
     }
 
     try {
       setIsSubmitting(true);
 
-      const response = await fetch("/api/admin/departments", {
-        method: editingDepartment ? "PATCH" : "POST",
+      const response = await fetch("/api/admin/jabatans", {
+        method: editingJabatan ? "PATCH" : "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          id: editingDepartment?.id,
+          id: editingJabatan?.id,
           name,
           office_id: form.office_id,
+          department_id: form.department_id,
           status: form.status,
         }),
       });
@@ -338,35 +397,33 @@ export default function DepartmentsPage() {
       const data = await readJsonResponse(response);
 
       if (!response.ok) {
-        throw new Error(
-          data.error || data.message || "Gagal menyimpan divisi.",
-        );
+        throw new Error(data.error || data.message || "Gagal menyimpan jabatan.");
       }
 
-      await loadDepartments();
+      await loadJabatans();
       closeModal();
     } catch (error) {
-      console.error("SAVE_DEPARTMENT_ERROR:", error);
+      console.error("SAVE_UNIT_ERROR:", error);
 
-      alert(error instanceof Error ? error.message : "Gagal menyimpan divisi.");
+      alert(error instanceof Error ? error.message : "Gagal menyimpan jabatan.");
     } finally {
       setIsSubmitting(false);
     }
   }
 
-  async function handleDeleteDepartment(department: Department) {
-    const totalUsers = department._count?.users || 0;
-    const totalUnits = department._count?.units || 0;
+  async function handleDeleteJabatan(jabatan: Jabatan) {
+    const totalUsers = jabatan._count?.users || 0;
+    const totalPositions = jabatan._count?.positions || 0;
 
-    if (totalUsers > 0 || totalUnits > 0) {
+    if (totalUsers > 0 || totalPositions > 0) {
       alert(
-        "Divisi ini masih memiliki unit atau digunakan oleh karyawan. Ubah status menjadi Nonaktif jika tidak ingin digunakan.",
+        "Jabatan ini masih memiliki posisi atau digunakan oleh karyawan. Ubah status menjadi Nonaktif jika tidak ingin digunakan.",
       );
       return;
     }
 
     const confirmDelete = window.confirm(
-      `Yakin ingin menghapus divisi "${department.name}"? Data yang dihapus tidak bisa dikembalikan.`,
+      `Yakin ingin menghapus jabatan "${jabatan.name}"? Data yang dihapus tidak bisa dikembalikan.`,
     );
 
     if (!confirmDelete) return;
@@ -374,27 +431,22 @@ export default function DepartmentsPage() {
     try {
       setIsDeleting(true);
 
-      const response = await fetch(
-        `/api/admin/departments?id=${department.id}`,
-        {
-          method: "DELETE",
-        },
-      );
+      const response = await fetch(`/api/admin/jabatans?id=${jabatan.id}`, {
+        method: "DELETE",
+      });
 
       const data = await readJsonResponse(response);
 
       if (!response.ok) {
-        throw new Error(
-          data.error || data.message || "Gagal menghapus divisi.",
-        );
+        throw new Error(data.error || data.message || "Gagal menghapus jabatan.");
       }
 
-      alert("Divisi berhasil dihapus.");
-      await loadDepartments();
+      alert("Jabatan berhasil dihapus.");
+      await loadJabatans();
     } catch (error) {
-      console.error("DELETE_DEPARTMENT_ERROR:", error);
+      console.error("DELETE_UNIT_ERROR:", error);
 
-      alert(error instanceof Error ? error.message : "Gagal menghapus divisi.");
+      alert(error instanceof Error ? error.message : "Gagal menghapus jabatan.");
     } finally {
       setIsDeleting(false);
     }
@@ -402,17 +454,17 @@ export default function DepartmentsPage() {
 
   return (
     <MobileShell variant="admin">
-      <DepartmentMotionStyles />
+      <JabatanMotionStyles />
 
-      <AppHeader title="Daftar Divisi" variant="admin" />
+      <AppHeader title="Daftar Jabatan" variant="admin" />
 
       <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 pb-28 md:px-10 lg:px-16">
-        <div className="department-enter overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-xl shadow-slate-300/30">
+        <div className="jabatan-enter overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-xl shadow-slate-300/30">
           <div className="bg-[#123c8c] p-6 text-white md:p-8">
             <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
               <div>
                 <h1 className="mt-3 text-3xl font-black tracking-tight md:text-4xl">
-                  Daftar Divisi
+                  Daftar Jabatan
                 </h1>
               </div>
 
@@ -422,19 +474,19 @@ export default function DepartmentsPage() {
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-white px-5 text-sm font-black text-[#123c8c] shadow-lg shadow-blue-950/20 transition duration-200 hover:-translate-y-0.5 hover:bg-blue-50 active:scale-[0.98]"
               >
                 <Plus size={18} />
-                Tambah Divisi
+                Tambah Jabatan
               </button>
             </div>
           </div>
 
           <div className="p-5 md:p-8">
             <div
-              className="department-row-enter grid gap-3 md:grid-cols-[1fr_230px_210px_auto]"
+              className="jabatan-row-enter grid gap-3 md:grid-cols-[1fr_220px_220px_210px_auto]"
               style={{ animationDelay: "80ms" }}
             >
               <div>
                 <label className="text-sm font-black text-slate-500">
-                  Nama Divisi / Kantor
+                  Nama Jabatan / Divisi / Kantor
                 </label>
 
                 <div className="relative mt-3">
@@ -446,8 +498,8 @@ export default function DepartmentsPage() {
                   <input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Cari divisi atau kantor..."
-                    className="department-field w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-4 pl-12 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                    placeholder="Cari jabatan, divisi, atau kantor..."
+                    className="jabatan-field w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-4 pl-12 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                   />
                 </div>
               </div>
@@ -459,8 +511,11 @@ export default function DepartmentsPage() {
 
                 <select
                   value={officeFilter}
-                  onChange={(event) => setOfficeFilter(event.target.value)}
-                  className="department-field mt-3 w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                  onChange={(event) => {
+                    setOfficeFilter(event.target.value);
+                    setDepartmentFilter("all");
+                  }}
+                  className="jabatan-field mt-3 w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 >
                   <option value="all">Semua Kantor</option>
                   <option value="none">Tanpa Kantor</option>
@@ -474,13 +529,36 @@ export default function DepartmentsPage() {
 
               <div>
                 <label className="text-sm font-black text-slate-500">
+                  Filter Divisi
+                </label>
+
+                <select
+                  value={departmentFilter}
+                  onChange={(event) => setDepartmentFilter(event.target.value)}
+                  className="jabatan-field mt-3 w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                >
+                  <option value="all">Semua Divisi</option>
+                  <option value="none">Tanpa Divisi</option>
+                  {filteredDepartmentsForFilter.map((department) => (
+                    <option key={department.id} value={department.id}>
+                      {department.name}
+                      {department.office?.name
+                        ? ` - ${department.office.name}`
+                        : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm font-black text-slate-500">
                   Filter Status
                 </label>
 
                 <select
                   value={statusFilter}
                   onChange={(event) => setStatusFilter(event.target.value)}
-                  className="department-field mt-3 w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                  className="jabatan-field mt-3 w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 >
                   {statusOptions.map((item) => (
                     <option key={item.value} value={item.value}>
@@ -496,53 +574,54 @@ export default function DepartmentsPage() {
                   onClick={resetFilter}
                   className="flex h-[54px] flex-1 items-center justify-center rounded-2xl border border-blue-100 bg-white px-5 text-sm font-black text-[#123c8c] shadow-sm transition hover:bg-blue-50 active:scale-[0.96] md:flex-none"
                 >
-                  Reset
+                  Atur Ulang
                 </button>
               </div>
             </div>
 
             {errorMessage ? (
-              <div className="department-row-enter mt-5 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-black text-red-700">
+              <div className="jabatan-row-enter mt-5 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-black text-red-700">
                 {errorMessage}
               </div>
             ) : null}
 
             <div
-              className="department-row-enter mt-8 overflow-hidden rounded-2xl border border-blue-100"
+              className="jabatan-row-enter mt-8 overflow-hidden rounded-2xl border border-blue-100"
               style={{ animationDelay: "130ms" }}
             >
-              <div className="hidden grid-cols-[0.3fr_1.3fr_1.2fr_0.75fr_0.75fr_1fr] bg-[#f6f8ff] px-5 py-4 text-xs font-black uppercase tracking-[0.18em] text-[#123c8c] md:grid">
+              <div className="hidden grid-cols-[0.3fr_1.2fr_1.1fr_1.1fr_0.75fr_0.75fr_1fr] bg-[#f6f8ff] px-5 py-4 text-xs font-black uppercase tracking-[0.18em] text-[#123c8c] md:grid">
                 <p>#</p>
-                <p>Divisi</p>
+                <p>Jabatan</p>
                 <p>Kantor</p>
-                <p>Unit</p>
+                <p>Divisi</p>
+                <p>Posisi</p>
                 <p>Status</p>
                 <p className="text-center">Aksi</p>
               </div>
 
               <div className="divide-y divide-blue-50 bg-white">
                 {isLoading ? (
-                  <div className="department-row-enter px-5 py-10 text-center">
+                  <div className="jabatan-row-enter px-5 py-10 text-center">
                     <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#123c8c]" />
                     <p className="mt-3 text-sm font-black text-slate-600">
-                      Mengambil data divisi...
+                      Mengambil data jabatan...
                     </p>
                   </div>
-                ) : filteredDepartments.length === 0 ? (
-                  <div className="department-row-enter px-5 py-10 text-center">
-                    <Network className="mx-auto text-slate-300" size={36} />
+                ) : filteredJabatans.length === 0 ? (
+                  <div className="jabatan-row-enter px-5 py-10 text-center">
+                    <Building2 className="mx-auto text-slate-300" size={36} />
                     <p className="mt-3 font-black text-slate-700">
-                      Data divisi tidak ditemukan.
+                      Data jabatan tidak ditemukan.
                     </p>
                     <p className="mt-1 text-sm text-slate-400">
-                      Tambahkan divisi baru atau ubah filter pencarian.
+                      Tambahkan jabatan baru atau ubah filter pencarian.
                     </p>
                   </div>
                 ) : (
-                  filteredDepartments.map((department, index) => (
+                  filteredJabatans.map((jabatan, index) => (
                     <div
-                      key={department.id}
-                      className="department-row-enter grid gap-4 px-4 py-4 text-sm transition duration-200 hover:bg-[#f8fbff] md:grid-cols-[0.3fr_1.3fr_1.2fr_0.75fr_0.75fr_1fr] md:items-center md:px-5 md:py-6"
+                      key={jabatan.id}
+                      className="jabatan-row-enter grid gap-4 px-4 py-4 text-sm transition duration-200 hover:bg-[#f8fbff] md:grid-cols-[0.3fr_1.2fr_1.1fr_1.1fr_0.75fr_0.75fr_1fr] md:items-center md:px-5 md:py-6"
                       style={{
                         animationDelay: `${index * 55}ms`,
                       }}
@@ -555,35 +634,35 @@ export default function DepartmentsPage() {
 
                           <div className="md:hidden">
                             <p className="font-black uppercase text-slate-950">
-                              {department.name}
+                              {jabatan.name}
                             </p>
 
                             <p className="mt-1 text-xs font-semibold text-slate-400">
-                              {department.office?.name || "Tanpa Kantor"} •{" "}
-                              {department._count?.units || 0} unit •{" "}
-                              {department._count?.users || 0} karyawan
+                              {jabatan.department?.office?.name || "Tanpa Kantor"}{" "}
+                              • {jabatan.department?.name || "Tanpa Divisi"} •{" "}
+                              {jabatan._count?.positions || 0} posisi
                             </p>
                           </div>
                         </div>
 
                         <span
                           className={`shrink-0 rounded-full px-3 py-1.5 text-[11px] font-black md:hidden ${
-                            department.status === "active"
+                            jabatan.status === "active"
                               ? "bg-blue-50 text-[#123c8c]"
                               : "bg-slate-100 text-slate-600"
                           }`}
                         >
-                          {formatStatus(department.status)}
+                          {formatStatus(jabatan.status)}
                         </span>
                       </div>
 
                       <div className="hidden md:block">
                         <p className="font-black uppercase text-slate-950">
-                          {department.name}
+                          {jabatan.name}
                         </p>
 
                         <p className="mt-1 text-xs font-semibold text-slate-400">
-                          {department._count?.users || 0} karyawan
+                          {jabatan._count?.users || 0} karyawan
                         </p>
                       </div>
 
@@ -593,40 +672,50 @@ export default function DepartmentsPage() {
                         </p>
 
                         <p className="mt-1 font-black text-slate-600 md:mt-0">
-                          {department.office?.name || "Tanpa Kantor"}
+                          {jabatan.department?.office?.name || "Tanpa Kantor"}
                         </p>
 
                         <p className="mt-1 line-clamp-1 text-xs font-semibold text-slate-400">
-                          {department.office?.address || ""}
+                          {jabatan.department?.office?.address || ""}
                         </p>
                       </div>
 
                       <div className="rounded-2xl border border-blue-100 bg-[#f8fbff] p-3 md:border-0 md:bg-transparent md:p-0">
                         <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-400 md:hidden">
-                          Unit
+                          Divisi
                         </p>
 
                         <p className="mt-1 font-black text-slate-600 md:mt-0">
-                          {department._count?.units || 0}
+                          {jabatan.department?.name || "Tanpa Divisi"}
+                        </p>
+                      </div>
+
+                      <div className="rounded-2xl border border-blue-100 bg-[#f8fbff] p-3 md:border-0 md:bg-transparent md:p-0">
+                        <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-400 md:hidden">
+                          Posisi
+                        </p>
+
+                        <p className="mt-1 font-black text-slate-600 md:mt-0">
+                          {jabatan._count?.positions || 0}
                         </p>
                       </div>
 
                       <div className="hidden md:block">
                         <span
                           className={`w-fit rounded-full px-4 py-2 text-xs font-black ${
-                            department.status === "active"
+                            jabatan.status === "active"
                               ? "bg-blue-50 text-[#123c8c]"
                               : "bg-slate-100 text-slate-600"
                           }`}
                         >
-                          {formatStatus(department.status)}
+                          {formatStatus(jabatan.status)}
                         </span>
                       </div>
 
                       <div className="grid gap-2 md:flex md:justify-center">
                         <button
                           type="button"
-                          onClick={() => openEditModal(department)}
+                          onClick={() => openEditModal(jabatan)}
                           className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#123c8c] px-4 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#0f3274] active:scale-[0.97] md:h-auto md:w-fit md:rounded-xl md:border md:border-blue-100 md:bg-white md:px-4 md:py-2 md:text-xs md:text-[#123c8c] md:shadow-none md:hover:bg-[#eaf1ff]"
                         >
                           <Edit size={16} className="md:h-3.5 md:w-3.5" />
@@ -635,11 +724,11 @@ export default function DepartmentsPage() {
 
                         <button
                           type="button"
-                          onClick={() => handleDeleteDepartment(department)}
+                          onClick={() => handleDeleteJabatan(jabatan)}
                           disabled={
                             isDeleting ||
-                            (department._count?.users || 0) > 0 ||
-                            (department._count?.units || 0) > 0
+                            (jabatan._count?.users || 0) > 0 ||
+                            (jabatan._count?.positions || 0) > 0
                           }
                           className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-red-100 bg-red-50 px-4 text-sm font-black text-red-600 transition hover:bg-red-100 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 md:h-auto md:w-fit md:rounded-xl md:px-4 md:py-2 md:text-xs"
                         >
@@ -664,20 +753,20 @@ export default function DepartmentsPage() {
       </section>
 
       {isModalOpen ? (
-        <div className="department-modal-backdrop fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/50 px-4 pb-4 backdrop-blur-sm md:items-center md:pb-0">
-          <div className="department-modal-panel max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-[2rem] bg-white p-5 shadow-2xl shadow-slate-950/30 md:p-7">
+        <div className="jabatan-modal-backdrop fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/50 px-4 pb-4 backdrop-blur-sm md:items-center md:pb-0">
+          <div className="jabatan-modal-panel max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-[2rem] bg-white p-5 shadow-2xl shadow-slate-950/30 md:p-7">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.22em] text-[#123c8c]">
-                  {editingDepartment ? "Edit Divisi" : "Tambah Divisi"}
+                  {editingJabatan ? "Edit Jabatan" : "Tambah Jabatan"}
                 </p>
 
                 <h2 className="mt-2 text-2xl font-black text-slate-950">
-                  {editingDepartment ? "Update Data Divisi" : "Divisi Baru"}
+                  {editingJabatan ? "Update Data Jabatan" : "Jabatan Baru"}
                 </h2>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Pilih kantor pemilik divisi, lalu isi nama divisi.
+                  Pilih kantor, lalu pilih divisi, kemudian isi nama jabatan.
                 </p>
               </div>
 
@@ -691,44 +780,100 @@ export default function DepartmentsPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-              <div className="department-row-enter">
-                <label className="mb-2 block text-sm font-black text-slate-700">
-                  Kantor
-                </label>
+              <div className="jabatan-row-enter rounded-[1.6rem] border border-blue-100 bg-[#f8fbff] p-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-sm font-black text-slate-700">
+                      Kantor
+                    </label>
 
-                <div className="relative">
-                  <MapPin
-                    size={18}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                  />
+                    <div className="relative">
+                      <MapPin
+                        size={18}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                      />
 
-                  <select
-                    value={form.office_id}
-                    onChange={(event) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        office_id: event.target.value,
-                      }))
-                    }
-                    className="department-field w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
-                  >
-                    <option value="">Pilih Kantor</option>
-                    {activeOffices.map((office) => (
-                      <option key={office.id} value={office.id}>
-                        {office.name}
-                        {office.address ? ` - ${office.address}` : ""}
-                      </option>
-                    ))}
-                  </select>
+                      <select
+                        value={form.office_id}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            office_id: event.target.value,
+                            department_id: "",
+                          }))
+                        }
+                        className="jabatan-field w-full appearance-none rounded-2xl border border-blue-100 bg-white py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                      >
+                        <option value="">Pilih Kantor</option>
+                        {activeOffices.map((office) => (
+                          <option key={office.id} value={office.id}>
+                            {office.name}
+                            {office.address ? ` - ${office.address}` : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-black text-slate-700">
+                      Divisi
+                    </label>
+
+                    <div className="relative">
+                      <Network
+                        size={18}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                      />
+
+                      <select
+                        value={form.department_id}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            department_id: event.target.value,
+                          }))
+                        }
+                        disabled={!form.office_id}
+                        className="jabatan-field w-full appearance-none rounded-2xl border border-blue-100 bg-white py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                      >
+                        <option value="">
+                          {form.office_id
+                            ? "Pilih Divisi"
+                            : "Pilih Kantor dulu"}
+                        </option>
+                        {formDepartments.map((department) => (
+                          <option key={department.id} value={department.id}>
+                            {department.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
+
+                {form.office_id && formDepartments.length === 0 ? (
+                  <div
+                    className="jabatan-row-enter mt-4 rounded-2xl border border-amber-100 bg-amber-50 p-4"
+                    style={{ animationDelay: "40ms" }}
+                  >
+                    <p className="text-sm font-black text-amber-700">
+                      Divisi belum tersedia untuk kantor ini
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-amber-700/80">
+                      Tambahkan Divisi terlebih dahulu dan hubungkan ke kantor
+                      yang dipilih.
+                    </p>
+                  </div>
+                ) : null}
               </div>
 
               <div
-                className="department-row-enter"
+                className="jabatan-row-enter"
                 style={{ animationDelay: "40ms" }}
               >
                 <label className="mb-2 block text-sm font-black text-slate-700">
-                  Nama Divisi
+                  Nama Jabatan
                 </label>
 
                 <input
@@ -739,17 +884,17 @@ export default function DepartmentsPage() {
                       name: event.target.value,
                     }))
                   }
-                  placeholder="Contoh: Technology, Finance, HRD"
-                  className="department-field w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                  placeholder="Contoh: Kembaliend Development, Mobile Development, Accounting"
+                  className="jabatan-field w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 />
               </div>
 
               <div
-                className="department-row-enter"
+                className="jabatan-row-enter"
                 style={{ animationDelay: "80ms" }}
               >
                 <label className="mb-2 block text-sm font-black text-slate-700">
-                  Status Divisi
+                  Status Jabatan
                 </label>
 
                 <select
@@ -760,33 +905,30 @@ export default function DepartmentsPage() {
                       status: event.target.value,
                     }))
                   }
-                  className="department-field w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                  className="jabatan-field w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 >
                   <option value="active">Aktif</option>
                   <option value="inactive">Nonaktif</option>
                 </select>
 
                 <p className="mt-2 text-xs font-semibold text-slate-400">
-                  Pilih Nonaktif jika divisi tidak digunakan sementara.
+                  Pilih Nonaktif jika jabatan tidak digunakan sementara.
                 </p>
               </div>
 
               <div
-                className="department-row-enter rounded-2xl border border-blue-100 bg-[#f6f8ff] p-4"
+                className="jabatan-row-enter rounded-2xl border border-blue-100 bg-[#f6f8ff] p-4"
                 style={{ animationDelay: "120ms" }}
               >
-                <p className="text-sm font-black text-[#123c8c]">
-                  Relasi Divisi
-                </p>
+                <p className="text-sm font-black text-[#123c8c]">Relasi Jabatan</p>
                 <p className="mt-1 text-sm leading-6 text-slate-500">
-                  Divisi berada langsung di bawah kantor. Contoh: Kantor Pusat
-                  Bandung → Technology → Backend Development → Backend
-                  Developer.
+                  Jabatan berada di bawah divisi. Contoh: Kantor Pusat Bandung →
+                  Technology → Backend Development → Backend Developer.
                 </p>
               </div>
 
               <div
-                className="department-row-enter flex flex-col-reverse gap-3 pt-2 md:flex-row md:justify-end"
+                className="jabatan-row-enter flex flex-col-reverse gap-3 pt-2 md:flex-row md:justify-end"
                 style={{ animationDelay: "160ms" }}
               >
                 <button
@@ -794,7 +936,7 @@ export default function DepartmentsPage() {
                   onClick={closeModal}
                   className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-black text-slate-600 transition hover:bg-slate-200 active:scale-[0.98]"
                 >
-                  Cancel
+                  Batal
                 </button>
 
                 <button
@@ -804,9 +946,9 @@ export default function DepartmentsPage() {
                 >
                   {isSubmitting
                     ? "Menyimpan..."
-                    : editingDepartment
-                      ? "Update Divisi"
-                      : "Tambah Divisi"}
+                    : editingJabatan
+                      ? "Update Jabatan"
+                      : "Tambah Jabatan"}
                 </button>
               </div>
             </form>

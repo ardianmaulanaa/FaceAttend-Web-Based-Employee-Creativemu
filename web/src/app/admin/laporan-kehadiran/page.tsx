@@ -49,7 +49,7 @@ const statusOptions: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "Semua Status" },
   { value: "present", label: "Hadir" },
   { value: "late", label: "Terlambat" },
-  { value: "pending", label: "Pending" },
+  { value: "pending", label: "Menunggu" },
   { value: "cuti", label: "Cuti" },
 ];
 
@@ -389,7 +389,7 @@ export default function AdminAttendanceReportPage() {
                     {stats.total}
                   </h3>
                   <p className="mt-1 text-xs font-semibold text-slate-500">
-                    Data absensi
+                    Data presensi
                   </p>
                 </div>
 
@@ -533,7 +533,7 @@ export default function AdminAttendanceReportPage() {
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.22em] text-[#123c8c]">
-                  Rekap Absensi
+                  Rekap Presensi
                 </p>
 
                 <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">

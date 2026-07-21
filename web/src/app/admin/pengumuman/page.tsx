@@ -495,7 +495,7 @@ export default function AdminAnnouncementsPage() {
                 type="button"
                 onClick={resetFilter}
                 className="inline-flex h-[46px] items-center justify-center rounded-2xl border border-blue-100 bg-white px-4 text-[#123c8c] shadow-sm transition duration-200 hover:bg-[#eaf1ff] active:scale-[0.96]"
-                title="Reset Filter"
+                title="Atur Ulang Filter"
               >
                 <RefreshCw size={20} strokeWidth={2.6} />
               </button>
@@ -663,7 +663,7 @@ export default function AdminAnnouncementsPage() {
                       title: event.target.value,
                     }))
                   }
-                  placeholder="Contoh: Pengingat Absensi Harian"
+                  placeholder="Contoh: Pengingat Presensi Harian"
                   className="admin-announcement-field w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 />
               </div>
@@ -723,7 +723,7 @@ export default function AdminAnnouncementsPage() {
                   onClick={closeModal}
                   className="rounded-2xl bg-slate-100 px-5 py-3 text-sm font-black text-slate-600 transition hover:bg-slate-200 active:scale-[0.98]"
                 >
-                  Cancel
+                  Batal
                 </button>
 
                 <button

@@ -84,7 +84,7 @@ export async function GET(req: NextRequest) {
         checkIn: "--:--",
         checkOut: "--:--",
         status: "Pending",
-        description: "Belum absensi hari ini",
+        description: "Belum presensi hari ini",
       });
     }
 
@@ -92,14 +92,14 @@ export async function GET(req: NextRequest) {
     const checkOut = formatTime(attendance.check_out_time);
     const status = formatStatus(attendance.status);
 
-    let description = "Menunggu absensi";
+    let description = "Menunggu presensi";
 
     if (attendance.check_in_time && !attendance.check_out_time) {
       description = "Sudah check-in";
     }
 
     if (attendance.check_in_time && attendance.check_out_time) {
-      description = "Absensi hari ini selesai";
+      description = "Presensi hari ini selesai";
     }
 
     if (attendance.late_minutes > 0) {
@@ -123,7 +123,7 @@ export async function GET(req: NextRequest) {
         message:
           error instanceof Error
             ? error.message
-            : "Gagal mengambil data absensi hari ini.",
+            : "Gagal mengambil data presensi hari ini.",
       },
       { status: 401 }
     );

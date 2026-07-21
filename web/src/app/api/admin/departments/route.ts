@@ -124,7 +124,7 @@ export async function GET(req: NextRequest) {
         _count: {
           select: {
             users: true,
-            units: true,
+            jabatans: true,
           },
         },
       },
@@ -294,7 +294,7 @@ export async function POST(req: NextRequest) {
         _count: {
           select: {
             users: true,
-            units: true,
+            jabatans: true,
           },
         },
       },
@@ -486,7 +486,7 @@ export async function PATCH(req: NextRequest) {
         _count: {
           select: {
             users: true,
-            units: true,
+            jabatans: true,
           },
         },
       },
@@ -561,7 +561,7 @@ export async function DELETE(req: NextRequest) {
         _count: {
           select: {
             users: true,
-            units: true,
+            jabatans: true,
           },
         },
       },
@@ -577,12 +577,12 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    if (department._count.users > 0 || department._count.units > 0) {
+    if (department._count.users > 0 || department._count.jabatans > 0) {
       return NextResponse.json(
         {
           success: false,
           message:
-            "Divisi tidak bisa dihapus karena masih memiliki unit atau karyawan. Ubah status menjadi Nonaktif.",
+            "Divisi tidak bisa dihapus karena masih memiliki jabatan atau karyawan. Ubah status menjadi Nonaktif.",
         },
         { status: 400 }
       );
