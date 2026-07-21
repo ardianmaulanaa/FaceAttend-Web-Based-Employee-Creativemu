@@ -553,16 +553,36 @@ export default function AppHeader({
   useEffect(() => {
     try {
       const storedAdmin = localStorage.getItem("faceattend_sidebar_admin_order");
-      if (storedAdmin) setAdminMenuOrder(JSON.parse(storedAdmin));
+      if (storedAdmin) {
+        const parsed = JSON.parse(storedAdmin);
+        if (Array.isArray(parsed) && parsed.length === adminMenus.length) {
+          setAdminMenuOrder(parsed);
+        }
+      }
 
       const storedMaster = localStorage.getItem("faceattend_sidebar_master_order");
-      if (storedMaster) setMasterDataMenuOrder(JSON.parse(storedMaster));
+      if (storedMaster) {
+        const parsed = JSON.parse(storedMaster);
+        if (Array.isArray(parsed) && parsed.length === masterDataMenus.length) {
+          setMasterDataMenuOrder(parsed);
+        }
+      }
 
       const storedOp = localStorage.getItem("faceattend_sidebar_op_order");
-      if (storedOp) setOperationalMenuOrder(JSON.parse(storedOp));
+      if (storedOp) {
+        const parsed = JSON.parse(storedOp);
+        if (Array.isArray(parsed) && parsed.length === operationalMenus.length) {
+          setOperationalMenuOrder(parsed);
+        }
+      }
 
       const storedEmp = localStorage.getItem("faceattend_sidebar_emp_order");
-      if (storedEmp) setEmployeeNavOrder(JSON.parse(storedEmp));
+      if (storedEmp) {
+        const parsed = JSON.parse(storedEmp);
+        if (Array.isArray(parsed) && parsed.length === employeeNav.length) {
+          setEmployeeNavOrder(parsed);
+        }
+      }
     } catch (e) {
       console.error(e);
     }
