@@ -26,7 +26,6 @@ import {
   MapPin,
   Network,
   Plus,
-  RefreshCw,
   Search,
   ShieldCheck,
   Trash2,
@@ -1121,14 +1120,6 @@ export default function AdminEmployeesPage() {
                 />
               </div>
 
-              <button
-                type="button"
-                onClick={loadEmployees}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#123c8c] px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#0f3274] active:scale-[0.98]"
-              >
-                <RefreshCw size={18} />
-                Refresh
-              </button>
             </div>
           </div>
 

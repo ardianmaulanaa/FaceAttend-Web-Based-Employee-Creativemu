@@ -13,7 +13,6 @@ import {
   Home,
   Loader2,
   MapPin,
-  RefreshCw,
   Search,
   ShieldAlert,
   UserRound,
@@ -400,14 +399,6 @@ export default function AdminNotificationsPage() {
               </h1>
             </div>
 
-            <button
-              type="button"
-              onClick={loadNotifications}
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-white px-5 text-sm font-black text-[#123c8c] shadow-lg shadow-blue-950/20 transition hover:-translate-y-0.5 hover:bg-blue-50 active:scale-[0.98]"
-            >
-              <RefreshCw size={18} />
-              Refresh
-            </button>
           </div>
         </section>
 

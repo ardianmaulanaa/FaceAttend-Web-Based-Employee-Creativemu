@@ -679,6 +679,7 @@ export default function HomePage() {
                   <WhatsAppButton />
 
                   <AnnouncementButton
+                    href="/notifikasi"
                     unread={hasUnreadAnnouncement}
                     onClick={markAnnouncementsAsRead}
                   />

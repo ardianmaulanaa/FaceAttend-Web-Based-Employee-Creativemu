@@ -9,7 +9,6 @@ import {
   ChevronRight,
   Loader2,
   Megaphone,
-  RefreshCcw,
 } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 
@@ -89,20 +88,14 @@ export default function EmployeeNotificationPage() {
     unread: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [pageError, setPageError] = useState("");
 
   const monthTitle = useMemo(() => getMonthTitle(), []);
 
-  async function loadNotifications(mode: "initial" | "refresh" = "initial") {
+  async function loadNotifications() {
     try {
-      if (mode === "initial") {
-        setIsLoading(true);
-      } else {
-        setIsRefreshing(true);
-      }
-
+      setIsLoading(true);
       setPageError("");
 
       const response = await fetch("/api/notifications", {
@@ -129,7 +122,6 @@ export default function EmployeeNotificationPage() {
       );
     } finally {
       setIsLoading(false);
-      setIsRefreshing(false);
     }
   }
 
@@ -188,7 +180,7 @@ export default function EmployeeNotificationPage() {
   }
 
   useEffect(() => {
-    void loadNotifications("initial");
+    void loadNotifications();
   }, []);
 
   return (
@@ -263,19 +255,6 @@ export default function EmployeeNotificationPage() {
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => loadNotifications("refresh")}
-              disabled={isRefreshing}
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#123c8c] px-5 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isRefreshing ? (
-                <Loader2 size={18} className="animate-spin" />
-              ) : (
-                <RefreshCcw size={18} />
-              )}
-              Refresh
-            </button>
           </div>
 
           {pageError ? (

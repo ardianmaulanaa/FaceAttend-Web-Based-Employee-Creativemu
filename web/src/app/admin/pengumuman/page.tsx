@@ -5,10 +5,10 @@ import Link from "next/link";
 import {
   Edit,
   FileText,
+  Loader2,
   Megaphone,
   Paperclip,
   Plus,
-  RefreshCw,
   Search,
   Trash2,
   X,
@@ -503,7 +503,7 @@ export default function AdminAnnouncementsPage() {
             <div className="divide-y divide-blue-50 bg-white">
               {isLoading ? (
                 <div className="admin-announcement-row-enter px-5 py-10 text-center">
-                  <RefreshCw className="mx-auto h-8 w-8 animate-spin text-[#123c8c]" />
+                  <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#123c8c]" />
                   <p className="mt-3 font-black text-slate-700">
                     Mengambil data pengumuman...
                   </p>

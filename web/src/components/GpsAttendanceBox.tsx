@@ -2,7 +2,13 @@
 
 import dynamic from "next/dynamic";
 import type { ComponentType } from "react";
-import { MapPin, Navigation, RefreshCw, ShieldCheck, TriangleAlert } from "lucide-react";
+import {
+  Loader2,
+  MapPin,
+  Navigation,
+  ShieldCheck,
+  TriangleAlert,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
   findNearestValidOffice,
@@ -154,7 +160,7 @@ export default function GpsAttendanceBox() {
           className="inline-flex items-center gap-2 rounded-2xl bg-blue-900 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-900/20 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isLoading ? (
-            <RefreshCw className="h-4 w-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <Navigation className="h-4 w-4" />
           )}

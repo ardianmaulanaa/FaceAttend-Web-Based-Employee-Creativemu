@@ -175,22 +175,6 @@ function getLocationCoordinate(location: LocationValue, type: "lat" | "lng") {
   );
 }
 
-function getLocationAccuracy(location: LocationValue) {
-  const objectLocation = getObjectLocation(location);
-
-  if (!objectLocation) return null;
-
-  return toNumber(objectLocation.accuracy);
-}
-
-function getLocationDistance(location: LocationValue) {
-  const objectLocation = getObjectLocation(location);
-
-  if (!objectLocation) return null;
-
-  return toNumber(objectLocation.distance);
-}
-
 function getLocationWithinRadius(location: LocationValue) {
   const objectLocation = getObjectLocation(location);
 
@@ -483,8 +467,6 @@ function LocationCard({
 }) {
   const latitude = getLocationCoordinate(location, "lat");
   const longitude = getLocationCoordinate(location, "lng");
-  const accuracy = getLocationAccuracy(location);
-  const distance = getLocationDistance(location);
   const withinRadius = getLocationWithinRadius(location);
   const locationText = formatLocationText(location);
 
@@ -535,58 +517,35 @@ function LocationCard({
       </div>
 
       {hasCoordinate || hasAddress ? (
-        <div className="mt-5">
-          <div className="rounded-2xl bg-slate-50 p-4">
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
-              Lokasi Tercatat
-            </p>
-
-            <p className="mt-2 break-words text-sm font-bold leading-6 text-slate-600">
-              {locationText ||
-                "Koordinat GPS presensi berhasil tercatat. Klik tombol di bawah untuk membuka titik lokasi pada Google Maps."}
-            </p>
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              {accuracy !== null ? (
-                <span className="rounded-full bg-white px-3 py-2 text-xs font-black text-slate-600 ring-1 ring-slate-100">
-                  Akurasi: ±{Math.round(accuracy)} meter
-                </span>
-              ) : null}
-
-              {distance !== null ? (
-                <span className="rounded-full bg-white px-3 py-2 text-xs font-black text-slate-600 ring-1 ring-slate-100">
-                  Jarak: {Math.round(distance)} meter
-                </span>
-              ) : null}
-            </div>
-          </div>
-
+        <div className="mt-4">
           {hasCoordinate ? (
             <a
               href={mapsUrl}
               target="_blank"
               rel="noreferrer"
-              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#123c8c] px-5 py-3.5 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:-translate-y-0.5 hover:bg-[#0f3274] active:scale-[0.98]"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#123c8c] px-4 py-3 text-sm font-black text-white shadow-md shadow-blue-900/15 transition hover:bg-[#0f3274] active:scale-[0.98] sm:w-auto"
             >
-              <Navigation size={18} strokeWidth={2.6} />
+              <Navigation size={17} strokeWidth={2.6} />
               Buka Lokasi di Google Maps
-              <ExternalLink size={16} strokeWidth={2.6} />
+              <ExternalLink size={15} strokeWidth={2.6} />
             </a>
           ) : null}
         </div>
       ) : (
-        <div className="mt-5 flex min-h-44 flex-col items-center justify-center rounded-2xl bg-slate-50 p-6 text-center">
-          <div className="history-detail-icon-pop flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-slate-400 shadow-sm">
-            <MapPin size={30} strokeWidth={2.4} />
+        <div className="mt-4 flex items-center gap-3 rounded-xl bg-slate-50 px-4 py-3">
+          <div className="history-detail-icon-pop flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-slate-400 shadow-sm">
+            <MapPin size={22} strokeWidth={2.4} />
           </div>
 
-          <h4 className="mt-4 text-base font-black text-slate-700">
-            Lokasi belum tersedia
-          </h4>
+          <div className="min-w-0">
+            <h4 className="text-sm font-black text-slate-700">
+              Lokasi belum tersedia
+            </h4>
 
-          <p className="mt-2 max-w-xs text-sm font-semibold leading-6 text-slate-400">
-            Data lokasi belum tersimpan untuk presensi ini.
-          </p>
+            <p className="mt-0.5 text-xs font-semibold leading-5 text-slate-400">
+              Data lokasi belum tersimpan.
+            </p>
+          </div>
         </div>
       )}
     </div>
@@ -815,24 +774,24 @@ export default function HistoryDetailPage() {
               </div>
             </section>
 
-            <section className="history-detail-row-enter rounded-[1.75rem] bg-white p-5 shadow-lg shadow-slate-200/50">
-              <div className="flex flex-col gap-1 border-b border-slate-100 pb-4">
+            <section className="history-detail-row-enter rounded-2xl bg-white p-4 shadow-md shadow-slate-200/40 md:p-5">
+              <div className="flex flex-col gap-1 border-b border-slate-100 pb-3">
                 <p className="text-xs font-black uppercase tracking-[0.2em] text-[#123c8c]">
                   GPS
                 </p>
-                <h3 className="text-xl font-black text-slate-950">
+                <h3 className="text-lg font-black text-slate-950">
                   Lokasi Presensi
                 </h3>
               </div>
 
-              <div className="mt-5 grid gap-6 divide-y divide-slate-100 lg:grid-cols-2 lg:divide-x lg:divide-y-0">
+              <div className="mt-4 grid gap-4 divide-y divide-slate-100 lg:grid-cols-2 lg:divide-x lg:divide-y-0">
                 <LocationCard
                   title="Lokasi Check-in"
                   location={attendance.checkInLocation}
                   delay="260ms"
                 />
 
-                <div className="pt-6 lg:pl-6 lg:pt-0">
+                <div className="pt-4 lg:pl-4 lg:pt-0">
                   <LocationCard
                     title="Lokasi Check-out"
                     location={attendance.checkOutLocation}
