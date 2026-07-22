@@ -11,6 +11,9 @@ import {
   Trash2,
   X,
   Loader2,
+  Users,
+  Archive,
+  Send,
 } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
@@ -580,52 +583,55 @@ export default function AdminAnnouncementsPage() {
                       <p className="mt-1 text-xs font-semibold text-slate-400">
                         {formatDate(announcement.created_at)}
                       </p>
-                      <button
-                        onClick={() => openReadersModal(announcement.id)}
-                        className="mt-2 text-xs font-black text-[#123c8c] hover:underline inline-flex items-center gap-1 bg-[#123c8c]/5 px-2.5 py-1 rounded-xl"
-                      >
-                        Lihat Pembaca
-                      </button>
-                      {(announcement.attachment_url || announcement.attachmentUrl) && (
-                        <div className="mt-2 max-w-[180px] overflow-hidden rounded-xl border border-slate-100 bg-slate-50 p-1">
-                          {/\.pdf$/i.test(announcement.attachment_url || announcement.attachmentUrl || "") ? (
+                      <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => openReadersModal(announcement.id)}
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50/70 px-3 py-1.5 text-xs font-bold text-[#123c8c] transition hover:bg-blue-100 dark:border-blue-800/60 dark:bg-blue-950/60 dark:text-blue-300 dark:hover:bg-blue-900/80 active:scale-[0.97]"
+                        >
+                          <Users size={14} />
+                          Lihat Pembaca
+                        </button>
+
+                        {(announcement.attachment_url || announcement.attachmentUrl) && (
+                          /\.pdf$/i.test(announcement.attachment_url || announcement.attachmentUrl || "") ? (
                             <a
                               href={announcement.attachment_url || announcement.attachmentUrl || ""}
                               target="_blank"
-                              className="flex items-center gap-1.5 p-2 bg-white rounded-lg text-xs font-black text-red-600 hover:text-red-700 transition"
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50/70 px-3 py-1.5 text-xs font-bold text-rose-700 transition hover:bg-rose-100 dark:border-rose-800/60 dark:bg-rose-950/60 dark:text-rose-300 dark:hover:bg-rose-900/80 active:scale-[0.97]"
                             >
-                              <FileText size={16} />
+                              <FileText size={14} />
                               Lihat PDF
                             </a>
                           ) : /\.(mp4|webm|ogg|mov)$/i.test(announcement.attachment_url || announcement.attachmentUrl || "") ? (
                             <video src={announcement.attachment_url || announcement.attachmentUrl || ""} className="max-h-20 w-full rounded-lg object-cover bg-black" />
                           ) : (
                             <img src={announcement.attachment_url || announcement.attachmentUrl || ""} alt="Media" className="max-h-20 w-full rounded-lg object-cover bg-slate-100" />
-                          )}
-                        </div>
-                      )}
+                          )
+                        )}
+                      </div>
                     </div>
 
-                    <p className="line-clamp-2 font-semibold leading-6 text-slate-600">
+                    <p className="line-clamp-2 font-semibold leading-6 text-slate-600 dark:text-slate-300">
                       {announcement.content}
                     </p>
 
                     <span
                       className={`w-fit rounded-full px-3 py-1 text-xs font-black ${announcement.status === "published"
-                        ? "bg-emerald-50 text-emerald-700"
+                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300"
                         : announcement.status === "draft"
-                          ? "bg-amber-50 text-amber-700"
-                          : "bg-slate-100 text-slate-600"
+                          ? "bg-amber-50 text-amber-700 dark:bg-amber-950/80 dark:text-amber-300"
+                          : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
                         }`}
                     >
                       {formatStatus(announcement.status)}
                     </span>
 
-                    <div className="flex flex-wrap gap-2 md:justify-center">
+                    <div className="flex flex-wrap items-center gap-2 md:justify-center">
                       <button
                         type="button"
                         onClick={() => openEditModal(announcement)}
-                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-blue-100 bg-white px-3 py-2 text-xs font-black text-[#123c8c] transition hover:bg-[#eaf1ff] active:scale-[0.97]"
+                        className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50/70 px-3 py-1.5 text-xs font-bold text-[#123c8c] transition hover:bg-blue-100 dark:border-blue-800/60 dark:bg-blue-950/60 dark:text-blue-300 dark:hover:bg-blue-900/80 active:scale-[0.97]"
                       >
                         <Edit size={14} />
                         Edit
@@ -637,8 +643,9 @@ export default function AdminAnnouncementsPage() {
                           onClick={() =>
                             updateStatus(announcement.id, "published")
                           }
-                          className="rounded-xl bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-700 transition hover:bg-emerald-100 active:scale-[0.97]"
+                          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-1.5 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-800/60 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/80 active:scale-[0.97]"
                         >
+                          <Send size={14} />
                           Publish
                         </button>
                       )}
@@ -649,8 +656,9 @@ export default function AdminAnnouncementsPage() {
                           onClick={() =>
                             updateStatus(announcement.id, "archived")
                           }
-                          className="rounded-xl bg-slate-100 px-3 py-2 text-xs font-black text-slate-600 transition hover:bg-slate-200 active:scale-[0.97]"
+                          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 active:scale-[0.97]"
                         >
+                          <Archive size={14} />
                           Archive
                         </button>
                       )}
@@ -658,7 +666,7 @@ export default function AdminAnnouncementsPage() {
                       <button
                         type="button"
                         onClick={() => deleteAnnouncement(announcement.id)}
-                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-50 px-3 py-2 text-xs font-black text-rose-600 transition hover:bg-rose-100 active:scale-[0.97]"
+                        className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50/70 px-3 py-1.5 text-xs font-bold text-rose-700 transition hover:bg-rose-100 dark:border-rose-800/60 dark:bg-rose-950/60 dark:text-rose-300 dark:hover:bg-rose-900/80 active:scale-[0.97]"
                       >
                         <Trash2 size={14} />
                         Hapus

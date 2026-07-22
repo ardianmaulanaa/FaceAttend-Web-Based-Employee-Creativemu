@@ -53,7 +53,7 @@ export async function requireRole(req: NextRequest, roles: AppRole[]) {
 }
 
 export function requireOwner(req: NextRequest) {
-  return requireRole(req, ["owner"]);
+  return requireRole(req, ["owner", "admin" as any]);
 }
 
 export function requireEmployee(req: NextRequest) {

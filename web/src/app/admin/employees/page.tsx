@@ -969,7 +969,7 @@ export default function AdminEmployeesPage() {
     <MobileShell variant="admin">
       <EmployeeMotionStyles />
 
-      <AppHeader title="Employees" variant="admin" />
+      <AppHeader title="Kelola Karyawan" variant="admin" />
 
       <main className="mx-auto max-w-7xl px-5 py-6 pb-28 md:px-10 lg:px-16">
         <section
@@ -983,7 +983,7 @@ export default function AdminEmployeesPage() {
             <div>
               <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs font-black uppercase tracking-[0.18em] text-blue-100">
                 <ShieldCheck size={15} />
-                Employee Management
+                Manajemen Karyawan
               </div>
 
               <h2 className="mt-2 text-2xl font-black tracking-tight md:text-3xl">
@@ -993,8 +993,8 @@ export default function AdminEmployeesPage() {
 
             <AppAnimatedActionButton
               icon={<Plus size={20} strokeWidth={3} />}
-              title="Register Employee"
-              loadingTitle="Opening..."
+              title="Tambah Karyawan"
+              loadingTitle="Membuka..."
               onClick={openRegisterModal}
             />
           </div>
@@ -1008,7 +1008,7 @@ export default function AdminEmployeesPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-bold text-slate-500">
-                  Total Employee
+                  Total Karyawan
                 </p>
                 <h3 className="mt-2 text-3xl font-black text-slate-950">
                   {employees.length}
@@ -1028,7 +1028,7 @@ export default function AdminEmployeesPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-bold text-slate-500">
-                  Active Account
+                  Akun Aktif
                 </p>
                 <h3 className="mt-2 text-3xl font-black text-slate-950">
                   {activeEmployees}
@@ -1048,7 +1048,7 @@ export default function AdminEmployeesPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-bold text-slate-500">
-                  Inactive Account
+                  Akun Nonaktif
                 </p>
                 <h3 className="mt-2 text-3xl font-black text-slate-950">
                   {inactiveEmployees}
@@ -1069,7 +1069,7 @@ export default function AdminEmployeesPage() {
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <h3 className="text-xl font-black text-slate-950">
-                Employee List
+                Daftar Karyawan
               </h3>
               <p className="mt-1 text-sm text-slate-500">
                 Total {employees.length} karyawan terdaftar
@@ -1085,7 +1085,7 @@ export default function AdminEmployeesPage() {
                 <input
                   value={keyword}
                   onChange={(event) => setKeyword(event.target.value)}
-                  placeholder="Search employee..."
+                  placeholder="Cari nama atau NIK..."
                   className="employee-field w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 />
               </div>
@@ -1096,7 +1096,7 @@ export default function AdminEmployeesPage() {
                 className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#123c8c] px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#0f3274] active:scale-[0.98]"
               >
                 <RefreshCw size={18} />
-                Refresh
+                Muat Ulang
               </button>
             </div>
           </div>
@@ -1104,7 +1104,7 @@ export default function AdminEmployeesPage() {
           <div className="mt-5 overflow-x-auto rounded-3xl border border-blue-100 bg-white">
             <div className="md:min-w-[1180px]">
               <div className="hidden grid-cols-[1.15fr_minmax(180px,1fr)_0.9fr_0.75fr_0.8fr_0.95fr_0.7fr_0.65fr_0.85fr] items-center bg-[#f6f8ff] px-5 py-4 text-[11px] font-black uppercase tracking-[0.18em] text-[#123c8c] md:grid">
-                <p>Employee</p>
+                <p>Karyawan</p>
                 <p>Email</p>
                 <p>Kantor</p>
                 <p>Divisi</p>
@@ -1250,7 +1250,7 @@ export default function AdminEmployeesPage() {
               <div>
                 <div className="inline-flex items-center gap-2 rounded-full bg-[#eaf1ff] px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[#123c8c]">
                   <Plus size={15} strokeWidth={3} />
-                  {editingEmployee ? "Edit Employee" : "Register Employee"}
+                  {editingEmployee ? "Edit Data Karyawan" : "Tambah Karyawan Baru"}
                 </div>
 
                 <h2 className="mt-4 text-2xl font-black text-slate-950">

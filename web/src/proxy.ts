@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
-const ADMIN_ROLES = new Set(["owner"]);
-const EMPLOYEE_ROLES = new Set(["employee"]);
+const ADMIN_ROLES = new Set(["owner", "admin"]);
+const EMPLOYEE_ROLES = new Set(["employee", "owner", "admin"]);
 const EMPLOYEE_PATHS = [
   "/home",
   "/attendance",
@@ -88,10 +88,6 @@ export async function proxy(req: NextRequest) {
       }
 
       return redirectToHome(req);
-    }
-
-    if (employeePage && ADMIN_ROLES.has(role)) {
-      return redirectToAdmin(req);
     }
 
     if (employeePage && !EMPLOYEE_ROLES.has(role)) {

@@ -665,8 +665,9 @@ export default function LoginPage() {
         return;
       }
 
-      router.replace(result.redirectTo || "/home");
-      router.refresh();
+      const targetUrl = result.redirectTo || "/home";
+      window.location.href = targetUrl;
+      return;
     } catch (error) {
       console.error("LOGIN_ERROR:", error);
 
@@ -874,7 +875,7 @@ export default function LoginPage() {
                       inputMode="email"
                       value={email}
                       onChange={(event) => setEmail(event.target.value)}
-                      placeholder="nama@creativemu.co.id"
+                      placeholder="nama@creativemu.my.id"
                       autoComplete="email"
                       disabled={formIsBusy}
                       className="border-blue-100 bg-[#f8fbff] text-slate-700 placeholder:text-slate-400 focus:border-[#123c8c] focus:bg-white focus:ring-blue-100/50 dark:border-blue-100 dark:bg-[#f8fbff] dark:text-slate-700 dark:placeholder:text-slate-400 dark:focus:border-[#123c8c] dark:focus:bg-white dark:focus:ring-blue-100/50"
@@ -901,7 +902,7 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                <div className="mt-6 space-y-3">
+                <div className="mt-6">
                   <div
                     className="login-field-enter"
                     style={{
@@ -925,33 +926,6 @@ export default function LoginPage() {
                         : isLoading
                           ? "Memproses..."
                           : "Masuk"}
-                    </AppButton>
-                  </div>
-
-                  <div
-                    className="login-field-enter"
-                    style={{
-                      animationDelay: "230ms",
-                    }}
-                  >
-                    <AppButton
-                      type="button"
-                      full
-                      variant="soft"
-                      disabled={formIsBusy}
-                      onClick={handleAdminDemoLogin}
-                      className="bg-[#fff4e6] text-[#ff8a00] ring-orange-100 hover:bg-[#ffe8cc] dark:bg-[#fff4e6] dark:text-[#ff8a00] dark:ring-orange-100 dark:hover:bg-[#ffe8cc]"
-                      leftIcon={
-                        isAdminDemoLoading ? (
-                          <Loader2 size={18} className="animate-spin" />
-                        ) : (
-                          <ShieldCheck size={18} strokeWidth={2.6} />
-                        )
-                      }
-                    >
-                      {isAdminDemoLoading
-                        ? "Masuk sebagai Owner..."
-                        : "Masuk sebagai Owner Demo"}
                     </AppButton>
                   </div>
                 </div>

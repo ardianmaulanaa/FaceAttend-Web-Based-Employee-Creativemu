@@ -213,7 +213,7 @@ export default function RegisterFacePage() {
               </button>
 
               <button className="rounded-2xl bg-[#123c8c] px-5 py-4 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#0f3478] active:scale-[0.98]">
-                Register Employee Face
+                Registrasi Wajah Karyawan
               </button>
             </div>
 

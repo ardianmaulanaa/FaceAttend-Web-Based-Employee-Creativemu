@@ -117,8 +117,8 @@ export default function AdminProfilePage() {
       return;
     }
 
-    if (userForm.phone && (userForm.phone.length !== 12 || !/^\d+$/.test(userForm.phone))) {
-      alert("Nomor telepon harus terdiri dari tepat 12 digit angka dan tidak ada spasi.");
+    if (userForm.phone && (userForm.phone.length < 10 || userForm.phone.length > 13 || !/^\d+$/.test(userForm.phone))) {
+      alert("Nomor telepon harus berupa angka 10-13 digit tanpa spasi atau simbol.");
       return;
     }
 
@@ -261,110 +261,108 @@ export default function AdminProfilePage() {
 
   return (
     <MobileShell variant="admin">
-      <main className="min-h-screen bg-[#f8fbff] pb-24">
+      <main className="min-h-screen bg-[#f8fbff] dark:bg-[#0d1117] pb-24 transition-colors">
         <AppHeader
-          title="Profile"
-          subtitle="Beranda / Settings / Profile"
+          title="Profil Admin / Owner"
           variant="admin"
         />
 
         {isLoading ? (
           <div className="flex min-h-[300px] items-center justify-center">
-            <Loader2 className="animate-spin text-[#123c8c]" size={36} />
+            <Loader2 className="animate-spin text-[#123c8c] dark:text-blue-400" size={36} />
           </div>
         ) : (
-          <section className="mx-auto mt-6 max-w-7xl px-5 md:px-10 lg:px-16">
-            <div className="grid gap-6 lg:grid-cols-[1fr_2fr]">
+          <section className="mx-auto mt-6 max-w-5xl px-5 md:px-10">
+            <div className="flex flex-col gap-6">
               
-              {/* LEFT CARD: Avatar & Company Status */}
-              <div className="rounded-[2rem] border border-blue-100 bg-white p-6 shadow-xl shadow-slate-200/50">
-                <div className="flex flex-col items-center text-center">
-                  <div className="relative h-28 w-28 overflow-hidden rounded-[2rem] border-4 border-blue-50 bg-slate-100 shadow-md">
-                    <Image
-                      src={avatarSrc}
-                      alt="Foto profil admin"
-                      fill
-                      sizes="112px"
-                      className="object-cover"
-                    />
-                  </div>
-
-                  <h2 className="mt-4 text-xl font-black text-slate-900">{admin?.name}</h2>
-                  <p className="text-sm font-semibold text-slate-500">{admin?.email}</p>
-                </div>
-
-                <div className="mt-8 border-t border-slate-100 pt-6">
-                  <h3 className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">
-                    Status Perusahaan
-                  </h3>
-
-                  <div className="mt-4">
-                    <div className="flex items-center justify-between text-sm font-bold text-slate-700">
-                      <span>Karyawan</span>
-                      <span>
-                        {totalEmployees} / {maxEmployeesLimit} ({percentage}%)
-                      </span>
-                    </div>
-
-                    <div className="mt-2 h-3.5 w-full overflow-hidden rounded-full bg-slate-100 p-0.5">
-                      <div
-                        className="h-full rounded-full bg-[#123c8c] transition-all duration-500"
-                        style={{ width: `${percentage}%` }}
+              {/* TOP CARD: Avatar & Company Status Centered */}
+              <div className="rounded-[2rem] border border-blue-100 dark:border-slate-800 bg-white dark:bg-[#161b22] p-6 shadow-xl shadow-slate-200/50 dark:shadow-none">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                  <div className="flex flex-col md:flex-row items-center text-center md:text-left gap-4">
+                    <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-[1.8rem] border-4 border-blue-50 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 shadow-md">
+                      <Image
+                        src={avatarSrc}
+                        alt="Foto profil admin"
+                        fill
+                        sizes="96px"
+                        className="object-cover"
                       />
                     </div>
+
+                    <div>
+                      <h2 className="text-xl font-black text-slate-950 dark:text-white">{admin?.name}</h2>
+                      <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 mt-0.5">{admin?.email}</p>
+                      
+                      <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-950/60 px-3.5 py-1 text-xs font-bold text-[#123c8c] dark:text-blue-400 border border-blue-100 dark:border-blue-800/50">
+                        Role: {admin?.role || "Admin"}
+                      </span>
+                    </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={handleResetCompanyData}
-                    className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-red-50 py-3.5 text-xs font-black uppercase tracking-[0.16em] text-red-600 border border-red-100 transition hover:bg-red-100/50 active:scale-[0.98]"
-                  >
-                    <Trash2 size={16} />
-                    Reset Data Perusahaan
-                  </button>
+                  <div className="w-full md:w-72 border-t md:border-t-0 md:border-l border-slate-100 dark:border-slate-800 pt-4 md:pt-0 md:pl-6">
+                    <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                      Status Perusahaan
+                    </h3>
+
+                    <div className="mt-2">
+                      <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
+                        <span>Karyawan Terdaftar</span>
+                        <span>
+                          {totalEmployees} / {maxEmployeesLimit} ({percentage}%)
+                        </span>
+                      </div>
+
+                      <div className="mt-2 h-3.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800 p-0.5">
+                        <div
+                          className="h-full rounded-full bg-[#123c8c] dark:bg-blue-500 transition-all duration-500"
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* RIGHT CARD: Tabs & Detail Forms */}
-              <div className="rounded-[2rem] border border-blue-100 bg-white p-6 shadow-xl shadow-slate-200/50">
-                <div className="flex border-b border-slate-100">
+              {/* BOTTOM CARD: Tabs & Detail Forms */}
+              <div className="rounded-[2rem] border border-blue-100 dark:border-slate-800 bg-white dark:bg-[#161b22] p-6 shadow-xl shadow-slate-200/50 dark:shadow-none">
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 border-b border-slate-100 dark:border-slate-800 pb-4">
                   <button
                     type="button"
                     onClick={() => setActiveTab("user")}
-                    className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-black transition-all ${
+                    className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${
                       activeTab === "user"
-                        ? "border-[#123c8c] text-[#123c8c]"
-                        : "border-transparent text-slate-400 hover:text-slate-700"
+                        ? "bg-[#123c8c] text-white shadow-md shadow-blue-900/20 dark:bg-blue-600"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
                     }`}
                   >
-                    <User size={16} />
-                    Profile User
+                    <User size={15} />
+                    Profil Pengguna
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setActiveTab("company")}
-                    className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-black transition-all ${
+                    className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${
                       activeTab === "company"
-                        ? "border-[#123c8c] text-[#123c8c]"
-                        : "border-transparent text-slate-400 hover:text-slate-700"
+                        ? "bg-[#123c8c] text-white shadow-md shadow-blue-900/20 dark:bg-blue-600"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
                     }`}
                   >
-                    <Building2 size={16} />
-                    Profile Perusahaan
+                    <Building2 size={15} />
+                    Profil Perusahaan
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setActiveTab("password")}
-                    className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-black transition-all ${
+                    className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${
                       activeTab === "password"
-                        ? "border-[#123c8c] text-[#123c8c]"
-                        : "border-transparent text-slate-400 hover:text-slate-700"
+                        ? "bg-[#123c8c] text-white shadow-md shadow-blue-900/20 dark:bg-blue-600"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
                     }`}
                   >
-                    <KeyRound size={16} />
-                    Reset Password
+                    <KeyRound size={15} />
+                    Ubah Password
                   </button>
                 </div>
 
@@ -375,33 +373,33 @@ export default function AdminProfilePage() {
                       <button
                         type="button"
                         onClick={() => setIsEditUserOpen(true)}
-                        className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-xs font-black text-white hover:bg-amber-600 transition active:scale-[0.98]"
+                        className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-white hover:bg-amber-600 transition active:scale-[0.98] shadow-sm"
                       >
                         <Pencil size={14} />
-                        EDIT PROFILE
+                        Edit Profil
                       </button>
                     </div>
 
                     <div className="grid gap-6 md:grid-cols-2">
                       <div className="space-y-1">
-                        <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Nama</p>
-                        <p className="text-sm font-bold text-slate-800">{admin?.name || "-"}</p>
+                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Nama Lengkap</p>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white">{admin?.name || "-"}</p>
                       </div>
 
                       <div className="space-y-1">
-                        <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Email</p>
-                        <p className="text-sm font-bold text-slate-800">{admin?.email || "-"}</p>
+                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Email Utama</p>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white">{admin?.email || "-"}</p>
                       </div>
 
                       <div className="space-y-1">
-                        <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Telepon</p>
-                        <p className="text-sm font-bold text-slate-800">{admin?.phone || "-"}</p>
+                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">No. Telepon / WhatsApp</p>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white">{admin?.phone || "-"}</p>
                       </div>
 
                       <div className="space-y-1">
-                        <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Timezone</p>
-                        <div className="flex items-center gap-2 text-sm font-bold text-slate-800">
-                          <Globe size={16} className="text-[#123c8c]" />
+                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Zona Waktu</p>
+                        <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
+                          <Globe size={16} className="text-[#123c8c] dark:text-blue-400" />
                           <span>WIB (Asia/Jakarta)</span>
                         </div>
                       </div>
@@ -416,40 +414,40 @@ export default function AdminProfilePage() {
                       <button
                         type="button"
                         onClick={() => setIsEditCompanyOpen(true)}
-                        className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-xs font-black text-white hover:bg-amber-600 transition active:scale-[0.98]"
+                        className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-white hover:bg-amber-600 transition active:scale-[0.98] shadow-sm"
                       >
                         <Pencil size={14} />
-                        EDIT KANTOR
+                        Edit Kantor
                       </button>
                     </div>
 
                     <div className="grid gap-6 md:grid-cols-2">
                       <div className="space-y-1">
-                        <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Nama Kantor</p>
-                        <p className="text-sm font-bold text-slate-800">{office?.name || "-"}</p>
+                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Nama Kantor</p>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white">{office?.name || "-"}</p>
                       </div>
 
                       <div className="space-y-1">
-                        <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Radius Absensi</p>
-                        <p className="text-sm font-bold text-slate-800">{office?.radius_meters || 100} Meter</p>
+                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Radius Absensi</p>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white">{office?.radius_meters || 100} Meter</p>
                       </div>
 
                       <div className="space-y-1 md:col-span-2">
-                        <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Alamat Perusahaan</p>
-                        <div className="flex items-start gap-2 text-sm font-bold text-slate-800">
-                          <MapPin size={16} className="mt-0.5 shrink-0 text-[#123c8c]" />
+                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Alamat Perusahaan</p>
+                        <div className="flex items-start gap-2 text-sm font-semibold text-slate-900 dark:text-white">
+                          <MapPin size={16} className="mt-0.5 shrink-0 text-[#123c8c] dark:text-blue-400" />
                           <span>{office?.address || "-"}</span>
                         </div>
                       </div>
 
                       <div className="space-y-1">
-                        <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Latitude</p>
-                        <p className="text-sm font-bold text-slate-800">{office?.latitude || "-"}</p>
+                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Latitude</p>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white">{office?.latitude || "-"}</p>
                       </div>
 
                       <div className="space-y-1">
-                        <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Longitude</p>
-                        <p className="text-sm font-bold text-slate-800">{office?.longitude || "-"}</p>
+                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Longitude</p>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white">{office?.longitude || "-"}</p>
                       </div>
                     </div>
                   </div>
@@ -459,34 +457,34 @@ export default function AdminProfilePage() {
                 {activeTab === "password" && (
                   <form onSubmit={handleResetPassword} className="mt-6 space-y-4 max-w-md">
                     <div className="space-y-1">
-                      <label className="text-xs font-black text-slate-400 uppercase">Kata Sandi Lama</label>
+                      <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Kata Sandi Lama</label>
                       <input
                         type="password"
                         value={passwordForm.current}
                         onChange={(e) => setPasswordForm({ ...passwordForm, current: e.target.value })}
-                        className="mt-1 h-12 w-full rounded-2xl border border-blue-100 bg-[#f7f9ff] px-4 text-sm font-bold text-slate-800 outline-none focus:border-[#123c8c]"
+                        className="mt-1 h-11 w-full rounded-2xl border border-blue-100 dark:border-slate-800 bg-[#f7f9ff] dark:bg-[#0d1117] px-4 text-sm font-normal text-slate-900 dark:text-white outline-none focus:border-[#123c8c] dark:focus:border-blue-500"
                         placeholder="Masukkan kata sandi lama"
                       />
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-xs font-black text-slate-400 uppercase">Kata Sandi Baru</label>
+                      <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Kata Sandi Baru</label>
                       <input
                         type="password"
                         value={passwordForm.new}
                         onChange={(e) => setPasswordForm({ ...passwordForm, new: e.target.value })}
-                        className="mt-1 h-12 w-full rounded-2xl border border-blue-100 bg-[#f7f9ff] px-4 text-sm font-bold text-slate-800 outline-none focus:border-[#123c8c]"
+                        className="mt-1 h-11 w-full rounded-2xl border border-blue-100 dark:border-slate-800 bg-[#f7f9ff] dark:bg-[#0d1117] px-4 text-sm font-normal text-slate-900 dark:text-white outline-none focus:border-[#123c8c] dark:focus:border-blue-500"
                         placeholder="Minimal 8 karakter"
                       />
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-xs font-black text-slate-400 uppercase">Konfirmasi Kata Sandi Baru</label>
+                      <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">Konfirmasi Kata Sandi Baru</label>
                       <input
                         type="password"
                         value={passwordForm.confirm}
                         onChange={(e) => setPasswordForm({ ...passwordForm, confirm: e.target.value })}
-                        className="mt-1 h-12 w-full rounded-2xl border border-blue-100 bg-[#f7f9ff] px-4 text-sm font-bold text-slate-800 outline-none focus:border-[#123c8c]"
+                        className="mt-1 h-11 w-full rounded-2xl border border-blue-100 dark:border-slate-800 bg-[#f7f9ff] dark:bg-[#0d1117] px-4 text-sm font-normal text-slate-900 dark:text-white outline-none focus:border-[#123c8c] dark:focus:border-blue-500"
                         placeholder="Ulangi kata sandi baru"
                       />
                     </div>
@@ -494,9 +492,9 @@ export default function AdminProfilePage() {
                     <button
                       type="submit"
                       disabled={isSaving}
-                      className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#123c8c] py-3.5 text-sm font-black text-white hover:bg-[#0f3274] transition active:scale-[0.98]"
+                      className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#123c8c] dark:bg-blue-600 py-3 text-sm font-bold text-white hover:bg-[#0f3274] dark:hover:bg-blue-700 transition active:scale-[0.98] shadow-md shadow-blue-900/20"
                     >
-                      {isSaving ? <Loader2 className="animate-spin" size={18} /> : "RESET PASSWORD"}
+                      {isSaving ? <Loader2 className="animate-spin" size={18} /> : "Simpan Password Baru"}
                     </button>
                   </form>
                 )}
@@ -534,12 +532,18 @@ export default function AdminProfilePage() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-black text-slate-500 uppercase">Telepon (12 Digit)</label>
+                  <label className="text-xs font-semibold text-slate-500">Telepon / WA (Maks 12 Digit)</label>
                   <input
                     type="text"
+                    inputMode="numeric"
+                    maxLength={12}
                     value={userForm.phone}
-                    onChange={(e) => setUserForm({ ...userForm, phone: e.target.value })}
-                    className="mt-1 h-12 w-full rounded-2xl border border-blue-100 bg-[#f7f9ff] px-4 text-sm font-bold text-slate-800 outline-none focus:border-[#123c8c]"
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, "").slice(0, 12);
+                      setUserForm({ ...userForm, phone: val });
+                    }}
+                    placeholder="Contoh: 081234567890"
+                    className="mt-1 h-11 w-full rounded-2xl border border-blue-100 bg-[#f7f9ff] px-4 text-sm font-semibold text-slate-800 outline-none focus:border-[#123c8c]"
                   />
                 </div>
 

@@ -24,6 +24,7 @@ import {
   Settings,
   UserPlus,
   UserRound,
+  UserCheck,
   UserRoundCog,
   X,
   Moon,
@@ -150,6 +151,11 @@ const operationalMenus = [
     href: "/admin/profil-karyawan",
     label: "Profil Karyawan",
     icon: UserRound,
+  },
+  {
+    href: "/admin/profile",
+    label: "Profil Saya",
+    icon: UserCheck,
   },
   {
     href: "/admin/salary",
@@ -967,9 +973,9 @@ export default function AppHeader({
             Number.isFinite(unreadCount)
               ? unreadCount
               : result.notifications.filter(
-                  (notif: { isRead?: boolean; status?: string }) =>
-                    !(notif?.isRead || notif?.status === "read"),
-                ).length,
+                (notif: { isRead?: boolean; status?: string }) =>
+                  !(notif?.isRead || notif?.status === "read"),
+              ).length,
           );
 
           setEmployeeNotifAuthBlocked(false);
@@ -1113,11 +1119,10 @@ export default function AppHeader({
   return (
     <>
       <header
-        className={`fixed inset-x-0 top-0 z-40 border-b px-3.5 py-2.5 md:px-10 md:py-4 backdrop-blur-2xl transition-all duration-300 lg:px-16 ${
-          hasScrolled
+        className={`fixed inset-x-0 top-0 z-40 border-b px-3.5 py-2.5 md:px-10 md:py-4 backdrop-blur-2xl transition-all duration-300 lg:px-16 ${hasScrolled
             ? "border-blue-100/80 bg-white/95 dark:border-[#21262d] dark:bg-[#161b22]/95 shadow-lg shadow-slate-300/30 dark:shadow-black/20"
             : "border-white/60 bg-white/90 dark:border-[#21262d]/60 dark:bg-[#161b22]/90 shadow-sm shadow-slate-200/40 dark:shadow-none"
-        }`}
+          }`}
       >
         <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
           <div
@@ -1169,20 +1174,18 @@ export default function AppHeader({
                 onFocus={() => setIsSearchFocused(true)}
                 onKeyDown={(e) => handleSearchKeyDown(e, false)}
                 placeholder="Cari data..."
-                className={`w-full rounded-2xl py-2.5 pl-11 pr-12 text-sm font-semibold border outline-none transition-all duration-200 ${
-                  theme === "dark"
+                className={`w-full rounded-2xl py-2.5 pl-11 pr-12 text-sm font-semibold border outline-none transition-all duration-200 ${theme === "dark"
                     ? "bg-[#21262d]/50 border-[#30363d] text-slate-100 placeholder-slate-500 focus:bg-[#161b22] focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
                     : "bg-[#f6f8ff] border-blue-100 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-[#123c8c] focus:ring-1 focus:ring-[#123c8c]"
-                }`}
+                  }`}
               />
               <button
                 type="button"
                 onClick={() => triggerSearch(searchQuery)}
-                className={`absolute right-3 p-1.5 rounded-xl transition ${
-                  theme === "dark"
+                className={`absolute right-3 p-1.5 rounded-xl transition ${theme === "dark"
                     ? "text-slate-400 hover:text-[#58a6ff] hover:bg-[#30363d]"
                     : "text-slate-500 hover:text-[#123c8c] hover:bg-blue-50"
-                }`}
+                  }`}
                 aria-label="Cari"
               >
                 <Search size={16} strokeWidth={2.5} />
@@ -1192,16 +1195,14 @@ export default function AppHeader({
             {/* Suggestions Dropdown */}
             {isSearchFocused && (
               <div
-                className={`absolute left-0 right-0 mt-2 max-h-[300px] overflow-y-auto rounded-2xl border p-2 shadow-2xl transition-all duration-200 ${
-                  theme === "dark"
+                className={`absolute left-0 right-0 mt-2 max-h-[300px] overflow-y-auto rounded-2xl border p-2 shadow-2xl transition-all duration-200 ${theme === "dark"
                     ? "border-[#30363d] bg-[#161b22] shadow-black/40"
                     : "border-blue-100 bg-white shadow-slate-300/40"
-                }`}
+                  }`}
               >
                 <div
-                  className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider ${
-                    theme === "dark" ? "text-slate-500" : "text-slate-400"
-                  }`}
+                  className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider ${theme === "dark" ? "text-slate-500" : "text-slate-400"
+                    }`}
                 >
                   Riwayat Pencarian
                 </div>
@@ -1218,15 +1219,14 @@ export default function AppHeader({
                         <div
                           key={item}
                           onMouseEnter={() => setActiveSuggestionIndex(index)}
-                          className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold transition-all duration-150 cursor-pointer ${
-                            isActive
+                          className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold transition-all duration-150 cursor-pointer ${isActive
                               ? theme === "dark"
                                 ? "bg-[#1f6feb] text-white"
                                 : "bg-[#123c8c] text-white shadow-md shadow-blue-900/10"
                               : theme === "dark"
                                 ? "text-slate-300 hover:bg-[#21262d] hover:text-[#58a6ff]"
                                 : "text-slate-600 hover:bg-[#eaf1ff] hover:text-[#123c8c]"
-                          }`}
+                            }`}
                           onMouseDown={(e) => {
                             e.preventDefault();
                             setSearchQuery(item);
@@ -1250,13 +1250,12 @@ export default function AppHeader({
                               e.stopPropagation();
                             }}
                             onClick={(e) => deleteHistoryItem(e, item)}
-                            className={`p-1 rounded-lg transition-all ${
-                              isActive
+                            className={`p-1 rounded-lg transition-all ${isActive
                                 ? "text-white/80 hover:text-white hover:bg-white/10"
                                 : theme === "dark"
                                   ? "text-slate-500 hover:text-red-400 hover:bg-red-500/10"
                                   : "text-slate-400 hover:text-red-600 hover:bg-red-50"
-                            }`}
+                              }`}
                             title="Hapus dari riwayat"
                           >
                             <X size={14} strokeWidth={3} />
@@ -1275,11 +1274,10 @@ export default function AppHeader({
             <button
               type="button"
               onClick={() => setIsMobileSearchOpen(true)}
-              className={`flex lg:hidden h-10 w-10 items-center justify-center rounded-xl shadow-lg ring-1 transition hover:scale-[1.05] active:scale-[0.96] ${
-                theme === "dark"
+              className={`flex lg:hidden h-10 w-10 items-center justify-center rounded-xl shadow-lg ring-1 transition hover:scale-[1.05] active:scale-[0.96] ${theme === "dark"
                   ? "bg-[#21262d] text-[#58a6ff] ring-[#30363d] shadow-black/20"
                   : "bg-[#eaf1ff] text-[#123c8c] ring-blue-100 shadow-slate-200/70 hover:bg-blue-50"
-              }`}
+                }`}
               aria-label="Cari menu"
             >
               <Search size={16} strokeWidth={2.5} />
@@ -1383,11 +1381,10 @@ export default function AppHeader({
                                     router.push("/admin/cuti");
                                   }
                                 }}
-                                className={`relative rounded-xl p-3 transition text-left ${
-                                  notif.type === "leave-request"
+                                className={`relative rounded-xl p-3 transition text-left ${notif.type === "leave-request"
                                     ? "bg-red-50 hover:bg-red-100/70 cursor-pointer border border-red-100"
                                     : "bg-[#f6f8ff]"
-                                }`}
+                                  }`}
                               >
                                 <div className="flex items-center justify-between">
                                   <p className="text-xs font-black text-[#123c8c]">
@@ -1494,10 +1491,10 @@ export default function AppHeader({
                                       prev.map((n) =>
                                         n.id === notif.id
                                           ? {
-                                              ...n,
-                                              isRead: true,
-                                              status: "read",
-                                            }
+                                            ...n,
+                                            isRead: true,
+                                            status: "read",
+                                          }
                                           : n,
                                       ),
                                     );
@@ -1509,11 +1506,10 @@ export default function AppHeader({
                                   setIsBellMenuOpen(false);
                                   router.push(notif.href || "/notifikasi");
                                 }}
-                                className={`rounded-xl p-3 border transition text-left cursor-pointer ${
-                                  !isRead
+                                className={`rounded-xl p-3 border transition text-left cursor-pointer ${!isRead
                                     ? "bg-blue-50/50 hover:bg-blue-50 border-blue-100/50 text-slate-900 dark:text-white"
                                     : "bg-slate-50/50 hover:bg-slate-50 border-slate-100/50 text-slate-700 dark:text-slate-300"
-                                }`}
+                                  }`}
                               >
                                 <div className="flex items-center justify-between gap-1.5">
                                   <p className="text-xs font-black text-[#123c8c] dark:text-blue-400">
@@ -1631,11 +1627,10 @@ export default function AppHeader({
                         onDragOver={handleMenuDragOver}
                         onDrop={() => handleMenuDrop("admin", menuIdx)}
                         onClick={() => handleNavigate(menu.href)}
-                        className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-black transition cursor-grab active:cursor-grabbing ${
-                          active
+                        className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-black transition cursor-grab active:cursor-grabbing ${active
                             ? "bg-[#123c8c] text-white shadow-lg shadow-blue-900/20"
                             : "text-slate-600 dark:text-slate-400 hover:bg-[#eaf1ff] dark:hover:bg-slate-800 hover:text-[#123c8c] dark:hover:text-blue-400"
-                        }`}
+                          }`}
                       >
                         <Icon size={18} strokeWidth={2.5} />
                         {menu.label}
@@ -1668,11 +1663,10 @@ export default function AppHeader({
                           onDragOver={handleMenuDragOver}
                           onDrop={() => handleMenuDrop("masterData", menuIdx)}
                           onClick={() => handleNavigate(menu.href)}
-                          className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-bold transition cursor-grab active:cursor-grabbing ${
-                            active
+                          className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-bold transition cursor-grab active:cursor-grabbing ${active
                               ? "bg-[#eaf1ff] dark:bg-blue-950/40 text-[#123c8c] dark:text-blue-400"
                               : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-[#123c8c] dark:hover:text-blue-400"
-                          }`}
+                            }`}
                         >
                           <Icon size={15} strokeWidth={2.5} />
                           {menu.label}
@@ -1707,13 +1701,12 @@ export default function AppHeader({
                           onDrop={() => handleMenuDrop("operational", menuIdx)}
                           disabled={isComingSoon}
                           onClick={() => handleNavigate(menu.href)}
-                          className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-black transition cursor-grab active:cursor-grabbing ${
-                            active
+                          className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-black transition cursor-grab active:cursor-grabbing ${active
                               ? "bg-[#123c8c] text-white shadow-lg shadow-blue-900/20"
                               : isComingSoon
                                 ? "text-slate-300 dark:text-slate-700 cursor-not-allowed opacity-50"
                                 : "text-slate-600 dark:text-slate-400 hover:bg-[#eaf1ff] dark:hover:bg-slate-800 hover:text-[#123c8c] dark:hover:text-blue-400"
-                          }`}
+                            }`}
                         >
                           <Icon size={18} strokeWidth={2.5} />
                           {menu.label}
@@ -1749,13 +1742,12 @@ export default function AppHeader({
                         onDrop={() => handleMenuDrop("employee", menuIdx)}
                         disabled={isComingSoon}
                         onClick={() => handleNavigate(menu.href)}
-                        className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-black transition cursor-grab active:cursor-grabbing ${
-                          active
+                        className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-black transition cursor-grab active:cursor-grabbing ${active
                             ? "bg-[#123c8c] text-white shadow-lg shadow-blue-900/20"
                             : isComingSoon
                               ? "text-slate-300 dark:text-slate-700 cursor-not-allowed opacity-50"
                               : "text-slate-600 dark:text-slate-400 hover:bg-[#eaf1ff] dark:hover:bg-slate-800 hover:text-[#123c8c] dark:hover:text-blue-400"
-                        }`}
+                          }`}
                       >
                         <Icon size={18} strokeWidth={2.5} />
                         {menu.label}
@@ -1784,11 +1776,10 @@ export default function AppHeader({
       {isMobileSearchOpen && (
         <div className="fixed inset-0 z-[1100] flex flex-col bg-slate-900/40 dark:bg-black/60 backdrop-blur-md">
           <div
-            className={`flex flex-col h-full max-h-[85vh] w-full rounded-b-3xl border-b p-5 shadow-2xl transition-all duration-300 ${
-              theme === "dark"
+            className={`flex flex-col h-full max-h-[85vh] w-full rounded-b-3xl border-b p-5 shadow-2xl transition-all duration-300 ${theme === "dark"
                 ? "border-[#30363d] bg-[#161b22]"
                 : "border-blue-100 bg-white"
-            }`}
+              }`}
           >
             <div className="flex items-center gap-3 mb-4">
               <div className="relative flex-1 flex items-center">
@@ -1802,11 +1793,10 @@ export default function AppHeader({
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => handleSearchKeyDown(e, true)}
                   placeholder="Cari data..."
-                  className={`w-full rounded-2xl py-2.5 pl-11 pr-12 text-sm font-semibold border outline-none transition-all duration-200 ${
-                    theme === "dark"
+                  className={`w-full rounded-2xl py-2.5 pl-11 pr-12 text-sm font-semibold border outline-none transition-all duration-200 ${theme === "dark"
                       ? "bg-[#21262d] border-[#30363d] text-slate-100 placeholder-slate-500 focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff]"
                       : "bg-[#f6f8ff] border-blue-100 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-[#123c8c] focus:ring-1 focus:ring-[#123c8c]"
-                  }`}
+                    }`}
                 />
                 <button
                   type="button"
@@ -1814,11 +1804,10 @@ export default function AppHeader({
                     triggerSearch(searchQuery);
                     setIsMobileSearchOpen(false);
                   }}
-                  className={`absolute right-3 p-1.5 rounded-xl transition ${
-                    theme === "dark"
+                  className={`absolute right-3 p-1.5 rounded-xl transition ${theme === "dark"
                       ? "text-slate-400 hover:text-[#58a6ff] hover:bg-[#30363d]"
                       : "text-slate-500 hover:text-[#123c8c] hover:bg-blue-50"
-                  }`}
+                    }`}
                   aria-label="Cari"
                 >
                   <Search size={16} strokeWidth={2.5} />
@@ -1827,11 +1816,10 @@ export default function AppHeader({
               <button
                 type="button"
                 onClick={() => setIsMobileSearchOpen(false)}
-                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition active:scale-[0.96] ${
-                  theme === "dark"
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition active:scale-[0.96] ${theme === "dark"
                     ? "bg-[#21262d] text-slate-300 hover:bg-[#30363d]"
                     : "bg-[#eaf1ff] text-[#123c8c] hover:bg-blue-100"
-                }`}
+                  }`}
                 aria-label="Tutup pencarian"
               >
                 <X size={20} strokeWidth={2.8} />
@@ -1840,9 +1828,8 @@ export default function AppHeader({
 
             <div className="flex-1 overflow-y-auto space-y-4">
               <div
-                className={`px-2 py-1 text-[10px] font-black uppercase tracking-wider ${
-                  theme === "dark" ? "text-slate-500" : "text-slate-400"
-                }`}
+                className={`px-2 py-1 text-[10px] font-black uppercase tracking-wider ${theme === "dark" ? "text-slate-500" : "text-slate-400"
+                  }`}
               >
                 Riwayat Pencarian
               </div>
@@ -1858,15 +1845,14 @@ export default function AppHeader({
                     return (
                       <div
                         key={item}
-                        className={`flex items-center justify-between rounded-2xl px-4 py-3 text-left text-sm font-semibold transition-all duration-150 cursor-pointer ${
-                          isActive
+                        className={`flex items-center justify-between rounded-2xl px-4 py-3 text-left text-sm font-semibold transition-all duration-150 cursor-pointer ${isActive
                             ? theme === "dark"
                               ? "bg-[#1f6feb] text-white"
                               : "bg-[#123c8c] text-white shadow-md shadow-blue-900/10"
                             : theme === "dark"
                               ? "bg-[#21262d]/40 text-slate-300 hover:bg-[#21262d]"
                               : "bg-[#f6f8ff] text-slate-600 hover:bg-[#eaf1ff]"
-                        }`}
+                          }`}
                         onClick={() => {
                           setSearchQuery(item);
                           triggerSearch(item);
@@ -1888,13 +1874,12 @@ export default function AppHeader({
                             e.stopPropagation();
                             deleteHistoryItem(e, item);
                           }}
-                          className={`p-1.5 rounded-xl transition-all ${
-                            isActive
+                          className={`p-1.5 rounded-xl transition-all ${isActive
                               ? "text-white/80 hover:text-white hover:bg-white/10"
                               : theme === "dark"
                                 ? "text-slate-500 hover:text-red-400 hover:bg-red-500/10"
                                 : "text-slate-400 hover:text-red-600 hover:bg-red-50"
-                          }`}
+                            }`}
                           title="Hapus dari riwayat"
                         >
                           <X size={16} strokeWidth={3} />
