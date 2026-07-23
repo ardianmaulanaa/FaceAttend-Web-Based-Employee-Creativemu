@@ -95,24 +95,17 @@ function formatStatus(status: string) {
 function getDefaultTimeByShift(shiftName: string) {
   const name = shiftName.toUpperCase();
 
-  if (name.includes("MAGANG")) {
-    return {
-      checkIn: "09:00",
-      checkOut: "16:00",
-    };
-  }
-
   if (name.includes("PAGI")) {
     return {
-      checkIn: "07:00",
-      checkOut: "15:00",
+      checkIn: "08:00",
+      checkOut: "11:00",
     };
   }
 
   if (name.includes("SIANG")) {
     return {
       checkIn: "13:00",
-      checkOut: "21:00",
+      checkOut: "15:00",
     };
   }
 

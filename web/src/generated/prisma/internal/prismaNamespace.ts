@@ -1833,6 +1833,9 @@ export const OfficeLocationScalarFieldEnum = {
   id: 'id',
   name: 'name',
   address: 'address',
+  phone: 'phone',
+  postal_code: 'postal_code',
+  logo_url: 'logo_url',
   latitude: 'latitude',
   longitude: 'longitude',
   radius_meters: 'radius_meters',
@@ -2177,6 +2180,9 @@ export const OfficeLocationOrderByRelevanceFieldEnum = {
   id: 'id',
   name: 'name',
   address: 'address',
+  phone: 'phone',
+  postal_code: 'postal_code',
+  logo_url: 'logo_url',
   status: 'status'
 } as const
 

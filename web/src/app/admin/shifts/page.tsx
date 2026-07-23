@@ -59,19 +59,19 @@ const shiftFilterOptions = [
   },
   {
     value: "UTAMA",
-    label: "Utama",
+    label: "Utama (08.00 - 17.00)",
   },
   {
     value: "MAGANG",
-    label: "Magang",
+    label: "Magang (08.00 - 17.00)",
   },
   {
     value: "SHIFT PAGI",
-    label: "Shift Pagi",
+    label: "Shift Pagi (08.00 - 11.00)",
   },
   {
     value: "SHIFT SIANG",
-    label: "Shift Siang",
+    label: "Shift Siang (13.00 - 15.00)",
   },
   {
     value: "active",
@@ -122,6 +122,13 @@ function formatStatus(status: string) {
   if (status === "inactive") return "Nonaktif";
 
   return status;
+}
+
+function getShiftHoursText(shiftName: string) {
+  const name = shiftName.toUpperCase();
+  if (name.includes("PAGI")) return "08:00 - 11:00";
+  if (name.includes("SIANG")) return "13:00 - 15:00";
+  return "08:00 - 17:00";
 }
 
 async function readJsonResponse(response: Response) {
@@ -497,8 +504,11 @@ export default function ShiftsPage() {
                         </div>
 
                         <div className="md:hidden">
-                          <p className="font-black uppercase text-slate-950">
-                            {shift.name}
+                          <p className="font-black uppercase text-slate-950 flex flex-wrap items-center gap-2">
+                            <span>{shift.name}</span>
+                            <span className="text-xs font-bold text-[#123c8c] bg-blue-50 px-2 py-0.5 rounded-lg normal-case">
+                              ({getShiftHoursText(shift.name)})
+                            </span>
                           </p>
                           <p className="mt-1 text-xs font-semibold text-slate-400">
                             Toleransi {shift.tolerance_minutes || 0} menit
@@ -518,8 +528,11 @@ export default function ShiftsPage() {
                     </div>
 
                     <div className="hidden md:block">
-                      <p className="font-black uppercase text-slate-950">
-                        {shift.name}
+                      <p className="font-black uppercase text-slate-950 flex items-center gap-2">
+                        <span>{shift.name}</span>
+                        <span className="text-xs font-bold text-[#123c8c] bg-blue-50 px-2.5 py-1 rounded-lg normal-case">
+                          {getShiftHoursText(shift.name)}
+                        </span>
                       </p>
                     </div>
 

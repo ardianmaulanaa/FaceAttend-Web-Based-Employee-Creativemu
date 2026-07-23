@@ -1,20 +1,18 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import {
   Building2,
+  Camera,
   Globe,
   KeyRound,
   Loader2,
-  Mail,
   MapPin,
   Pencil,
   Phone,
-  RefreshCw,
-  Trash2,
+  Upload,
   User,
-  UsersRound,
 } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import MobileShell from "@/components/MobileShell";
@@ -33,6 +31,9 @@ type CompanyOffice = {
   id: string;
   name: string;
   address: string | null;
+  phone: string | null;
+  postal_code: string | null;
+  logo_url: string | null;
   latitude: number;
   longitude: number;
   radius_meters: number;
@@ -53,11 +54,22 @@ export default function AdminProfilePage() {
 
   // Form states
   const [userForm, setUserForm] = useState({ name: "", email: "", phone: "" });
-  const [companyForm, setCompanyForm] = useState({ name: "", address: "", latitude: 0, longitude: 0, radius_meters: 100 });
+  const [companyForm, setCompanyForm] = useState({
+    name: "",
+    address: "",
+    phone: "",
+    postal_code: "",
+    logo_url: "",
+    latitude: 0,
+    longitude: 0,
+    radius_meters: 100,
+  });
   const [passwordForm, setPasswordForm] = useState({ current: "", new: "", confirm: "" });
 
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
   const [isEditCompanyOpen, setIsEditCompanyOpen] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   async function loadData() {
     try {
@@ -74,7 +86,7 @@ export default function AdminProfilePage() {
         });
       }
 
-      // 2. Load Employees count
+      // 2. Load Employees count and office data
       const empResponse = await fetch("/api/employees", { cache: "no-store" });
       const empData = await empResponse.json();
       if (empData.success && empData.employees) {
@@ -83,14 +95,23 @@ export default function AdminProfilePage() {
         // Find first office as company profile
         if (empData.officeLocations && empData.officeLocations.length > 0) {
           const mainOffice = empData.officeLocations[0];
+          const officeLogo = mainOffice.logo_url || mainOffice.logoUrl || "";
           setOffice(mainOffice);
           setCompanyForm({
             name: mainOffice.name || "",
             address: mainOffice.address || "",
+            phone: mainOffice.phone || "",
+            postal_code: mainOffice.postal_code || mainOffice.postalCode || "",
+            logo_url: officeLogo,
             latitude: Number(mainOffice.latitude) || 0,
             longitude: Number(mainOffice.longitude) || 0,
             radius_meters: Number(mainOffice.radius_meters) || 100,
           });
+
+          if (officeLogo) {
+            localStorage.setItem("faceattend_company_logo", officeLogo);
+            window.dispatchEvent(new Event("company_profile_updated"));
+          }
         }
       }
     } catch (error) {
@@ -103,6 +124,29 @@ export default function AdminProfilePage() {
   useEffect(() => {
     void loadData();
   }, []);
+
+  // Handle Logo Upload (Base64 file reader like profile photo)
+  function handleLogoFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Format file harus berupa gambar (JPG, PNG, WebP, SVG).");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Ukuran file logo maksimal 5MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64Data = reader.result as string;
+      setCompanyForm((prev) => ({ ...prev, logo_url: base64Data }));
+    };
+    reader.readAsDataURL(file);
+  }
 
   // Update Profile User
   async function handleUpdateUser(e: React.FormEvent) {
@@ -150,7 +194,7 @@ export default function AdminProfilePage() {
     }
   }
 
-  // Update Profile Perusahaan
+  // Update Profile Perusahaan (Company Profile)
   async function handleUpdateCompany(e: React.FormEvent) {
     e.preventDefault();
     if (!companyForm.name.trim() || !companyForm.address.trim()) {
@@ -158,8 +202,8 @@ export default function AdminProfilePage() {
       return;
     }
 
-    if (!office?.id) {
-      alert("Gagal mengidentifikasi kantor perusahaan.");
+    if (companyForm.phone && (companyForm.phone.length < 10 || companyForm.phone.length > 13 || !/^\d+$/.test(companyForm.phone))) {
+      alert("Nomor telepon perusahaan harus berupa angka 10-13 digit tanpa spasi atau simbol.");
       return;
     }
 
@@ -169,9 +213,12 @@ export default function AdminProfilePage() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id: office.id,
+          id: office?.id || undefined,
           name: companyForm.name,
           address: companyForm.address,
+          phone: companyForm.phone,
+          postal_code: companyForm.postal_code,
+          logo_url: companyForm.logo_url,
           latitude: companyForm.latitude,
           longitude: companyForm.longitude,
           radius_meters: companyForm.radius_meters,
@@ -185,7 +232,17 @@ export default function AdminProfilePage() {
         return;
       }
 
-      setOffice(result.office || { ...office, ...companyForm });
+      const updatedOffice = result.office || { id: result.office?.id || office?.id || "main", ...companyForm };
+      setOffice(updatedOffice);
+      
+      if (companyForm.name) {
+        localStorage.setItem("faceattend_company_name", companyForm.name);
+      }
+      if (companyForm.logo_url) {
+        localStorage.setItem("faceattend_company_logo", companyForm.logo_url);
+      }
+      window.dispatchEvent(new Event("company_profile_updated"));
+
       setIsEditCompanyOpen(false);
       alert("Profil perusahaan berhasil diperbarui.");
     } catch {
@@ -240,23 +297,8 @@ export default function AdminProfilePage() {
     }
   }
 
-  // Reset Data Perusahaan (Demo Simulation)
-  async function handleResetCompanyData() {
-    const confirm = window.customConfirm
-      ? await window.customConfirm("Apakah Anda yakin ingin mereset seluruh data absensi dan aktivitas perusahaan? Tindakan ini tidak bisa dibatalkan.")
-      : window.confirm("Apakah Anda yakin ingin mereset seluruh data absensi dan aktivitas perusahaan? Tindakan ini tidak bisa dibatalkan.");
-    if (!confirm) return;
-
-    try {
-      setIsSaving(true);
-      // Simulate clear logs
-      alert("Proses pembersihan data perusahaan berhasil disimulasikan.");
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
   const avatarSrc = admin?.profile_photo || DEFAULT_AVATAR;
+  const companyLogoSrc = office?.logo_url || companyForm.logo_url || DEFAULT_AVATAR;
   const percentage = Math.min(Math.round((totalEmployees / maxEmployeesLimit) * 100), 100);
 
   return (
@@ -410,26 +452,45 @@ export default function AdminProfilePage() {
                 {/* TAB CONTENT: PROFILE PERUSAHAAN */}
                 {activeTab === "company" && (
                   <div className="mt-6 space-y-6">
-                    <div className="flex justify-end">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-blue-50/50 dark:bg-blue-950/20 p-4 rounded-2xl border border-blue-100/60 dark:border-blue-900/40">
+                      <div className="flex items-center gap-4">
+                        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border-2 border-blue-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">
+                          <Image
+                            src={companyLogoSrc}
+                            alt="Logo Perusahaan"
+                            fill
+                            sizes="64px"
+                            className="object-contain p-1"
+                          />
+                        </div>
+                        <div>
+                          <h4 className="text-base font-black text-slate-900 dark:text-white">{office?.name || "Profil Perusahaan"}</h4>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Logo resmi perusahaan di aplikasi</p>
+                        </div>
+                      </div>
+
                       <button
                         type="button"
                         onClick={() => setIsEditCompanyOpen(true)}
-                        className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-white hover:bg-amber-600 transition active:scale-[0.98] shadow-sm"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-xs font-bold text-white hover:bg-amber-600 transition active:scale-[0.98] shadow-sm"
                       >
                         <Pencil size={14} />
-                        Edit Kantor
+                        Edit Kantor & Logo
                       </button>
                     </div>
 
                     <div className="grid gap-6 md:grid-cols-2">
                       <div className="space-y-1">
-                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Nama Kantor</p>
+                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Nama Perusahaan / Kantor</p>
                         <p className="text-sm font-semibold text-slate-900 dark:text-white">{office?.name || "-"}</p>
                       </div>
 
                       <div className="space-y-1">
-                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Radius Absensi</p>
-                        <p className="text-sm font-semibold text-slate-900 dark:text-white">{office?.radius_meters || 100} Meter</p>
+                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">No. Telepon Perusahaan</p>
+                        <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
+                          <Phone size={15} className="text-[#123c8c] dark:text-blue-400" />
+                          <span>{office?.phone || "-"}</span>
+                        </div>
                       </div>
 
                       <div className="space-y-1 md:col-span-2">
@@ -438,6 +499,16 @@ export default function AdminProfilePage() {
                           <MapPin size={16} className="mt-0.5 shrink-0 text-[#123c8c] dark:text-blue-400" />
                           <span>{office?.address || "-"}</span>
                         </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Kode Pos</p>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white">{office?.postal_code || "-"}</p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Radius Absensi</p>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white">{office?.radius_meters || 100} Meter</p>
                       </div>
 
                       <div className="space-y-1">
@@ -568,20 +639,75 @@ export default function AdminProfilePage() {
           </div>
         )}
 
-        {/* MODAL EDIT COMPANY OFFICE */}
+        {/* MODAL EDIT COMPANY OFFICE & LOGO */}
         {isEditCompanyOpen && (
           <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm">
-            <div className="w-full max-w-lg rounded-[2.5rem] border border-blue-100 bg-white p-6 shadow-2xl">
-              <h3 className="text-xl font-black text-slate-900">Ubah Profil Perusahaan</h3>
+            <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-[2.5rem] border border-blue-100 bg-white p-6 shadow-2xl">
+              <h3 className="text-xl font-black text-slate-900">Ubah Profil Perusahaan & Logo</h3>
               
               <form onSubmit={handleUpdateCompany} className="mt-4 space-y-4">
+                {/* LOGO UPLOAD SECTION (Like Employee Photo Profile Change) */}
+                <div className="flex flex-col items-center justify-center gap-3 bg-blue-50/70 p-4 rounded-2xl border border-blue-100">
+                  <div className="relative h-24 w-24 overflow-hidden rounded-2xl border-4 border-white bg-white shadow-md">
+                    <Image
+                      src={companyForm.logo_url || DEFAULT_AVATAR}
+                      alt="Preview Logo Perusahaan"
+                      fill
+                      sizes="96px"
+                      className="object-contain p-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute inset-0 flex items-center justify-center bg-black/40 text-white opacity-0 hover:opacity-100 transition-opacity"
+                    >
+                      <Camera size={24} />
+                    </button>
+                  </div>
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoFileSelect}
+                    className="hidden"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#123c8c] px-4 py-2 text-xs font-bold text-white hover:bg-[#0f3274] transition shadow-sm"
+                  >
+                    <Upload size={14} />
+                    Unggah Logo Perusahaan
+                  </button>
+                  <p className="text-[11px] text-slate-500 font-medium">Format: PNG, JPG, WebP, SVG (Transparan disarankan, maks 5MB)</p>
+                </div>
+
                 <div>
-                  <label className="text-xs font-black text-slate-500 uppercase">Nama Kantor</label>
+                  <label className="text-xs font-black text-slate-500 uppercase">Nama Perusahaan / Kantor</label>
                   <input
                     type="text"
                     value={companyForm.name}
                     onChange={(e) => setCompanyForm({ ...companyForm, name: e.target.value })}
                     className="mt-1 h-12 w-full rounded-2xl border border-blue-100 bg-[#f7f9ff] px-4 text-sm font-bold text-slate-800 outline-none focus:border-[#123c8c]"
+                    placeholder="Contoh: PT Creativemu Digital Indonesia"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-black text-slate-500 uppercase">No. Telepon Perusahaan (12-13 Digit)</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={13}
+                    value={companyForm.phone}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, "").slice(0, 13);
+                      setCompanyForm({ ...companyForm, phone: val });
+                    }}
+                    className="mt-1 h-12 w-full rounded-2xl border border-blue-100 bg-[#f7f9ff] px-4 text-sm font-bold text-slate-800 outline-none focus:border-[#123c8c]"
+                    placeholder="Contoh: 081234567890"
                   />
                 </div>
 
@@ -591,40 +717,75 @@ export default function AdminProfilePage() {
                     value={companyForm.address}
                     onChange={(e) => setCompanyForm({ ...companyForm, address: e.target.value })}
                     className="mt-1 h-20 w-full rounded-2xl border border-blue-100 bg-[#f7f9ff] p-4 text-sm font-bold text-slate-800 outline-none focus:border-[#123c8c] resize-none"
+                    placeholder="Alamat lengkap gedung / jalan"
                   />
                 </div>
 
-                <div className="grid gap-4 grid-cols-3">
-                  <div>
-                    <label className="text-xs font-black text-slate-500 uppercase">Latitude</label>
-                    <input
-                      type="number"
-                      step="any"
-                      value={companyForm.latitude}
-                      onChange={(e) => setCompanyForm({ ...companyForm, latitude: Number(e.target.value) })}
-                      className="mt-1 h-12 w-full rounded-2xl border border-blue-100 bg-[#f7f9ff] px-4 text-sm font-bold text-slate-800 outline-none focus:border-[#123c8c]"
-                    />
-                  </div>
+                <div>
+                  <label className="text-xs font-black text-slate-500 uppercase">Kode Pos</label>
+                  <input
+                    type="text"
+                    value={companyForm.postal_code}
+                    onChange={(e) => setCompanyForm({ ...companyForm, postal_code: e.target.value })}
+                    className="mt-1 h-12 w-full rounded-2xl border border-blue-100 bg-[#f7f9ff] px-4 text-sm font-bold text-slate-800 outline-none focus:border-[#123c8c]"
+                    placeholder="Contoh: 12340"
+                  />
+                </div>
 
-                  <div>
-                    <label className="text-xs font-black text-slate-500 uppercase">Longitude</label>
-                    <input
-                      type="number"
-                      step="any"
-                      value={companyForm.longitude}
-                      onChange={(e) => setCompanyForm({ ...companyForm, longitude: Number(e.target.value) })}
-                      className="mt-1 h-12 w-full rounded-2xl border border-blue-100 bg-[#f7f9ff] px-4 text-sm font-bold text-slate-800 outline-none focus:border-[#123c8c]"
-                    />
-                  </div>
+                <div>
+                  <label className="text-xs font-black text-slate-500 uppercase">Koordinat / Link Google Maps (Tempel Sekaligus)</label>
+                  <input
+                    type="text"
+                    value={companyForm.latitude && companyForm.longitude ? `${companyForm.latitude}, ${companyForm.longitude}` : ""}
+                    placeholder="Tempel '-6.2088, 106.8456' atau link Google Maps"
+                    onChange={(e) => {
+                      const val = decodeURIComponent(String(e.target.value || "").trim());
+                      if (!val) return;
 
+                      const patterns = [
+                        /@(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/,
+                        /[?&]q=(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/,
+                        /[?&]ll=(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/,
+                        /(-?\d+(?:\.\d+)?)\s*[\s,]+\s*(-?\d+(?:\.\d+)?)/,
+                      ];
+
+                      for (const pattern of patterns) {
+                        const match = val.match(pattern);
+                        if (match) {
+                          const lat = Number(match[1]);
+                          const lng = Number(match[2]);
+                          if (Number.isFinite(lat) && Number.isFinite(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+                            setCompanyForm((prev) => ({
+                              ...prev,
+                              latitude: lat,
+                              longitude: lng,
+                            }));
+                            break;
+                          }
+                        }
+                      }
+                    }}
+                    className="mt-1 h-12 w-full rounded-2xl border border-blue-100 bg-[#f7f9ff] px-4 text-sm font-bold text-slate-800 outline-none focus:border-[#123c8c]"
+                  />
+                  <p className="mt-1 text-[11px] text-slate-500 font-medium">Cukup sekali tempel (*copy-paste*) link Google Maps atau teks koordinat langsung (contoh: <code>-6.2088, 106.8456</code>).</p>
+                </div>
+
+                <div className="grid gap-4 grid-cols-2">
                   <div>
-                    <label className="text-xs font-black text-slate-500 uppercase">Radius (Meter)</label>
+                    <label className="text-xs font-black text-slate-500 uppercase">Radius Absensi (Meter)</label>
                     <input
                       type="number"
                       value={companyForm.radius_meters}
                       onChange={(e) => setCompanyForm({ ...companyForm, radius_meters: Number(e.target.value) })}
                       className="mt-1 h-12 w-full rounded-2xl border border-blue-100 bg-[#f7f9ff] px-4 text-sm font-bold text-slate-800 outline-none focus:border-[#123c8c]"
                     />
+                  </div>
+
+                  <div className="flex flex-col justify-center bg-blue-50/60 dark:bg-slate-800/40 p-3 rounded-2xl border border-blue-100/80">
+                    <p className="text-[11px] font-black text-slate-500 uppercase">Hasil Terdeteksi:</p>
+                    <p className="text-xs font-bold text-[#123c8c] dark:text-blue-400 mt-0.5 truncate">
+                      Lat: {companyForm.latitude || "-"} | Lng: {companyForm.longitude || "-"}
+                    </p>
                   </div>
                 </div>
 
@@ -654,3 +815,4 @@ export default function AdminProfilePage() {
     </MobileShell>
   );
 }
+

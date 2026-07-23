@@ -546,6 +546,56 @@ export default function AppHeader({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [hasScrolled, setHasScrolled] = useState(false);
   const [isBellMenuOpen, setIsBellMenuOpen] = useState(false);
+  const [companyLogo, setCompanyLogo] = useState<string>("/images/creativemu-logo/creativemu.png");
+  const [companyName, setCompanyName] = useState<string>("Creativemu");
+
+  useEffect(() => {
+    function updateLogo() {
+      const cachedLogo = localStorage.getItem("faceattend_company_logo");
+      if (cachedLogo) {
+        setCompanyLogo(cachedLogo);
+      }
+      const cachedName = localStorage.getItem("faceattend_company_name");
+      if (cachedName) {
+        setCompanyName(cachedName);
+      }
+    }
+    updateLogo();
+
+    async function fetchCompanyProfile() {
+      try {
+        const res = await fetch("/api/offices/active", { cache: "no-store" });
+        const data = await res.json();
+        if (data.success && data.offices && data.offices.length > 0) {
+          const office = data.offices[0];
+          const logo = office.logo_url || office.logoUrl;
+          const name = office.name;
+          if (logo) {
+            setCompanyLogo(logo);
+            localStorage.setItem("faceattend_company_logo", logo);
+          }
+          if (name) {
+            setCompanyName(name);
+            localStorage.setItem("faceattend_company_name", name);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    void fetchCompanyProfile();
+
+    const handleCustomEvent = () => {
+      updateLogo();
+      void fetchCompanyProfile();
+    };
+
+    window.addEventListener("company_profile_updated", handleCustomEvent);
+    return () => {
+      window.removeEventListener("company_profile_updated", handleCustomEvent);
+    };
+  }, []);
 
   // Draggable menu ordering states
   const [adminMenuOrder, setAdminMenuOrder] = useState<number[]>([0, 1, 2, 3]);
@@ -1123,9 +1173,9 @@ export default function AppHeader({
         <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
           <div
             aria-hidden="true"
-            className="absolute right-16 top-1/2 hidden h-64 w-64 -translate-y-1/2 bg-contain bg-center bg-no-repeat opacity-[0.11] blur-[0.5px] md:block"
+            className="absolute right-2 sm:right-16 top-1/2 h-48 w-48 sm:h-64 sm:w-64 -translate-y-1/2 bg-contain bg-center bg-no-repeat opacity-[0.10] sm:opacity-[0.12] blur-[0.5px] pointer-events-none"
             style={{
-              backgroundImage: "url('/images/creativemu-logo/creativemu.png')",
+              backgroundImage: `url('${companyLogo}')`,
             }}
           />
         </div>
@@ -1608,7 +1658,7 @@ export default function AppHeader({
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white keep-white p-2 shadow-lg shadow-slate-300/50 ring-1 ring-blue-100 dark:ring-transparent">
                 <Image
-                  src="/images/creativemu-logo/creativemu.png"
+                  src={companyLogo}
                   alt="Creativemu Logo"
                   width={48}
                   height={48}
@@ -1618,12 +1668,12 @@ export default function AppHeader({
               </div>
 
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#123c8c]">
-                  FaceAttend
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#123c8c] dark:text-blue-400">
+                  {companyName}
                 </p>
 
                 <h2 className="mt-1 text-xl font-black tracking-tight text-slate-950 dark:text-white">
-                  {isAdmin ? "Panel" : "Menu Karyawan"}
+                  {isAdmin ? "Panel Admin" : "Menu Karyawan"}
                 </h2>
               </div>
             </div>

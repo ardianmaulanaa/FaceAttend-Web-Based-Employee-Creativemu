@@ -17,6 +17,7 @@ import {
 import MobileShell from "@/components/MobileShell";
 import { AppButton, AppCard, AppInput } from "@/components/ui/AppUI";
 import { useTheme } from "@/context/ThemeContext";
+import { useCompanyLogo, useCompanyName } from "@/hooks/useCompanyLogo";
 
 const ADMIN_DEMO_EMAIL = "admin@creativemu.co.id";
 const ADMIN_DEMO_PASSWORD = "123456";
@@ -474,6 +475,8 @@ function FloatingAlert({
 export default function LoginPage() {
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
+  const companyLogo = useCompanyLogo();
+  const companyName = useCompanyName();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -731,7 +734,7 @@ export default function LoginPage() {
 
             <div className="relative z-10 flex h-32 w-32 items-center justify-center overflow-hidden rounded-[2rem] border border-white/80 bg-white p-5 shadow-[0_24px_58px_rgba(18,60,140,0.14)] md:h-40 md:w-40 md:p-7 dark:border-slate-800/80 dark:bg-[#0d1117] dark:shadow-none">
               <Image
-                src="/images/creativemu-logo/creativemu.png"
+                src={companyLogo}
                 alt="Creativemu Logo"
                 width={140}
                 height={140}
@@ -743,7 +746,7 @@ export default function LoginPage() {
 
           <div className="relative mt-9 text-center md:mt-12">
             <h2 className="intro-text-in text-3xl font-black uppercase tracking-[0.18em] text-slate-950 dark:text-white md:text-5xl">
-              Creativemu
+              {companyName}
             </h2>
             <p
               className="intro-text-in mt-3 text-xs font-black uppercase tracking-[0.28em] text-[#ff8a00] md:text-sm"
@@ -793,8 +796,8 @@ export default function LoginPage() {
               <div className="login-logo-pop flex items-center gap-4">
                 <div className="flex h-12 min-h-12 w-12 min-w-12 items-center justify-center overflow-hidden rounded-2xl bg-white keep-white p-2 shadow-xl shadow-slate-300/60 md:h-14 md:w-14">
                   <Image
-                    src="/images/creativemu-logo/creativemu.png"
-                    alt="Creativemu Logo"
+                    src={companyLogo}
+                    alt={`${companyName} Logo`}
                     width={56}
                     height={56}
                     className="h-full w-full object-contain"
@@ -804,12 +807,13 @@ export default function LoginPage() {
 
                 <div>
                   <h1 className="text-xl font-black tracking-tight text-slate-950 md:text-2xl">
-                    Creativemu
+                    {companyName}
                   </h1>
                 </div>
               </div>
 
-              <div className="mt-14 max-w-2xl md:mt-16 lg:mt-28">
+              <div className="relative mt-14 max-w-2xl md:mt-16 lg:mt-28">
+
                 <p
                   className="login-text-reveal text-xs font-black uppercase tracking-[0.35em] text-[#123c8c] md:text-sm"
                   style={{
@@ -826,7 +830,7 @@ export default function LoginPage() {
                   }}
                 >
                   <span className="typewriter-title login-presence-title">
-                    Creativemu Presence
+                    {companyName} Presence
                   </span>
                 </h2>
 
@@ -847,7 +851,7 @@ export default function LoginPage() {
                 animationDelay: "280ms",
               }}
             >
-              © 2026 FaceAttend for Creativemu
+              © 2026 FaceAttend for {companyName}
             </div>
           </div>
 

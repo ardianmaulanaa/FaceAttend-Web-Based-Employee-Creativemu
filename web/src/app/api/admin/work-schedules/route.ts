@@ -4,10 +4,10 @@ import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
-type AllowedRole = "owner";
+type AllowedRole = "owner" | "admin";
 
-const VIEW_ROLES: AllowedRole[] = ["owner"];
-const MANAGE_ROLES: AllowedRole[] = ["owner"];
+const VIEW_ROLES: AllowedRole[] = ["owner", "admin"];
+const MANAGE_ROLES: AllowedRole[] = ["owner", "admin"];
 
 const dayOrder = [
   "MONDAY",
@@ -47,24 +47,17 @@ const defaultShifts = [
 function getDefaultTimeByShift(shiftName: string) {
   const name = shiftName.toUpperCase();
 
-  if (name.includes("MAGANG")) {
-    return {
-      checkIn: "09:00",
-      checkOut: "16:00",
-    };
-  }
-
   if (name.includes("PAGI")) {
     return {
-      checkIn: "07:00",
-      checkOut: "15:00",
+      checkIn: "08:00",
+      checkOut: "11:00",
     };
   }
 
   if (name.includes("SIANG")) {
     return {
       checkIn: "13:00",
-      checkOut: "21:00",
+      checkOut: "15:00",
     };
   }
 
@@ -90,14 +83,11 @@ function sortShifts<T extends { name: string }>(shifts: T[]) {
     const aIndex = order.indexOf(a.name.toUpperCase());
     const bIndex = order.indexOf(b.name.toUpperCase());
 
-    if (aIndex === -1 && bIndex === -1) {
-      return a.name.localeCompare(b.name);
-    }
+    if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+    if (aIndex !== -1) return -1;
+    if (bIndex !== -1) return 1;
 
-    if (aIndex === -1) return 1;
-    if (bIndex === -1) return -1;
-
-    return aIndex - bIndex;
+    return a.name.localeCompare(b.name);
   });
 }
 
@@ -125,9 +115,7 @@ async function getCurrentUser(req: NextRequest) {
   }
 
   const user = await prisma.user.findUnique({
-    where: {
-      id: userId,
-    },
+    where: { id: userId },
     select: {
       id: true,
       role: true,
@@ -180,7 +168,10 @@ async function ensureDefaultWorkSchedules() {
               day_of_week: day,
             },
           },
-          update: {},
+          update: {
+            check_in_time: defaultTime.checkIn,
+            check_out_time: defaultTime.checkOut,
+          },
           create: {
             shift_id: shift.id,
             day_of_week: day,
@@ -263,7 +254,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json(
         {
           message:
-            "Akses ditolak. Hanya owner yang dapat mengubah jam kerja.",
+            "Akses ditolak. Hanya admin & owner yang dapat mengubah jam kerja.",
         },
         { status: 403 },
       );

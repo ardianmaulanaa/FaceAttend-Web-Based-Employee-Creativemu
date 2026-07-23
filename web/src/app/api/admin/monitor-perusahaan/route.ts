@@ -5,9 +5,9 @@ import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
-type AllowedRole = "owner";
+type AllowedRole = "owner" | "admin";
 
-const ALLOWED_ROLES: AllowedRole[] = ["owner"];
+const ALLOWED_ROLES: AllowedRole[] = ["owner", "admin"];
 
 function getDateParts(date = new Date()) {
   return {

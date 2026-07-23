@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
+import { useCompanyLogo } from "@/hooks/useCompanyLogo";
 
 type MobileShellProps = {
   children: ReactNode;
@@ -15,6 +16,7 @@ export default function MobileShell({
   withBottomPadding = true,
   className = "",
 }: MobileShellProps) {
+  const companyLogo = useCompanyLogo();
   const bottomPaddingClass = withBottomPadding ? "pb-24 md:pb-0" : "";
 
   const backgroundGlow =
@@ -34,7 +36,7 @@ export default function MobileShell({
         <div
           className="universal-watermark absolute left-1/2 top-1/2 h-[320px] w-[320px] -translate-x-1/2 -translate-y-1/2 bg-contain bg-center bg-no-repeat blur-[2px] md:h-[440px] md:w-[440px] lg:h-[520px] lg:w-[520px]"
           style={{
-            backgroundImage: "url('/images/creativemu-logo/creativemu.png')",
+            backgroundImage: `url('${companyLogo}')`,
           }}
         />
         <div className="absolute left-1/2 top-1/2 h-[620px] w-[620px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-100/20 dark:bg-blue-900/5 blur-3xl md:h-[820px] md:w-[820px]" />

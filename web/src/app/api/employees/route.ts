@@ -17,6 +17,9 @@ const officeSelect = {
   id: true,
   name: true,
   address: true,
+  phone: true,
+  postal_code: true,
+  logo_url: true,
   latitude: true,
   longitude: true,
   radius_meters: true,
@@ -348,12 +351,30 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    const offices = await prisma.officeLocation.findMany({
-      select: officeSelect,
-      orderBy: {
-        name: "asc",
-      },
-    });
+    let offices: any[] = [];
+    try {
+      offices = await prisma.officeLocation.findMany({
+        select: officeSelect,
+        orderBy: {
+          name: "asc",
+        },
+      });
+    } catch {
+      offices = await prisma.officeLocation.findMany({
+        select: {
+          id: true,
+          name: true,
+          address: true,
+          latitude: true,
+          longitude: true,
+          radius_meters: true,
+          status: true,
+        },
+        orderBy: {
+          name: "asc",
+        },
+      });
+    }
 
     const departments = await prisma.department.findMany({
       select: departmentSelect,
@@ -400,6 +421,9 @@ export async function GET(req: NextRequest) {
         id: office.id,
         name: office.name,
         address: office.address,
+        phone: office.phone || null,
+        postal_code: office.postal_code || null,
+        logo_url: office.logo_url || null,
         latitude: Number(office.latitude),
         longitude: Number(office.longitude),
         radius_meters: Number(office.radius_meters),

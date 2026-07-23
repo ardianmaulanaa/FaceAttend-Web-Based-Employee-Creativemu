@@ -199,8 +199,11 @@ model WorkSchedule {
 model OfficeLocation {
   id String @id @default(uuid()) @db.Char(36)
 
-  name    String  @unique @db.VarChar(100)
-  address String? @db.VarChar(255)
+  name        String  @unique @db.VarChar(100)
+  address     String? @db.VarChar(255)
+  phone       String? @db.VarChar(50)
+  postal_code String? @db.VarChar(20)
+  logo_url    String? @db.LongText
 
   latitude      Float
   longitude     Float
