@@ -371,7 +371,7 @@ function AdminEmployeeProfilesContent() {
                     </div>
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                        Unit Kerja
+                        Posisi
                       </p>
                       <p className="text-sm font-bold text-slate-800">
                         {selectedEmployee.unit?.name || "-"}

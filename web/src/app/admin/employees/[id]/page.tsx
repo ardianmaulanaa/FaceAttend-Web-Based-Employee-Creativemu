@@ -10,6 +10,10 @@ import {
   Building2,
   CalendarDays,
   Clock3,
+  CreditCard,
+  FileText,
+  Gift,
+  Coins,
   IdCard,
   Loader2,
   Mail,
@@ -17,6 +21,7 @@ import {
   Network,
   Phone,
   ShieldCheck,
+  UserCheck,
   UserRound,
   UsersRound,
 } from "lucide-react";
@@ -87,6 +92,17 @@ type Employee = {
   profile_photo_url?: string | null;
   photo_url?: string | null;
   avatar_url?: string | null;
+
+  birth_place?: string | null;
+  birth_date?: string | null;
+  bank_account_number?: string | null;
+  nik?: string | null;
+  employment_status?: string | null;
+  contract_start_date?: string | null;
+  contract_end_date?: string | null;
+  base_salary?: number | string | null;
+  npwp_number?: string | null;
+  ptkp_status?: string | null;
 };
 
 async function readJsonResponse(response: Response) {
@@ -166,6 +182,39 @@ function formatDate(value?: string | null) {
     month: "long",
     year: "numeric",
   }).format(date);
+}
+
+function formatTTL(birthPlace?: string | null, birthDate?: string | null) {
+  const place = birthPlace?.trim() || "";
+  const dateFormatted = formatDate(birthDate);
+
+  if (place && dateFormatted !== "-") {
+    return `${place}, ${dateFormatted}`;
+  }
+  if (place) return place;
+  if (dateFormatted !== "-") return dateFormatted;
+  return "-";
+}
+
+function formatEmploymentStatus(status?: string | null) {
+  if (!status) return "-";
+  const s = status.toLowerCase();
+  if (s === "kartap") return "Karyawan Tetap";
+  if (s === "kontrak") return "Karyawan Kontrak";
+  if (s === "magang") return "Intern / Magang";
+  if (s === "pkl") return "Siswa PKL";
+  return status;
+}
+
+function formatCurrency(amount?: number | string | null) {
+  if (!amount) return "-";
+  const num = Number(amount);
+  if (isNaN(num)) return "-";
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  }).format(num);
 }
 
 function formatStatus(status: "active" | "inactive") {
@@ -485,7 +534,55 @@ export default function AdminEmployeeDetailPage() {
                     label="Nomor Telepon"
                     value={employee.phone || "-"}
                     description="Kontak pribadi karyawan"
+                    delay={100}
+                  />
+
+                  <DetailCard
+                    icon={IdCard}
+                    label="NIK (No. Induk Kependudukan)"
+                    value={employee.nik || "-"}
+                    description="Nomor NIK KTP resmi"
                     delay={120}
+                  />
+
+                  <DetailCard
+                    icon={Gift}
+                    label="Tempat, Tanggal Lahir (TTL)"
+                    value={formatTTL(employee.birth_place, employee.birth_date)}
+                    description="TTL sesuai identitas resmi"
+                    delay={140}
+                  />
+
+                  <DetailCard
+                    icon={CreditCard}
+                    label="No. Rekening Bank"
+                    value={employee.bank_account_number || "-"}
+                    description="Rekening pencairan gaji karyawan"
+                    delay={160}
+                  />
+
+                  <DetailCard
+                    icon={UserCheck}
+                    label="Status Kepegawaian"
+                    value={formatEmploymentStatus(employee.employment_status)}
+                    description={
+                      employee.contract_start_date
+                        ? `Mulai kerja: ${formatDate(employee.contract_start_date)}`
+                        : "Status hubungan kerja"
+                    }
+                    delay={180}
+                  />
+
+                  <DetailCard
+                    icon={Coins}
+                    label="Gaji Pokok"
+                    value={formatCurrency(employee.base_salary)}
+                    description={
+                      employee.ptkp_status
+                        ? `Status PTKP: ${employee.ptkp_status}`
+                        : "Gaji acuan bulanan"
+                    }
+                    delay={200}
                   />
 
                   <DetailCard
@@ -493,7 +590,7 @@ export default function AdminEmployeeDetailPage() {
                     label="Employee ID"
                     value={employee.id}
                     description="ID unik akun di database"
-                    delay={160}
+                    delay={220}
                   />
 
                   <DetailCard
@@ -501,7 +598,7 @@ export default function AdminEmployeeDetailPage() {
                     label="Tanggal Dibuat"
                     value={formatDate(employee.created_at)}
                     description="Tanggal akun employee didaftarkan"
-                    delay={200}
+                    delay={240}
                   />
                 </div>
               </div>
@@ -513,7 +610,7 @@ export default function AdminEmployeeDetailPage() {
             >
               <SectionTitle
                 title="Struktur Organisasi"
-                subtitle="Kantor, divisi, unit, jabatan, dan shift"
+                subtitle="Kantor, divisi, posisi, jabatan, dan shift"
               />
 
               <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -534,7 +631,7 @@ export default function AdminEmployeeDetailPage() {
 
                 <DetailCard
                   icon={Building2}
-                  label="Unit"
+                  label="Posisi"
                   value={getRelationName(employee.unit)}
                   delay={160}
                 />

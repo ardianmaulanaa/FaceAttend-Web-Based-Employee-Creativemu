@@ -10,8 +10,11 @@ import {
   CalendarDays,
   ChevronRight,
   Clock3,
+  CreditCard,
   Eye,
   EyeOff,
+  Gift,
+  IdCard,
   Image as ImageIcon,
   Loader2,
   LockKeyhole,
@@ -24,6 +27,7 @@ import {
   Save,
   ShieldCheck,
   Upload,
+  UserCheck,
   UserRound,
   X,
   AlertTriangle,
@@ -177,6 +181,40 @@ function normalizePhoneInput(value: string) {
 
 function isValidPhoneNumber(value: string) {
   return /^\d{10,12}$/.test(value);
+}
+
+function formatDate(value?: string | null) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return new Intl.DateTimeFormat("id-ID", {
+    timeZone: "Asia/Jakarta",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  }).format(date);
+}
+
+function formatTTL(birthPlace?: string | null, birthDate?: string | null) {
+  const place = birthPlace?.trim() || "";
+  const dateFormatted = formatDate(birthDate);
+
+  if (place && dateFormatted !== "-") {
+    return `${place}, ${dateFormatted}`;
+  }
+  if (place) return place;
+  if (dateFormatted !== "-") return dateFormatted;
+  return "-";
+}
+
+function formatEmploymentStatus(status?: string | null) {
+  if (!status) return "-";
+  const s = status.toLowerCase();
+  if (s === "kartap") return "Karyawan Tetap";
+  if (s === "kontrak") return "Karyawan Kontrak";
+  if (s === "magang") return "Intern / Magang";
+  if (s === "pkl") return "Siswa PKL";
+  return status;
 }
 
 function getProfileAlertTheme(type: NonNullable<ProfileAlert>["type"]) {
@@ -1089,7 +1127,7 @@ export default function ProfilePage() {
         icon: ShieldCheck,
       },
       {
-        label: "Unit Kerja",
+        label: "Posisi",
         value: user.unit?.name || "-",
         icon: Building2,
       },
@@ -1102,6 +1140,26 @@ export default function ProfilePage() {
         label: "Jabatan",
         value: user.position?.name || "-",
         icon: BriefcaseBusiness,
+      },
+      {
+        label: "NIK (No. Induk Kependudukan)",
+        value: (user as any).nik || "-",
+        icon: IdCard,
+      },
+      {
+        label: "Tempat, Tanggal Lahir (TTL)",
+        value: formatTTL((user as any).birth_place, (user as any).birth_date),
+        icon: Gift,
+      },
+      {
+        label: "No. Rekening Bank",
+        value: (user as any).bank_account_number || "-",
+        icon: CreditCard,
+      },
+      {
+        label: "Status Kepegawaian",
+        value: formatEmploymentStatus((user as any).employment_status),
+        icon: UserCheck,
       },
       {
         label: "Shift",
