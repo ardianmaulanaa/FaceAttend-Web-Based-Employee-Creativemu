@@ -62,8 +62,9 @@ export default function EmployeeSalaryPage() {
     netPay: 0,
   });
 
-  const fetchStats = async (email: string, baseSalary: number) => {
+  const fetchStats = async (email: string, rawBaseSalary: number) => {
     try {
+      const baseSalary = rawBaseSalary > 0 ? rawBaseSalary : 2000000;
       const today = new Date();
       const monthNum = today.getMonth() + 1;
       const yearNum = today.getFullYear();
@@ -101,16 +102,29 @@ export default function EmployeeSalaryPage() {
           return s.includes("cuti");
         }).length;
 
-        const totalDays = new Date(yearNum, monthNum, 0).getDate();
-        const activeCount = hadir + telat + izin + sakit + cuti;
+        // Effective working days in current month (excluding weekends)
+        let totalDays = 0;
+        const daysInMonth = new Date(yearNum, monthNum, 0).getDate();
+        for (let d = 1; d <= daysInMonth; d++) {
+          const dayOfWeek = new Date(yearNum, monthNum - 1, d).getDay();
+          if (dayOfWeek !== 0 && dayOfWeek !== 6) totalDays++;
+        }
+        if (totalDays === 0) totalDays = 22; // default 22 hari kerja
 
-        const recommended = baseSalary;
+        // Hari kerja yang diakui dibayar (Hadir + Telat + Cuti Resmi + Sakit Ber-surat Dokter + Izin)
+        const paidDays = Math.min(hadir + telat + cuti + sakit + izin, totalDays);
+        
+        // Gaji pokok Prorata
+        const recommended = Math.round(baseSalary * (paidDays / totalDays));
+        
+        // Tunjangan uang makan & transport per hari hadir nyata
         const mealAllowance = (hadir + telat) * 25000;
         const transportAllowance = (hadir + telat) * 15000;
         const latePenalty = telat * 5000;
-        const bpjsDeduction = Math.round(baseSalary * 0.03);
+        const bpjsDeduction = Math.round(baseSalary * 0.03); // 3% BPJS
+        
         const netPay =
-          baseSalary +
+          recommended +
           mealAllowance +
           transportAllowance -
           latePenalty -
@@ -128,7 +142,7 @@ export default function EmployeeSalaryPage() {
           transportAllowance,
           latePenalty,
           bpjsDeduction,
-          netPay,
+          netPay: Math.max(0, netPay),
         });
       }
     } catch (err) {
@@ -149,9 +163,9 @@ export default function EmployeeSalaryPage() {
         const salData = await salRes.json();
 
         if (profileData.success && profileData.user) {
-          setProfile(profileData.user);
-          const base = Number(profileData.user.base_salary || 0);
-          void fetchStats(profileData.user.email, base);
+          const userWithFixedSalary = { ...profileData.user, base_salary: 2000000 };
+          setProfile(userWithFixedSalary);
+          void fetchStats(profileData.user.email, 2000000);
         }
         if (salData.success && salData.records) {
           setRecords(salData.records);
@@ -222,9 +236,9 @@ export default function EmployeeSalaryPage() {
 
                     <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800 space-y-3">
                       <div className="flex justify-between text-xs font-bold">
-                        <span className="text-slate-500">Gaji Pokok</span>
-                        <span className="text-slate-800 dark:text-white">
-                          {formatIDR(Number(profile.base_salary || 0))}
+                        <span className="text-slate-500">Gaji Pokok (Dasar: {formatIDR(Number(profile.base_salary || 2000000))})</span>
+                        <span className="text-slate-800 dark:text-white font-black">
+                          {formatIDR(attendanceStats.recommendedSalary)}
                         </span>
                       </div>
                       <div className="flex justify-between text-xs font-bold">
@@ -372,7 +386,17 @@ export default function EmployeeSalaryPage() {
                     {/* Message Info */}
                     <div className="flex flex-col justify-center border-t md:border-t-0 md:border-l border-slate-100 dark:border-slate-800 pt-4 md:pt-0 md:pl-6">
                       <p className="text-[10px] font-black text-slate-400 uppercase">
-                        Informasi Verifikasi
+                        Informasi Formula Prorata Gaji
+                      </p>
+                      <p className="text-xs font-bold text-slate-600 dark:text-slate-350 mt-1 leading-relaxed">
+                        Gaji pokok dihitung prorata dari total{" "}
+                        <span className="text-[#123c8c] dark:text-blue-400 font-black">
+                          {attendanceStats.hadir + attendanceStats.telat + attendanceStats.cuti + attendanceStats.sakit + attendanceStats.izin} hari kerja berbayar
+                        </span>{" "}
+                        (Hadir, Cuti Resmi, Sakit & Izin) dari{" "}
+                        <span className="font-black text-slate-800 dark:text-white">
+                          {attendanceStats.totalDays} hari kerja efektif
+                        </span>.
                       </p>
                     </div>
                   </div>

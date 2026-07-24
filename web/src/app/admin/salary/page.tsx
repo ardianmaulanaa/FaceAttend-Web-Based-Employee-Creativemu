@@ -254,7 +254,7 @@ export default function AdminSalaryPage() {
         );
         const activeCount = hadir + telat + izin + sakit + cuti;
 
-        const base = Number(emp.base_salary || 2000000);
+        const base = 2000000;
         const paidDays = Math.min(activeCount, effectiveWorkdays);
         const recommended =
           effectiveWorkdays > 0
@@ -280,12 +280,12 @@ export default function AdminSalaryPage() {
 
   const openPayModal = (emp: Employee) => {
     setSelectedEmp(emp);
-    setPayAmount(emp.base_salary ? String(emp.base_salary) : "");
     const date = new Date();
     const currentPeriod = date.toLocaleDateString("id-ID", {
       month: "long",
       year: "numeric",
     });
+    setPayAmount("2000000");
     setPayMonth(currentPeriod);
     setPayNote("Gaji bulanan reguler");
     setPayError("");
@@ -566,7 +566,7 @@ export default function AdminSalaryPage() {
                               style: "currency",
                               currency: "IDR",
                               maximumFractionDigits: 0,
-                            }).format(Number(emp.base_salary || 2000000))}
+                            }).format(2000000)}
                           </td>
                           <td className="px-4 py-3 text-center whitespace-nowrap">
                             <button
@@ -798,30 +798,42 @@ export default function AdminSalaryPage() {
                       </div>
                     </div>
 
-                    <div className="border-t border-slate-200 dark:border-slate-800 pt-3">
+                    <div className="border-t border-slate-200 dark:border-slate-800 pt-3 space-y-2">
                       <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase">
-                        Rekomendasi Kemnaker
+                        Rincian Formulasi Prorata (Kemnaker)
                       </p>
-                      <p className="text-lg font-black text-emerald-600 dark:text-emerald-400 mt-1">
-                        {new Intl.NumberFormat("id-ID", {
-                          style: "currency",
-                          currency: "IDR",
-                          maximumFractionDigits: 0,
-                        }).format(attendanceStats.recommendedSalary)}
-                      </p>
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                        Dihitung berdasarkan proporsi hari kerja aktif (hadir,
-                        cuti, sakit, izin) sebanyak{" "}
-                        <b>
-                          {attendanceStats.hadir +
-                            attendanceStats.telat +
-                            attendanceStats.sakit +
-                            attendanceStats.izin +
-                            attendanceStats.cuti}{" "}
-                          hari
-                        </b>{" "}
-                        dari total{" "}
-                        <b>{attendanceStats.totalDays} hari periode</b>.
+                      
+                      <div className="bg-white dark:bg-[#161b22] p-3 rounded-xl border border-slate-100 dark:border-slate-800 space-y-1.5 text-xs font-semibold">
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Gaji Pokok Prorata ({attendanceStats.hadir + attendanceStats.telat + attendanceStats.sakit + attendanceStats.izin + attendanceStats.cuti}/{attendanceStats.totalDays} hari):</span>
+                          <span className="font-bold text-slate-800 dark:text-white">
+                            {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(attendanceStats.recommendedSalary)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Tunjangan Makan & Transport (+):</span>
+                          <span className="font-bold text-emerald-600">
+                            +{new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format((attendanceStats.hadir + attendanceStats.telat) * 40000)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Potongan Telat & BPJS (-):</span>
+                          <span className="font-bold text-red-500">
+                            -{new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format((attendanceStats.telat * 5000) + 60000)}
+                          </span>
+                        </div>
+                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center font-black">
+                          <span className="text-slate-700 dark:text-slate-300">Estimasi THP Bersih:</span>
+                          <span className="text-sm text-emerald-600 dark:text-emerald-400">
+                            {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(
+                              Math.max(0, attendanceStats.recommendedSalary + ((attendanceStats.hadir + attendanceStats.telat) * 40000) - (attendanceStats.telat * 5000) - 60000)
+                            )}
+                          </span>
+                        </div>
+                      </div>
+
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                        Hari berbayar diakui: <b>{attendanceStats.hadir + attendanceStats.telat} Hadir</b> + <b>{attendanceStats.sakit + attendanceStats.izin} Sakit/Izin</b> + <b>{attendanceStats.cuti} Cuti</b> ({attendanceStats.hadir + attendanceStats.telat + attendanceStats.sakit + attendanceStats.izin + attendanceStats.cuti} / {attendanceStats.totalDays} Hari Kerja).
                       </p>
                     </div>
                   </>
