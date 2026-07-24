@@ -112,6 +112,11 @@ const masterDataMenus = [
     label: "Posisi",
     icon: UserRoundCog,
   },
+  {
+    href: "/admin/employment-status",
+    label: "Status Kepegawaian",
+    icon: UserRound,
+  },
 ];
 
 const operationalMenus = [

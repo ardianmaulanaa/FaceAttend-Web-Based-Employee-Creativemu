@@ -223,6 +223,10 @@ function isCheckOutVisitReport(report: AttendanceReportDetail) {
   return normalizeMode(getCheckOutMode(report)) === "visit";
 }
 
+function isCheckOutWfhReport(report: AttendanceReportDetail) {
+  return normalizeMode(getCheckOutMode(report)) === "wfh";
+}
+
 function hasVisitReport(report: AttendanceReportDetail) {
   const mainMode = normalizeMode(report.workMode);
   const label = String(report.workModeLabel || "").toLowerCase();
@@ -473,8 +477,11 @@ function EmployeeNotesSection({
 }) {
   const shouldShowLate = isLateReport(report);
   const shouldShowVisit = hasVisitReport(report);
+  const shouldShowWfhCheckout = isCheckOutWfhReport(report);
 
-  if (!shouldShowLate && !shouldShowVisit) return null;
+  if (!shouldShowLate && !shouldShowVisit && !shouldShowWfhCheckout) {
+    return null;
+  }
 
   const visitTitle = getVisitTitle(report);
   const visitClientName = getVisitClientName(report);
@@ -502,7 +509,7 @@ function EmployeeNotesSection({
             Keterangan Karyawan
           </p>
           <p className="mt-1 text-sm font-semibold text-slate-500">
-            Catatan terlambat atau kunjungan dari karyawan.
+            Catatan terlambat, kunjungan, atau mode check-out karyawan.
           </p>
         </div>
       </div>
@@ -569,6 +576,26 @@ function EmployeeNotesSection({
                     {visitNote}
                   </div>
                 ) : null}
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {shouldShowWfhCheckout ? (
+          <div className="attendance-detail-row-enter rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-[#123c8c] ring-1 ring-blue-100">
+                <BriefcaseBusiness size={21} strokeWidth={2.7} />
+              </div>
+
+              <div className="min-w-0">
+                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#123c8c]">
+                  Keterangan Check-out
+                </p>
+
+                <p className="mt-2 text-sm font-bold leading-6 text-slate-700">
+                  Karyawan check-out dengan mode WFH.
+                </p>
               </div>
             </div>
           </div>

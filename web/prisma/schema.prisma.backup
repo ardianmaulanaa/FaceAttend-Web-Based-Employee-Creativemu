@@ -21,15 +21,15 @@ model User {
   // utama, magang
   employee_type String @default("utama") @db.VarChar(20)
 
-  phone                 String?   @db.VarChar(20)
-  status                String    @default("active") @db.VarChar(20)
-  employment_status     String?   @db.VarChar(100)
+  phone               String?   @db.VarChar(20)
+  status              String    @default("active") @db.VarChar(20)
+  employment_status   String?   @db.VarChar(100)
   employment_start_date DateTime? @db.Date
   employment_end_date   DateTime? @db.Date
-  birth_place           String?   @db.VarChar(100)
-  birth_date            DateTime? @db.Date
-  bank_account_number   String?   @db.VarChar(50)
-  nik                   String?   @db.VarChar(30)
+  birth_place         String?   @db.VarChar(100)
+  birth_date          DateTime? @db.Date
+  bank_account_number String?   @db.VarChar(50)
+  nik                 String?   @db.VarChar(30)
 
   profile_photo           String? @db.Text
   profile_photo_public_id String? @db.VarChar(255)
@@ -627,3 +627,4 @@ model EmploymentStatus {
 
   @@map("employment_statuses")
 }
+

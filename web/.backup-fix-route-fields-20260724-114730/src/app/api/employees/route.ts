@@ -252,9 +252,9 @@ async function validateEmployeeHierarchy(params: {
     throw new Error("Divisi tidak ditemukan atau tidak aktif.");
   }
 
-  if (department.office_id !== registeredOfficeId) {
-    throw new Error("Divisi tidak sesuai dengan kantor yang dipilih.");
-  }
+  
+    // Validasi hierarki organisasi dihapus: setiap master data dipilih independen.
+
 
   const jabatan = await prisma.jabatan.findUnique({
     where: {
@@ -271,9 +271,9 @@ async function validateEmployeeHierarchy(params: {
     throw new Error("Jabatan tidak ditemukan atau tidak aktif.");
   }
 
-  if (jabatan.department_id !== departmentId) {
-    throw new Error("Jabatan tidak sesuai dengan divisi yang dipilih.");
-  }
+  
+    // Validasi hierarki organisasi dihapus: setiap master data dipilih independen.
+
 
   const position = await prisma.position.findUnique({
     where: {
@@ -290,9 +290,9 @@ async function validateEmployeeHierarchy(params: {
     throw new Error("Posisi tidak ditemukan atau tidak aktif.");
   }
 
-  if (position.jabatan_id !== jabatanId) {
-    throw new Error("Posisi tidak sesuai dengan jabatan yang dipilih.");
-  }
+  
+    // Validasi hierarki organisasi dihapus: setiap master data dipilih independen.
+
 
   const shift = await prisma.shift.findUnique({
     where: {

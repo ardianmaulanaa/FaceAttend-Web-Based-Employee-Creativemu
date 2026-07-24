@@ -1,0 +1,220 @@
+import { NextRequest, NextResponse } from "next/server";
+import { requireOwner } from "@/lib/api-auth";
+import { getApiErrorMessage, getApiErrorStatus } from "@/lib/api-errors";
+import { prisma } from "@/lib/prisma";
+
+export const runtime = "nodejs";
+
+type OfficeBody = {
+  name?: string;
+  address?: string;
+  latitude?: string | number;
+  longitude?: string | number;
+  radius_meters?: string | number;
+  radiusMeters?: string | number;
+  status?: string;
+};
+
+type RouteContext = {
+  params: Promise<{
+    id: string;
+  }>;
+};
+
+function toNumber(value: unknown) {
+  if (value === null || value === undefined || value === "") return null;
+
+  const numberValue = Number(value);
+
+  return Number.isFinite(numberValue) ? numberValue : null;
+}
+
+function normalizeStatus(value: unknown) {
+  return String(value || "active").toLowerCase() === "inactive"
+    ? "inactive"
+    : "active";
+}
+
+function validateOfficeBody(body: OfficeBody) {
+  const name = String(body.name || "").trim();
+  const address = String(body.address || "").trim();
+  const latitude = toNumber(body.latitude);
+  const longitude = toNumber(body.longitude);
+  const radius = toNumber(body.radius_meters ?? body.radiusMeters);
+  const status = normalizeStatus(body.status);
+
+  if (!name) {
+    return {
+      error: "Nama kantor wajib diisi.",
+      data: null,
+    };
+  }
+
+  if (latitude === null || longitude === null) {
+    return {
+      error: "Latitude dan longitude wajib diisi dengan angka valid.",
+      data: null,
+    };
+  }
+
+  if (radius === null || radius <= 0) {
+    return {
+      error: "Radius kantor wajib diisi dengan angka lebih dari 0.",
+      data: null,
+    };
+  }
+
+  return {
+    error: "",
+    data: {
+      name,
+      address: address || null,
+      latitude,
+      longitude,
+      radius_meters: Math.round(radius),
+      status,
+    },
+  };
+}
+
+export async function GET(req: NextRequest, context: RouteContext) {
+  try {
+    await requireOwner(req);
+
+    const { id } = await context.params;
+
+    const office = await prisma.officeLocation.findUnique({
+      where: {
+        id,
+      },
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        latitude: true,
+        longitude: true,
+        radius_meters: true,
+        status: true,
+      },
+    });
+
+    if (!office) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Data kantor tidak ditemukan.",
+        },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      office,
+    });
+  } catch (error) {
+    console.error("GET_ADMIN_OFFICE_DETAIL_ERROR:", error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        message: getApiErrorMessage(error, "Gagal mengambil data kantor."),
+      },
+      { status: getApiErrorStatus(error) }
+    );
+  }
+}
+
+export async function PATCH(req: NextRequest, context: RouteContext) {
+  try {
+    await requireOwner(req);
+
+    const { id } = await context.params;
+    const body = (await req.json()) as OfficeBody;
+    const result = validateOfficeBody(body);
+
+    if (!result.data) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: result.error,
+        },
+        { status: 400 }
+      );
+    }
+
+    const office = await prisma.officeLocation.update({
+      where: {
+        id,
+      },
+      data: result.data,
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        latitude: true,
+        longitude: true,
+        radius_meters: true,
+        status: true,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "Kantor berhasil diperbarui.",
+      office,
+    });
+  } catch (error) {
+    console.error("UPDATE_ADMIN_OFFICE_ERROR:", error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        message: getApiErrorMessage(error, "Gagal memperbarui kantor."),
+      },
+      { status: getApiErrorStatus(error) }
+    );
+  }
+}
+
+export async function DELETE(req: NextRequest, context: RouteContext) {
+  try {
+    await requireOwner(req);
+
+    const { id } = await context.params;
+
+    const office = await prisma.officeLocation.update({
+      where: {
+        id,
+      },
+      data: {
+        status: "inactive",
+      },
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        latitude: true,
+        longitude: true,
+        radius_meters: true,
+        status: true,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "Kantor berhasil dinonaktifkan.",
+      office,
+    });
+  } catch (error) {
+    console.error("DELETE_ADMIN_OFFICE_ERROR:", error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        message: getApiErrorMessage(error, "Gagal menghapus kantor."),
+      },
+      { status: getApiErrorStatus(error) }
+    );
+  }
+}

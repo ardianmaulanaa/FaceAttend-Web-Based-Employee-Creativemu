@@ -2424,11 +2424,11 @@ export default function AttendancePage() {
         formData.append("late_reason", "");
       }
 
-      if (action === "check-out" && workMode === "visit") {
-        formData.append("checkOutWorkMode", "visit");
-        formData.append("check_out_work_mode", "visit");
-        formData.append("checkOutActivityNote", "Kunjungan");
-        formData.append("check_out_activity_note", "Kunjungan");
+      if (action === "check-out") {
+        formData.append("checkOutWorkMode", workMode);
+        formData.append("check_out_work_mode", workMode);
+        formData.append("checkOutActivityNote", getWorkModeLabel(workMode));
+        formData.append("check_out_activity_note", getWorkModeLabel(workMode));
       }
 
       if (action === "check-in" && reason.trim()) {
