@@ -16,6 +16,14 @@ type WorkDayName =
   | "FRIDAY"
   | "SATURDAY";
 
+type DailyAttendanceCategory =
+  | "hadir"
+  | "terlambat"
+  | "wfh"
+  | "kunjungan"
+  | "izin_sakit"
+  | "cuti";
+
 const workDayByUtcDay: WorkDayName[] = [
   "SUNDAY",
   "MONDAY",
@@ -152,6 +160,43 @@ function normalizeLeaveType(type: string): LeaveType {
   return "other";
 }
 
+function normalizeWorkMode(value?: string | null) {
+  const normalized = String(value || "").toLowerCase();
+
+  if (normalized === "wfh" || normalized === "wfc") return "wfh";
+  if (normalized === "visit" || normalized === "kunjungan") return "kunjungan";
+
+  return "office";
+}
+
+function getAttendanceCategory(attendance: {
+  status?: string | null;
+  check_in_status?: string | null;
+  late_minutes?: number | null;
+  work_mode?: string | null;
+}): DailyAttendanceCategory {
+  if (
+    attendance.check_in_status === "LATE" ||
+    Number(attendance.late_minutes || 0) > 0 ||
+    attendance.status === "LATE"
+  ) {
+    return "terlambat";
+  }
+
+  const workMode = normalizeWorkMode(attendance.work_mode);
+
+  if (workMode === "wfh") return "wfh";
+  if (workMode === "kunjungan") return "kunjungan";
+
+  return "hadir";
+}
+
+function getLeaveCategory(leaveType: LeaveType): DailyAttendanceCategory {
+  if (leaveType === "annual") return "cuti";
+
+  return "izin_sakit";
+}
+
 export async function GET(req: NextRequest) {
   try {
     await requireOwner(req);
@@ -244,6 +289,12 @@ export async function GET(req: NextRequest) {
         getWorkDayKeys(startDate, endDate, employee.shift?.work_schedules),
       ]),
     );
+    const employeeDailyRecords = new Map(
+      employees.map((employee) => [
+        employee.id,
+        new Map<string, { date: string; category: DailyAttendanceCategory }>(),
+      ]),
+    );
     const attendances = await prisma.attendance.findMany({
       where: {
         attendance_date: {
@@ -262,6 +313,7 @@ export async function GET(req: NextRequest) {
         check_in_status: true,
         late_minutes: true,
         check_in_time: true,
+        work_mode: true,
       },
     });
 
@@ -288,6 +340,12 @@ export async function GET(req: NextRequest) {
 
       if (hasCheckedIn) {
         summary.hadir += 1;
+        const dateKey = toDateKey(attendance.attendance_date);
+
+        employeeDailyRecords.get(attendance.user_id)?.set(dateKey, {
+          date: dateKey,
+          category: getAttendanceCategory(attendance),
+        });
       } else {
         summary.menunggu += 1;
       }
@@ -339,6 +397,19 @@ export async function GET(req: NextRequest) {
       } else {
         summary.lainnya += days;
       }
+
+      const category = getLeaveCategory(leaveType);
+
+      for (const dateKey of leaveDateKeys) {
+        const dailyRecords = employeeDailyRecords.get(leaveRequest.user_id);
+
+        if (!dailyRecords || dailyRecords.has(dateKey)) continue;
+
+        dailyRecords.set(dateKey, {
+          date: dateKey,
+          category,
+        });
+      }
     }
 
     for (const employee of employees) {
@@ -373,6 +444,9 @@ export async function GET(req: NextRequest) {
         status: employee.status,
         shiftName: employee.shift?.name || null,
         summary: employeeSummaries.get(employee.id) || createEmptySummary(),
+        dailyRecords: Array.from(
+          employeeDailyRecords.get(employee.id)?.values() || [],
+        ).sort((first, second) => first.date.localeCompare(second.date)),
       })),
     });
   } catch (error) {

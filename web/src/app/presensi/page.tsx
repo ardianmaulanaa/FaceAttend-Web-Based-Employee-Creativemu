@@ -105,6 +105,8 @@ type LeaveBlock = {
 
 type TodayAttendanceResponse = {
   success?: boolean;
+  message?: string;
+  error?: string;
   attendance?: TodayAttendance | null;
   todayAttendance?: TodayAttendance | null;
   data?: TodayAttendance | { attendance?: TodayAttendance | null } | null;
@@ -218,6 +220,25 @@ function normalizeCurrentUser(
   return user as CurrentUser;
 }
 
+async function readOptionalJson(response: Response) {
+  const text = await response.text();
+
+  if (!text) return {};
+
+  try {
+    return JSON.parse(text) as Record<string, unknown>;
+  } catch {
+    return {};
+  }
+}
+
+function getResponseMessage(
+  data: Record<string, unknown>,
+  fallback: string,
+) {
+  return String(data.message || data.error || fallback);
+}
+
 function normalizeTodayAttendance(
   data: TodayAttendanceResponse,
 ): TodayAttendance | null {
@@ -246,19 +267,25 @@ function normalizeTodayAttendance(
   return null;
 }
 
+function hasFilledAttendanceTime(value?: string | null) {
+  const time = String(value || "").trim();
+
+  return Boolean(time && time !== "--:--" && time !== "-");
+}
+
 function hasAttendanceCheckIn(attendance: TodayAttendance | null) {
-  return Boolean(
-    attendance?.checkIn ||
-      attendance?.checkInTime ||
-      attendance?.check_in_time,
+  return (
+    hasFilledAttendanceTime(attendance?.checkIn) ||
+    hasFilledAttendanceTime(attendance?.checkInTime) ||
+    hasFilledAttendanceTime(attendance?.check_in_time)
   );
 }
 
 function hasAttendanceCheckOut(attendance: TodayAttendance | null) {
-  return Boolean(
-    attendance?.checkOut ||
-      attendance?.checkOutTime ||
-      attendance?.check_out_time,
+  return (
+    hasFilledAttendanceTime(attendance?.checkOut) ||
+    hasFilledAttendanceTime(attendance?.checkOutTime) ||
+    hasFilledAttendanceTime(attendance?.check_out_time)
   );
 }
 
@@ -1782,13 +1809,32 @@ export default function AttendancePage() {
         cache: "no-store",
       });
 
-      const data = (await response.json()) as AuthMeResponse | CurrentUser;
+      const data = await readOptionalJson(response);
 
       if (!response.ok) {
-        throw new Error("Gagal mengambil data shift karyawan.");
+        const message = getResponseMessage(
+          data,
+          "Gagal mengambil data shift karyawan.",
+        );
+
+        if (response.status === 401 || response.status === 403) {
+          await fetch("/api/auth/logout", {
+            method: "POST",
+            cache: "no-store",
+          }).catch(() => null);
+
+          window.localStorage.removeItem("presensi_read_announcement_id");
+          window.sessionStorage.clear();
+
+          const reason = response.status === 403 ? "inactive" : "expired";
+          window.location.replace(`/login?reason=${reason}&redirect=/presensi`);
+          return null;
+        }
+
+        throw new Error(message);
       }
 
-      const user = normalizeCurrentUser(data);
+      const user = normalizeCurrentUser(data as AuthMeResponse | CurrentUser);
 
       if (!user) {
         throw new Error("Data user tidak valid.");
@@ -1800,12 +1846,14 @@ export default function AttendancePage() {
 
       return user;
     } catch (error) {
-      console.error("LOAD_CURRENT_USER_ERROR:", error);
-      safeSetStatus(
-        "Data Shift Belum Siap",
+      const message =
         error instanceof Error
           ? error.message
-          : "Gagal mengambil data shift karyawan.",
+          : "Gagal mengambil data shift karyawan.";
+
+      safeSetStatus(
+        "Data Shift Belum Siap",
+        message,
       );
 
       return null;

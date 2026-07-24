@@ -142,8 +142,7 @@ async function getJson(url: string) {
     if (!response.ok) return null;
 
     return await readJsonResponse(response);
-  } catch (error) {
-    console.error(`Gagal mengambil data ${url}:`, error);
+  } catch {
     return null;
   }
 }

@@ -6,6 +6,8 @@ import { useParams, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   Download,
   Loader2,
   UserRound,
@@ -29,6 +31,19 @@ type EmployeeAttendanceSummary = {
   estimasiSalary: number;
 };
 
+type DailyAttendanceCategory =
+  | "hadir"
+  | "terlambat"
+  | "wfh"
+  | "kunjungan"
+  | "izin_sakit"
+  | "cuti";
+
+type DailyAttendanceRecord = {
+  date: string;
+  category: DailyAttendanceCategory;
+};
+
 type EmployeeRecap = {
   id: string;
   name: string;
@@ -41,6 +56,7 @@ type EmployeeRecap = {
   status?: string | null;
   shiftName?: string | null;
   summary: EmployeeAttendanceSummary;
+  dailyRecords?: DailyAttendanceRecord[];
 };
 
 type EmployeeAttendanceRecapResponse = {
@@ -133,6 +149,119 @@ function getEmployeePhoto(employee?: EmployeeRecap | null) {
   return employee?.profile_photo || employee?.profile_photo_url || "";
 }
 
+function getMonthDate(value: string) {
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(value)
+    ? new Date(`${value}T00:00:00`)
+    : new Date();
+
+  if (Number.isNaN(date.getTime())) return new Date();
+
+  date.setDate(1);
+  date.setHours(0, 0, 0, 0);
+
+  return date;
+}
+
+function getMonthKey(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+    2,
+    "0",
+  )}`;
+}
+
+function getDateKey(date: Date) {
+  return `${getMonthKey(date)}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function addMonths(date: Date, amount: number) {
+  const nextDate = new Date(date);
+
+  nextDate.setMonth(nextDate.getMonth() + amount);
+
+  return nextDate;
+}
+
+function formatCalendarMonth(date: Date) {
+  return new Intl.DateTimeFormat("id-ID", {
+    month: "long",
+    year: "numeric",
+  }).format(date);
+}
+
+function isDateInRange(dateKey: string, startDate: string, endDate: string) {
+  if (!startDate || !endDate) return true;
+
+  return dateKey >= startDate && dateKey <= endDate;
+}
+
+function buildCalendarDays(monthDate: Date) {
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const firstDate = new Date(year, month, 1);
+  const totalDays = new Date(year, month + 1, 0).getDate();
+  const leadingBlanks = firstDate.getDay();
+  const days: ({ dateKey: string; day: number } | null)[] = Array.from(
+    { length: leadingBlanks },
+    () => null,
+  );
+
+  for (let day = 1; day <= totalDays; day += 1) {
+    const date = new Date(year, month, day);
+
+    days.push({
+      dateKey: getDateKey(date),
+      day,
+    });
+  }
+
+  return days;
+}
+
+const calendarCategoryStyles: Record<
+  DailyAttendanceCategory,
+  { label: string; dot: string; tile: string }
+> = {
+  hadir: {
+    label: "Hadir",
+    dot: "bg-emerald-500",
+    tile: "bg-emerald-500 text-white shadow-lg shadow-emerald-200",
+  },
+  terlambat: {
+    label: "Terlambat",
+    dot: "bg-orange-500",
+    tile: "bg-orange-500 text-white shadow-lg shadow-orange-200",
+  },
+  wfh: {
+    label: "WFH",
+    dot: "bg-blue-500",
+    tile: "bg-blue-500 text-white shadow-lg shadow-blue-200",
+  },
+  kunjungan: {
+    label: "Kunjungan",
+    dot: "bg-teal-500",
+    tile: "bg-teal-500 text-white shadow-lg shadow-teal-200",
+  },
+  izin_sakit: {
+    label: "Izin/Sakit",
+    dot: "bg-yellow-400",
+    tile: "bg-yellow-400 text-slate-900 shadow-lg shadow-yellow-100",
+  },
+  cuti: {
+    label: "Cuti",
+    dot: "bg-violet-500",
+    tile: "bg-violet-500 text-white shadow-lg shadow-violet-200",
+  },
+};
+
+const calendarLegend: DailyAttendanceCategory[] = [
+  "hadir",
+  "terlambat",
+  "wfh",
+  "kunjungan",
+  "izin_sakit",
+  "cuti",
+];
+
 function RecapDetailMotionStyles() {
   return (
     <style>{`
@@ -184,6 +313,9 @@ export default function AdminEmployeeAttendanceRecapDetailPage() {
   const [employee, setEmployee] = useState<EmployeeRecap | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [calendarMonth, setCalendarMonth] = useState(() =>
+    getMonthDate(getInitialDate(searchParams, "startDate")),
+  );
 
   const getRecap = useCallback(async () => {
     if (startDate && endDate && startDate > endDate) {
@@ -241,6 +373,12 @@ export default function AdminEmployeeAttendanceRecapDetailPage() {
   useEffect(() => {
     void getRecap();
   }, [getRecap]);
+
+  useEffect(() => {
+    if (!startDate) return;
+
+    setCalendarMonth(getMonthDate(startDate));
+  }, [startDate]);
 
   const summary = useMemo<EmployeeAttendanceSummary>(() => {
     return (
@@ -345,6 +483,21 @@ export default function AdminEmployeeAttendanceRecapDetailPage() {
     },
   ];
   const employeePhoto = getEmployeePhoto(employee);
+  const dailyRecordByDate = useMemo(() => {
+    return new Map(
+      (employee?.dailyRecords || []).map((record) => [record.date, record]),
+    );
+  }, [employee?.dailyRecords]);
+  const calendarDays = useMemo(
+    () => buildCalendarDays(calendarMonth),
+    [calendarMonth],
+  );
+  const firstMonth = getMonthDate(startDate || getDateKey(new Date()));
+  const lastMonth = getMonthDate(endDate || startDate || getDateKey(new Date()));
+  const canOpenPreviousMonth =
+    getMonthKey(addMonths(calendarMonth, -1)) >= getMonthKey(firstMonth);
+  const canOpenNextMonth =
+    getMonthKey(addMonths(calendarMonth, 1)) <= getMonthKey(lastMonth);
 
   return (
     <MobileShell variant="admin" withBottomPadding={false}>
@@ -504,6 +657,120 @@ export default function AdminEmployeeAttendanceRecapDetailPage() {
                     <p className="mt-5 text-4xl font-black">{item.value}</p>
                   </div>
                 ))}
+              </div>
+
+              <div
+                className="recap-detail-enter overflow-hidden rounded-[2.25rem] border border-blue-100 bg-white shadow-xl shadow-slate-300/30"
+                style={{ animationDelay: "160ms" }}
+              >
+                <div className="flex flex-col gap-4 border-b border-slate-100 px-5 py-5 md:flex-row md:items-center md:justify-between md:px-8">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.14em] text-[#123c8c]">
+                      Kalender Kehadiran
+                    </p>
+                    <h3 className="mt-2 text-2xl font-black capitalize text-slate-950">
+                      {formatCalendarMonth(calendarMonth)}
+                    </h3>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCalendarMonth((current) => addMonths(current, -1))
+                      }
+                      disabled={!canOpenPreviousMonth}
+                      className="flex h-12 w-12 items-center justify-center rounded-2xl border border-blue-100 bg-white text-[#123c8c] shadow-sm transition hover:bg-[#f8fbff] disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-50 disabled:text-slate-300"
+                    >
+                      <ChevronLeft size={22} strokeWidth={2.8} />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCalendarMonth((current) => addMonths(current, 1))
+                      }
+                      disabled={!canOpenNextMonth}
+                      className="flex h-12 w-12 items-center justify-center rounded-2xl border border-blue-100 bg-white text-[#123c8c] shadow-sm transition hover:bg-[#f8fbff] disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-50 disabled:text-slate-300"
+                    >
+                      <ChevronRight size={22} strokeWidth={2.8} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-4 md:p-8">
+                  <div className="grid grid-cols-7 gap-2 text-center md:gap-3">
+                    {["MIN", "SEN", "SEL", "RAB", "KAM", "JUM", "SAB"].map(
+                      (dayLabel) => (
+                        <div
+                          key={dayLabel}
+                          className="py-2 text-[11px] font-black text-slate-400 md:text-sm"
+                        >
+                          {dayLabel}
+                        </div>
+                      ),
+                    )}
+
+                    {calendarDays.map((day, index) => {
+                      if (!day) {
+                        return (
+                          <div
+                            key={`blank-${index}`}
+                            className="h-11 rounded-2xl bg-slate-50 md:h-14"
+                          />
+                        );
+                      }
+
+                      const record = dailyRecordByDate.get(day.dateKey);
+                      const categoryStyle = record
+                        ? calendarCategoryStyles[record.category]
+                        : null;
+                      const isInPeriod = isDateInRange(
+                        day.dateKey,
+                        startDate,
+                        endDate,
+                      );
+
+                      return (
+                        <div
+                          key={day.dateKey}
+                          className={`flex h-11 items-center justify-center rounded-2xl text-sm font-black transition md:h-14 md:text-base ${
+                            !isInPeriod
+                              ? "bg-slate-50 text-slate-300"
+                              : categoryStyle
+                                ? categoryStyle.tile
+                                : "bg-[#f8fbff] text-slate-700"
+                          }`}
+                          title={
+                            categoryStyle
+                              ? `${day.dateKey} - ${categoryStyle.label}`
+                              : day.dateKey
+                          }
+                        >
+                          {day.day}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-3 border-t border-slate-100 pt-5">
+                    {calendarLegend.map((category) => {
+                      const categoryStyle = calendarCategoryStyles[category];
+
+                      return (
+                        <div
+                          key={category}
+                          className="flex items-center gap-2 text-sm font-black text-slate-600"
+                        >
+                          <span
+                            className={`h-3.5 w-3.5 rounded-full ${categoryStyle.dot}`}
+                          />
+                          {categoryStyle.label}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </>
           )}
