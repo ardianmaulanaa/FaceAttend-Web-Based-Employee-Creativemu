@@ -145,21 +145,6 @@ function formatDateRange(startDate: string, endDate: string) {
   return `${formatter.format(start)} - ${formatter.format(end)}`;
 }
 
-function formatWorkDuration(minutes: number) {
-  if (!minutes || minutes <= 0) return "0 menit";
-
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
-
-  if (hours > 0 && remainingMinutes > 0) {
-    return `${hours}j ${remainingMinutes}m`;
-  }
-
-  if (hours > 0) return `${hours}j`;
-
-  return `${remainingMinutes}m`;
-}
-
 function getNetWorkMinutes(summary?: EmployeeAttendanceSummary | null) {
   if (!summary) return 0;
 
@@ -485,11 +470,6 @@ export default function AdminEmployeeAttendanceRecapPage() {
       className: "border-teal-100 bg-teal-50 text-teal-700",
     },
     {
-      label: "Kerja Bersih",
-      value: formatWorkDuration(getNetWorkMinutes(selectedSummary)),
-      className: "border-blue-100 bg-blue-50 text-[#123c8c]",
-    },
-    {
       label: "Sakit",
       value: selectedSummary.sakit,
       className: "border-red-100 bg-red-50 text-red-700",
@@ -684,8 +664,6 @@ export default function AdminEmployeeAttendanceRecapPage() {
                     pendingLeaveCountByEmployeeId.get(employee.id) || 0;
                   const hasPendingLeave = pendingLeaveCount > 0;
                   const employeePhoto = getEmployeePhoto(employee);
-                  const summary = recapByEmployeeId.get(employee.id)?.summary;
-                  const netWorkMinutes = getNetWorkMinutes(summary);
                   const detailParams = new URLSearchParams({
                     startDate,
                     endDate,
@@ -771,9 +749,6 @@ export default function AdminEmployeeAttendanceRecapPage() {
                             ]
                               .filter(Boolean)
                               .join(" / ") || employee.email}
-                          </p>
-                          <p className="mt-2 text-xs font-black uppercase tracking-[0.1em] text-[#123c8c]">
-                            Kerja bersih {formatWorkDuration(netWorkMinutes)}
                           </p>
                         </div>
 
