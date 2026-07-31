@@ -267,6 +267,7 @@ const initialForm: EmployeeForm = {
 };
 
 const EMPLOYEE_REQUEST_TIMEOUT_MS = 15_000;
+const DEFAULT_NEW_EMPLOYEE_PASSWORD = "Creativemu123";
 
 function getInitialName(name: string) {
   return name
@@ -869,7 +870,9 @@ export default function AdminEmployeesPage() {
     const email = form.email.trim().toLowerCase();
     const temporaryPassword = form.temporaryPassword.trim();
     const confirmTemporaryPassword = form.confirmTemporaryPassword.trim();
-    const passwordForSave = temporaryPassword;
+    const passwordForSave = isEditing
+      ? temporaryPassword
+      : DEFAULT_NEW_EMPLOYEE_PASSWORD;
     const confirmPasswordForSave = confirmTemporaryPassword;
 
     if (!form.name.trim() || !email) {
@@ -913,15 +916,6 @@ export default function AdminEmployeesPage() {
       showEmployeeAlert(
         "Email harus Creativemu",
         "Email akun wajib menggunakan domain resmi Creativemu.",
-        "warning",
-      );
-      return;
-    }
-
-    if (!isEditing && (!temporaryPassword || !confirmTemporaryPassword)) {
-      showEmployeeAlert(
-        "Data belum lengkap",
-        "Password dan konfirmasi password wajib diisi untuk employee baru.",
         "warning",
       );
       return;
@@ -1056,7 +1050,7 @@ export default function AdminEmployeesPage() {
           name: form.name.trim(),
           email,
           role: form.role,
-          temporaryPassword: isEditing ? passwordForSave : temporaryPassword,
+          temporaryPassword: passwordForSave,
           registered_office_id: form.registered_office_id,
           department_id: form.department_id,
           jabatan_id: form.jabatan_id,
@@ -1098,7 +1092,7 @@ export default function AdminEmployeesPage() {
         isEditing ? "Karyawan diperbarui" : "Karyawan berhasil dibuat",
         isEditing
           ? "Data akun berhasil diperbarui dan sudah tersimpan."
-          : "Akun baru berhasil dibuat dan siap digunakan untuk login.",
+          : `Akun baru berhasil dibuat. Password awal: ${DEFAULT_NEW_EMPLOYEE_PASSWORD}.`,
         "success",
       );
     } catch (error) {
@@ -1568,7 +1562,8 @@ export default function AdminEmployeesPage() {
                 </h2>
 
                 <p className="mt-1 text-sm leading-6 text-slate-500">
-                  Isi & perbarui data karyawan melalui 4 tab terstruktur di bawah.
+                  Isi & perbarui data karyawan melalui 4 tab terstruktur di
+                  bawah.
                 </p>
               </div>
 
@@ -1641,7 +1636,10 @@ export default function AdminEmployeesPage() {
             <form
               onSubmit={handleSubmit}
               onKeyDown={(event) => {
-                if (event.key === "Enter" && (event.target as HTMLElement).tagName === "INPUT") {
+                if (
+                  event.key === "Enter" &&
+                  (event.target as HTMLElement).tagName === "INPUT"
+                ) {
                   event.preventDefault();
                 }
               }}
@@ -1753,91 +1751,85 @@ export default function AdminEmployeesPage() {
                     </div>
                   </div>
 
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div>
-                      <label className="mb-2 block text-sm font-black text-slate-700">
-                        {editingEmployee ? "Password Baru (Opsional)" : "Password Sementara"}
-                      </label>
-                      <div className="app-field-smooth relative rounded-2xl">
-                        <KeyRound
-                          size={18}
-                          className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                        />
-                        <input
-                          type={showTemporaryPassword ? "text" : "password"}
-                          value={form.temporaryPassword}
-                          onChange={(event) =>
-                            setForm((prev) => ({
-                              ...prev,
-                              temporaryPassword: event.target.value,
-                            }))
-                          }
-                          placeholder={
-                            editingEmployee
-                              ? "Biarkan kosong jika tidak diubah"
-                              : "Password sementara"
-                          }
-                          className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-12 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
-                        />
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setShowTemporaryPassword((prev) => !prev)
-                          }
-                          className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-slate-400 transition hover:bg-white hover:text-[#123c8c]"
-                        >
-                          {showTemporaryPassword ? (
-                            <EyeOff size={18} />
-                          ) : (
-                            <Eye size={18} />
-                          )}
-                        </button>
+                  {editingEmployee && (
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <label className="mb-2 block text-sm font-black text-slate-700">
+                          Password Baru (Opsional)
+                        </label>
+                        <div className="app-field-smooth relative rounded-2xl">
+                          <KeyRound
+                            size={18}
+                            className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                          />
+                          <input
+                            type={showTemporaryPassword ? "text" : "password"}
+                            value={form.temporaryPassword}
+                            onChange={(event) =>
+                              setForm((prev) => ({
+                                ...prev,
+                                temporaryPassword: event.target.value,
+                              }))
+                            }
+                            placeholder="Biarkan kosong jika tidak diubah"
+                            className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-12 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setShowTemporaryPassword((prev) => !prev)
+                            }
+                            className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-slate-400 transition hover:bg-white hover:text-[#123c8c]"
+                          >
+                            {showTemporaryPassword ? (
+                              <EyeOff size={18} />
+                            ) : (
+                              <Eye size={18} />
+                            )}
+                          </button>
+                        </div>
                       </div>
-                    </div>
 
-                    <div>
-                      <label className="mb-2 block text-sm font-black text-slate-700">
-                        {editingEmployee ? "Konfirmasi Password Baru" : "Konfirmasi Password"}
-                      </label>
-                      <div className="app-field-smooth relative rounded-2xl">
-                        <KeyRound
-                          size={18}
-                          className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                        />
-                        <input
-                          type={
-                            showConfirmTemporaryPassword ? "text" : "password"
-                          }
-                          value={form.confirmTemporaryPassword}
-                          onChange={(event) =>
-                            setForm((prev) => ({
-                              ...prev,
-                              confirmTemporaryPassword: event.target.value,
-                            }))
-                          }
-                          placeholder={
-                            editingEmployee
-                              ? "Ulangi password baru"
-                              : "Ulangi password"
-                          }
-                          className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-12 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
-                        />
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setShowConfirmTemporaryPassword((prev) => !prev)
-                          }
-                          className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-slate-400 transition hover:bg-white hover:text-[#123c8c]"
-                        >
-                          {showConfirmTemporaryPassword ? (
-                            <EyeOff size={18} />
-                          ) : (
-                            <Eye size={18} />
-                          )}
-                        </button>
+                      <div>
+                        <label className="mb-2 block text-sm font-black text-slate-700">
+                          Konfirmasi Password Baru
+                        </label>
+                        <div className="app-field-smooth relative rounded-2xl">
+                          <KeyRound
+                            size={18}
+                            className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                          />
+                          <input
+                            type={
+                              showConfirmTemporaryPassword ? "text" : "password"
+                            }
+                            value={form.confirmTemporaryPassword}
+                            onChange={(event) =>
+                              setForm((prev) => ({
+                                ...prev,
+                                confirmTemporaryPassword: event.target.value,
+                              }))
+                            }
+                            placeholder="Ulangi password baru"
+                            className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-12 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setShowConfirmTemporaryPassword((prev) => !prev)
+                            }
+                            className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-slate-400 transition hover:bg-white hover:text-[#123c8c]"
+                          >
+                            {showConfirmTemporaryPassword ? (
+                              <EyeOff size={18} />
+                            ) : (
+                              <Eye size={18} />
+                            )}
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
 
@@ -1994,9 +1986,11 @@ export default function AdminEmployeesPage() {
                           <option value="">Pilih Shift</option>
                           {activeShifts.map((shift) => (
                             <option key={shift.id} value={shift.id}>
-                               {shift.name} - Toleransi {shift.tolerance_minutes} m
+                              {shift.name} - Toleransi {shift.tolerance_minutes}{" "}
+                              m
                             </option>
-                          </select>
+                          ))}
+                        </select>
                       </div>
                     </div>
                   </div>
@@ -2017,7 +2011,9 @@ export default function AdminEmployeesPage() {
                           onChange={(event) =>
                             setForm((prev) => ({
                               ...prev,
-                              status: event.target.value as "active" | "inactive",
+                              status: event.target.value as
+                                | "active"
+                                | "inactive",
                             }))
                           }
                           className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"

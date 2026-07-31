@@ -44,14 +44,12 @@ type AttendanceReportResponse = {
   reports: AttendanceReport[];
 };
 
-type StatusFilter = "all" | "present" | "uncheckout" | "late" | "pending" | "cuti";
+type StatusFilter = "all" | "present" | "late" | "cuti";
 
 const statusOptions: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "Semua Status" },
   { value: "present", label: "Hadir" },
-  { value: "uncheckout", label: "Belum Checkout" },
   { value: "late", label: "Terlambat" },
-  { value: "pending", label: "Menunggu" },
   { value: "cuti", label: "Cuti" },
 ];
 
@@ -372,12 +370,8 @@ export default function AdminAttendanceReportPage() {
 
   const groupedReports = useMemo(() => {
     const groups = new Map<string, AttendanceReport[]>();
-    const filtered =
-      statusFilter === "uncheckout"
-        ? reports.filter((item) => item.checkIn !== "-" && item.checkOut === "-")
-        : reports;
 
-    filtered.forEach((item) => {
+    reports.forEach((item) => {
       const key = item.dateLabel || "Tanpa Tanggal";
 
       if (!groups.has(key)) {
@@ -391,7 +385,7 @@ export default function AdminAttendanceReportPage() {
       dateLabel,
       items,
     }));
-  }, [reports, statusFilter]);
+  }, [reports]);
 
   const stats = useMemo(() => {
     const total = reports.length;
