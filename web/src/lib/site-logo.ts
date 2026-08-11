@@ -102,8 +102,14 @@ export async function updateSiteLogoSrc(logoSrc: string) {
 export async function updateSiteLogoFile(
   buffer: Uint8Array<ArrayBuffer>,
   mime: string,
+  fileName = "",
 ) {
-  const extension = mime.includes("svg")
+  const fileExtension = fileName.split(".").pop()?.toLowerCase() || "";
+  const extension = ["svg", "webp", "jpg", "jpeg", "png"].includes(fileExtension)
+    ? fileExtension === "jpeg"
+      ? "jpg"
+      : fileExtension
+    : mime.includes("svg")
     ? "svg"
     : mime.includes("webp")
       ? "webp"
