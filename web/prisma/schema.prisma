@@ -37,6 +37,8 @@ model User {
 
   profile_photo           String? @db.Text
   profile_photo_public_id String? @db.VarChar(255)
+  profile_photo_data      Bytes?
+  profile_photo_mime      String? @db.VarChar(50)
 
   jabatan_id    String? @db.Char(36)
   department_id String? @db.Char(36)

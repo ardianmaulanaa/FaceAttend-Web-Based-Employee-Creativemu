@@ -1,6 +1,4 @@
 import { Buffer } from "node:buffer";
-import fs from "node:fs";
-import path from "node:path";
 
 import { NextRequest, NextResponse } from "next/server";
 
@@ -143,32 +141,17 @@ async function parsePhotoBody(req: NextRequest): Promise<ParsedPhotoBody> {
   return dataUrlToBuffer(photoDataUrl.trim());
 }
 
-function saveLocalProfilePhoto(
-  buffer: Buffer,
-  userId: string,
-  mime: string,
-): { url: string; publicId: string | null } {
-  const uploadDir = path.join(process.cwd(), "public", "uploads", "profiles");
+function getProfilePhotoEndpoint(userId: string) {
+  return `/api/profil/photo?userId=${encodeURIComponent(userId)}&raw=1`;
+}
 
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
+function toPrismaBytes(buffer: Buffer): Uint8Array<ArrayBuffer> {
+  const arrayBuffer = buffer.buffer.slice(
+    buffer.byteOffset,
+    buffer.byteOffset + buffer.byteLength,
+  ) as ArrayBuffer;
 
-  const ext = mime.includes("png")
-    ? "png"
-    : mime.includes("webp")
-      ? "webp"
-      : "jpg";
-
-  const filename = `user-${userId}-${Date.now()}.${ext}`;
-  const filePath = path.join(uploadDir, filename);
-
-  fs.writeFileSync(filePath, buffer);
-
-  return {
-    url: `/uploads/profiles/${filename}`,
-    publicId: null,
-  };
+  return new Uint8Array(arrayBuffer);
 }
 
 async function getSafeUser(userId: string) {
@@ -229,19 +212,47 @@ function errorResponse(error: unknown, fallbackMessage: string) {
 
 export async function GET(req: NextRequest) {
   try {
-    const userId = await getUserIdFromRequest(req);
-    const user = await getSafeUser(userId);
+    const authUserId = await getUserIdFromRequest(req);
+    const requestedUserId = req.nextUrl.searchParams.get("userId") || authUserId;
+    const isRaw = req.nextUrl.searchParams.get("raw") === "1";
+    const user = await getSafeUser(requestedUserId);
 
     if (!user) {
       throw new ApiError(404, "Data user tidak ditemukan.");
     }
 
+    if (isRaw) {
+      const rows = await prisma.$queryRawUnsafe<
+        Array<{ profile_photo_data: Buffer | Uint8Array | null; profile_photo_mime: string | null }>
+      >(
+        "SELECT profile_photo_data, profile_photo_mime FROM users WHERE id = ? LIMIT 1",
+        requestedUserId,
+      );
+      const photo = rows[0];
+
+      if (!photo?.profile_photo_data) {
+        throw new ApiError(404, "Foto profil tidak ditemukan.");
+      }
+
+      return new NextResponse(Buffer.from(photo.profile_photo_data), {
+        headers: {
+          "Content-Type": photo.profile_photo_mime || "image/jpeg",
+          "Cache-Control": "private, no-store, max-age=0",
+        },
+      });
+    }
+
+    const photoUrl = user.profile_photo ? getProfilePhotoEndpoint(requestedUserId) : null;
+
     return NextResponse.json({
       success: true,
-      photoUrl: user.profile_photo,
-      profilePhoto: user.profile_photo,
-      photo: user.profile_photo,
-      user,
+      photoUrl,
+      profilePhoto: photoUrl,
+      photo: photoUrl,
+      user: {
+        ...user,
+        profile_photo: photoUrl,
+      },
     });
   } catch (error) {
     return errorResponse(error, "GET_PROFILE_PHOTO_ERROR:");
@@ -285,9 +296,8 @@ export async function PATCH(req: NextRequest) {
       throw new ApiError(400, "Ukuran foto maksimal 5MB.");
     }
 
-    const localResult = saveLocalProfilePhoto(buffer, userId, mime);
-    const photoUrl = localResult.url;
-    const photoPublicId = localResult.publicId;
+    const photoUrl = getProfilePhotoEndpoint(userId);
+    const photoPublicId = null;
 
     const updatedUser = await prisma.user.update({
       where: {
@@ -296,6 +306,8 @@ export async function PATCH(req: NextRequest) {
       data: {
         profile_photo: photoUrl,
         profile_photo_public_id: photoPublicId,
+        profile_photo_data: toPrismaBytes(buffer),
+        profile_photo_mime: mime,
       },
       select: {
         id: true,

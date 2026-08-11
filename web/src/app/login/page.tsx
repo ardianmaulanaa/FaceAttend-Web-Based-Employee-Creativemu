@@ -347,6 +347,7 @@ function FloatingAlert({
 export default function LoginPage() {
   const router = useRouter();
   const { logoSrc, siteTitle } = useSiteLogoSettings();
+  const introLogoSrc = DEFAULT_SITE_MARK_LOGO_SRC;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -584,7 +585,7 @@ export default function LoginPage() {
 
             <div className="relative z-10 flex h-32 w-32 items-center justify-center p-0 md:h-40 md:w-40 md:overflow-hidden md:rounded-[2rem] md:border md:border-white/80 md:bg-white md:p-7 md:shadow-[0_24px_58px_rgba(18,60,140,0.14)]">
               <Image
-                src={logoSrc}
+                src={introLogoSrc}
                 alt="Creativemu Logo"
                 width={421}
                 height={390}
@@ -623,7 +624,7 @@ export default function LoginPage() {
         {/* 1. WATERMARK C-SOLO LOGO - DEAD CENTERED IN ENTIRE PAGE (X & Y) */}
         <div className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center overflow-hidden">
           <Image
-            src={logoSrc}
+            src={introLogoSrc}
             alt="Watermark Logo"
             width={500}
             height={500}
