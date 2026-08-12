@@ -87,6 +87,66 @@ function getNotificationStyle(type: string) {
   };
 }
 
+function NotificationMotionStyles() {
+  return (
+    <style jsx global>{`
+      @keyframes notificationPageEnter {
+        from {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes notificationCardEnter {
+        from {
+          opacity: 0;
+          transform: translateY(16px) scale(0.98);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @keyframes notificationItemEnter {
+        from {
+          opacity: 0;
+          transform: translateX(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      .notification-page-enter {
+        animation: notificationPageEnter 320ms ease-out both;
+      }
+
+      .notification-card-enter {
+        animation: notificationCardEnter 340ms cubic-bezier(0.16, 1, 0.3, 1)
+          both;
+      }
+
+      .notification-item-enter {
+        animation: notificationItemEnter 280ms ease-out both;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .notification-page-enter,
+        .notification-card-enter,
+        .notification-item-enter {
+          animation: none !important;
+        }
+      }
+    `}</style>
+  );
+}
+
 export default function EmployeeNotificationPage() {
   const router = useRouter();
 
@@ -101,9 +161,11 @@ export default function EmployeeNotificationPage() {
 
   const monthTitle = useMemo(() => getMonthTitle(), []);
 
-  async function loadNotifications() {
+  async function loadNotifications(options: { showLoading?: boolean } = {}) {
     try {
-      setIsLoading(true);
+      if (options.showLoading ?? false) {
+        setIsLoading(true);
+      }
       setPageError("");
 
       const response = await fetch("/api/notifications", {
@@ -201,22 +263,23 @@ export default function EmployeeNotificationPage() {
   }
 
   useEffect(() => {
-    void loadNotifications();
+    void loadNotifications({ showLoading: true });
     const timer = setInterval(() => {
       void loadNotifications();
-    }, 1000);
+    }, 8000);
 
     return () => clearInterval(timer);
   }, []);
 
   return (
     <MobileShell variant="employee" withBottomPadding={false}>
+      <NotificationMotionStyles />
       <AppHeader title="Notifikasi" eyebrow="Presensi" hideMobileMenuButton />
 
       <main className="min-h-dvh bg-gradient-to-br from-[#f6f8ff] via-white to-[#eef4ff] pb-[calc(8rem+env(safe-area-inset-bottom))] text-slate-950 md:pb-28">
-        <section className="mx-auto max-w-5xl px-5 pb-10 pt-6 md:px-8">
+        <section className="notification-page-enter mx-auto max-w-5xl px-5 pb-10 pt-6 md:px-8">
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-blue-100">
+            <div className="notification-card-enter rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-blue-100">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
@@ -233,7 +296,10 @@ export default function EmployeeNotificationPage() {
               </div>
             </div>
 
-            <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-orange-100">
+            <div
+              className="notification-card-enter rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-orange-100"
+              style={{ animationDelay: "60ms" }}
+            >
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
@@ -250,7 +316,10 @@ export default function EmployeeNotificationPage() {
               </div>
             </div>
 
-            <div className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-emerald-100">
+            <div
+              className="notification-card-enter rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-emerald-100"
+              style={{ animationDelay: "120ms" }}
+            >
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-400">
@@ -268,7 +337,10 @@ export default function EmployeeNotificationPage() {
             </div>
           </div>
 
-          <div className="mt-6 rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-blue-100 md:p-6">
+          <div
+            className="notification-card-enter mt-6 rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-blue-100 md:p-6"
+            style={{ animationDelay: "160ms" }}
+          >
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
                 <h3 className="text-2xl font-black tracking-tight text-slate-950">
@@ -315,11 +387,12 @@ export default function EmployeeNotificationPage() {
                         type="button"
                         onClick={() => void markAsRead(notification)}
                         disabled={isActive}
-                        className={`group flex w-full items-start gap-4 rounded-3xl border p-4 text-left transition duration-200 hover:-translate-y-0.5 md:p-5 ${
+                        className={`notification-item-enter group flex w-full items-start gap-4 rounded-3xl border p-4 text-left transition duration-200 hover:-translate-y-0.5 md:p-5 ${
                           notification.isRead
                             ? "border-slate-100 bg-slate-50/70 opacity-80 hover:bg-slate-100/80"
                             : "border-2 border-blue-300 bg-[#f4f8ff] shadow-md shadow-blue-900/10 ring-2 ring-blue-400/30 hover:bg-white"
                         }`}
+                        style={{ animationDelay: "220ms" }}
                       >
                         <div
                           className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ring-1 ${style.icon}`}
