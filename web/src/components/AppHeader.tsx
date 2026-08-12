@@ -23,6 +23,7 @@ import {
   Network,
   Palette,
   PhoneCall,
+  ArrowLeftRight,
   Settings,
   Trophy,
   UserPlus,

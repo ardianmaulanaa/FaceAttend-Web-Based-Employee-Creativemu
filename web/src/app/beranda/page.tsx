@@ -6,6 +6,7 @@ import Link from "next/link";
 import {
   ArrowLeftRight,
   Bell,
+  CalendarDays,
   PhoneCall,
   FileText,
   History,
