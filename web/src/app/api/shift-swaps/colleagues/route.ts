@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     const userShiftUpper = rawShiftName.toUpperCase().trim();
 
     const userShiftKind = getShiftKind(userShiftUpper);
-    const canSelfShift = userShiftKind === "utama";
+    const isPrimaryShift = userShiftKind === "utama";
 
     // Allowed colleague shift keywords for "Tukar Rekan"
     let allowedColleagueKeywords: string[] = [];
@@ -171,11 +171,11 @@ export async function GET(req: NextRequest) {
 
     // Target shift options for "Geser Shift Mandiri":
     // Only Karyawan Utama can move to Shift Siang
-    const availableShifts: AvailableShiftItem[] = canSelfShift
+    const availableShifts: AvailableShiftItem[] = isPrimaryShift
       ? allShiftOptions.filter((s) => s.name.toUpperCase().includes("SIANG"))
       : [];
 
-    if (canSelfShift && availableShifts.length === 0) {
+    if (isPrimaryShift && availableShifts.length === 0) {
       availableShifts.push({
         id: "shift-siang-default",
         name: "SHIFT SIANG",
@@ -187,8 +187,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       currentShiftName: userShiftUpper,
-      canSelfShift,
-      colleagues: filteredColleagues.map((col) => ({}}]}
+      canSelfShift: isPrimaryShift,
+      colleagues: filteredColleagues.map((col) => ({
         id: col.id,
         name: col.name,
         employeeCode: col.employee_code,
