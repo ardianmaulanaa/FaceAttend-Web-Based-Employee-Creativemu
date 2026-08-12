@@ -904,7 +904,7 @@ export function AppModalMotion({
 
       <div
         className={cn(
-          "app-modal-backdrop-enter fixed inset-0 z-[80] flex bg-slate-950/50 px-4 pb-4",
+          "app-modal-backdrop-enter fixed inset-0 z-[80] flex bg-transparent px-4 pb-4",
           align === "center" &&
             "items-end justify-center md:items-center md:pb-0",
           align === "bottom" && "items-end justify-center",

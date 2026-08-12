@@ -54,14 +54,30 @@ function getDatabaseConfig(connectionLimit: number) {
   ).toLowerCase();
   const sslValue = (parsedUrl.searchParams.get("ssl") || "").toLowerCase();
   const sslMode = (parsedUrl.searchParams.get("sslmode") || "").toLowerCase();
+  const envSsl = (process.env.DATABASE_SSL || "").toLowerCase();
+  const envRejectUnauthorized = (
+    process.env.DATABASE_SSL_REJECT_UNAUTHORIZED || ""
+  ).toLowerCase();
+  const sslDisabled =
+    sslValue === "false" ||
+    sslValue === "0" ||
+    sslMode === "disabled" ||
+    sslMode === "disable" ||
+    envSsl === "false" ||
+    envSsl === "0";
 
   const useTls =
-    !isLocalDatabase ||
-    sslAccept === "strict" ||
-    sslValue === "true" ||
-    sslMode === "required" ||
-    sslMode === "verify-ca" ||
-    sslMode === "verify-identity";
+    !sslDisabled &&
+    (envSsl === "true" ||
+      envSsl === "1" ||
+      sslAccept === "strict" ||
+      sslValue === "true" ||
+      sslMode === "required" ||
+      sslMode === "verify-ca" ||
+      sslMode === "verify-identity" ||
+      (!isLocalDatabase && process.env.DATABASE_SSL_AUTO === "true"));
+
+  const rejectUnauthorized = envRejectUnauthorized !== "false";
 
   return {
     host,
@@ -75,7 +91,7 @@ function getDatabaseConfig(connectionLimit: number) {
       ? {
           ssl: {
             minVersion: "TLSv1.2" as const,
-            rejectUnauthorized: true,
+            rejectUnauthorized,
           },
         }
       : {}),

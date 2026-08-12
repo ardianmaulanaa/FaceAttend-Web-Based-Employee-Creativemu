@@ -626,7 +626,7 @@ export default function AdminAnnouncementsPage() {
       </main>
 
       {isModalOpen && (
-        <div className="admin-announcement-modal-backdrop fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/45 p-4">
+        <div className="admin-announcement-modal-backdrop fixed inset-0 z-[80] flex items-center justify-center bg-transparent p-4">
           <div className="admin-announcement-modal-panel flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-xl shadow-slate-950/25">
             <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4 md:px-6">
               <div>

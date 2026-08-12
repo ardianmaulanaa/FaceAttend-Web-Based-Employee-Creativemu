@@ -10,6 +10,7 @@ function normalizeLogoSrc(value: string | null | undefined) {
   const logoSrc = String(value || "").trim();
 
   if (!logoSrc) return DEFAULT_SITE_LOGO_SRC;
+  if (logoSrc.startsWith("/uploads/")) return DEFAULT_SITE_LOGO_SRC;
   if (logoSrc.startsWith("/")) return logoSrc;
   if (logoSrc.startsWith("https://")) return logoSrc;
 

@@ -38,6 +38,18 @@ if [ -d "$BUILD_DIR/standalone/public/uploads" ]; then
   fail "$BUILD_DIR/standalone/public/uploads exists in deploy output"
 fi
 
+if [ -f "$BUILD_DIR/standalone/server.js" ]; then
+  for path in \
+    "$BUILD_DIR/standalone/public/images/creativemu-logo/creativemu.png" \
+    "$BUILD_DIR/standalone/public/images/creativemu-logo/creativemu-solo.png" \
+    "$BUILD_DIR/standalone/$BUILD_DIR/static"
+  do
+    if [ ! -e "$path" ]; then
+      fail "$path is missing from deploy output"
+    fi
+  done
+fi
+
 if [ "$failures" -gt 0 ]; then
   exit 1
 fi

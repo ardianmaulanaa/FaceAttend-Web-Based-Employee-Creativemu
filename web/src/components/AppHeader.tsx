@@ -21,6 +21,7 @@ import {
   Megaphone,
   Menu,
   Network,
+  Palette,
   PhoneCall,
   Settings,
   Trophy,
@@ -37,6 +38,7 @@ type AppHeaderProps = {
   subtitle?: string;
   rightLabel?: string;
   variant?: "employee" | "admin";
+  hideMobileMenuButton?: boolean;
 };
 
 type NotificationStats = {
@@ -166,6 +168,11 @@ const operationalMenus = [
     label: "Logo Aplikasi",
     icon: Settings,
   },
+  {
+    href: "/admin/warna-aplikasi",
+    label: "Warna Aplikasi",
+    icon: Palette,
+  },
 ];
 
 const WHATSAPP_LINK = "https://wa.me/6282123459565";
@@ -226,6 +233,7 @@ export default function AppHeader({
   subtitle,
   rightLabel,
   variant = "employee",
+  hideMobileMenuButton = false,
 }: AppHeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -397,7 +405,7 @@ export default function AppHeader({
             <button
               type="button"
               onClick={() => setIsSidebarOpen(true)}
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c] shadow-lg shadow-slate-200/70 ring-1 ring-blue-100 transition hover:bg-blue-50 active:scale-[0.96]"
+              className={`${hideMobileMenuButton ? "hidden md:flex" : "flex"} h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c] shadow-lg shadow-slate-200/70 ring-1 ring-blue-100 transition hover:bg-blue-50 active:scale-[0.96]`}
               aria-label="Buka menu"
             >
               <Menu size={25} strokeWidth={3} />
@@ -491,7 +499,7 @@ export default function AppHeader({
           type="button"
           aria-label="Tutup menu"
           onClick={() => setIsSidebarOpen(false)}
-          className="fixed inset-0 z-50 bg-slate-950/40"
+          className="fixed inset-0 z-50 bg-transparent"
         />
       ) : null}
 

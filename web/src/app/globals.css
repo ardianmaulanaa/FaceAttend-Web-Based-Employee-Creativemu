@@ -8,6 +8,13 @@
   --primary-dark: #0b2358;
   --accent: #ff8a00;
   --muted: #64748b;
+  --app-primary: #123c8c;
+  --app-primary-hover: #0f3274;
+  --app-primary-soft: #eaf1ff;
+  --app-primary-subtle: #f8fbff;
+  --app-primary-text: #123c8c;
+  --app-primary-rgb: 18 60 140;
+  --app-primary-text-rgb: 18 60 140;
 }
 
 * {
@@ -43,8 +50,107 @@ input {
 }
 
 ::selection {
-  background: #123c8c;
+  background: var(--app-primary);
   color: white;
+}
+
+.bg-\[\#123c8c\],
+.bg-blue-600,
+.bg-blue-700,
+.bg-blue-800,
+.bg-blue-900,
+.group:hover .group-hover\:bg-\[\#123c8c\] {
+  background-color: var(--app-primary) !important;
+}
+
+.hover\:bg-\[\#0f3274\]:hover,
+.hover\:bg-\[\#0f3474\]:hover,
+.hover\:bg-\[\#0f347a\]:hover,
+.hover\:bg-blue-700:hover,
+.hover\:bg-blue-800:hover,
+.hover\:bg-blue-900:hover {
+  background-color: var(--app-primary-hover) !important;
+}
+
+.bg-\[\#eaf1ff\],
+.bg-\[\#eef5ff\],
+.bg-blue-50,
+.hover\:bg-\[\#eaf1ff\]:hover,
+.hover\:bg-\[\#eef5ff\]:hover,
+.hover\:bg-blue-50:hover,
+.hover\:bg-blue-50\/50:hover {
+  background-color: var(--app-primary-soft) !important;
+}
+
+.bg-\[\#f8fbff\],
+.bg-\[\#f6f8ff\],
+.bg-\[\#f1f5ff\],
+.md\:bg-\[\#f8fbff\],
+.bg-blue-50\/50,
+.bg-blue-50\/70,
+.hover\:bg-\[\#f8fbff\]:hover {
+  background-color: var(--app-primary-subtle) !important;
+}
+
+.text-\[\#123c8c\],
+.text-blue-500,
+.text-blue-600,
+.text-blue-700,
+.text-blue-800,
+.hover\:text-\[\#123c8c\]:hover,
+.group:hover .group-hover\:text-\[\#123c8c\] {
+  color: var(--app-primary-text) !important;
+}
+
+.border-\[\#123c8c\],
+.border-blue-100,
+.border-blue-200,
+.border-blue-300,
+.hover\:border-\[\#123c8c\]:hover,
+.hover\:border-blue-100:hover,
+.hover\:border-blue-200:hover,
+.hover\:border-blue-300:hover,
+.focus\:border-\[\#123c8c\]:focus {
+  border-color: rgb(var(--app-primary-rgb) / 0.22) !important;
+}
+
+.ring-\[\#123c8c\],
+.ring-blue-50,
+.ring-blue-100,
+.focus\:ring-blue-100:focus,
+.focus\:ring-blue-100\/50:focus,
+.focus\:ring-blue-100\/70:focus {
+  --tw-ring-color: rgb(var(--app-primary-rgb) / 0.18) !important;
+}
+
+.file\:bg-\[\#123c8c\]::file-selector-button {
+  background-color: var(--app-primary) !important;
+}
+
+.bg-\[\#123c8c\]\/75 {
+  background-color: rgb(var(--app-primary-rgb) / 0.75) !important;
+}
+
+.hover\:bg-\[\#123c8c\]\/90:hover {
+  background-color: rgb(var(--app-primary-rgb) / 0.9) !important;
+}
+
+.text-\[\#123c8c\]\/70 {
+  color: rgb(var(--app-primary-text-rgb) / 0.7) !important;
+}
+
+.text-\[\#123c8c\]\/75 {
+  color: rgb(var(--app-primary-text-rgb) / 0.75) !important;
+}
+
+.border-\[\#123c8c\]\/20,
+.border-blue-100\/60,
+.border-blue-100\/80 {
+  border-color: rgb(var(--app-primary-rgb) / 0.2) !important;
+}
+
+.ring-blue-100\/90 {
+  --tw-ring-color: rgb(var(--app-primary-rgb) / 0.18) !important;
 }
 
 @keyframes floatText {

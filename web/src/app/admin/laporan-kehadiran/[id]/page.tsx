@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   BriefcaseBusiness,
@@ -781,8 +781,16 @@ function OfficeLocationCard({
 export default function AdminAttendanceReportDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
 
   const id = String(params.id || "");
+  const cameFromDashboard = searchParams.get("from") === "dashboard";
+  const backHref = cameFromDashboard
+    ? "/admin/dasbor"
+    : "/admin/laporan-kehadiran";
+  const backLabel = cameFromDashboard
+    ? "Kembali ke Dasbor"
+    : "Kembali ke Laporan";
 
   const [report, setReport] = useState<AttendanceReportDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -824,6 +832,13 @@ export default function AdminAttendanceReportDetailPage() {
         await readJsonResponse(response);
 
       if (!response.ok || !data.success || !data.report) {
+        if (cameFromDashboard && response.status === 404) {
+          router.replace(
+            `/admin/rekap-kehadiran-karyawan/${encodeURIComponent(id)}?from=dashboard`,
+          );
+          return;
+        }
+
         setReport(null);
         setErrorMessage(data.message || "Detail laporan tidak ditemukan.");
         return;
@@ -887,11 +902,11 @@ export default function AdminAttendanceReportDetailPage() {
         <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 md:px-10 lg:px-16">
           <button
             type="button"
-            onClick={() => router.push("/admin/laporan-kehadiran")}
+            onClick={() => router.push(backHref)}
             className="attendance-detail-enter inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-black text-[#123c8c] shadow-sm ring-1 ring-blue-100 transition hover:bg-[#f8fbff] active:scale-[0.98]"
           >
             <ArrowLeft size={18} strokeWidth={2.6} />
-            Kembali ke Laporan
+            {backLabel}
           </button>
 
           {isLoading ? (
