@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  ArrowRight,
   CalendarDays,
   ChevronRight,
   ClipboardList,
@@ -550,16 +549,16 @@ export default function AdminEmployeeAttendanceRecapPage() {
           </div>
 
           <div
-            className="attendance-recap-enter rounded-[2rem] border border-white/70 bg-white/95 px-5 py-8 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:px-8 md:py-10"
+            className="attendance-recap-enter w-full max-w-full overflow-hidden rounded-[2rem] border border-white/70 bg-white/95 px-5 py-8 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:px-8 md:py-10"
             style={{ animationDelay: "100ms" }}
           >
-            <div className="grid gap-5 lg:grid-cols-[1fr_1fr_1.4fr]">
-              <label className="block">
+            <div className="grid w-full max-w-full gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.4fr)]">
+              <label className="block min-w-0">
                 <span className="mb-2 block text-xs font-black uppercase tracking-[0.12em] text-slate-500">
                   Tanggal Mulai
                 </span>
 
-                <div className="relative">
+                <div className="relative min-w-0">
                   <CalendarDays
                     size={18}
                     className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
@@ -569,17 +568,17 @@ export default function AdminEmployeeAttendanceRecapPage() {
                     type="date"
                     value={startDate}
                     onChange={(event) => setStartDate(event.target.value)}
-                    className="attendance-recap-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                    className="attendance-recap-field h-12 w-full min-w-0 max-w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
                   />
                 </div>
               </label>
 
-              <label className="block">
+              <label className="block min-w-0">
                 <span className="mb-2 block text-xs font-black uppercase tracking-[0.12em] text-slate-500">
                   Tanggal Akhir
                 </span>
 
-                <div className="relative">
+                <div className="relative min-w-0">
                   <CalendarDays
                     size={18}
                     className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
@@ -589,17 +588,17 @@ export default function AdminEmployeeAttendanceRecapPage() {
                     type="date"
                     value={endDate}
                     onChange={(event) => setEndDate(event.target.value)}
-                    className="attendance-recap-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                    className="attendance-recap-field h-12 w-full min-w-0 max-w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
                   />
                 </div>
               </label>
 
-              <label className="block">
+              <label className="block min-w-0">
                 <span className="mb-2 block text-xs font-black uppercase tracking-[0.12em] text-slate-500">
                   Cari Karyawan
                 </span>
 
-                <div className="relative">
+                <div className="relative min-w-0">
                   <Search
                     size={18}
                     className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
@@ -609,7 +608,7 @@ export default function AdminEmployeeAttendanceRecapPage() {
                     value={searchKeyword}
                     onChange={(event) => setSearchKeyword(event.target.value)}
                     placeholder="Cari nama karyawan..."
-                    className="attendance-recap-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                    className="attendance-recap-field h-12 w-full min-w-0 max-w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
                   />
                 </div>
               </label>
