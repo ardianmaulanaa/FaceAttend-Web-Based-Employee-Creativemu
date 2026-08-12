@@ -15,7 +15,9 @@ export async function GET(req: NextRequest) {
   try {
     const authUser = await requireAuth(req);
     const swapDateParam = req.nextUrl.searchParams.get("swapDate") || "";
-    const selectedDate = swapDateParam ? toShiftSwapDate(swapDateParam) : new Date();
+    const selectedDate = swapDateParam
+      ? toShiftSwapDate(swapDateParam)
+      : new Date();
 
     const currentUser = await prisma.user.findUnique({
       where: { id: authUser.id },
@@ -29,7 +31,7 @@ export async function GET(req: NextRequest) {
     const userShiftUpper = rawShiftName.toUpperCase().trim();
 
     const userShiftKind = getShiftKind(userShiftUpper);
-    const isPrimaryShift = userShiftKind === "utama";
+    const canSelfShift = userShiftKind === "utama";
 
     // Allowed colleague shift keywords for "Tukar Rekan"
     let allowedColleagueKeywords: string[] = [];
@@ -167,16 +169,13 @@ export async function GET(req: NextRequest) {
 
     const allShiftOptions = Array.from(shiftMap.values());
 
-    const userShiftKind = getShiftKind(userShiftUpper);
-    const isPrimaryShift = userShiftKind === "utama";
-
     // Target shift options for "Geser Shift Mandiri":
     // Only Karyawan Utama can move to Shift Siang
-    const availableShifts: AvailableShiftItem[] = isPrimaryShift
+    const availableShifts: AvailableShiftItem[] = canSelfShift
       ? allShiftOptions.filter((s) => s.name.toUpperCase().includes("SIANG"))
       : [];
 
-    if (isPrimaryShift && availableShifts.length === 0) {
+    if (canSelfShift && availableShifts.length === 0) {
       availableShifts.push({
         id: "shift-siang-default",
         name: "SHIFT SIANG",
@@ -188,8 +187,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       currentShiftName: userShiftUpper,
-      canSelfShift: isPrimaryShift,
-      colleagues: filteredColleagues.map((col) => ({
+      canSelfShift,
+      colleagues: filteredColleagues.map((col) => ({}}]}
         id: col.id,
         name: col.name,
         employeeCode: col.employee_code,
@@ -201,7 +200,9 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error("GET_SHIFT_SWAP_COLLEAGUES_ERROR:", error);
     return NextResponse.json(
-      { error: getApiErrorMessage(error, "Gagal mengambil daftar rekan kerja.") },
+      {
+        error: getApiErrorMessage(error, "Gagal mengambil daftar rekan kerja."),
+      },
       { status: getApiErrorStatus(error) },
     );
   }

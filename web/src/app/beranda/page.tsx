@@ -279,7 +279,7 @@ function ProfileAvatar({
     size === "desktop" ? "h-24 w-24 text-2xl" : "h-12 w-12 text-sm";
 
   if (user.profile_photo) {
-    const photoSrc = `${user.profile_photo}${user.profile_photo.includes("?") ? "&" : "?"}v=${Date.now()}`;
+    const photoSrc = `${user.profile_photo}${user.profile_photo.includes("?") ? "&" : "?"}v=${Math.floor(Date.now() / 1000)}`;
 
     return (
       <img
