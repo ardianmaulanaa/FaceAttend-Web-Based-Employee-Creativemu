@@ -8,6 +8,13 @@ import {
 export const APP_THEME_STORAGE_KEY = "app_theme_colors";
 
 const HEX_COLOR_RE = /^#[0-9a-f]{6}$/i;
+const STALE_ALFABANK_RED_COLORS = new Set([
+  "#b91c1c",
+  "#dc2626",
+  "#ef4444",
+  "#e60000",
+  "#ff0000",
+]);
 
 function normalizeHexColor(value: unknown, fallback: string) {
   const color = String(value || "").trim();
@@ -18,7 +25,7 @@ function normalizeHexColor(value: unknown, fallback: string) {
 export function normalizeClientAppTheme(
   value: Partial<AppThemeSettings> | null | undefined,
 ): AppThemeSettings {
-  return {
+  const normalizedTheme = {
     primaryColor: normalizeHexColor(
       value?.primaryColor,
       DEFAULT_APP_THEME.primaryColor,
@@ -34,6 +41,12 @@ export function normalizeClientAppTheme(
     ),
     textColor: normalizeHexColor(value?.textColor, DEFAULT_APP_THEME.textColor),
   };
+
+  if (STALE_ALFABANK_RED_COLORS.has(normalizedTheme.primaryColor)) {
+    return DEFAULT_APP_THEME;
+  }
+
+  return normalizedTheme;
 }
 
 function hexToRgbTriplet(hexColor: string) {
