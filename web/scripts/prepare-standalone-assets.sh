@@ -25,6 +25,18 @@ if [ -d "$BUILD_DIR/static" ]; then
   cp -R "$BUILD_DIR/static" "$STANDALONE_DIR/$BUILD_DIR/static"
 fi
 
+rm -rf "$STANDALONE_DIR/prisma"
+
+if [ -f "prisma/schema.prisma" ]; then
+  mkdir -p "$STANDALONE_DIR/prisma"
+  cp "prisma/schema.prisma" "$STANDALONE_DIR/prisma/schema.prisma"
+fi
+
+if [ -d "prisma/migrations" ]; then
+  mkdir -p "$STANDALONE_DIR/prisma"
+  cp -R "prisma/migrations" "$STANDALONE_DIR/prisma/migrations"
+fi
+
 find "$STANDALONE_DIR" -name ".DS_Store" -delete
 find "$STANDALONE_DIR" -name "*.log" -delete
 

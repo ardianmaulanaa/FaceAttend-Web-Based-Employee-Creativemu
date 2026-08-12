@@ -8,7 +8,6 @@ import {
 } from "@/lib/app-theme-defaults";
 import {
   applyAppTheme,
-  isDefaultAppTheme,
   readStoredAppTheme,
   storeAppTheme,
 } from "@/lib/app-theme-client";
@@ -39,11 +38,6 @@ async function loadAppTheme() {
     };
 
     if (data.success && data.theme) {
-      if (storedTheme && isDefaultAppTheme(data.theme)) {
-        applyAppTheme(storedTheme);
-        return;
-      }
-
       applyAppTheme(data.theme);
       storeAppTheme(data.theme);
       return;
