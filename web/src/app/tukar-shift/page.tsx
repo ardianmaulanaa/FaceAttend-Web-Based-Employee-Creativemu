@@ -147,7 +147,7 @@ export default function TukarShiftPage() {
   const [currentShiftName, setCurrentShiftName] = useState("Shift Utama");
   const [colleagues, setColleagues] = useState<Colleague[]>([]);
   const [availableShifts, setAvailableShifts] = useState<AvailableShift[]>([]);
-  const [canSelfShift, setCanSelfShift] = useState(false);
+  const [canSelfShift, setCanSelfShift] = useState(true);
   const [isRulesOpen, setIsRulesOpen] = useState(false);
 
   const [sentRequests, setSentRequests] = useState<SwapRequest[]>([]);
@@ -166,6 +166,12 @@ export default function TukarShiftPage() {
   const [alertState, setAlertState] = useState<{
     type: "success" | "error" | "warning";
     message: string;
+  } | null>(null);
+
+  // Custom cancel modal state (replaces window.prompt)
+  const [cancelModal, setCancelModal] = useState<{
+    swapId: string;
+    reason: string;
   } | null>(null);
 
   async function loadData() {
@@ -319,6 +325,52 @@ export default function TukarShiftPage() {
     }
   }
 
+  function handleCancel(swapId: string) {
+    setCancelModal({ swapId, reason: "" });
+  }
+
+  async function executeCancelConfirmed() {
+    if (!cancelModal) return;
+    const { swapId, reason: cancelReason } = cancelModal;
+    const finalReason = cancelReason.trim() || "Dibatalkan oleh karyawan";
+    setCancelModal(null);
+    try {
+      setProcessingId(swapId);
+      setAlertState(null);
+
+      const res = await fetch(`/api/shift-swaps/${swapId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "cancel", cancelReason: finalReason }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok || !json.success) {
+        setAlertState({
+          type: "error",
+          message: json.error || "Gagal membatalkan pengajuan.",
+        });
+        return;
+      }
+
+      setAlertState({
+        type: "success",
+        message: json.message || "Pengajuan berhasil dibatalkan.",
+      });
+
+      await loadData();
+    } catch (err) {
+      console.error("SWAP_CANCEL_ERROR:", err);
+      setAlertState({
+        type: "error",
+        message: "Terjadi kesalahan saat membatalkan pengajuan.",
+      });
+    } finally {
+      setProcessingId(null);
+    }
+  }
+
   const pendingIncoming = incomingRequests.filter(
     (r) => r.status === "pending",
   );
@@ -336,6 +388,61 @@ export default function TukarShiftPage() {
         rightLabel="Tukar Shift"
         hideMobileMenuButton
       />
+
+      {/* CUSTOM CANCEL MODAL */}
+      {cancelModal ? (
+        <div className="fixed inset-0 z-[110] flex items-end justify-center bg-slate-950/45 px-4 pb-4 md:items-center md:pb-0">
+          <button
+            type="button"
+            aria-label="Tutup modal batal"
+            className="absolute inset-0 cursor-default"
+            onClick={() => setCancelModal(null)}
+          />
+          <div className="relative w-full max-w-sm overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-2xl shadow-slate-900/25">
+            <div className="flex items-center gap-3 border-b border-slate-100 bg-gradient-to-r from-red-50 to-white p-5">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-600">
+                <XCircle size={24} strokeWidth={2.5} />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-red-500">Konfirmasi</p>
+                <h3 className="mt-0.5 text-lg font-black text-slate-950">Batalkan Pengajuan?</h3>
+              </div>
+            </div>
+            <div className="space-y-4 p-5">
+              <p className="text-sm font-bold leading-6 text-slate-500">
+                Pengajuan yang dibatalkan tidak dapat dikembalikan. Masukkan alasan jika perlu.
+              </p>
+              <div>
+                <label className="text-sm font-black text-slate-700">Alasan Pembatalan <span className="text-xs font-bold text-slate-400">(opsional)</span></label>
+                <textarea
+                  value={cancelModal.reason}
+                  onChange={(e) => setCancelModal((prev) => prev ? { ...prev, reason: e.target.value } : prev)}
+                  placeholder="Tidak jadi / alasan lain..."
+                  rows={3}
+                  className="mt-2 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-5 py-3.5 text-sm font-bold text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100/60"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 border-t border-slate-100 bg-slate-50/60 p-4">
+              <button
+                type="button"
+                onClick={() => setCancelModal(null)}
+                className="flex flex-1 items-center justify-center rounded-2xl border border-blue-100 bg-white px-4 py-3 text-sm font-black text-slate-600 transition hover:bg-slate-50 active:scale-[0.98]"
+              >
+                Kembali
+              </button>
+              <button
+                type="button"
+                onClick={executeCancelConfirmed}
+                className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-red-600 px-4 py-3 text-sm font-black text-white shadow-md shadow-red-900/20 transition hover:bg-red-700 active:scale-[0.98]"
+              >
+                <XCircle size={16} />
+                Ya, Batalkan
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {alertState && alertTheme ? (
         <div className="pointer-events-none fixed right-4 top-4 z-[120] w-[calc(100vw-2rem)] max-w-md sm:right-7 sm:top-7">
@@ -764,20 +871,42 @@ export default function TukarShiftPage() {
                       </p>
                     </div>
 
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-[10px] font-black ${req.status === "approved"
-                          ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
-                          : req.status === "rejected"
-                            ? "bg-red-50 text-red-700 ring-1 ring-red-200"
-                            : "bg-amber-50 text-amber-700 ring-1 ring-amber-200"
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-[10px] font-black ${
+                          req.status === "approved"
+                            ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
+                            : req.status === "rejected"
+                              ? "bg-red-50 text-red-700 ring-1 ring-red-200"
+                              : req.status === "cancelled"
+                                ? "bg-slate-100 text-slate-500 ring-1 ring-slate-200"
+                                : "bg-amber-50 text-amber-700 ring-1 ring-amber-200"
                         }`}
-                    >
-                      {req.status === "approved"
-                        ? "Disetujui"
-                        : req.status === "rejected"
-                          ? "Ditolak"
-                          : "Menunggu"}
-                    </span>
+                      >
+                        {req.status === "approved"
+                          ? "Disetujui"
+                          : req.status === "rejected"
+                            ? "Ditolak"
+                            : req.status === "cancelled"
+                              ? "Dibatalkan"
+                              : "Menunggu"}
+                      </span>
+
+                      {req.status === "pending" || req.status === "approved" ? (
+                        <button
+                          type="button"
+                          disabled={processingId === req.id}
+                          onClick={() => handleCancel(req.id)}
+                          className="rounded-full bg-red-50 px-2.5 py-1 text-[10px] font-black text-red-600 ring-1 ring-red-200 transition hover:bg-red-100 active:scale-95 disabled:opacity-50"
+                        >
+                          {processingId === req.id ? (
+                            <Loader2 size={12} className="animate-spin inline" />
+                          ) : (
+                            "Batalkan"
+                          )}
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
                 ))}
 

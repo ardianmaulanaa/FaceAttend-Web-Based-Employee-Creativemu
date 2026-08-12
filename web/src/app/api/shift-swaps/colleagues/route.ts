@@ -167,11 +167,23 @@ export async function GET(req: NextRequest) {
 
     const allShiftOptions = Array.from(shiftMap.values());
 
+    const userShiftKind = getShiftKind(userShiftUpper);
+    const isPrimaryShift = userShiftKind === "utama";
+
     // Target shift options for "Geser Shift Mandiri":
-    // Only karyawan utama can move to shift pagi / shift siang.
+    // Only Karyawan Utama can move to Shift Siang
     const availableShifts: AvailableShiftItem[] = isPrimaryShift
-      ? allShiftOptions.filter((s) => s.name.includes("SIANG"))
+      ? allShiftOptions.filter((s) => s.name.toUpperCase().includes("SIANG"))
       : [];
+
+    if (isPrimaryShift && availableShifts.length === 0) {
+      availableShifts.push({
+        id: "shift-siang-default",
+        name: "SHIFT SIANG",
+        startTime: "13:00",
+        endTime: "21:00",
+      });
+    }
 
     return NextResponse.json({
       success: true,

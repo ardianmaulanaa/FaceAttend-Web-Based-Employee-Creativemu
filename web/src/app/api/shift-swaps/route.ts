@@ -215,21 +215,19 @@ export async function POST(req: NextRequest) {
 
       if (getShiftKind(requesterShiftUpper) !== "utama") {
         return NextResponse.json(
-          { error: "Geser shift hanya berlaku untuk karyawan utama." },
+          { error: "Geser shift mandiri hanya berlaku untuk karyawan utama." },
           { status: 400 },
         );
       }
 
       if (!targetShiftName) {
         return NextResponse.json(
-          { error: "Pilih shift tujuan (misalnya Shift Siang)." },
+          { error: "Pilih shift tujuan (Shift Siang)." },
           { status: 400 },
         );
       }
 
-      const targetShiftKind = getShiftKind(targetShiftUpper);
-
-      if (targetShiftKind !== "siang") {
+      if (!targetShiftUpper.includes("SIANG")) {
         return NextResponse.json(
           { error: "Karyawan utama hanya bisa geser ke Shift Siang." },
           { status: 400 },
@@ -283,29 +281,22 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: cutoffMessage }, { status: 400 });
       }
 
-      // Check if already submitted for this date
-      const existingPendingOrApproved = await prisma.shiftSwapRequest.findFirst({
+      // Block only if there's an ACTIVE (pending/approved) shift swap for this date.
+      // After cancellation, a new one can be submitted.
+      const existingActive = await prisma.shiftSwapRequest.findFirst({
         where: {
           requester_id: user.id,
           swap_date: swapDate,
           status: { in: ["pending", "approved"] },
+          target_user_id: user.id, // self-shift only
         },
       });
 
-      if (existingPendingOrApproved) {
-        if (
-          existingPendingOrApproved.status === "approved" &&
-          existingPendingOrApproved.target_user_id === user.id
-        ) {
-          return NextResponse.json({
-            success: true,
-            message: `Jam kerja untuk tanggal tersebut sudah digeser ke ${existingPendingOrApproved.target_shift_name}. Presensi akan menggunakan jadwal ${existingPendingOrApproved.target_shift_name}.`,
-            request: existingPendingOrApproved,
-          });
-        }
-
+      if (existingActive) {
         return NextResponse.json(
-          { error: "Kamu sudah memiliki pergeseran/tukar shift untuk tanggal tersebut." },
+          {
+            error: `Kamu sudah memiliki geser shift aktif untuk tanggal tersebut (status: ${existingActive.status}). Batalkan terlebih dahulu jika ingin menggantinya.`,
+          },
           { status: 400 },
         );
       }
@@ -440,6 +431,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: cutoffMessage }, { status: 400 });
     }
 
+    // Block duplicate only for same requester → same colleague → same date → still pending
     const existingPending = await prisma.shiftSwapRequest.findFirst({
       where: {
         requester_id: user.id,
@@ -451,7 +443,9 @@ export async function POST(req: NextRequest) {
 
     if (existingPending) {
       return NextResponse.json(
-        { error: "Kamu sudah mengirim pengajuan tukar shift ke karyawan ini untuk tanggal tersebut." },
+        {
+          error: "Kamu sudah mengirim pengajuan tukar shift ke karyawan ini untuk tanggal tersebut. Tunggu responnya atau batalkan terlebih dahulu.",
+        },
         { status: 400 },
       );
     }

@@ -99,13 +99,7 @@ export async function PATCH(
         );
       }
 
-      const cancelReason = String(body.cancelReason || body.reason || "").trim();
-      if (!cancelReason) {
-        return NextResponse.json(
-          { error: "Alasan pembatalan wajib diisi." },
-          { status: 400 },
-        );
-      }
+      const cancelReason = String(body.cancelReason || body.reason || "").trim() || "Dibatalkan oleh karyawan";
 
       const updatedSwap = await prisma.shiftSwapRequest.update({
         where: { id: swapId },
