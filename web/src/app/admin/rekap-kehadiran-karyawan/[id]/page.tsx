@@ -917,16 +917,16 @@ export default function AdminEmployeeAttendanceRecapDetailPage() {
           </div>
 
           <div
-            className="recap-detail-enter rounded-[2.25rem] border border-white/70 bg-white/95 p-8 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-10"
+            className="recap-detail-enter w-full max-w-full overflow-hidden rounded-[2.25rem] border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-10"
             style={{ animationDelay: "80ms" }}
           >
-            <div className="grid gap-6 md:grid-cols-2">
-              <label className="block">
+            <div className="grid w-full max-w-full gap-6 md:grid-cols-2">
+              <label className="block min-w-0">
                 <span className="mb-3 block text-sm font-black uppercase tracking-[0.12em] text-slate-500">
                   Tanggal Mulai
                 </span>
 
-                <div className="relative">
+                <div className="relative min-w-0">
                   <CalendarDays
                     size={22}
                     className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400"
@@ -936,17 +936,17 @@ export default function AdminEmployeeAttendanceRecapDetailPage() {
                     type="date"
                     value={startDate}
                     onChange={(event) => setStartDate(event.target.value)}
-                    className="recap-detail-field h-16 w-full rounded-3xl border border-blue-100 bg-[#f8fbff] py-4 pl-14 pr-5 text-base font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                    className="recap-detail-field h-16 w-full min-w-0 max-w-full rounded-3xl border border-blue-100 bg-[#f8fbff] py-4 pl-14 pr-5 text-base font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
                   />
                 </div>
               </label>
 
-              <label className="block">
+              <label className="block min-w-0">
                 <span className="mb-3 block text-sm font-black uppercase tracking-[0.12em] text-slate-500">
                   Tanggal Akhir
                 </span>
 
-                <div className="relative">
+                <div className="relative min-w-0">
                   <CalendarDays
                     size={22}
                     className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400"
@@ -956,7 +956,7 @@ export default function AdminEmployeeAttendanceRecapDetailPage() {
                     type="date"
                     value={endDate}
                     onChange={(event) => setEndDate(event.target.value)}
-                    className="recap-detail-field h-16 w-full rounded-3xl border border-blue-100 bg-[#f8fbff] py-4 pl-14 pr-5 text-base font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                    className="recap-detail-field h-16 w-full min-w-0 max-w-full rounded-3xl border border-blue-100 bg-[#f8fbff] py-4 pl-14 pr-5 text-base font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
                   />
                 </div>
               </label>

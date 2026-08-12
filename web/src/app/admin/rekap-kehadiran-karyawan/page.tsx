@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  ArrowRight,
   CalendarDays,
   ChevronRight,
   ClipboardList,
@@ -550,16 +549,16 @@ export default function AdminEmployeeAttendanceRecapPage() {
           </div>
 
           <div
-            className="attendance-recap-enter rounded-[2rem] border border-white/70 bg-white/95 px-5 py-8 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:px-8 md:py-10"
+            className="attendance-recap-enter w-full max-w-full overflow-hidden rounded-[2rem] border border-white/70 bg-white/95 px-5 py-8 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:px-8 md:py-10"
             style={{ animationDelay: "100ms" }}
           >
-            <div className="grid gap-5 lg:grid-cols-[1fr_1fr_1.4fr]">
-              <label className="block">
+            <div className="grid w-full max-w-full gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.4fr)]">
+              <label className="block min-w-0">
                 <span className="mb-2 block text-xs font-black uppercase tracking-[0.12em] text-slate-500">
                   Tanggal Mulai
                 </span>
 
-                <div className="relative">
+                <div className="relative min-w-0">
                   <CalendarDays
                     size={18}
                     className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
@@ -569,17 +568,17 @@ export default function AdminEmployeeAttendanceRecapPage() {
                     type="date"
                     value={startDate}
                     onChange={(event) => setStartDate(event.target.value)}
-                    className="attendance-recap-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                    className="attendance-recap-field h-12 w-full min-w-0 max-w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
                   />
                 </div>
               </label>
 
-              <label className="block">
+              <label className="block min-w-0">
                 <span className="mb-2 block text-xs font-black uppercase tracking-[0.12em] text-slate-500">
                   Tanggal Akhir
                 </span>
 
-                <div className="relative">
+                <div className="relative min-w-0">
                   <CalendarDays
                     size={18}
                     className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
@@ -589,17 +588,17 @@ export default function AdminEmployeeAttendanceRecapPage() {
                     type="date"
                     value={endDate}
                     onChange={(event) => setEndDate(event.target.value)}
-                    className="attendance-recap-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                    className="attendance-recap-field h-12 w-full min-w-0 max-w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
                   />
                 </div>
               </label>
 
-              <label className="block">
+              <label className="block min-w-0">
                 <span className="mb-2 block text-xs font-black uppercase tracking-[0.12em] text-slate-500">
                   Cari Karyawan
                 </span>
 
-                <div className="relative">
+                <div className="relative min-w-0">
                   <Search
                     size={18}
                     className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
@@ -609,7 +608,7 @@ export default function AdminEmployeeAttendanceRecapPage() {
                     value={searchKeyword}
                     onChange={(event) => setSearchKeyword(event.target.value)}
                     placeholder="Cari nama karyawan..."
-                    className="attendance-recap-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                    className="attendance-recap-field h-12 w-full min-w-0 max-w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
                   />
                 </div>
               </label>
@@ -694,7 +693,7 @@ export default function AdminEmployeeAttendanceRecapPage() {
                       key={employee.id}
                       href={`/admin/rekap-kehadiran-karyawan/${employee.id}?${detailParams.toString()}`}
                       onClick={() => setSelectedEmployeeId(employee.id)}
-                      className={`group attendance-recap-row-enter flex w-full items-center gap-4 border-l-4 p-4 text-left transition hover:bg-[#f8fbff] md:p-5 ${
+                      className={`group attendance-recap-row-enter flex w-full flex-wrap items-center gap-3 border-l-4 p-4 text-left transition hover:bg-[#f8fbff] sm:gap-4 md:p-5 ${
                         hasPendingLeave
                           ? "border-l-orange-400 bg-orange-50/35"
                           : "border-l-transparent"
@@ -739,7 +738,7 @@ export default function AdminEmployeeAttendanceRecapPage() {
                         ) : null}
                       </div>
 
-                      <div className="min-w-0 flex-1">
+                      <div className="min-w-0 flex-[1_1_12rem]">
                         <h3 className="text-sm font-black text-slate-950 leading-snug break-words sm:text-base">
                           {employee.name}
                         </h3>
@@ -753,7 +752,6 @@ export default function AdminEmployeeAttendanceRecapPage() {
                             .filter(Boolean)
                             .join(" / ")}
                         </p>
-
                         {netWorkMinutes > 0 ? (
                           <p className="mt-1 text-[10px] font-black uppercase tracking-[0.1em] text-[#123c8c] sm:text-xs">
                             Kerja bersih {formatWorkDuration(netWorkMinutes)}
@@ -761,8 +759,8 @@ export default function AdminEmployeeAttendanceRecapPage() {
                         ) : null}
                       </div>
 
-                      <div className="flex shrink-0 items-center gap-2 ml-auto">
-                        <div className="flex flex-col items-end gap-1.5 sm:flex-row sm:items-center">
+                      <div className="flex w-full items-center justify-between gap-2 pt-1 sm:ml-auto sm:w-auto sm:shrink-0 sm:justify-end sm:pt-0">
+                        <div className="flex min-w-0 flex-wrap items-center gap-1.5 sm:justify-end">
                           <span className="rounded-full bg-purple-50 px-2.5 py-1 text-[10px] font-black text-purple-700 ring-1 ring-purple-200/80 sm:text-[11px]">
                             Sisa Cuti: {employee.remainingLeaveQuota ?? 12} Hari
                           </span>
@@ -782,7 +780,7 @@ export default function AdminEmployeeAttendanceRecapPage() {
                           </span>
                         </div>
 
-                        <div className="flex h-8 w-8 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c] ring-1 ring-blue-100 transition group-hover:bg-[#123c8c] group-hover:text-white sm:h-10 sm:w-10">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c] ring-1 ring-blue-100 transition group-hover:bg-[#123c8c] group-hover:text-white sm:h-10 sm:w-10">
                           <ChevronRight size={18} strokeWidth={2.8} className="transition-transform group-hover:translate-x-0.5" />
                         </div>
                       </div>

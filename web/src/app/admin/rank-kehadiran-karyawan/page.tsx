@@ -405,14 +405,14 @@ export default function AdminAttendanceRankPage() {
           </div>
 
           <div
-            className="rank-enter grid gap-3 rounded-3xl border border-blue-100 bg-white p-4 shadow-xl shadow-slate-200/60 md:grid-cols-[1fr_1fr_1.4fr_auto]"
+            className="rank-enter grid w-full max-w-full gap-3 overflow-hidden rounded-3xl border border-blue-100 bg-white p-4 shadow-xl shadow-slate-200/60 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.4fr)_auto]"
             style={{ animationDelay: "80ms" }}
           >
-            <label className="block">
+            <label className="block min-w-0">
               <span className="mb-2 block text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">
                 Tanggal Mulai
               </span>
-              <div className="relative">
+              <div className="relative min-w-0">
                 <CalendarDays
                   size={18}
                   className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
@@ -421,16 +421,16 @@ export default function AdminAttendanceRankPage() {
                   type="date"
                   value={startDate}
                   onChange={(event) => setStartDate(event.target.value)}
-                  className="h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-[#123456] outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                  className="h-12 w-full min-w-0 max-w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-[#123456] outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 />
               </div>
             </label>
 
-            <label className="block">
+            <label className="block min-w-0">
               <span className="mb-2 block text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">
                 Tanggal Akhir
               </span>
-              <div className="relative">
+              <div className="relative min-w-0">
                 <CalendarDays
                   size={18}
                   className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
@@ -439,16 +439,16 @@ export default function AdminAttendanceRankPage() {
                   type="date"
                   value={endDate}
                   onChange={(event) => setEndDate(event.target.value)}
-                  className="h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-[#123456] outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                  className="h-12 w-full min-w-0 max-w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-[#123456] outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 />
               </div>
             </label>
 
-            <label className="block">
+            <label className="block min-w-0">
               <span className="mb-2 block text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">
                 Cari Karyawan
               </span>
-              <div className="relative">
+              <div className="relative min-w-0">
                 <Search
                   size={18}
                   className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
@@ -457,12 +457,12 @@ export default function AdminAttendanceRankPage() {
                   value={searchKeyword}
                   onChange={(event) => setSearchKeyword(event.target.value)}
                   placeholder="Cari nama atau status..."
-                  className="h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-[#123456] outline-none transition placeholder:text-slate-400 focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                  className="h-12 w-full min-w-0 max-w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-[#123456] outline-none transition placeholder:text-slate-400 focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 />
               </div>
             </label>
 
-            <label className="block">
+            <label className="block min-w-0">
               <span className="mb-2 block text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">
                 Urutan Kerja Bersih
               </span>
