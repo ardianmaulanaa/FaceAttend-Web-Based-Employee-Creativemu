@@ -188,6 +188,43 @@ function RankMotionStyles() {
         animation: rankEnter 320ms ease-out both;
       }
 
+      .rank-filter-field {
+        appearance: none;
+        box-sizing: border-box;
+        display: block;
+        inline-size: 100%;
+        max-inline-size: 100%;
+        min-inline-size: 0;
+      }
+
+      .rank-filter-field::-webkit-date-and-time-value {
+        min-inline-size: 0;
+        text-align: left;
+      }
+
+      .rank-filter-field::-webkit-calendar-picker-indicator {
+        margin: 0;
+        padding: 0;
+      }
+
+      @media (max-width: 420px) {
+        .rank-filter-card {
+          padding-inline: 1rem;
+        }
+
+        .rank-filter-icon {
+          left: 0.875rem;
+          height: 1rem;
+          width: 1rem;
+        }
+
+        .rank-filter-field {
+          padding-left: 2.5rem;
+          padding-right: 0.5rem;
+          font-size: 0.8125rem;
+        }
+      }
+
       @media (prefers-reduced-motion: reduce) {
         .rank-enter {
           animation: none !important;
@@ -405,41 +442,41 @@ export default function AdminAttendanceRankPage() {
           </div>
 
           <div
-            className="rank-enter grid w-full max-w-full gap-3 overflow-hidden rounded-3xl border border-blue-100 bg-white p-4 shadow-xl shadow-slate-200/60 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.4fr)_auto]"
+            className="rank-enter rank-filter-card grid w-full max-w-full gap-3 overflow-hidden rounded-3xl border border-blue-100 bg-white p-4 shadow-xl shadow-slate-200/60 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.4fr)_auto]"
             style={{ animationDelay: "80ms" }}
           >
-            <label className="block min-w-0">
+            <label className="block w-full min-w-0 max-w-full overflow-hidden">
               <span className="mb-2 block text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">
                 Tanggal Mulai
               </span>
-              <div className="relative min-w-0">
+              <div className="relative w-full min-w-0 max-w-full overflow-hidden">
                 <CalendarDays
                   size={18}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                  className="rank-filter-icon absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
                 />
                 <input
                   type="date"
                   value={startDate}
                   onChange={(event) => setStartDate(event.target.value)}
-                  className="h-12 w-full min-w-0 max-w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-[#123456] outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                  className="rank-filter-field h-12 w-full min-w-0 max-w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-[#123456] outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 />
               </div>
             </label>
 
-            <label className="block min-w-0">
+            <label className="block w-full min-w-0 max-w-full overflow-hidden">
               <span className="mb-2 block text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">
                 Tanggal Akhir
               </span>
-              <div className="relative min-w-0">
+              <div className="relative w-full min-w-0 max-w-full overflow-hidden">
                 <CalendarDays
                   size={18}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                  className="rank-filter-icon absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
                 />
                 <input
                   type="date"
                   value={endDate}
                   onChange={(event) => setEndDate(event.target.value)}
-                  className="h-12 w-full min-w-0 max-w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-[#123456] outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                  className="rank-filter-field h-12 w-full min-w-0 max-w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-[#123456] outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 />
               </div>
             </label>

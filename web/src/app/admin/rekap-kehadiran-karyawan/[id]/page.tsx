@@ -498,10 +498,44 @@ function RecapDetailMotionStyles() {
       }
 
       .recap-detail-field {
+        appearance: none;
+        box-sizing: border-box;
+        display: block;
+        inline-size: 100%;
+        max-inline-size: 100%;
+        min-inline-size: 0;
         transition:
           border-color 180ms ease,
           background-color 180ms ease,
           box-shadow 180ms ease;
+      }
+
+      .recap-detail-field::-webkit-date-and-time-value {
+        min-inline-size: 0;
+        text-align: left;
+      }
+
+      .recap-detail-field::-webkit-calendar-picker-indicator {
+        margin: 0;
+        padding: 0;
+      }
+
+      @media (max-width: 420px) {
+        .recap-detail-filter-card {
+          padding-inline: 1rem;
+        }
+
+        .recap-detail-date-icon {
+          left: 0.875rem;
+          height: 1.125rem;
+          width: 1.125rem;
+        }
+
+        .recap-detail-field {
+          padding-left: 2.75rem;
+          padding-right: 0.5rem;
+          font-size: 0.875rem;
+        }
       }
 
       @media (prefers-reduced-motion: reduce) {
@@ -917,19 +951,19 @@ export default function AdminEmployeeAttendanceRecapDetailPage() {
           </div>
 
           <div
-            className="recap-detail-enter w-full max-w-full overflow-hidden rounded-[2.25rem] border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-10"
+            className="recap-detail-enter recap-detail-filter-card w-full max-w-full overflow-hidden rounded-[2.25rem] border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-10"
             style={{ animationDelay: "80ms" }}
           >
             <div className="grid w-full max-w-full gap-6 md:grid-cols-2">
-              <label className="block min-w-0">
+              <label className="block w-full min-w-0 max-w-full overflow-hidden">
                 <span className="mb-3 block text-sm font-black uppercase tracking-[0.12em] text-slate-500">
                   Tanggal Mulai
                 </span>
 
-                <div className="relative min-w-0">
+                <div className="relative w-full min-w-0 max-w-full overflow-hidden">
                   <CalendarDays
                     size={22}
-                    className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400"
+                    className="recap-detail-date-icon absolute left-5 top-1/2 -translate-y-1/2 text-slate-400"
                   />
 
                   <input
@@ -941,15 +975,15 @@ export default function AdminEmployeeAttendanceRecapDetailPage() {
                 </div>
               </label>
 
-              <label className="block min-w-0">
+              <label className="block w-full min-w-0 max-w-full overflow-hidden">
                 <span className="mb-3 block text-sm font-black uppercase tracking-[0.12em] text-slate-500">
                   Tanggal Akhir
                 </span>
 
-                <div className="relative min-w-0">
+                <div className="relative w-full min-w-0 max-w-full overflow-hidden">
                   <CalendarDays
                     size={22}
-                    className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400"
+                    className="recap-detail-date-icon absolute left-5 top-1/2 -translate-y-1/2 text-slate-400"
                   />
 
                   <input
