@@ -137,6 +137,13 @@ async function getJson(url: string) {
       cache: "no-store",
     });
 
+    if (response.status === 401 || response.status === 403) {
+      if (typeof window !== "undefined") {
+        window.location.replace("/login?reason=expired&redirect=/beranda");
+      }
+      return null;
+    }
+
     if (!response.ok) return null;
 
     return await readJsonResponse(response);
