@@ -250,6 +250,30 @@ function HomeMotionStyles() {
         animation: homePulseDot 1.45s ease-in-out infinite;
       }
 
+      .creativemu-blue-home [class*="bg-red-500"],
+      .creativemu-blue-home [class*="bg-red-600"],
+      .creativemu-blue-home [class*="bg-[#e50000]"] {
+        background-color: #123c8c !important;
+      }
+
+      .creativemu-blue-home [class*="hover:bg-red-600"]:hover,
+      .creativemu-blue-home [class*="hover:bg-red-700"]:hover,
+      .creativemu-blue-home [class*="hover:bg-[#c90000]"]:hover {
+        background-color: #0f3274 !important;
+      }
+
+      .creativemu-blue-home [class*="text-red-600"],
+      .creativemu-blue-home [class*="text-red-700"] {
+        color: #123c8c !important;
+      }
+
+      .creativemu-blue-home [class*="border-red-100"],
+      .creativemu-blue-home [class*="ring-red-100"],
+      .creativemu-blue-home [class*="ring-red-200"] {
+        border-color: #dbeafe !important;
+        --tw-ring-color: #dbeafe !important;
+      }
+
       @media (prefers-reduced-motion: reduce) {
         .home-enter,
         .home-card-enter,
@@ -279,12 +303,10 @@ function ProfileAvatar({
     size === "desktop" ? "h-24 w-24 text-2xl" : "h-12 w-12 text-sm";
 
   if (user.profile_photo) {
-    const photoSrc = `${user.profile_photo}${user.profile_photo.includes("?") ? "&" : "?"}v=${Math.floor(Date.now() / 1000)}`;
-
     return (
       <img
         key={user.profile_photo}
-        src={photoSrc}
+        src={user.profile_photo}
         alt={user.name || "Profil"}
         className={`home-icon-pop ${sizeClass} shrink-0 rounded-full object-cover ${
           size === "desktop" ? "ring-4 ring-white/70" : "ring-4 ring-white"
@@ -640,7 +662,7 @@ export default function HomePage() {
           />
         </div>
 
-        <main className="min-h-dvh overflow-x-hidden bg-white text-slate-950 md:bg-gradient-to-br md:from-[#f6f8ff] md:via-white md:to-[#eef4ff] md:pb-28">
+        <main className="creativemu-blue-home min-h-dvh overflow-x-hidden bg-white text-slate-950 md:bg-gradient-to-br md:from-[#f6f8ff] md:via-white md:to-[#eef4ff] md:pb-28">
           <section
             className="home-enter bg-white md:hidden"
             style={{
