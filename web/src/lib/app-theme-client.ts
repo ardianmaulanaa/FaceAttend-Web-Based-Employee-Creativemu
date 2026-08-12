@@ -8,18 +8,19 @@ import {
 export const APP_THEME_STORAGE_KEY = "app_theme_colors";
 
 const HEX_COLOR_RE = /^#[0-9a-f]{6}$/i;
-const STALE_ALFABANK_RED_COLORS = new Set([
-  "#b91c1c",
-  "#dc2626",
-  "#ef4444",
-  "#e60000",
-  "#ff0000",
-]);
-
 function normalizeHexColor(value: unknown, fallback: string) {
   const color = String(value || "").trim();
 
   return HEX_COLOR_RE.test(color) ? color.toLowerCase() : fallback;
+}
+
+function isRedThemeColor(hexColor: string) {
+  const normalizedColor = hexColor.replace("#", "");
+  const red = parseInt(normalizedColor.slice(0, 2), 16);
+  const green = parseInt(normalizedColor.slice(2, 4), 16);
+  const blue = parseInt(normalizedColor.slice(4, 6), 16);
+
+  return red >= 150 && red > green * 1.45 && red > blue * 1.45;
 }
 
 export function normalizeClientAppTheme(
@@ -42,7 +43,10 @@ export function normalizeClientAppTheme(
     textColor: normalizeHexColor(value?.textColor, DEFAULT_APP_THEME.textColor),
   };
 
-  if (STALE_ALFABANK_RED_COLORS.has(normalizedTheme.primaryColor)) {
+  if (
+    isRedThemeColor(normalizedTheme.primaryColor) ||
+    isRedThemeColor(normalizedTheme.textColor)
+  ) {
     return DEFAULT_APP_THEME;
   }
 
