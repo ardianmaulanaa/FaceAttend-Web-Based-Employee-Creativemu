@@ -167,9 +167,6 @@ export async function GET(req: NextRequest) {
 
     const allShiftOptions = Array.from(shiftMap.values());
 
-    const userShiftKind = getShiftKind(userShiftUpper);
-    const isPrimaryShift = userShiftKind === "utama";
-
     // Target shift options for "Geser Shift Mandiri":
     // Only Karyawan Utama can move to Shift Siang
     const availableShifts: AvailableShiftItem[] = isPrimaryShift

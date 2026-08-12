@@ -295,6 +295,7 @@ export default function PositionsPage() {
               />
 
               <input
+                suppressHydrationWarning
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Cari posisi..."
@@ -304,6 +305,7 @@ export default function PositionsPage() {
 
             <div>
               <select
+                suppressHydrationWarning
                 value={statusFilter}
                 onChange={(event) => setStatusFilter(event.target.value)}
                 className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
@@ -480,4 +482,4 @@ export default function PositionsPage() {
       <BottomNav variant="admin" />
     </MobileShell>
   );
-}
+}
