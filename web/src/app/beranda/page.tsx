@@ -80,11 +80,6 @@ const defaultAttendance: AttendanceToday = {
 
 const quickMenus = [
   {
-    href: "/history",
-    label: "Riwayat Presensi",
-    icon: History,
-  },
-  {
     href: "/presensi",
     label: "Presensi",
     icon: ScanFace,
@@ -96,8 +91,23 @@ const quickMenus = [
   },
   {
     href: "/cuti",
-    label: "Ajukan Izin/Cuti",
-    icon: FileText,
+    label: "Pengajuan Cuti",
+    icon: CalendarDays,
+  },
+  {
+    href: "/history",
+    label: "Riwayat Presensi",
+    icon: History,
+  },
+  {
+    href: "/pengumuman",
+    label: "Pengumuman",
+    icon: Megaphone,
+  },
+  {
+    href: "/profil",
+    label: "Profil",
+    icon: UserRound,
   },
 ];
 
@@ -374,14 +384,14 @@ function RoleBadges({ items }: { items: Array<string | undefined | null> }) {
 
 function QuickMenuGrid() {
   return (
-    <div className="grid grid-cols-4 gap-x-1.5 gap-y-3 md:grid-cols-4 md:gap-4">
+    <div className="grid grid-cols-3 gap-3 md:grid-cols-6 md:gap-4">
       {quickMenus.map(({ href, label, icon: Icon }, index) => (
         <Link
           key={href}
           href={href}
-          className="home-card-enter group flex flex-col items-center rounded-3xl text-center transition hover:-translate-y-0.5 active:scale-[0.98] md:border md:border-blue-100 md:bg-[#f8fbff] md:p-6 md:hover:-translate-y-1 md:hover:bg-white md:hover:shadow-xl md:hover:shadow-slate-200/60"
+          className="home-card-enter group flex flex-col items-center rounded-3xl p-2 text-center transition hover:-translate-y-0.5 active:scale-[0.98] md:border md:border-blue-100 md:bg-[#f8fbff] md:p-6 md:hover:-translate-y-1 md:hover:bg-white md:hover:shadow-xl md:hover:shadow-slate-200/60"
           style={{
-            animationDelay: `${index * 70}ms`,
+            animationDelay: `${index * 55}ms`,
           }}
         >
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#eaf1ff] transition group-hover:scale-105 md:h-20 md:w-20">

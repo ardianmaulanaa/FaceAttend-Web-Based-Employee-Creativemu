@@ -71,6 +71,7 @@ type AdminContactNumberResponse = {
 const employeeNav = [
   { href: "/beranda", label: "Beranda", icon: Home },
   { href: "/presensi", label: "Presensi", icon: CalendarCheck },
+  { href: "/tukar-shift", label: "Tukar Shift", icon: ArrowLeftRight },
   { href: "/pengumuman", label: "Pengumuman", icon: Megaphone },
   { href: "/history", label: "Riwayat", icon: History },
   { href: "/cuti", label: "Cuti", icon: CalendarDays },
