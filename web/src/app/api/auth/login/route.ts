@@ -231,6 +231,15 @@ export async function POST(req: Request) {
       where: {
         email: normalizedEmail,
       },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        password_hash: true,
+        role: true,
+        status: true,
+        employment_end_date: true,
+      },
     });
 
     if (!user) {

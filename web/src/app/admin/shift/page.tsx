@@ -282,9 +282,9 @@ export default function ShiftsPage() {
     <MobileShell variant="admin">
       <MotionStyles />
 
-      <AppHeader title="Shift Kerja" variant="admin" />
+      <AppHeader title="Shift Kerja" variant="admin" hideMobileMenuButton />
 
-      <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 pb-28 md:px-10 lg:px-16">
+      <section className="mx-auto max-w-7xl space-y-6 px-5 pb-28 pt-28 md:px-10 md:pt-32 lg:px-16">
         <div className="page-enter rounded-[2rem] border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-8">
           <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
             <div>

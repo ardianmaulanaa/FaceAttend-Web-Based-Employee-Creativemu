@@ -25,6 +25,7 @@ function normalizeLogoSrc(value: string | null | undefined) {
 
   if (!logoSrc) return DEFAULT_SITE_LOGO_SRC;
   if (logoSrc.startsWith("/api/site-logo")) return DEFAULT_SITE_LOGO_SRC;
+  if (logoSrc.startsWith("/uploads/")) return DEFAULT_SITE_LOGO_SRC;
   if (logoSrc.startsWith("/")) return logoSrc;
   if (logoSrc.startsWith("http://") || logoSrc.startsWith("https://")) return logoSrc;
 

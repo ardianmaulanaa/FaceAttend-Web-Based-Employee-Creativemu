@@ -14,6 +14,14 @@ import {
   DEFAULT_APP_THEME,
   type AppThemeSettings,
 } from "@/lib/app-theme-defaults";
+import {
+  applyAppTheme,
+  clearStoredAppTheme,
+  isDefaultAppTheme,
+  normalizeClientAppTheme,
+  readStoredAppTheme,
+  storeAppTheme,
+} from "@/lib/app-theme-client";
 
 type AppThemeResponse = {
   success?: boolean;
@@ -94,8 +102,17 @@ export default function AdminAppThemePage() {
         return;
       }
 
-      setTheme(data.theme || DEFAULT_APP_THEME);
+      const storedTheme = readStoredAppTheme();
+      const loadedTheme = data.theme || DEFAULT_APP_THEME;
+      const nextTheme =
+        storedTheme && isDefaultAppTheme(loadedTheme)
+          ? storedTheme
+          : loadedTheme;
+
+      setTheme(nextTheme);
       setDefaultTheme(data.defaultTheme || DEFAULT_APP_THEME);
+      applyAppTheme(nextTheme);
+      storeAppTheme(nextTheme);
       notifyAppThemeChanged();
     } catch (error) {
       setErrorMessage(
@@ -115,10 +132,17 @@ export default function AdminAppThemePage() {
   function updateColor(key: keyof AppThemeSettings, value: string) {
     setFeedbackMessage("");
     setErrorMessage("");
-    setTheme((currentTheme) => ({
-      ...currentTheme,
-      [key]: value,
-    }));
+    setTheme((currentTheme) => {
+      const nextTheme = normalizeClientAppTheme({
+        ...currentTheme,
+        [key]: value,
+      });
+
+      applyAppTheme(nextTheme);
+      storeAppTheme(nextTheme);
+
+      return nextTheme;
+    });
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -143,8 +167,11 @@ export default function AdminAppThemePage() {
         return;
       }
 
-      setTheme(data.theme || DEFAULT_APP_THEME);
+      const nextTheme = data.theme || DEFAULT_APP_THEME;
+      setTheme(nextTheme);
       setDefaultTheme(data.defaultTheme || DEFAULT_APP_THEME);
+      applyAppTheme(nextTheme);
+      storeAppTheme(nextTheme);
       setFeedbackMessage(data.message || "Warna aplikasi berhasil diperbarui.");
       notifyAppThemeChanged();
     } catch (error) {
@@ -176,8 +203,11 @@ export default function AdminAppThemePage() {
         return;
       }
 
-      setTheme(data.theme || DEFAULT_APP_THEME);
+      const nextTheme = data.theme || DEFAULT_APP_THEME;
+      clearStoredAppTheme();
+      setTheme(nextTheme);
       setDefaultTheme(data.defaultTheme || DEFAULT_APP_THEME);
+      applyAppTheme(nextTheme);
       setFeedbackMessage(data.message || "Warna berhasil dikembalikan.");
       notifyAppThemeChanged();
     } catch (error) {
