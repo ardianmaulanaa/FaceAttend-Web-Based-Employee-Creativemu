@@ -1173,14 +1173,14 @@ export default function AdminEmployeesPage() {
 
       <main className="mx-auto max-w-7xl px-5 py-6 pb-28 md:px-10 lg:px-16">
         <section className="employee-enter relative overflow-hidden rounded-[2.2rem] bg-[#123c8c] p-6 text-white shadow-2xl shadow-blue-900/25 md:p-8">
-          <div className="relative z-10 flex flex-col gap-7 md:flex-row md:items-center md:justify-between">
+          <div className="relative z-10 flex flex-col items-center text-center gap-7 md:flex-row md:items-center md:justify-between md:text-left">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-blue-100">
                 <ShieldCheck size={15} />
                 Manajemen Karyawan
               </div>
 
-              <h2 className="mt-5 text-3xl font-black tracking-tight md:text-4xl">
+              <h2 className="mt-4 text-3xl font-black tracking-tight md:text-4xl">
                 Data Karyawan
               </h2>
             </div>

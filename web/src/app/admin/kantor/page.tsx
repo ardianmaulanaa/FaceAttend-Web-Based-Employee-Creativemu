@@ -721,7 +721,7 @@ export default function AdminOfficePage() {
                 className="office-enter w-full max-w-full overflow-hidden rounded-[2rem] bg-[#123c8c] p-5 text-white shadow-2xl shadow-blue-900/20 md:p-8"
                 style={{ animationDelay: "80ms" }}
               >
-                <div className="flex min-w-0 flex-col gap-5 md:flex-row md:items-center md:justify-between">
+                <div className="flex min-w-0 flex-col items-center text-center gap-5 md:flex-row md:items-center md:justify-between md:text-left">
                   <div className="min-w-0 flex-1">
                     <p className="break-words text-xs font-black uppercase tracking-[0.24em] text-blue-100">
                       Lokasi Kantor

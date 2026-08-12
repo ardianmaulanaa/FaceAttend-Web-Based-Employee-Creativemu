@@ -456,19 +456,19 @@ export default function AppHeader({
               <Menu size={25} strokeWidth={3} />
             </button>
 
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               {eyebrow ? (
                 <p className="text-xs font-black uppercase tracking-[0.28em] text-[#123c8c]">
                   {eyebrow}
                 </p>
               ) : null}
 
-              <h1 className="mt-1 truncate text-2xl font-black tracking-tight text-slate-950 md:text-2xl lg:text-3xl">
+              <h1 className="mt-0.5 text-lg font-black leading-tight tracking-tight text-slate-950 sm:text-xl md:text-2xl lg:text-3xl">
                 {title}
               </h1>
 
               {subtitle ? (
-                <p className="mt-1 line-clamp-1 max-w-xl text-sm font-semibold leading-5 text-slate-500">
+                <p className="mt-1 line-clamp-1 max-w-xl text-xs font-semibold leading-relaxed text-slate-500 sm:text-sm">
                   {subtitle}
                 </p>
               ) : null}

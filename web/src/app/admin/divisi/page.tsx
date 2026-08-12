@@ -266,7 +266,7 @@ export default function DepartmentsPage() {
 
       <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 pb-28 md:px-10 lg:px-16">
         <div className="page-enter rounded-[2rem] border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-8">
-          <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+          <div className="flex flex-col items-center text-center gap-5">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.24em] text-[#123c8c]">
                 Master Data Admin Panel
@@ -277,7 +277,7 @@ export default function DepartmentsPage() {
               </h1>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row md:items-center">
+            <div className="flex w-full justify-center">
               <AppButton
                 onClick={openAddModal}
                 leftIcon={<Plus size={18} />}
@@ -300,7 +300,7 @@ export default function DepartmentsPage() {
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Cari divisi..."
-                className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-4 pl-12 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3.5 pl-12 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
               />
             </div>
 
@@ -309,7 +309,7 @@ export default function DepartmentsPage() {
                 suppressHydrationWarning
                 value={statusFilter}
                 onChange={(event) => setStatusFilter(event.target.value)}
-                className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23475569%22%20stroke-width%3D%222.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:1.25rem] bg-[right_1rem_center] bg-no-repeat py-3.5 pl-5 pr-12 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
               >
                 {filterOptions.map((item) => (
                   <option key={item.value} value={item.value}>

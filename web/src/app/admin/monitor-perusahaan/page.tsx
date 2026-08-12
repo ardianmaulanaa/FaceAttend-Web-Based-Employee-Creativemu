@@ -828,8 +828,8 @@ export default function AdminCompanyMonitorPage() {
         <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 md:px-10 lg:px-16">
           <div className="monitor-enter overflow-hidden rounded-[2rem] border border-blue-100 bg-white shadow-xl shadow-slate-300/30">
             <div className="grid gap-0 xl:grid-cols-[0.95fr_1.05fr]">
-              <div className="bg-[#123c8c] p-6 text-white md:p-8">
-                <div className="flex items-center gap-3">
+              <div className="bg-[#123c8c] p-6 text-white text-center md:text-left md:p-8">
+                <div className="flex flex-col items-center gap-3 md:flex-row md:items-center">
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/15">
                     <BarChart3 size={25} strokeWidth={2.6} />
                   </div>

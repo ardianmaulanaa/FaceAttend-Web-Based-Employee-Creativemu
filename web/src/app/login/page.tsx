@@ -634,16 +634,16 @@ export default function LoginPage() {
           />
         </div>
 
-        {/* 2. MAIN LOGO CREATIVEMU - DEAD CENTERED AT TOP OF ENTIRE PAGE (X) */}
-        <div className="login-logo-pop pointer-events-none absolute left-1/2 top-5 z-30 flex -translate-x-1/2 justify-center text-center sm:top-7 lg:top-8">
-          <div className="pointer-events-auto flex h-20 w-72 shrink-0 items-center justify-center transition-transform duration-300 hover:scale-[1.02] sm:h-24 sm:w-80 md:h-28 md:w-[26rem] lg:h-32 lg:w-[32rem]">
+        {/* 2. MAIN LOGO CREATIVEMU - CENTERED ON MOBILE, LEFT-ALIGNED ON DESKTOP */}
+        <div className="login-logo-pop pointer-events-none absolute left-1/2 top-5 z-30 flex -translate-x-1/2 justify-center text-center sm:top-7 lg:left-20 lg:top-8 lg:translate-x-0 lg:justify-start lg:text-left">
+          <div className="pointer-events-auto flex h-20 w-72 shrink-0 items-center justify-center transition-transform duration-300 hover:scale-[1.02] sm:h-24 sm:w-80 md:h-28 md:w-[26rem] lg:h-32 lg:w-[28rem]">
             <Image
               src={logoSrc}
               alt="Creativemu Logo"
               width={512}
               height={128}
               unoptimized
-              className="h-full w-full object-contain object-center"
+              className="h-full w-full object-contain object-center lg:object-left"
               priority
             />
           </div>

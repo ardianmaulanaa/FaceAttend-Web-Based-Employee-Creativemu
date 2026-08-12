@@ -497,20 +497,23 @@ export default function WorkSchedulesPage() {
 
       <section className="mx-auto max-w-6xl space-y-5 px-5 py-6 pb-28 md:px-10 lg:px-16">
         <div className="work-schedule-enter overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-xl shadow-slate-300/30">
-          <div className="bg-[#123c8c] p-6 text-white md:p-8">
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="bg-[#123c8c] p-6 text-white text-center md:p-8">
+            <div className="flex flex-col items-center gap-5">
               <div>
-                <h1 className="mt-3 text-3xl font-black tracking-tight md:text-4xl">
+                <p className="text-xs font-black uppercase tracking-[0.24em] text-blue-200">
+                  Master Data Admin Panel
+                </p>
+                <h1 className="mt-2 text-3xl font-black tracking-tight md:text-4xl">
                   Daftar Jam Kerja
                 </h1>
               </div>
 
               <div
-                className="work-schedule-row-enter grid w-full gap-3 rounded-3xl bg-white/10 p-3 backdrop-blur md:grid-cols-[1fr_auto_auto] lg:max-w-2xl"
+                className="work-schedule-row-enter flex w-full max-w-2xl flex-col items-center gap-3 rounded-3xl bg-white/10 p-4 backdrop-blur sm:flex-row"
                 style={{ animationDelay: "80ms" }}
               >
-                <div>
-                  <label className="mb-2 block text-xs font-black uppercase tracking-[0.15em] text-blue-100">
+                <div className="w-full text-left">
+                  <label className="mb-1.5 block text-xs font-black uppercase tracking-[0.15em] text-blue-100">
                     Pilih Shift
                   </label>
 
@@ -520,7 +523,7 @@ export default function WorkSchedulesPage() {
                       setSelectedShiftId(event.target.value);
                       setSuccessMessage("");
                     }}
-                    className="work-schedule-field h-[52px] w-full rounded-2xl border border-white/20 bg-white px-4 text-sm font-black text-slate-700 outline-none focus:ring-4 focus:ring-white/20"
+                    className="work-schedule-field h-[50px] w-full appearance-none rounded-2xl border border-white/20 bg-white bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23475569%22%20stroke-width%3D%222.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:1.25rem] bg-[right_1rem_center] bg-no-repeat pl-4 pr-11 text-sm font-black text-slate-700 outline-none focus:ring-4 focus:ring-white/20"
                   >
                     {shifts.length === 0 ? (
                       <option value="">Belum ada shift</option>

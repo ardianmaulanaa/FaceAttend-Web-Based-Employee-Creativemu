@@ -393,9 +393,9 @@ export default function AdminAnnouncementsPage() {
 
       <main className="mx-auto max-w-7xl px-5 py-6 pb-28 md:px-10 lg:px-16">
         <section className="admin-announcement-enter relative overflow-hidden rounded-[2rem] bg-[#123c8c] p-6 text-white shadow-md shadow-slate-300/40 md:p-8">
-          <div className="relative z-10 flex flex-col gap-7 md:flex-row md:items-center md:justify-between">
+          <div className="relative z-10 flex flex-col items-center text-center gap-6 md:flex-row md:items-center md:justify-between md:text-left">
             <div>
-              <h1 className="mt-5 text-3xl font-black tracking-tight md:text-4xl">
+              <h1 className="mt-2 text-3xl font-black tracking-tight md:text-4xl">
                 Pengumuman Admin
               </h1>
             </div>
@@ -403,7 +403,7 @@ export default function AdminAnnouncementsPage() {
             <button
               type="button"
               onClick={openAddModal}
-              className="inline-flex items-center justify-center gap-3 rounded-[1.4rem] bg-white px-6 py-4 text-sm font-black text-[#123c8c] shadow-sm ring-1 ring-white/70 transition duration-200 hover:bg-blue-50 active:scale-[0.98]"
+              className="inline-flex w-full items-center justify-center gap-3 rounded-[1.4rem] bg-white px-6 py-4 text-sm font-black text-[#123c8c] shadow-sm ring-1 ring-white/70 transition duration-200 hover:bg-blue-50 active:scale-[0.98] sm:w-auto"
             >
               <Plus size={20} strokeWidth={3} />
               Tambah Pengumuman
