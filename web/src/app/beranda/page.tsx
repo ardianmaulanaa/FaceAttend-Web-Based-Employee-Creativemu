@@ -334,9 +334,8 @@ function AnnouncementButton({
       }`}
       aria-label="Pengumuman"
     >
-      <Bell
+      <Megaphone
         size={desktop ? 28 : 24}
-        fill={unread ? (desktop ? "#123c8c" : "white") : "transparent"}
         strokeWidth={2.2}
       />
 

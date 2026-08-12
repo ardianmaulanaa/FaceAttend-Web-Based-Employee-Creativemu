@@ -33,6 +33,10 @@ import {
 } from "lucide-react";
 
 import { useSiteLogo } from "@/hooks/useSiteLogo";
+import {
+  getReadAnnouncementIds,
+  getReadNotificationIds,
+} from "@/lib/announcement-read";
 
 type AppHeaderProps = {
   title: string;
@@ -41,6 +45,12 @@ type AppHeaderProps = {
   rightLabel?: string;
   variant?: "employee" | "admin";
   hideMobileMenuButton?: boolean;
+};
+
+type NotificationItem = {
+  id: string;
+  rawId?: string;
+  isRead?: boolean;
 };
 
 type NotificationStats = {
@@ -58,6 +68,7 @@ type NotificationStats = {
 type NotificationResponse = {
   success?: boolean;
   stats?: NotificationStats;
+  notifications?: NotificationItem[];
   message?: string;
 };
 
@@ -302,9 +313,28 @@ export default function AppHeader({
 
         const data = (await readJsonResponse(response)) as NotificationResponse;
 
-        const count = isAdmin
-          ? getAdminNotificationCount(data.stats)
-          : getEmployeeNotificationCount(data.stats);
+        let count = 0;
+        if (isAdmin) {
+          count = getAdminNotificationCount(data.stats);
+        } else {
+          // Calculate employee unread count taking local read status into account
+          const readAnnIds = getReadAnnouncementIds();
+          const readNotifIds = getReadNotificationIds();
+          const list = data.notifications || [];
+
+          count = list.filter((item) => {
+            const cleanId = (item.rawId || item.id)
+              .replace("announcement-", "")
+              .replace("swap-", "");
+
+            const isReadLocally =
+              readAnnIds.includes(cleanId) ||
+              readNotifIds.includes(cleanId) ||
+              readNotifIds.includes(item.id);
+
+            return !isReadLocally && !item.isRead;
+          }).length;
+        }
 
         if (isMounted) {
           setNotificationCount(count);
@@ -320,11 +350,22 @@ export default function AppHeader({
 
     const intervalId = window.setInterval(() => {
       void loadNotificationCount();
-    }, 30000);
+    }, 3000);
+
+    const handleCountChange = () => {
+      void loadNotificationCount();
+    };
+
+    window.addEventListener("notification-count-changed", handleCountChange);
+    window.addEventListener("focus", handleCountChange);
+    window.addEventListener("storage", handleCountChange);
 
     return () => {
       isMounted = false;
       window.clearInterval(intervalId);
+      window.removeEventListener("notification-count-changed", handleCountChange);
+      window.removeEventListener("focus", handleCountChange);
+      window.removeEventListener("storage", handleCountChange);
     };
   }, [isAdmin, pathname]);
 

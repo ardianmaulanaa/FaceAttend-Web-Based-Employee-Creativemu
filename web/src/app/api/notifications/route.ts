@@ -84,12 +84,14 @@ function formatDate(value: Date | string | null | undefined) {
 
 function getNotificationHref(type: string) {
   if (type === "announcement") return "/pengumuman";
+  if (type === "shift_swap") return "/tukar-shift";
 
   return "/cuti";
 }
 
 function getNotificationLabel(type: string) {
   if (type === "announcement") return "Pengumuman";
+  if (type === "shift_swap") return "Tukar Shift";
 
   return "Cuti / Izin / Sakit";
 }
@@ -175,7 +177,7 @@ export async function GET(req: NextRequest) {
         type: "shift_swap",
         typeLabel: "Tukar Shift",
         title: "Permintaan Tukar Shift Masuk",
-        message: `${item.requester?.name || "Rekan kerja"} mengajukan tukar shift (${item.requester_shift_name} ↔ ${item.target_shift_name}) untuk tanggal ${formatShiftSwapDate(item.swap_date)}.`,
+        message: `${item.requester?.name || "Rekan kerja"} mengajukan tukar shift (${item.requester_shift_name} ↔ ${item.target_shift_name}) ${formatShiftSwapDate(item.swap_date)}.`,
         status: "unread",
         statusText: "Belum Dibaca",
         isRead: false,
