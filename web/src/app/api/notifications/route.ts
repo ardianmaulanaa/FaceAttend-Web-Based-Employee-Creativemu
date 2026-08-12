@@ -7,7 +7,7 @@ import { formatShiftSwapDate } from "@/lib/shift-swap-schema";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const EMPLOYEE_NOTIFICATION_TYPES = ["leave_status", "announcement"];
+const EMPLOYEE_NOTIFICATION_TYPES = ["leave_status", "announcement", "shift_swap"];
 
 async function getCurrentUser(req: NextRequest) {
   const authUser = await requireAuth(req);

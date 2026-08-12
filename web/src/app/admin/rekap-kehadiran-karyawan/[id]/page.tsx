@@ -248,11 +248,9 @@ function getDateKey(date: Date) {
 }
 
 function addMonths(date: Date, amount: number) {
-  const nextDate = new Date(date);
+  const current = date instanceof Date && !Number.isNaN(date.getTime()) ? date : new Date();
 
-  nextDate.setMonth(nextDate.getMonth() + amount);
-
-  return nextDate;
+  return new Date(current.getFullYear(), current.getMonth() + amount, 1, 0, 0, 0, 0);
 }
 
 function formatCalendarMonth(date: Date) {
@@ -834,12 +832,8 @@ export default function AdminEmployeeAttendanceRecapDetailPage() {
     () => buildCalendarDays(calendarMonth),
     [calendarMonth],
   );
-  const firstMonth = getMonthDate(startDate || getDateKey(new Date()));
-  const lastMonth = getMonthDate(endDate || startDate || getDateKey(new Date()));
-  const canOpenPreviousMonth =
-    getMonthKey(addMonths(calendarMonth, -1)) >= getMonthKey(firstMonth);
-  const canOpenNextMonth =
-    getMonthKey(addMonths(calendarMonth, 1)) <= getMonthKey(lastMonth);
+  const canOpenPreviousMonth = true;
+  const canOpenNextMonth = true;
 
   return (
     <MobileShell variant="admin" withBottomPadding={false}>

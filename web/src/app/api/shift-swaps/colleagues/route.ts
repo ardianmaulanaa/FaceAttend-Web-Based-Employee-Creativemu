@@ -170,9 +170,7 @@ export async function GET(req: NextRequest) {
     // Target shift options for "Geser Shift Mandiri":
     // Only karyawan utama can move to shift pagi / shift siang.
     const availableShifts: AvailableShiftItem[] = isPrimaryShift
-      ? allShiftOptions.filter(
-          (s) => s.name.includes("PAGI") || s.name.includes("SIANG"),
-        )
+      ? allShiftOptions.filter((s) => s.name.includes("SIANG"))
       : [];
 
     return NextResponse.json({

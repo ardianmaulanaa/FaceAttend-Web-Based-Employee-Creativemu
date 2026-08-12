@@ -175,23 +175,6 @@ export function getShiftSwapCutoffMessage(params: {
     return "Tanggal tukar/geser shift tidak boleh sebelum hari ini.";
   }
 
-  if (swapDateNumber > todayNumber) return null;
-
-  const nowParts = getJakartaDateParts(params.now || new Date());
-  const nowMinutes = nowParts.hour * 60 + nowParts.minute;
-  const earliestBlockedWindow = params.windows
-    .map((window) => ({
-      ...window,
-      cutoffMinutes: timeToMinutes(window.startTime) - 30,
-    }))
-    .sort((a, b) => a.cutoffMinutes - b.cutoffMinutes)[0];
-
-  if (!earliestBlockedWindow) return null;
-
-  if (nowMinutes >= earliestBlockedWindow.cutoffMinutes) {
-    return `Pengajuan hanya bisa dilakukan maksimal 30 menit sebelum ${earliestBlockedWindow.shiftName} masuk (${earliestBlockedWindow.startTime}).`;
-  }
-
   return null;
 }
 

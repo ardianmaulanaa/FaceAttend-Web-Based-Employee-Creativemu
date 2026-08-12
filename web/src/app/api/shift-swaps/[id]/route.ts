@@ -62,9 +62,9 @@ export async function PATCH(
     const body = await req.json();
     const action = String(body.action || "").toLowerCase().trim();
 
-    if (action !== "approve" && action !== "reject") {
+    if (action !== "approve" && action !== "reject" && action !== "cancel") {
       return NextResponse.json(
-        { error: "Aksi tidak valid. Pilih setuju (approve) atau tolak (reject)." },
+        { error: "Aksi tidak valid. Pilih setuju (approve), tolak (reject), atau batalkan (cancel)." },
         { status: 400 },
       );
     }
@@ -82,6 +82,63 @@ export async function PATCH(
         { error: "Pengajuan tukar shift tidak ditemukan." },
         { status: 404 },
       );
+    }
+
+    if (action === "cancel") {
+      if (user.id !== swapRequest.requester_id && user.id !== swapRequest.target_user_id) {
+        return NextResponse.json(
+          { error: "Kamu tidak memiliki akses untuk membatalkan pengajuan ini." },
+          { status: 403 },
+        );
+      }
+
+      if (swapRequest.status === "cancelled") {
+        return NextResponse.json(
+          { error: "Pengajuan ini sudah dibatalkan sebelumnya." },
+          { status: 400 },
+        );
+      }
+
+      const cancelReason = String(body.cancelReason || body.reason || "").trim();
+      if (!cancelReason) {
+        return NextResponse.json(
+          { error: "Alasan pembatalan wajib diisi." },
+          { status: 400 },
+        );
+      }
+
+      const updatedSwap = await prisma.shiftSwapRequest.update({
+        where: { id: swapId },
+        data: {
+          status: "cancelled",
+        },
+      });
+
+      const cancellerName = user.id === swapRequest.requester_id ? swapRequest.requester.name : swapRequest.target_user.name;
+
+      // Send notifications to BOTH users
+      const notificationTargets = Array.from(new Set([swapRequest.requester_id, swapRequest.target_user_id]));
+      for (const targetId of notificationTargets) {
+        try {
+          await prisma.adminNotification.create({
+            data: {
+              user_id: targetId,
+              type: "shift_swap",
+              title: "Tukar Shift Dibatalkan",
+              message: `${cancellerName} membatalkan tukar shift (${swapRequest.requester_shift_name} ↔ ${swapRequest.target_shift_name}) untuk tanggal ${formatJakartaDate(swapRequest.swap_date)}. Alasan: "${cancelReason}"`,
+              status: "unread",
+            },
+          });
+        } catch {
+          // ignore notification insert error
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: `Pengajuan tukar shift berhasil dibatalkan. Notifikasi telah dikirimkan ke kedua karyawan.`,
+        request: updatedSwap,
+      });
     }
 
     if (swapRequest.target_user_id !== user.id) {

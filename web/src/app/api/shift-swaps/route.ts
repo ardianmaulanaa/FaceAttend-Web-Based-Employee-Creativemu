@@ -229,9 +229,9 @@ export async function POST(req: NextRequest) {
 
       const targetShiftKind = getShiftKind(targetShiftUpper);
 
-      if (targetShiftKind !== "pagi" && targetShiftKind !== "siang") {
+      if (targetShiftKind !== "siang") {
         return NextResponse.json(
-          { error: "Karyawan utama hanya bisa geser ke Shift Pagi atau Shift Siang." },
+          { error: "Karyawan utama hanya bisa geser ke Shift Siang." },
           { status: 400 },
         );
       }

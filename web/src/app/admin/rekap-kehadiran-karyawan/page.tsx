@@ -753,10 +753,20 @@ export default function AdminEmployeeAttendanceRecapPage() {
                             .filter(Boolean)
                             .join(" / ")}
                         </p>
+
+                        {netWorkMinutes > 0 ? (
+                          <p className="mt-1 text-[10px] font-black uppercase tracking-[0.1em] text-[#123c8c] sm:text-xs">
+                            Kerja bersih {formatWorkDuration(netWorkMinutes)}
+                          </p>
+                        ) : null}
                       </div>
 
                       <div className="flex shrink-0 items-center gap-2 ml-auto">
-                        <div className="flex flex-col items-end gap-1 sm:flex-row sm:items-center">
+                        <div className="flex flex-col items-end gap-1.5 sm:flex-row sm:items-center">
+                          <span className="rounded-full bg-purple-50 px-2.5 py-1 text-[10px] font-black text-purple-700 ring-1 ring-purple-200/80 sm:text-[11px]">
+                            Sisa Cuti: {employee.remainingLeaveQuota ?? 12} Hari
+                          </span>
+
                           {hasPendingLeave ? (
                             <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-black text-orange-700 ring-1 ring-orange-200 sm:px-2.5 sm:py-1 sm:text-[11px]">
                               {pendingLeaveCount} cuti baru
@@ -772,51 +782,8 @@ export default function AdminEmployeeAttendanceRecapPage() {
                           </span>
                         </div>
 
-                        <div className="min-w-0 flex-1">
-                          <h3 className="text-sm font-black text-slate-950 leading-snug break-words sm:text-base">
-                            {employee.name}
-                          </h3>
-
-                          <p className="mt-0.5 text-[11px] font-semibold leading-snug text-slate-500 break-words sm:text-xs">
-                            {[
-                              employee.employee_code,
-                              employee.department?.name,
-                              employee.jabatan?.name || employee.position?.name,
-                            ]
-                              .filter(Boolean)
-                              .join(" / ")}
-                          </p>
-                          {netWorkMinutes > 0 ? (
-                            <p className="mt-1 text-[10px] font-black uppercase tracking-[0.1em] text-[#123c8c] sm:text-xs">
-                              Kerja bersih {formatWorkDuration(netWorkMinutes)}
-                            </p>
-                          ) : null}
-                        </div>
-
-                        <div className="flex shrink-0 items-center gap-2 ml-auto">
-                          <div className="flex flex-col items-end gap-1.5 sm:flex-row sm:items-center">
-                            <span className="rounded-full bg-purple-50 px-2.5 py-1 text-[10px] font-black text-purple-700 ring-1 ring-purple-200/80 sm:text-[11px]">
-                              Sisa Cuti: {employee.remainingLeaveQuota ?? 12} Hari
-                            </span>
-
-                            {hasPendingLeave ? (
-                              <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-black text-orange-700 ring-1 ring-orange-200 sm:px-2.5 sm:py-1 sm:text-[11px]">
-                                {pendingLeaveCount} cuti baru
-                              </span>
-                            ) : null}
-
-                            <span
-                              className={`rounded-full px-2 py-0.5 text-[10px] font-black ring-1 sm:px-2.5 sm:py-1 sm:text-[11px] ${getStatusStyle(
-                                employee.status,
-                              )}`}
-                            >
-                              {getStatusLabel(employee.status)}
-                            </span>
-                          </div>
-
-                          <div className="flex h-8 w-8 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c] ring-1 ring-blue-100 transition group-hover:bg-[#123c8c] group-hover:text-white sm:h-10 sm:w-10">
-                            <ChevronRight size={18} strokeWidth={2.8} className="transition-transform group-hover:translate-x-0.5" />
-                          </div>
+                        <div className="flex h-8 w-8 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c] ring-1 ring-blue-100 transition group-hover:bg-[#123c8c] group-hover:text-white sm:h-10 sm:w-10">
+                          <ChevronRight size={18} strokeWidth={2.8} className="transition-transform group-hover:translate-x-0.5" />
                         </div>
                       </div>
                     </Link>

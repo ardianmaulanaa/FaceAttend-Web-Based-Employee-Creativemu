@@ -426,12 +426,10 @@ export default function TukarShiftPage() {
                   Tukar shift antar rekan kerja
                 </p>
                 <ul className="mt-3 space-y-2 text-xs font-bold leading-5 text-slate-600">
-                  <li>Shift utama bisa tukar dengan shift siang.</li>
-                  <li>Shift pagi bisa tukar dengan shift siang.</li>
-                  <li>Shift utama tidak bisa tukar dengan shift pagi.</li>
+                  <li>- Shift pagi bisa tukar dengan shift siang.</li>
+                  <li>- Shift utama tidak bisa tukar dengan shift pagi (gunakan Geser Shift).</li>
                   <li>
-                    Pengajuan dan approval harus sebelum batas 30 menit dari
-                    jam masuk shift yang terkait.
+                    - Pengajuan dan approval berbasis tanggal (berlaku untuk hari ini & besok) tanpa batasan jam/menit.
                   </li>
                 </ul>
               </div>
@@ -441,12 +439,10 @@ export default function TukarShiftPage() {
                   Geser shift tanpa rekan
                 </p>
                 <ul className="mt-3 space-y-2 text-xs font-bold leading-5 text-amber-900">
-                  <li>Hanya berlaku untuk karyawan utama.</li>
+                  <li>- Hanya berlaku untuk karyawan utama.</li>
+                  <li>- Karyawan utama bisa geser ke shift siang.</li>
                   <li>
-                    Karyawan utama bisa geser ke shift pagi atau shift siang.
-                  </li>
-                  <li>
-                    Batas pengajuan 30 menit sebelum jam masuk shift tujuan.
+                    - Pengajuan berbasis tanggal (berlaku untuk hari ini & besok) secara fleksibel.
                   </li>
                 </ul>
               </div>
@@ -563,11 +559,10 @@ export default function TukarShiftPage() {
                     setRequestMode("swap");
                     setTargetShiftName("");
                   }}
-                  className={`rounded-2xl px-4 py-3 text-left transition active:scale-[0.98] ${
-                    requestMode === "swap"
+                  className={`rounded-2xl px-4 py-3 text-left transition active:scale-[0.98] ${requestMode === "swap"
                       ? "bg-[#123c8c] text-white shadow-lg shadow-blue-900/20"
                       : "bg-white text-slate-600 ring-1 ring-blue-100"
-                  }`}
+                    }`}
                 >
                   <span className="block text-xs font-black uppercase">
                     Tukar Shift
@@ -583,11 +578,10 @@ export default function TukarShiftPage() {
                     setRequestMode("self");
                     setTargetUserId("");
                   }}
-                  className={`rounded-2xl px-4 py-3 text-left transition active:scale-[0.98] ${
-                    requestMode === "self"
+                  className={`rounded-2xl px-4 py-3 text-left transition active:scale-[0.98] ${requestMode === "self"
                       ? "bg-[#123c8c] text-white shadow-lg shadow-blue-900/20"
                       : "bg-white text-slate-600 ring-1 ring-blue-100"
-                  }`}
+                    }`}
                 >
                   <span className="block text-xs font-black uppercase">
                     Geser Shift
@@ -612,44 +606,58 @@ export default function TukarShiftPage() {
                   <label className="text-sm font-black text-slate-700">
                     Pilih Rekan Kerja
                   </label>
-                  <select
-                    value={targetUserId}
-                    onChange={(e) => setTargetUserId(e.target.value)}
-                    className="mt-2 min-h-[52px] w-full rounded-3xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
-                  >
-                    <option value="">-- Pilih Rekan Kerja --</option>
-                    {colleagues.map((col) => (
-                      <option key={col.id} value={col.id}>
-                        {col.name} ({col.shiftName})
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative mt-2">
+                    <select
+                      value={targetUserId}
+                      onChange={(e) => setTargetUserId(e.target.value)}
+                      className="min-h-[54px] w-full appearance-none rounded-2xl border border-blue-100 bg-[#f8fbff] pl-6 pr-12 py-3.5 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100/60 shadow-sm cursor-pointer"
+                    >
+                      <option value="">-- Pilih Rekan Kerja --</option>
+                      {colleagues.map((col) => (
+                        <option key={col.id} value={col.id}>
+                          {col.name} ({col.shiftName})
+                        </option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div>
                   <label className="text-sm font-black text-slate-700">
                     Pilih Shift Tujuan
                   </label>
-                  <select
-                    value={targetShiftName}
-                    onChange={(e) => setTargetShiftName(e.target.value)}
-                    disabled={!canSelfShift}
-                    className="mt-2 min-h-[52px] w-full rounded-3xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <option value="">
-                      {canSelfShift
-                        ? "-- Pilih Shift Tujuan --"
-                        : "Hanya untuk karyawan utama"}
-                    </option>
-                    {availableShifts.map((shift) => (
-                      <option key={shift.id} value={shift.name}>
-                        {shift.name}
-                        {shift.startTime && shift.endTime
-                          ? ` (${shift.startTime}-${shift.endTime})`
-                          : ""}
+                  <div className="relative mt-2">
+                    <select
+                      value={targetShiftName}
+                      onChange={(e) => setTargetShiftName(e.target.value)}
+                      disabled={!canSelfShift}
+                      className="min-h-[54px] w-full appearance-none rounded-2xl border border-blue-100 bg-[#f8fbff] pl-6 pr-12 py-3.5 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100/60 disabled:cursor-not-allowed disabled:opacity-60 shadow-sm cursor-pointer"
+                    >
+                      <option value="">
+                        {canSelfShift
+                          ? "-- Pilih Shift Tujuan --"
+                          : "Hanya untuk karyawan utama"}
                       </option>
-                    ))}
-                  </select>
+                      {availableShifts.map((shift) => (
+                        <option key={shift.id} value={shift.name}>
+                          {shift.name}
+                          {shift.startTime && shift.endTime
+                            ? ` (${shift.startTime}-${shift.endTime})`
+                            : ""}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -664,11 +672,10 @@ export default function TukarShiftPage() {
                   value={swapDate}
                   min={getTodayString()}
                   onChange={(e) => setSwapDate(e.target.value)}
-                  className="mt-2 min-h-[52px] w-full rounded-3xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                  className="mt-2 min-h-[54px] w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-6 py-3.5 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100/60 shadow-sm"
                 />
                 <p className="mt-2 text-[11px] font-bold leading-4 text-slate-400">
-                  Pengajuan hanya bisa dibuat sebelum batas 30 menit dari jam
-                  masuk shift pada tanggal tersebut.
+                  Pengajuan berbasis tanggal (berlaku fleksibel untuk hari ini & besok).
                 </p>
               </div>
 
@@ -684,7 +691,7 @@ export default function TukarShiftPage() {
                       ? "Alasan singkat tukar shift..."
                       : "Alasan singkat geser shift..."
                   }
-                  className="mt-2 min-h-28 w-full resize-none rounded-3xl border border-blue-100 bg-[#f8fbff] px-4 py-4 text-sm font-bold leading-6 text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                  className="mt-2 min-h-[100px] w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-6 py-4 text-sm font-bold text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100/60 shadow-sm"
                 />
               </div>
 
@@ -758,13 +765,12 @@ export default function TukarShiftPage() {
                     </div>
 
                     <span
-                      className={`rounded-full px-2.5 py-1 text-[10px] font-black ${
-                        req.status === "approved"
+                      className={`rounded-full px-2.5 py-1 text-[10px] font-black ${req.status === "approved"
                           ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
                           : req.status === "rejected"
                             ? "bg-red-50 text-red-700 ring-1 ring-red-200"
                             : "bg-amber-50 text-amber-700 ring-1 ring-amber-200"
-                      }`}
+                        }`}
                     >
                       {req.status === "approved"
                         ? "Disetujui"
@@ -797,13 +803,12 @@ export default function TukarShiftPage() {
                     </div>
 
                     <span
-                      className={`rounded-full px-2.5 py-1 text-[10px] font-black ${
-                        req.status === "approved"
+                      className={`rounded-full px-2.5 py-1 text-[10px] font-black ${req.status === "approved"
                           ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
                           : req.status === "rejected"
                             ? "bg-red-50 text-red-700 ring-1 ring-red-200"
                             : "bg-amber-50 text-amber-700 ring-1 ring-amber-200"
-                      }`}
+                        }`}
                     >
                       {req.status === "approved"
                         ? "Disetujui"

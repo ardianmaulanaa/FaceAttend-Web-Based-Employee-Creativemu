@@ -202,6 +202,11 @@ export default function EmployeeNotificationPage() {
 
   useEffect(() => {
     void loadNotifications();
+    const timer = setInterval(() => {
+      void loadNotifications();
+    }, 1000);
+
+    return () => clearInterval(timer);
   }, []);
 
   return (
