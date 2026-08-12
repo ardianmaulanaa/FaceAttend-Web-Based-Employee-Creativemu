@@ -316,6 +316,7 @@ export default function ShiftsPage() {
               />
 
               <input
+                suppressHydrationWarning
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Cari shift kerja..."
@@ -325,6 +326,7 @@ export default function ShiftsPage() {
 
             <div>
               <select
+                suppressHydrationWarning
                 value={statusFilter}
                 onChange={(event) => setStatusFilter(event.target.value)}
                 className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"

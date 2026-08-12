@@ -579,6 +579,7 @@ export function AppInput({ label, error, className, ...props }: AppInputProps) {
       ) : null}
 
       <input
+        suppressHydrationWarning
         className={cn(
           "mt-2 min-h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-60",
           error &&
@@ -615,6 +616,7 @@ export function AppTextarea({
       ) : null}
 
       <textarea
+        suppressHydrationWarning
         className={cn(
           "mt-2 min-h-28 w-full resize-none rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-4 text-sm font-bold leading-6 text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-60",
           error &&
