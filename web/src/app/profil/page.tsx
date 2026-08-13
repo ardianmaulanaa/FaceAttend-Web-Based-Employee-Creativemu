@@ -431,6 +431,26 @@ function ProfileMotionStyles() {
           transform 180ms ease;
       }
 
+      input[type="date"].profile-field {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        min-height: 48px;
+        line-height: normal;
+      }
+
+      input[type="date"].profile-field::-webkit-date-and-time-value {
+        text-align: left;
+        min-height: 1.5em;
+        margin: auto 0;
+      }
+
+      input[type="date"].profile-field::-webkit-calendar-picker-indicator {
+        opacity: 0.6;
+        cursor: pointer;
+        padding: 4px;
+      }
+
       .profile-field:focus {
         transform: translateY(-1px);
       }

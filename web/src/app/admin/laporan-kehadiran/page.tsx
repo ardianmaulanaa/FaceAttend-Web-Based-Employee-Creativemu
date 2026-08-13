@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   CalendarDays,
   Camera,
+  ChevronDown,
   Eye,
   FileDown,
   ImageIcon,
@@ -172,6 +173,26 @@ function AttendanceReportMotionStyles() {
           border-color 180ms ease,
           background-color 180ms ease,
           box-shadow 180ms ease;
+      }
+
+      input[type="date"].attendance-report-field {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        min-height: 48px;
+        line-height: normal;
+      }
+
+      input[type="date"].attendance-report-field::-webkit-date-and-time-value {
+        text-align: left;
+        min-height: 1.5em;
+        margin: auto 0;
+      }
+
+      input[type="date"].attendance-report-field::-webkit-calendar-picker-indicator {
+        opacity: 0.6;
+        cursor: pointer;
+        padding: 4px;
       }
 
       .attendance-report-opening {
@@ -416,8 +437,8 @@ export default function AdminAttendanceReportPage() {
           <div className="attendance-report-enter overflow-hidden rounded-[2rem] border border-blue-100 bg-white shadow-xl shadow-slate-300/30">
             <div className="grid gap-0 lg:grid-cols-[0.95fr_1.05fr]">
               <div className="bg-[#123c8c] p-6 text-white md:p-8">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
+                <div className="flex flex-col items-center text-center gap-3 md:flex-row md:items-center md:text-left">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/15">
                     <Camera size={25} strokeWidth={2.6} />
                   </div>
 
@@ -505,50 +526,77 @@ export default function AdminAttendanceReportPage() {
 
             <form
               onSubmit={handleSearchSubmit}
-              className="mt-6 grid gap-3 lg:grid-cols-[1.4fr_1fr_0.85fr_auto]"
+              className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:items-end"
             >
-              <div className="relative">
-                <Search
-                  size={18}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                />
+              <div className="w-full">
+                <label className="mb-2 block text-xs font-black uppercase tracking-wider text-slate-500">
+                  Cari Karyawan
+                </label>
+                <div className="relative">
+                  <Search
+                    size={18}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
 
-                <input
-                  value={searchKeyword}
-                  onChange={(event) => {
-                    setSearchKeyword(event.target.value);
-                    setSelectedEmployeeId("");
-                  }}
-                  placeholder="Cari nama / kode karyawan..."
-                  className="attendance-report-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
-                />
+                  <input
+                    value={searchKeyword}
+                    onChange={(event) => {
+                      setSearchKeyword(event.target.value);
+                      setSelectedEmployeeId("");
+                    }}
+                    placeholder="Nama / kode karyawan..."
+                    className="attendance-report-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                  />
+                </div>
               </div>
 
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(event) => setSelectedDate(event.target.value)}
-                title="Kosongkan untuk menampilkan tanggal presensi terbaru"
-                className="attendance-report-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
-              />
+              <div className="w-full">
+                <label className="mb-2 block text-xs font-black uppercase tracking-wider text-slate-500">
+                  Tanggal Presensi
+                </label>
+                <div className="relative flex items-center">
+                  <CalendarDays
+                    size={18}
+                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(event) => setSelectedDate(event.target.value)}
+                    title="Kosongkan untuk menampilkan tanggal presensi terbaru"
+                    className="attendance-report-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
+                  />
+                </div>
+              </div>
 
-              <select
-                value={statusFilter}
-                onChange={(event) =>
-                  setStatusFilter(event.target.value as StatusFilter)
-                }
-                className="attendance-report-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
-              >
-                {statusOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+              <div className="w-full">
+                <label className="mb-2 block text-xs font-black uppercase tracking-wider text-slate-500">
+                  Status Kehadiran
+                </label>
+                <div className="relative">
+                  <select
+                    value={statusFilter}
+                    onChange={(event) =>
+                      setStatusFilter(event.target.value as StatusFilter)
+                    }
+                    className="attendance-report-field h-12 w-full appearance-none rounded-2xl border border-blue-100 bg-[#f8fbff] pl-4 pr-10 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
+                  >
+                    {statusOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={18}
+                    className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+                </div>
+              </div>
 
               <button
                 type="submit"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#123c8c] px-5 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#0f3274] active:scale-[0.98]"
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#123c8c] px-5 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-[#0f3274] active:scale-[0.98]"
               >
                 <Search size={17} />
                 Cari

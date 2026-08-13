@@ -472,20 +472,27 @@ export default function AdminAnnouncementsPage() {
                 />
               </div>
 
-              <select
-                value={filterStatus}
-                onChange={(event) =>
-                  setFilterStatus(
-                    event.target.value as "all" | AnnouncementStatus,
-                  )
-                }
-                className="admin-announcement-field rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
-              >
-                <option value="all">Semua Status</option>
-                <option value="published">Published</option>
-                <option value="draft">Draft</option>
-                <option value="archived">Archived</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={filterStatus}
+                  onChange={(event) =>
+                    setFilterStatus(
+                      event.target.value as "all" | AnnouncementStatus,
+                    )
+                  }
+                  className="admin-announcement-field w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-4 pr-10 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
+                >
+                  <option value="all">Semua Status</option>
+                  <option value="published">Published</option>
+                  <option value="draft">Draft</option>
+                  <option value="archived">Archived</option>
+                </select>
+                <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
             </div>
           </div>
 

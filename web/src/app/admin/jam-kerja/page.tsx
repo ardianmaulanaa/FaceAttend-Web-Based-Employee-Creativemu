@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   CalendarDays,
   CheckCircle2,
+  ChevronDown,
   Clock3,
   Loader2,
   Power,
@@ -517,24 +518,30 @@ export default function WorkSchedulesPage() {
                     Pilih Shift
                   </label>
 
-                  <select
-                    value={selectedShiftId}
-                    onChange={(event) => {
-                      setSelectedShiftId(event.target.value);
-                      setSuccessMessage("");
-                    }}
-                    className="work-schedule-field h-[50px] w-full appearance-none rounded-2xl border border-white/20 bg-white bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23475569%22%20stroke-width%3D%222.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:1.25rem] bg-[right_1rem_center] bg-no-repeat pl-4 pr-11 text-sm font-black text-slate-700 outline-none focus:ring-4 focus:ring-white/20"
-                  >
-                    {shifts.length === 0 ? (
-                      <option value="">Belum ada shift</option>
-                    ) : (
-                      rows.map((row) => (
-                        <option key={row.shift_id} value={row.shift_id}>
-                          {row.shift_name} - {formatStatus(row.shift_status)}
-                        </option>
-                      ))
-                    )}
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={selectedShiftId}
+                      onChange={(event) => {
+                        setSelectedShiftId(event.target.value);
+                        setSuccessMessage("");
+                      }}
+                      className="work-schedule-field h-[50px] w-full appearance-none rounded-2xl border border-white/20 bg-white pl-4 pr-10 text-sm font-black text-slate-700 outline-none focus:ring-4 focus:ring-white/20 cursor-pointer"
+                    >
+                      {shifts.length === 0 ? (
+                        <option value="">Belum ada shift</option>
+                      ) : (
+                        rows.map((row) => (
+                          <option key={row.shift_id} value={row.shift_id}>
+                            {row.shift_name} - {formatStatus(row.shift_status)}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                    <ChevronDown
+                      size={18}
+                      className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500"
+                    />
+                  </div>
                 </div>
 
                 <div className="flex items-end">
@@ -729,7 +736,7 @@ export default function WorkSchedulesPage() {
                           </label>
                         </div>
 
-                        <div className="mt-4 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
+                        <div className="mt-4 grid grid-cols-2 gap-3">
                           <label className="min-w-0">
                             <span className="mb-1 block text-xs font-black text-slate-400">
                               Masuk
@@ -747,7 +754,7 @@ export default function WorkSchedulesPage() {
                                   event.target.value,
                                 )
                               }
-                              className="work-schedule-field h-12 w-full max-w-[150px] min-w-0 rounded-2xl border border-blue-100 bg-[#f8fbff] px-3 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-100 disabled:text-slate-400"
+                              className="work-schedule-field h-12 w-full min-w-0 rounded-2xl border border-blue-100 bg-[#f8fbff] px-3 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-100 disabled:text-slate-400 cursor-pointer"
                             />
                           </label>
 
@@ -768,7 +775,7 @@ export default function WorkSchedulesPage() {
                                   event.target.value,
                                 )
                               }
-                              className="work-schedule-field h-12 w-full max-w-[150px] min-w-0 rounded-2xl border border-blue-100 bg-[#f8fbff] px-3 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-100 disabled:text-slate-400"
+                              className="work-schedule-field h-12 w-full min-w-0 rounded-2xl border border-blue-100 bg-[#f8fbff] px-3 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-100 disabled:text-slate-400 cursor-pointer"
                             />
                           </label>
                         </div>

@@ -13,7 +13,7 @@ import {
   ensureShiftSwapTable,
   formatShiftSwapDate,
   getShiftKind,
-  getShiftSwapCutoffMessage,
+  getShiftSwapCutoffMessageWithAttendance,
   getShiftWindowForSwapDate,
   toShiftSwapDate,
 } from "@/lib/shift-swap-schema";
@@ -272,9 +272,10 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const cutoffMessage = getShiftSwapCutoffMessage({
+      const cutoffMessage = await getShiftSwapCutoffMessageWithAttendance({
+        userId: user.id,
         swapDate,
-        windows: [targetWindow],
+        shiftStartTime: targetWindow.startTime,
       });
 
       if (cutoffMessage) {
@@ -422,9 +423,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const cutoffMessage = getShiftSwapCutoffMessage({
+    const cutoffMessage = await getShiftSwapCutoffMessageWithAttendance({
+      userId: user.id,
       swapDate,
-      windows: [requesterWindow, targetWindow],
+      shiftStartTime: requesterWindow.startTime,
     });
 
     if (cutoffMessage) {

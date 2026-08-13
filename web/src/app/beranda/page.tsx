@@ -328,14 +328,16 @@ function ProfileAvatar({
   );
 }
 
-function AnnouncementButton({
-  href = "/pengumuman",
+function NotificationHeaderButton({
+  href = "/notifikasi",
   unread,
+  unreadCount = 0,
   desktop = false,
   onClick,
 }: {
   href?: string;
   unread: boolean;
+  unreadCount?: number;
   desktop?: boolean;
   onClick: () => void;
 }) {
@@ -346,27 +348,25 @@ function AnnouncementButton({
       className={`home-icon-pop relative flex shrink-0 items-center justify-center rounded-2xl ring-1 transition hover:-translate-y-0.5 active:scale-[0.96] ${
         desktop ? "h-16 w-16" : "h-12 w-12"
       } ${
-        unread
-          ? desktop
-            ? "bg-white text-[#123c8c] ring-white"
-            : "bg-[#123c8c] text-white ring-[#123c8c]"
-          : desktop
-            ? "bg-white/10 text-white/70 ring-white/20"
-            : "bg-white text-slate-400 ring-blue-100"
+        desktop
+          ? "bg-white/10 text-white/90 ring-white/20"
+          : "bg-white text-[#123c8c] ring-blue-100"
       }`}
-      aria-label="Pengumuman"
+      aria-label="Notifikasi"
     >
-      <Megaphone
-        size={desktop ? 28 : 24}
-        strokeWidth={2.2}
+      <Bell
+        size={desktop ? 26 : 22}
+        strokeWidth={2.4}
       />
 
       {unread ? (
         <span
-          className={`home-pulse-dot absolute rounded-full bg-red-500 ring-2 ring-white ${
-            desktop ? "right-3 top-3 h-4 w-4" : "right-2 top-2 h-3 w-3"
+          className={`absolute flex min-h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-black leading-none text-white ring-2 ring-white shadow-md ${
+            desktop ? "-right-1 -top-1" : "-right-1 -top-1"
           }`}
-        />
+        >
+          {unreadCount > 0 ? (unreadCount > 99 ? "99+" : unreadCount) : "!"}
+        </span>
       ) : null}
     </Link>
   );
@@ -715,9 +715,10 @@ export default function HomePage() {
                 <div className="flex shrink-0 items-center gap-3">
                   <WhatsAppButton />
 
-                  <AnnouncementButton
+                  <NotificationHeaderButton
                     href="/notifikasi"
                     unread={hasUnreadAnnouncement}
+                    unreadCount={announcements.length}
                     onClick={markAnnouncementsAsRead}
                   />
                 </div>
@@ -776,8 +777,9 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                <AnnouncementButton
+                <NotificationHeaderButton
                   unread={hasUnreadAnnouncement}
+                  unreadCount={announcements.length}
                   desktop
                   onClick={markAnnouncementsAsRead}
                 />

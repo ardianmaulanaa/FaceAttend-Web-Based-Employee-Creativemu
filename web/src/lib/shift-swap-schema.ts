@@ -178,6 +178,110 @@ export function getShiftSwapCutoffMessage(params: {
   return null;
 }
 
+/**
+ * Cek apakah karyawan boleh mengajukan tukar shift untuk swapDate berdasarkan
+ * status presensi aktual (check-in / check-out) hari ini:
+ *
+ * Aturan:
+ * - Jika swapDate = BESOK → selalu boleh.
+ * - Jika swapDate = HARI INI:
+ *   a) Sudah check-out  → boleh (shift selesai, bisa approve untuk besok juga).
+ *   b) Sudah check-in tapi belum check-out → TIDAK boleh untuk hari ini
+ *      (hanya boleh untuk besok — redirect ke pesan error).
+ *   c) Belum check-in → boleh jika waktu sekarang >= (jam shift mulai - 60 menit).
+ *      Jika belum waktunya → TIDAK boleh untuk hari ini.
+ *
+ * Returns null jika diizinkan, atau string pesan error jika tidak diizinkan.
+ */
+export async function getShiftSwapCutoffMessageWithAttendance(params: {
+  userId: string;
+  swapDate: Date;
+  shiftStartTime?: string | null; // format "HH:mm"
+  now?: Date;
+}): Promise<string | null> {
+  const now = params.now || new Date();
+  const swapDateKey = getSwapDateKey(params.swapDate);
+  const todayKey = getJakartaTodayKey(now);
+  const swapDateNumber = dateKeyToNumber(swapDateKey);
+  const todayNumber = dateKeyToNumber(todayKey);
+
+  // Tanggal di masa lalu — tolak
+  if (swapDateNumber < todayNumber) {
+    return "Tanggal tukar/geser shift tidak boleh sebelum hari ini.";
+  }
+
+  // swapDate = besok atau lebih → selalu boleh
+  if (swapDateNumber > todayNumber) {
+    return null;
+  }
+
+  // swapDate = hari ini — cek attendance aktual
+  try {
+    const todayParts = getJakartaDateParts(now);
+    const todayStart = new Date(
+      Date.UTC(todayParts.year, todayParts.month - 1, todayParts.day),
+    );
+    const todayEnd = new Date(todayStart);
+    todayEnd.setUTCDate(todayEnd.getUTCDate() + 1);
+
+    const todayAttendance = await prisma.attendance.findFirst({
+      where: {
+        user_id: params.userId,
+        attendance_date: {
+          gte: todayStart,
+          lt: todayEnd,
+        },
+      },
+      select: {
+        check_in_time: true,
+        check_out_time: true,
+      },
+    });
+
+    const hasCheckedIn = Boolean(todayAttendance?.check_in_time);
+    const hasCheckedOut = Boolean(todayAttendance?.check_out_time);
+
+    // Sudah check-out → shift selesai, boleh akses tukar shift untuk hari ini
+    if (hasCheckedIn && hasCheckedOut) {
+      return null;
+    }
+
+    // Sudah check-in tapi belum check-out → hanya boleh untuk besok
+    if (hasCheckedIn && !hasCheckedOut) {
+      return (
+        "Kamu sudah check-in. Pengajuan tukar/geser shift untuk hari ini tidak dapat dilakukan saat sedang bekerja. " +
+        "Pilih tanggal besok agar kamu dan rekan bisa saling konfirmasi."
+      );
+    }
+
+    // Belum check-in → cek window 1 jam sebelum shift mulai
+    const shiftStart = normalizeTime(params.shiftStartTime);
+    if (shiftStart) {
+      const shiftStartMinutes = timeToMinutes(shiftStart);
+      const openWindowMinutes = shiftStartMinutes - 60; // 1 jam sebelum shift
+
+      const jakartaParts = getJakartaDateParts(now);
+      const currentMinutes = jakartaParts.hour * 60 + jakartaParts.minute;
+
+      if (currentMinutes < openWindowMinutes) {
+        const openHour = Math.floor(openWindowMinutes / 60);
+        const openMin = openWindowMinutes % 60;
+        const openTimeStr = `${String(openHour).padStart(2, "0")}:${String(openMin).padStart(2, "0")}`;
+        return (
+          `Pengajuan tukar/geser shift untuk hari ini baru dibuka pukul ${openTimeStr} WIB ` +
+          `(1 jam sebelum shift dimulai). Silakan coba lagi setelah waktu tersebut atau pilih tanggal besok.`
+        );
+      }
+    }
+
+    // Belum check-in dan sudah dalam window 1 jam sebelum shift → boleh
+    return null;
+  } catch {
+    // Jika gagal cek attendance, izinkan saja agar tidak memblokir
+    return null;
+  }
+}
+
 export function getShiftWindowForSwapDate(shift: ShiftWithSchedules, date: Date) {
   const dayKey = getDayOfWeekKey(date);
   const schedule = shift.work_schedules?.find(

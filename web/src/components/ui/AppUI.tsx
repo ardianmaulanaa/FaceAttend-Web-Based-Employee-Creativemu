@@ -654,19 +654,27 @@ export function AppSelect({
         <span className="text-sm font-black text-slate-700">{label}</span>
       ) : null}
 
-      <select
-        suppressHydrationWarning
-        value={value ?? ""}
-        className={cn(
-          "mt-2 min-h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-60",
-          error &&
-            "border-red-200 bg-red-50 focus:border-red-400 focus:ring-red-100",
-          className,
-        )}
-        {...props}
-      >
-        {children}
-      </select>
+      <div className="relative mt-2">
+        <select
+          suppressHydrationWarning
+          value={value ?? ""}
+          className={cn(
+            "min-h-12 w-full appearance-none rounded-2xl border border-blue-100 bg-[#f8fbff] pl-4 pr-10 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer",
+            error &&
+              "border-red-200 bg-red-50 focus:border-red-400 focus:ring-red-100",
+            className,
+          )}
+          {...props}
+        >
+          {children}
+        </select>
+
+        <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </div>
 
       {error ? (
         <span className="mt-2 block text-xs font-bold text-red-600">

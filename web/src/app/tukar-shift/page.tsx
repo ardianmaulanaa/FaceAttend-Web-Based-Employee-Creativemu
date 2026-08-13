@@ -849,38 +849,47 @@ export default function TukarShiftPage() {
                 Belum ada riwayat tukar shift.
               </div>
             ) : (
-              <div className="space-y-2.5">
+              <div className="space-y-3">
                 {sentRequests.map((req, index) => (
                   <div
                     key={req.id}
-                    className="tukar-shift-enter flex items-center justify-between rounded-3xl border border-blue-100 bg-white p-3.5 shadow-sm"
+                    className="tukar-shift-enter flex flex-col gap-3 rounded-3xl border border-blue-100 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
                     style={{ animationDelay: `${index * 45}ms` }}
                   >
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
                         {req.isSelfShift ? "Geser Shift" : "Tukar Keluar"}
                       </p>
-                      <p className="text-xs font-black text-slate-900">
+                      <p className="mt-0.5 text-sm font-black text-slate-900 leading-snug break-words">
                         {req.isSelfShift
                           ? `${req.requesterShiftName} ke ${req.targetShiftName}`
                           : `Ke: ${req.targetUser?.name} (${req.targetShiftName})`}
                       </p>
-                      <p className="text-[11px] font-bold text-slate-500">
+                      <p className="mt-1 text-xs font-bold text-slate-500">
                         Tanggal:{" "}
-                        <span className="text-[#123c8c]">{req.swapDate}</span>
+                        <span className="font-black text-[#123c8c]">{req.swapDate}</span>
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex w-full items-center justify-between gap-2.5 pt-2 border-t border-slate-100 sm:w-auto sm:justify-start sm:border-t-0 sm:pt-0">
                       <span
-                        className={`rounded-full px-2.5 py-1 text-[10px] font-black ${
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: 900,
+                          lineHeight: "1.2",
+                          padding: "6px 12px",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                        className={`rounded-full ring-1 ${
                           req.status === "approved"
-                            ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
+                            ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
                             : req.status === "rejected"
-                              ? "bg-red-50 text-red-700 ring-1 ring-red-200"
+                              ? "bg-red-50 text-red-700 ring-red-200"
                               : req.status === "cancelled"
-                                ? "bg-slate-100 text-slate-500 ring-1 ring-slate-200"
-                                : "bg-amber-50 text-amber-700 ring-1 ring-amber-200"
+                                ? "bg-slate-100 text-slate-500 ring-slate-200"
+                                : "bg-amber-50 text-amber-700 ring-amber-200"
                         }`}
                       >
                         {req.status === "approved"
@@ -897,12 +906,26 @@ export default function TukarShiftPage() {
                           type="button"
                           disabled={processingId === req.id}
                           onClick={() => handleCancel(req.id)}
-                          className="rounded-full bg-red-50 px-2.5 py-1 text-[10px] font-black text-red-600 ring-1 ring-red-200 transition hover:bg-red-100 active:scale-95 disabled:opacity-50"
+                          style={{
+                            fontSize: "12px",
+                            fontWeight: 900,
+                            lineHeight: "1.2",
+                            padding: "6px 12px",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "4px",
+                            fontFamily: "inherit",
+                          }}
+                          className="ml-auto rounded-full bg-rose-50 text-rose-600 ring-1 ring-rose-200 transition hover:bg-rose-100 active:scale-95 disabled:opacity-50"
                         >
                           {processingId === req.id ? (
-                            <Loader2 size={12} className="animate-spin inline" />
+                            <Loader2 size={13} className="animate-spin" />
                           ) : (
-                            "Batalkan"
+                            <>
+                              <X size={13} strokeWidth={3} />
+                              Batalkan
+                            </>
                           )}
                         </button>
                       ) : null}
@@ -913,38 +936,50 @@ export default function TukarShiftPage() {
                 {incomingRequests.map((req, index) => (
                   <div
                     key={req.id}
-                    className="tukar-shift-enter flex items-center justify-between rounded-3xl border border-blue-100 bg-white p-3.5 shadow-sm"
+                    className="tukar-shift-enter flex flex-col gap-3 rounded-3xl border border-blue-100 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
                     style={{
                       animationDelay: `${(sentRequests.length + index) * 45}ms`,
                     }}
                   >
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
                         Tukar Masuk
                       </p>
-                      <p className="text-xs font-black text-slate-900">
+                      <p className="mt-0.5 text-sm font-black text-slate-900 leading-snug break-words">
                         Dari: {req.requester?.name} ({req.requesterShiftName})
                       </p>
-                      <p className="text-[11px] font-bold text-slate-500">
+                      <p className="mt-1 text-xs font-bold text-slate-500">
                         Tanggal:{" "}
-                        <span className="text-[#123c8c]">{req.swapDate}</span>
+                        <span className="font-black text-[#123c8c]">{req.swapDate}</span>
                       </p>
                     </div>
 
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-[10px] font-black ${req.status === "approved"
-                          ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
-                          : req.status === "rejected"
-                            ? "bg-red-50 text-red-700 ring-1 ring-red-200"
-                            : "bg-amber-50 text-amber-700 ring-1 ring-amber-200"
+                    <div className="flex items-center pt-1 sm:pt-0">
+                      <span
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: 900,
+                          lineHeight: "1.2",
+                          padding: "6px 12px",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                        className={`rounded-full ring-1 ${
+                          req.status === "approved"
+                            ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                            : req.status === "rejected"
+                              ? "bg-red-50 text-red-700 ring-red-200"
+                              : "bg-amber-50 text-amber-700 ring-amber-200"
                         }`}
-                    >
-                      {req.status === "approved"
-                        ? "Disetujui"
-                        : req.status === "rejected"
-                          ? "Ditolak"
-                          : "Menunggu"}
-                    </span>
+                      >
+                        {req.status === "approved"
+                          ? "Disetujui"
+                          : req.status === "rejected"
+                            ? "Ditolak"
+                            : "Menunggu"}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>

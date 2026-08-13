@@ -1282,14 +1282,21 @@ export default function AdminEmployeesPage() {
                 />
               </div>
 
-              <select
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
-                className="employee-field rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-xs font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
-              >
-                <option value="asc">Nama: A - Z</option>
-                <option value="desc">Nama: Z - A</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
+                  className="employee-field w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-4 pr-10 text-xs font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
+                >
+                  <option value="asc">Nama: A - Z</option>
+                  <option value="desc">Nama: Z - A</option>
+                </select>
+                <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1721,11 +1728,14 @@ export default function AdminEmployeesPage() {
                               role: event.target.value as "admin" | "employee",
                             }))
                           }
-                          className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                          className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-10 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
                         >
                           <option value="employee">Employee</option>
                           <option value="admin">Admin</option>
                         </select>
+                        <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1853,7 +1863,7 @@ export default function AdminEmployeesPage() {
                               registered_office_id: event.target.value,
                             }))
                           }
-                          className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                          className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-10 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
                         >
                           <option value="">Pilih Kantor</option>
                           {activeOffices.map((office) => (
@@ -1862,6 +1872,9 @@ export default function AdminEmployeesPage() {
                             </option>
                           ))}
                         </select>
+                        <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
+                        </div>
                       </div>
                     </div>
 
@@ -1882,7 +1895,7 @@ export default function AdminEmployeesPage() {
                               department_id: event.target.value,
                             }))
                           }
-                          className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                          className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-10 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
                         >
                           <option value="">Pilih Divisi</option>
                           {filteredDepartments.map((department) => (
@@ -1891,6 +1904,9 @@ export default function AdminEmployeesPage() {
                             </option>
                           ))}
                         </select>
+                        <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1913,7 +1929,7 @@ export default function AdminEmployeesPage() {
                               jabatan_id: event.target.value,
                             }))
                           }
-                          className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                          className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-10 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
                         >
                           <option value="">Pilih Jabatan</option>
                           {filteredJabatans.map((jabatan) => (
@@ -1922,6 +1938,9 @@ export default function AdminEmployeesPage() {
                             </option>
                           ))}
                         </select>
+                        <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
+                        </div>
                       </div>
                     </div>
 
@@ -1942,7 +1961,7 @@ export default function AdminEmployeesPage() {
                               position_id: event.target.value,
                             }))
                           }
-                          className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                          className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-10 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
                         >
                           <option value="">Pilih Posisi</option>
                           {filteredPositions.map((position) => (
@@ -1951,6 +1970,9 @@ export default function AdminEmployeesPage() {
                             </option>
                           ))}
                         </select>
+                        <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1980,7 +2002,7 @@ export default function AdminEmployeesPage() {
                                   : prev.employment_end_date,
                             }));
                           }}
-                          className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                          className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-10 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
                         >
                           <option value="">Pilih Shift</option>
                           {activeShifts.map((shift) => (
@@ -1990,6 +2012,9 @@ export default function AdminEmployeesPage() {
                             </option>
                           ))}
                         </select>
+                        <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -2004,7 +2029,7 @@ export default function AdminEmployeesPage() {
                       <label className="mb-2 block text-sm font-black text-slate-700">
                         Status Akun
                       </label>
-                      <div className="app-field-smooth rounded-2xl">
+                      <div className="app-field-smooth relative rounded-2xl">
                         <select
                           value={form.status}
                           onChange={(event) =>
@@ -2015,11 +2040,14 @@ export default function AdminEmployeesPage() {
                                 | "inactive",
                             }))
                           }
-                          className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                          className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-3 pr-10 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
                         >
                           <option value="active">Aktif</option>
                           <option value="inactive">Nonaktif</option>
                         </select>
+                        <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
+                        </div>
                       </div>
                     </div>
 
@@ -2062,10 +2090,10 @@ export default function AdminEmployeesPage() {
                       <label className="mb-2 block text-sm font-black text-slate-700">
                         Mulai Masa Kerja
                       </label>
-                      <div className="app-field-smooth relative rounded-2xl">
+                      <div className="app-field-smooth relative flex items-center rounded-2xl">
                         <CalendarDays
                           size={18}
-                          className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                          className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
                         />
                         <input
                           type="date"
@@ -2076,7 +2104,7 @@ export default function AdminEmployeesPage() {
                               employment_start_date: event.target.value,
                             }))
                           }
-                          className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                          className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
                         />
                       </div>
                     </div>
@@ -2086,10 +2114,10 @@ export default function AdminEmployeesPage() {
                         <label className="mb-2 block text-sm font-black text-slate-700">
                           Akhir Masa Kerja
                         </label>
-                        <div className="app-field-smooth relative rounded-2xl">
+                        <div className="app-field-smooth relative flex items-center rounded-2xl">
                           <CalendarDays
                             size={18}
-                            className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
                           />
                           <input
                             type="date"
@@ -2101,7 +2129,7 @@ export default function AdminEmployeesPage() {
                               }))
                             }
                             min={form.employment_start_date || undefined}
-                            className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                            className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
                           />
                         </div>
                       </div>
@@ -2195,10 +2223,10 @@ export default function AdminEmployeesPage() {
                       <label className="mb-2 block text-sm font-black text-slate-700">
                         Tanggal Lahir
                       </label>
-                      <div className="app-field-smooth relative rounded-2xl">
+                      <div className="app-field-smooth relative flex items-center rounded-2xl">
                         <CalendarDays
                           size={18}
-                          className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                          className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
                         />
                         <input
                           type="date"
@@ -2209,7 +2237,7 @@ export default function AdminEmployeesPage() {
                               birth_date: event.target.value,
                             }))
                           }
-                          className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                          className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
                         />
                       </div>
                     </div>

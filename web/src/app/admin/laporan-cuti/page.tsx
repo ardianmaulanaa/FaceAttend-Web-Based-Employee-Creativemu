@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   CalendarDays,
   CheckCircle2,
+  ChevronDown,
   Clock3,
   FileText,
   Eye,
@@ -440,8 +441,8 @@ export default function AdminLeaveReportPage() {
           <div className="leave-report-enter overflow-hidden rounded-[2rem] border border-blue-100 bg-white shadow-xl shadow-slate-300/30">
             <div className="grid gap-0 lg:grid-cols-[0.95fr_1.05fr]">
               <div className="bg-[#123c8c] p-6 text-white md:p-8">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
+                <div className="flex flex-col items-center text-center gap-3 md:flex-row md:items-center md:text-left">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/15">
                     <FileText size={25} strokeWidth={2.6} />
                   </div>
 
@@ -533,33 +534,49 @@ export default function AdminLeaveReportPage() {
               </div>
             </div>
 
-            <div className="mt-6 grid gap-3 md:grid-cols-[1fr_220px]">
-              <div className="relative">
-                <Search
-                  size={18}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                />
+            <div className="mt-6 grid gap-4 md:grid-cols-[1fr_220px] md:items-end">
+              <div>
+                <label className="mb-2 block text-xs font-black uppercase tracking-wider text-slate-500">
+                  Cari Karyawan
+                </label>
+                <div className="relative">
+                  <Search
+                    size={18}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
 
-                <input
+                  <input
 	                  value={searchKeyword}
 	                  onChange={(event) => setSearchKeyword(event.target.value)}
 	                  placeholder="Cari nama, kode, divisi, atau status cuti..."
-                  className="leave-report-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
-                />
+                    className="leave-report-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                  />
+                </div>
               </div>
 
-              <select
-                value={statusFilter}
-                onChange={(event) =>
-                  setStatusFilter(event.target.value as StatusFilter)
-                }
-                className="leave-report-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
-              >
-                <option value="all">Semua Status</option>
-                <option value="pending">Menunggu</option>
-                <option value="approved">Disetujui</option>
-                <option value="rejected">Ditolak</option>
-              </select>
+              <div>
+                <label className="mb-2 block text-xs font-black uppercase tracking-wider text-slate-500">
+                  Status Cuti
+                </label>
+                <div className="relative">
+                  <select
+                    value={statusFilter}
+                    onChange={(event) =>
+                      setStatusFilter(event.target.value as StatusFilter)
+                    }
+                    className="leave-report-field h-12 w-full appearance-none rounded-2xl border border-blue-100 bg-[#f8fbff] pl-4 pr-10 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
+                  >
+                    <option value="all">Semua Status</option>
+                    <option value="pending">Menunggu</option>
+                    <option value="approved">Disetujui</option>
+                    <option value="rejected">Ditolak</option>
+                  </select>
+                  <ChevronDown
+                    size={18}
+                    className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="mt-6">

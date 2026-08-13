@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   CalendarDays,
   CheckCircle2,
+  ChevronDown,
   Clock3,
   FileText,
   Loader2,
@@ -464,18 +465,24 @@ export default function LeaveRequestPage() {
                 Jenis Pengajuan
               </label>
 
-              <select
-                suppressHydrationWarning
-                value={leaveType}
-                onChange={(event) => setLeaveType(event.target.value)}
-                className="mt-2 min-h-[52px] w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
-              >
-                <option value="annual">Cuti Tahunan</option>
-                <option value="permission">Izin</option>
-                <option value="sick">Sakit</option>
-                <option value="overtime">Lembur</option>
-                <option value="other">Lainnya</option>
-              </select>
+              <div className="relative mt-2">
+                <select
+                  suppressHydrationWarning
+                  value={leaveType}
+                  onChange={(event) => setLeaveType(event.target.value)}
+                  className="min-h-[52px] w-full appearance-none rounded-2xl border border-blue-100 bg-[#f8fbff] pl-4 pr-10 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
+                >
+                  <option value="annual">Cuti Tahunan</option>
+                  <option value="permission">Izin</option>
+                  <option value="sick">Sakit</option>
+                  <option value="overtime">Lembur</option>
+                  <option value="other">Lainnya</option>
+                </select>
+                <ChevronDown
+                  size={18}
+                  className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+              </div>
             </div>
 
             {leaveType === "overtime" ? (
@@ -484,16 +491,22 @@ export default function LeaveRequestPage() {
                   <label className="text-sm font-black text-slate-700">
                     Tanggal Lembur
                   </label>
-                  <input
-                    type="date"
-                    value={startDate}
-                    min={todayDate}
-                    onChange={(event) => {
-                      setStartDate(event.target.value);
-                      setEndDate(event.target.value);
-                    }}
-                    className="mt-2 min-h-[52px] w-full min-w-0 rounded-2xl border border-blue-100 bg-[#f8fbff] px-3 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
-                  />
+                  <div className="relative mt-2 flex items-center rounded-2xl">
+                    <CalendarDays
+                      size={18}
+                      className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+                    <input
+                      type="date"
+                      value={startDate}
+                      min={todayDate}
+                      onChange={(event) => {
+                        setStartDate(event.target.value);
+                        setEndDate(event.target.value);
+                      }}
+                      className="min-h-[52px] w-full min-w-0 rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
+                    />
+                  </div>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
@@ -505,7 +518,7 @@ export default function LeaveRequestPage() {
                       type="time"
                       value={startTimeOvertime}
                       onChange={(e) => setStartTimeOvertime(e.target.value)}
-                      className="mt-2 min-h-[52px] w-full min-w-0 rounded-2xl border border-blue-100 bg-[#f8fbff] px-3 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                      className="mt-2 min-h-[52px] w-full min-w-0 rounded-2xl border border-blue-100 bg-[#f8fbff] px-3.5 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
                     />
                   </div>
 
@@ -517,7 +530,7 @@ export default function LeaveRequestPage() {
                       type="time"
                       value={endTimeOvertime}
                       onChange={(e) => setEndTimeOvertime(e.target.value)}
-                      className="mt-2 min-h-[52px] w-full min-w-0 rounded-2xl border border-blue-100 bg-[#f8fbff] px-3 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                      className="mt-2 min-h-[52px] w-full min-w-0 rounded-2xl border border-blue-100 bg-[#f8fbff] px-3.5 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
                     />
                   </div>
                 </div>
@@ -544,21 +557,27 @@ export default function LeaveRequestPage() {
                       Tanggal Mulai
                     </label>
 
-                    <input
-                      type="date"
-                      value={startDate}
-                      min={todayDate}
-                      onChange={(event) => {
-                        const nextStartDate = event.target.value;
+                    <div className="relative mt-2 flex items-center rounded-2xl">
+                      <CalendarDays
+                        size={18}
+                        className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                      />
+                      <input
+                        type="date"
+                        value={startDate}
+                        min={todayDate}
+                        onChange={(event) => {
+                          const nextStartDate = event.target.value;
 
-                        setStartDate(nextStartDate);
+                          setStartDate(nextStartDate);
 
-                        if (endDate && nextStartDate > endDate) {
-                          setEndDate(nextStartDate);
-                        }
-                      }}
-                      className="mt-2 min-h-[52px] w-full min-w-0 rounded-2xl border border-blue-100 bg-[#f8fbff] px-1 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
-                    />
+                          if (endDate && nextStartDate > endDate) {
+                            setEndDate(nextStartDate);
+                          }
+                        }}
+                        className="min-h-[52px] w-full min-w-0 rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
+                      />
+                    </div>
                   </div>
 
                   <div>
@@ -566,13 +585,19 @@ export default function LeaveRequestPage() {
                       Tanggal Selesai
                     </label>
 
-                    <input
-                      type="date"
-                      value={endDate}
-                      min={startDate || todayDate}
-                      onChange={(event) => setEndDate(event.target.value)}
-                      className="mt-2 min-h-[52px] w-full min-w-0 rounded-2xl border border-blue-100 bg-[#f8fbff] px-1 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
-                    />
+                    <div className="relative mt-2 flex items-center rounded-2xl">
+                      <CalendarDays
+                        size={18}
+                        className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                      />
+                      <input
+                        type="date"
+                        value={endDate}
+                        min={startDate || todayDate}
+                        onChange={(event) => setEndDate(event.target.value)}
+                        className="min-h-[52px] w-full min-w-0 rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
+                      />
+                    </div>
                   </div>
                 </div>
 

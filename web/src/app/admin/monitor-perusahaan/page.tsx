@@ -882,17 +882,24 @@ export default function AdminCompanyMonitorPage() {
                       Bulan
                     </p>
 
-                    <select
-                      value={month}
-                      onChange={(event) => setMonth(Number(event.target.value))}
-                      className="monitor-field mt-2 h-12 w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
-                    >
-                      {monthOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="relative mt-2">
+                      <select
+                        value={month}
+                        onChange={(event) => setMonth(Number(event.target.value))}
+                        className="monitor-field h-12 w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] pl-4 pr-10 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100 cursor-pointer"
+                      >
+                        {monthOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
                   </div>
 
                   <div>

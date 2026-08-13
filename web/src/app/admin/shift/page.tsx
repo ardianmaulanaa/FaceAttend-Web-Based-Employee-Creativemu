@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
+  ChevronDown,
   Clock3,
   Edit,
   Loader2,
@@ -324,12 +325,12 @@ export default function ShiftsPage() {
               />
             </div>
 
-            <div>
+            <div className="relative">
               <select
                 suppressHydrationWarning
                 value={statusFilter}
                 onChange={(event) => setStatusFilter(event.target.value)}
-                className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23475569%22%20stroke-width%3D%222.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:1.25rem] bg-[right_1rem_center] bg-no-repeat py-3.5 pl-5 pr-12 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3.5 pl-4 pr-10 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
               >
                 {filterOptions.map((item) => (
                   <option key={item.value} value={item.value}>
@@ -337,6 +338,10 @@ export default function ShiftsPage() {
                   </option>
                 ))}
               </select>
+              <ChevronDown
+                size={18}
+                className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+              />
             </div>
           </div>
 
@@ -516,7 +521,7 @@ export default function ShiftsPage() {
                         check_in_open: e.target.value,
                       }))
                     }
-                    className="w-full rounded-xl border border-blue-100 bg-[#f6f8ff] px-3 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white focus:ring-2 focus:ring-blue-100"
+                    className="h-12 w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-3.5 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
                   />
                 </div>
                 <div>
@@ -532,7 +537,7 @@ export default function ShiftsPage() {
                         check_out_open: e.target.value,
                       }))
                     }
-                    className="w-full rounded-xl border border-blue-100 bg-[#f6f8ff] px-3 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white focus:ring-2 focus:ring-blue-100"
+                    className="h-12 w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-3.5 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
                   />
                 </div>
               </div>

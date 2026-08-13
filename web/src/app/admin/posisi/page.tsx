@@ -265,7 +265,7 @@ export default function PositionsPage() {
 
       <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 pb-28 md:px-10 lg:px-16">
         <div className="page-enter rounded-[2rem] border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-8">
-          <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+          <div className="flex flex-col items-center text-center gap-5 md:flex-row md:items-start md:justify-between md:text-left">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.24em] text-[#123c8c]">
                 Master Data Admin Panel
@@ -276,7 +276,7 @@ export default function PositionsPage() {
               </h1>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row md:items-center">
+            <div className="flex w-full justify-center">
               <AppButton
                 onClick={openAddModal}
                 leftIcon={<Plus size={18} />}
@@ -303,12 +303,12 @@ export default function PositionsPage() {
               />
             </div>
 
-            <div>
+            <div className="relative">
               <select
                 suppressHydrationWarning
                 value={statusFilter}
                 onChange={(event) => setStatusFilter(event.target.value)}
-                className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] px-4 py-4 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-4 pl-4 pr-10 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
               >
                 {filterOptions.map((item) => (
                   <option key={item.value} value={item.value}>
@@ -316,6 +316,11 @@ export default function PositionsPage() {
                   </option>
                 ))}
               </select>
+              <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
           </div>
 
