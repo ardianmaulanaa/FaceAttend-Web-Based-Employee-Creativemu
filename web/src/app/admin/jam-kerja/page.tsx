@@ -498,8 +498,8 @@ export default function WorkSchedulesPage() {
 
       <section className="mx-auto max-w-6xl space-y-5 px-5 py-6 pb-28 md:px-10 lg:px-16">
         <div className="work-schedule-enter overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-xl shadow-slate-300/30">
-          <div className="bg-[#123c8c] p-6 text-white text-center md:p-8">
-            <div className="flex flex-col items-center gap-5">
+          <div className="bg-[#123c8c] p-6 text-white text-center md:p-8 md:text-left">
+            <div className="flex flex-col items-center gap-5 md:flex-row md:items-start md:justify-between">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.24em] text-blue-200">
                   Master Data Admin Panel

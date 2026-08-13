@@ -287,7 +287,7 @@ export default function ShiftsPage() {
 
       <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 pb-28 md:px-10 lg:px-16">
         <div className="page-enter rounded-[2rem] border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-8">
-          <div className="flex flex-col items-center text-center gap-5">
+          <div className="flex flex-col items-center text-center gap-5 md:flex-row md:items-start md:justify-between md:text-left">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.24em] text-[#123c8c]">
                 Master Data Admin Panel
@@ -298,7 +298,7 @@ export default function ShiftsPage() {
               </h1>
             </div>
 
-            <div className="flex w-full justify-center">
+            <div className="flex w-full justify-center md:w-auto md:justify-end">
               <AppButton
                 onClick={openAddModal}
                 leftIcon={<Plus size={18} />}

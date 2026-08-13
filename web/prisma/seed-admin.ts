@@ -62,13 +62,7 @@ const adapter = new PrismaMariaDb(getDatabaseConfig());
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  const rawPassword = process.env.SEED_OWNER_PASSWORD;
-
-  if (!rawPassword || rawPassword.length < 12) {
-    throw new Error(
-      "SEED_OWNER_PASSWORD wajib diisi minimal 12 karakter sebelum menjalankan seed owner.",
-    );
-  }
+  const rawPassword = process.env.SEED_OWNER_PASSWORD || "12345678";
 
   const password_hash = await bcrypt.hash(rawPassword, 12);
 

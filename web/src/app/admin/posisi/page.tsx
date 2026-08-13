@@ -265,7 +265,7 @@ export default function PositionsPage() {
 
       <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 pb-28 md:px-10 lg:px-16">
         <div className="page-enter rounded-[2rem] border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-8">
-          <div className="flex flex-col items-center text-center gap-5 md:flex-row md:items-start md:justify-between md:text-left">
+          <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-center sm:justify-between text-left">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.24em] text-[#123c8c]">
                 Master Data Admin Panel
@@ -276,7 +276,7 @@ export default function PositionsPage() {
               </h1>
             </div>
 
-            <div className="flex w-full justify-center">
+            <div className="flex w-full justify-end sm:w-auto shrink-0">
               <AppButton
                 onClick={openAddModal}
                 leftIcon={<Plus size={18} />}
@@ -355,13 +355,13 @@ export default function PositionsPage() {
                     className="row-enter rounded-3xl border border-blue-50/50 bg-[#fbfdff] p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-100 hover:bg-white hover:shadow-md hover:shadow-blue-900/5"
                     style={{ animationDelay: `${index * 40}ms` }}
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-[#123c8c]">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#123c8c]">
                           <BriefcaseBusiness size={20} />
                         </div>
-                        <div>
-                          <h3 className="font-black text-slate-800 text-base">
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-black text-slate-800 text-base truncate">
                             {item.name}
                           </h3>
                           <div className="mt-1 flex flex-wrap items-center gap-1.5">
@@ -379,7 +379,7 @@ export default function PositionsPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex shrink-0 items-center gap-1.5">
                         <button
                           onClick={() => openEditModal(item)}
                           className="flex h-9 w-9 items-center justify-center rounded-xl border border-blue-50 bg-white text-[#123c8c] shadow-sm hover:bg-blue-50 transition"
