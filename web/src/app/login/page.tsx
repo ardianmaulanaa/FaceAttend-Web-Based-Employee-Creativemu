@@ -572,9 +572,8 @@ export default function LoginPage() {
               dismissIntro();
             }
           }}
-          className={`fixed inset-0 z-[999] flex cursor-pointer select-none flex-col items-center justify-center overflow-hidden px-6 transition-all duration-500 ${
-            introLeaving ? "scale-105 opacity-0 blur-md" : "opacity-100"
-          } bg-[#f6f8ff]`}
+          className={`fixed inset-0 z-[999] flex cursor-pointer select-none flex-col items-center justify-center overflow-hidden px-6 transition-all duration-500 ${introLeaving ? "scale-105 opacity-0 blur-md" : "opacity-100"
+            } bg-[#f6f8ff]`}
           aria-label="Lanjut ke halaman login"
         >
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,138,0,0.16),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(18,60,140,0.18),transparent_38%)]" />
@@ -609,9 +608,8 @@ export default function LoginPage() {
           </div>
 
           <p
-            className={`relative mt-14 text-sm font-semibold text-slate-400 transition-opacity duration-300 md:mt-16 ${
-              introHintVisible ? "opacity-100" : "opacity-0"
-            }`}
+            className={`relative mt-14 text-sm font-semibold text-slate-400 transition-opacity duration-300 md:mt-16 ${introHintVisible ? "opacity-100" : "opacity-0"
+              }`}
           >
             Tap di mana saja untuk melanjutkan
           </p>
