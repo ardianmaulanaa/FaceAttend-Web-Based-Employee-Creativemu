@@ -325,11 +325,7 @@ export default function AdminNotificationsPage() {
 
   useEffect(() => {
     void loadNotifications(true);
-    const timer = setInterval(() => {
-      void loadNotifications(false);
-    }, 3000);
-
-    return () => clearInterval(timer);
+    
   }, []);
 
   const filteredNotifications = useMemo(() => {

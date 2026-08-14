@@ -943,7 +943,7 @@ export default function AdminAttendanceReportDetailPage() {
                       </div>
 
                       <div className="min-w-0">
-                        <h2 className="mt-1 truncate text-3xl font-black tracking-tight md:text-4xl">
+                        <h2 className="mt-1 text-xl font-black tracking-tight leading-tight break-words sm:text-2xl md:text-3xl">
                           {report.employeeName}
                         </h2>
                       </div>
