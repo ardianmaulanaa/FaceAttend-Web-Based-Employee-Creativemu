@@ -113,7 +113,7 @@ function MotionStyles() {
 }
 
 export default function JabatanPage() {
-  const [jabatans, setJabatans] = useState<Jabatan[]>([]);
+  const [jabatanList, setJabatanList] = useState<Jabatan[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [form, setForm] = useState<JabatanForm>(initialForm);
@@ -125,12 +125,12 @@ export default function JabatanPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingJabatan, setEditingJabatan] = useState<Jabatan | null>(null);
 
-  async function loadJabatans() {
+  async function loadJabatan() {
     try {
       setIsLoading(true);
       setErrorMessage("");
 
-      const response = await fetch("/api/admin/jabatans", {
+      const response = await fetch("/api/admin/jabatan", {
         cache: "no-store",
       });
 
@@ -140,9 +140,9 @@ export default function JabatanPage() {
         throw new Error(data.error || data.message || "Gagal mengambil data jabatan.");
       }
 
-      setJabatans(data.jabatans || data.data || []);
+      setJabatanList(data.jabatan || data.data || []);
     } catch (error) {
-      console.error("LOAD_JABATANS_ERROR:", error);
+      console.error("LOAD_JABATAN_ERROR:", error);
       setErrorMessage(
         error instanceof Error ? error.message : "Gagal mengambil data jabatan."
       );
@@ -152,18 +152,18 @@ export default function JabatanPage() {
   }
 
   useEffect(() => {
-    void loadJabatans();
+    void loadJabatan();
   }, []);
 
-  const filteredJabatans = useMemo(() => {
+  const filteredJabatan = useMemo(() => {
     const keyword = search.toLowerCase().trim();
 
-    return jabatans.filter((item) => {
+    return jabatanList.filter((item) => {
       const nameMatch = item.name.toLowerCase().includes(keyword);
       const statusMatch = statusFilter === "all" || item.status === statusFilter;
       return nameMatch && statusMatch;
     });
-  }, [jabatans, search, statusFilter]);
+  }, [jabatanList, search, statusFilter]);
 
   function openAddModal() {
     setEditingJabatan(null);
@@ -198,7 +198,7 @@ export default function JabatanPage() {
     try {
       setIsSubmitting(true);
 
-      const url = "/api/admin/jabatans";
+      const url = "/api/admin/jabatan";
       const method = editingJabatan ? "PATCH" : "POST";
       const bodyPayload = editingJabatan
         ? { id: editingJabatan.id, name, status: form.status }
@@ -218,7 +218,7 @@ export default function JabatanPage() {
         throw new Error(data.error || data.message || "Gagal menyimpan data.");
       }
 
-      await loadJabatans();
+      await loadJabatan();
       closeModal();
     } catch (error) {
       console.error("SAVE_JABATAN_ERROR:", error);
@@ -238,7 +238,7 @@ export default function JabatanPage() {
     try {
       setIsLoading(true);
 
-      const response = await fetch(`/api/admin/jabatans?id=${item.id}`, {
+      const response = await fetch(`/api/admin/jabatan?id=${item.id}`, {
         method: "DELETE",
       });
 
@@ -248,7 +248,7 @@ export default function JabatanPage() {
         throw new Error(data.error || data.message || "Gagal menghapus data.");
       }
 
-      await loadJabatans();
+      await loadJabatan();
     } catch (error) {
       console.error("DELETE_JABATAN_ERROR:", error);
       alert(error instanceof Error ? error.message : "Gagal menghapus data.");
@@ -333,7 +333,7 @@ export default function JabatanPage() {
                   Memuat data jabatan...
                 </p>
               </div>
-            ) : filteredJabatans.length === 0 ? (
+            ) : filteredJabatan.length === 0 ? (
               <AppEmptyState
                 title="Tidak Ada Data"
                 description={
@@ -344,7 +344,7 @@ export default function JabatanPage() {
               />
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredJabatans.map((item, index) => (
+                {filteredJabatan.map((item, index) => (
                   <div
                     key={item.id}
                     className="row-enter rounded-3xl border border-blue-50/50 bg-[#fbfdff] p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-100 hover:bg-white hover:shadow-md hover:shadow-blue-900/5"

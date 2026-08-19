@@ -1,3 +1,3 @@
 -- Baseline migration.
--- Perubahan check-out work mode sudah tersedia pada database faceattend_db.
+-- Perubahan check-out work mode sudah tersedia pada database creativemu_db.
 -- File ini sengaja tidak menjalankan DDL dan hanya memperbaiki riwayat Prisma Migrate.

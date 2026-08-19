@@ -1066,10 +1066,10 @@ export async function PATCH(req: NextRequest) {
       bank_code: string | null;
       bank_account_number: string | null;
       nik: string | null;
-      registered_office_id: string;
-      department_id: string;
-      jabatan_id: string;
-      position_id: string;
+      registered_office_id: string | null;
+      department_id: string | null;
+      jabatan_id: string | null;
+      position_id: string | null;
       shift_id: string;
       npwp_number: string | null;
       ptkp_status: string | null;

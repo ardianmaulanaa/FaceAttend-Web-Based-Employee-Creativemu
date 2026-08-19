@@ -28,7 +28,7 @@ type Department = {
   updated_at?: string;
   _count?: {
     users?: number;
-    jabatans?: number;
+    jabatan?: number;
   };
 };
 

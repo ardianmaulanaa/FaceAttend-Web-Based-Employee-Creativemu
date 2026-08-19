@@ -241,6 +241,9 @@ type EmployeeAlert = {
   message: string;
 } | null;
 
+type PersonnelFilter = "all" | "employee" | "intern";
+type RegistrationType = "employee" | "intern";
+
 const initialForm: EmployeeForm = {
   employee_code: "",
   name: "",
@@ -287,6 +290,19 @@ function formatRole(role?: string | null) {
   if (normalizedRole === "admin" || normalizedRole === "owner") return "Admin";
 
   return "Employee";
+}
+
+function isInternEmployee(employee?: Employee | null) {
+  if (!employee) return false;
+
+  const employmentStatus = String(employee.employment_status || "")
+    .trim()
+    .toLowerCase();
+  const shiftName = String(employee.shift?.name || "")
+    .trim()
+    .toLowerCase();
+
+  return employmentStatus === "magang" || shiftName === "magang";
 }
 
 function formatDateInput(value?: string | null) {
@@ -513,7 +529,7 @@ export default function AdminEmployeesPage() {
 
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<DepartmentOption[]>([]);
-  const [jabatans, setJabatans] = useState<JabatanOption[]>([]);
+  const [jabatan, setJabatan] = useState<JabatanOption[]>([]);
   const [positions, setPositions] = useState<PositionOption[]>([]);
   const [shifts, setShifts] = useState<ShiftOption[]>([]);
   const [employmentStatuses, setEmploymentStatuses] = useState<
@@ -523,6 +539,12 @@ export default function AdminEmployeesPage() {
 
   const [keyword, setKeyword] = useState("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [personnelFilter, setPersonnelFilter] =
+    useState<PersonnelFilter>("all");
+  const [registrationType, setRegistrationType] =
+    useState<RegistrationType | null>(null);
+  const [isRegistrationTypeModalOpen, setIsRegistrationTypeModalOpen] =
+    useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeModalTab, setActiveModalTab] = useState<
     "account" | "structure" | "employment" | "payroll"
@@ -650,7 +672,7 @@ export default function AdminEmployeesPage() {
 
       setEmployees(employeeList);
       setDepartments(result.departments || []);
-      setJabatans(result.jabatan || []);
+      setJabatan(result.jabatan || []);
       setPositions(result.positions || []);
       setShifts(result.shifts || []);
       setEmploymentStatuses(result.employmentStatuses || []);
@@ -698,9 +720,9 @@ export default function AdminEmployeesPage() {
     return departments.filter((department) => department.status === "active");
   }, [departments]);
 
-  const filteredJabatans = useMemo(() => {
-    return jabatans.filter((jabatan) => jabatan.status === "active");
-  }, [jabatans]);
+  const filteredJabatan = useMemo(() => {
+    return jabatan.filter((jabatan) => jabatan.status === "active");
+  }, [jabatan]);
 
   const filteredPositions = useMemo(() => {
     return positions.filter((position) => position.status === "active");
@@ -714,10 +736,22 @@ export default function AdminEmployeesPage() {
     return activeShifts.find((shift) => shift.id === form.shift_id) || null;
   }, [activeShifts, form.shift_id]);
 
+  const internShift = useMemo(() => {
+    return (
+      activeShifts.find(
+        (shift) => shift.name.trim().toLowerCase() === "magang",
+      ) || null
+    );
+  }, [activeShifts]);
+
+  const isInternForm = registrationType === "intern";
+
   const isSelectedPrimaryShift =
     selectedShift?.name.trim().toLowerCase() === "utama";
 
-  const finalEmploymentStatus = form.employment_status.trim();
+  const finalEmploymentStatus = isInternForm
+    ? "Magang"
+    : form.employment_status.trim();
 
   const activeEmploymentStatuses = useMemo(() => {
     const list = employmentStatuses.filter(
@@ -750,8 +784,25 @@ export default function AdminEmployeesPage() {
     );
   }, [employees]);
 
+  const internEmployees = useMemo(
+    () => employeeAccounts.filter((employee) => isInternEmployee(employee)),
+    [employeeAccounts],
+  );
+
+  const regularEmployees = useMemo(
+    () => employeeAccounts.filter((employee) => !isInternEmployee(employee)),
+    [employeeAccounts],
+  );
+
   const filteredEmployees = useMemo(() => {
+    const normalizedKeyword = keyword.trim().toLowerCase();
+
     const list = employeeAccounts.filter((employee) => {
+      const intern = isInternEmployee(employee);
+
+      if (personnelFilter === "employee" && intern) return false;
+      if (personnelFilter === "intern" && !intern) return false;
+
       const text = `
         ${employee.id || ""}
         ${employee.employee_code || ""}
@@ -777,7 +828,7 @@ export default function AdminEmployeesPage() {
         ${employee.wfh_quota_monthly ?? ""}
       `.toLowerCase();
 
-      return text.includes(keyword.toLowerCase());
+      return text.includes(normalizedKeyword);
     });
 
     return list.sort((a, b) => {
@@ -787,7 +838,7 @@ export default function AdminEmployeesPage() {
         ? nameA.localeCompare(nameB)
         : nameB.localeCompare(nameA);
     });
-  }, [employeeAccounts, keyword, sortOrder]);
+  }, [employeeAccounts, keyword, personnelFilter, sortOrder]);
 
   const activeEmployees = employeeAccounts.filter(
     (employee) => employee.status === "active",
@@ -799,15 +850,44 @@ export default function AdminEmployeesPage() {
 
   function openRegisterModal() {
     setEditingEmployee(null);
-    setForm(initialForm);
+    setRegistrationType(null);
+    setIsRegistrationTypeModalOpen(true);
+  }
+
+  function beginRegistration(type: RegistrationType) {
+    const isIntern = type === "intern";
+
+    if (isIntern && !internShift) {
+      setIsRegistrationTypeModalOpen(false);
+      showEmployeeAlert(
+        "Shift Magang belum tersedia",
+        'Buat atau aktifkan shift dengan nama "Magang" pada master shift terlebih dahulu.',
+        "warning",
+      );
+      return;
+    }
+
+    setEditingEmployee(null);
+    setRegistrationType(type);
+    setForm({
+      ...initialForm,
+      shift_id: isIntern ? internShift?.id || "" : "",
+      employment_status: isIntern ? "Magang" : "",
+      bank_code: "",
+      bank_account_number: "",
+    });
     setShowTemporaryPassword(false);
     setShowConfirmTemporaryPassword(false);
     setActiveModalTab("account");
+    setIsRegistrationTypeModalOpen(false);
     setIsModalOpen(true);
   }
 
   function openEditModal(employee: Employee) {
+    const isIntern = isInternEmployee(employee);
+
     setEditingEmployee(employee);
+    setRegistrationType(isIntern ? "intern" : "employee");
     setShowTemporaryPassword(false);
     setShowConfirmTemporaryPassword(false);
     setActiveModalTab("account");
@@ -828,16 +908,17 @@ export default function AdminEmployeesPage() {
       temporaryPassword: "",
       confirmTemporaryPassword: "",
       status: employee.status,
-      employment_status:
-        employee.employment_status?.trim().toLowerCase() === "utama"
+      employment_status: isIntern
+        ? "Magang"
+        : employee.employment_status?.trim().toLowerCase() === "utama"
           ? ""
           : employee.employment_status || "",
       employment_start_date: formatDateInput(employee.employment_start_date),
       employment_end_date: formatDateInput(employee.employment_end_date),
       birth_place: employee.birth_place || "",
       birth_date: formatDateInput(employee.birth_date),
-      bank_code: employee.bank_code || "",
-      bank_account_number: employee.bank_account_number || "",
+      bank_code: isIntern ? "" : employee.bank_code || "",
+      bank_account_number: isIntern ? "" : employee.bank_account_number || "",
       nik: employee.nik || "",
       wfh_quota_monthly: String(employee.wfh_quota_monthly ?? 0),
       annual_leave_quota: String(employee.annual_leave_quota ?? 12),
@@ -847,7 +928,9 @@ export default function AdminEmployeesPage() {
 
   function closeRegisterModal() {
     setIsModalOpen(false);
+    setIsRegistrationTypeModalOpen(false);
     setEditingEmployee(null);
+    setRegistrationType(null);
     setForm(initialForm);
     setShowTemporaryPassword(false);
     setShowConfirmTemporaryPassword(false);
@@ -996,6 +1079,7 @@ export default function AdminEmployeesPage() {
     }
 
     if (
+      !isInternForm &&
       form.bank_account_number &&
       !isValidBankAccountNumber(form.bank_account_number)
     ) {
@@ -1071,15 +1155,17 @@ export default function AdminEmployeesPage() {
           department_id: form.department_id,
           jabatan_id: form.jabatan_id,
           position_id: form.position_id,
-          shift_id: form.shift_id,
+          shift_id: isInternForm
+            ? internShift?.id || form.shift_id
+            : form.shift_id,
           status: form.status,
-          employment_status: finalEmploymentStatus,
+          employment_status: isInternForm ? "Magang" : finalEmploymentStatus,
           employment_start_date: form.employment_start_date,
           employment_end_date: employmentEndDateForSave,
           birth_place: form.birth_place.trim(),
           birth_date: form.birth_date,
-          bank_code: form.bank_code,
-          bank_account_number: form.bank_account_number,
+          bank_code: isInternForm ? "" : form.bank_code,
+          bank_account_number: isInternForm ? "" : form.bank_account_number,
           nik: form.nik,
           employee_code: form.employee_code.trim(),
           wfh_quota_monthly: wfhQuotaMonthly,
@@ -1197,7 +1283,7 @@ export default function AdminEmployeesPage() {
 
             <AppAnimatedActionButton
               icon={<Plus size={27} strokeWidth={3} />}
-              title="Daftar Karyawan"
+              title="Registrasi"
               loadingTitle="Opening..."
               onClick={openRegisterModal}
             />
@@ -1271,10 +1357,10 @@ export default function AdminEmployeesPage() {
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <h3 className="text-xl font-black text-slate-950">
-                Daftar Karyawan
+                Daftar Karyawan & Magang
               </h3>
               <p className="mt-1 text-sm text-slate-500">
-                Total {employeeAccounts.length} karyawan terdaftar
+                Total {employeeAccounts.length} personel terdaftar
               </p>
             </div>
 
@@ -1287,7 +1373,7 @@ export default function AdminEmployeesPage() {
                 <input
                   value={keyword}
                   onChange={(event) => setKeyword(event.target.value)}
-                  placeholder="Cari karyawan..."
+                  placeholder="Cari karyawan atau magang..."
                   className="employee-field w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
                 />
               </div>
@@ -1320,6 +1406,52 @@ export default function AdminEmployeesPage() {
                 </div>
               </div>
             </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
+            {[
+              {
+                key: "all" as const,
+                label: "Semua",
+                count: employeeAccounts.length,
+              },
+              {
+                key: "employee" as const,
+                label: "Karyawan",
+                count: regularEmployees.length,
+              },
+              {
+                key: "intern" as const,
+                label: "Magang",
+                count: internEmployees.length,
+              },
+            ].map((filter) => {
+              const active = personnelFilter === filter.key;
+
+              return (
+                <button
+                  key={filter.key}
+                  type="button"
+                  onClick={() => setPersonnelFilter(filter.key)}
+                  className={`inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-black transition ${
+                    active
+                      ? "bg-[#123c8c] text-white shadow-md shadow-blue-900/20"
+                      : "bg-[#f6f8ff] text-slate-600 hover:bg-blue-50 hover:text-[#123c8c]"
+                  }`}
+                >
+                  {filter.label}
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] ${
+                      active
+                        ? "bg-white/20 text-white"
+                        : "bg-white text-slate-500"
+                    }`}
+                  >
+                    {filter.count}
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
           <div className="mt-5 space-y-3 md:hidden">
@@ -1475,15 +1607,21 @@ export default function AdminEmployeesPage() {
                             </p>
                             <span
                               className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-black ${
-                                String(employee.role || "").toLowerCase() ===
-                                  "admin" ||
-                                String(employee.role || "").toLowerCase() ===
-                                  "owner"
-                                  ? "bg-blue-50 text-[#123c8c]"
-                                  : "bg-slate-100 text-slate-500"
+                                isInternEmployee(employee)
+                                  ? "bg-violet-50 text-violet-700"
+                                  : String(
+                                        employee.role || "",
+                                      ).toLowerCase() === "admin" ||
+                                      String(
+                                        employee.role || "",
+                                      ).toLowerCase() === "owner"
+                                    ? "bg-blue-50 text-[#123c8c]"
+                                    : "bg-slate-100 text-slate-500"
                               }`}
                             >
-                              {formatRole(employee.role)}
+                              {isInternEmployee(employee)
+                                ? "Magang"
+                                : formatRole(employee.role)}
                             </span>
                           </div>
                         </div>
@@ -1566,6 +1704,66 @@ export default function AdminEmployeesPage() {
         </section>
       </main>
 
+      {isRegistrationTypeModalOpen && (
+        <AppModalMotion>
+          <AppModalPanel>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full bg-[#eaf1ff] px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[#123c8c]">
+                  <Plus size={15} strokeWidth={3} />
+                  Registrasi
+                </div>
+                <h2 className="mt-2 text-xl font-black text-slate-950 md:text-2xl">
+                  Pilih Jenis Registrasi
+                </h2>
+                <p className="mt-1 text-sm font-semibold text-slate-500">
+                  Pilih jenis akun sebelum mengisi data personel.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsRegistrationTypeModalOpen(false);
+                  setRegistrationType(null);
+                }}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 transition hover:bg-slate-200"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => beginRegistration("employee")}
+                className="group rounded-[1.75rem] border border-blue-100 bg-white p-5 text-left transition hover:-translate-y-0.5 hover:border-[#123c8c] hover:bg-blue-50 hover:shadow-lg"
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
+                  <UsersRound size={24} strokeWidth={2.7} />
+                </div>
+                <h3 className="mt-4 text-lg font-black text-slate-950">
+                  Tambah Karyawan
+                </h3>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => beginRegistration("intern")}
+                className="group rounded-[1.75rem] border border-violet-100 bg-white p-5 text-left transition hover:-translate-y-0.5 hover:border-violet-400 hover:bg-violet-50 hover:shadow-lg"
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-50 text-violet-700">
+                  <BriefcaseBusiness size={24} strokeWidth={2.7} />
+                </div>
+                <h3 className="mt-4 text-lg font-black text-slate-950">
+                  Tambah Karyawan Magang
+                </h3>
+              </button>
+            </div>
+          </AppModalPanel>
+        </AppModalMotion>
+      )}
+
       {isModalOpen && (
         <AppModalMotion>
           <AppModalPanel>
@@ -1573,19 +1771,24 @@ export default function AdminEmployeesPage() {
               <div>
                 <div className="inline-flex items-center gap-2 rounded-full bg-[#eaf1ff] px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[#123c8c]">
                   <UserRound size={15} strokeWidth={3} />
-                  {editingEmployee ? "Perbarui Karyawan" : "Tambah Karyawan"}
+                  {editingEmployee
+                    ? isInternForm
+                      ? "Perbarui Magang"
+                      : "Perbarui Karyawan"
+                    : isInternForm
+                      ? "Tambah Karyawan Magang"
+                      : "Tambah Karyawan"}
                 </div>
 
                 <h2 className="mt-1 text-xl font-black text-slate-950 md:text-2xl">
                   {editingEmployee
-                    ? "Perbarui Data Karyawan"
-                    : "Tambah Karyawan Baru"}
+                    ? isInternForm
+                      ? "Perbarui Data Karyawan Magang"
+                      : "Perbarui Data Karyawan"
+                    : isInternForm
+                      ? "Isi Data Karyawan Magang"
+                      : "Isi Data Karyawan"}
                 </h2>
-
-                <p className="mt-1 text-sm leading-6 text-slate-500">
-                  Isi & perbarui data karyawan melalui 4 tab terstruktur di
-                  bawah.
-                </p>
               </div>
 
               <button
@@ -1649,7 +1852,7 @@ export default function AdminEmployeesPage() {
                   }`}
                 >
                   <CreditCard size={15} />
-                  4. Identitas & Bank
+                  4. {isInternForm ? "Identitas" : "Identitas & Bank"}
                 </button>
               </div>
             </div>
@@ -2005,7 +2208,7 @@ export default function AdminEmployeesPage() {
                           className="w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-10 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
                         >
                           <option value="">Pilih Jabatan</option>
-                          {filteredJabatans.map((jabatan) => (
+                          {filteredJabatan.map((jabatan) => (
                             <option key={jabatan.id} value={jabatan.id}>
                               {jabatan.name}
                             </option>
@@ -2086,6 +2289,7 @@ export default function AdminEmployeesPage() {
                         />
                         <select
                           value={form.shift_id}
+                          disabled={isInternForm}
                           onChange={(event) => {
                             const nextShift = activeShifts.find(
                               (shift) => shift.id === event.target.value,
@@ -2125,6 +2329,11 @@ export default function AdminEmployeesPage() {
                           </svg>
                         </div>
                       </div>
+                      {isInternForm ? (
+                        <p className="mt-2 text-xs font-bold text-violet-700">
+                          Shift otomatis diatur menjadi Magang.
+                        </p>
+                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -2179,6 +2388,7 @@ export default function AdminEmployeesPage() {
                       <div className="app-field-smooth relative rounded-2xl">
                         <select
                           value={form.employment_status}
+                          disabled={isInternForm}
                           onChange={(event) =>
                             setForm((prev) => ({
                               ...prev,
@@ -2199,6 +2409,11 @@ export default function AdminEmployeesPage() {
                           className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-500"
                         />
                       </div>
+                      {isInternForm ? (
+                        <p className="mt-2 text-xs font-bold text-violet-700">
+                          Status kepegawaian otomatis Magang.
+                        </p>
+                      ) : null}
                     </div>
                   </div>
 
@@ -2387,41 +2602,61 @@ export default function AdminEmployeesPage() {
                     </div>
                   </div>
 
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <AppBankSelect
-                      label="Nama Bank"
-                      value={form.bank_code}
-                      onChange={(val) =>
-                        setForm((prev) => ({ ...prev, bank_code: val }))
-                      }
-                    />
-
-                    <div>
-                      <label className="mb-2 block text-sm font-black text-slate-700">
-                        No Rekening
-                      </label>
-                      <div className="app-field-smooth relative rounded-2xl">
-                        <CreditCard
-                          size={18}
-                          className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                        />
-                        <input
-                          value={form.bank_account_number}
-                          onChange={(event) =>
-                            handleNumericFormChange(
-                              "bank_account_number",
-                              event.target.value,
-                            )
-                          }
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          maxLength={16}
-                          placeholder="Masukkan no rekening"
-                          className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
-                        />
+                  {isInternForm ? (
+                    <div className="rounded-[1.5rem] border border-violet-100 bg-violet-50 p-5">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-violet-700">
+                          <CreditCard size={20} strokeWidth={2.7} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-black text-violet-900">
+                            Data Bank Tidak Diperlukan untuk Magang
+                          </p>
+                          <p className="mt-1 text-sm font-semibold leading-6 text-violet-700">
+                            Nama Bank: <span className="font-black">-</span>
+                            <br />
+                            No Rekening: <span className="font-black">-</span>
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <AppBankSelect
+                        label="Nama Bank"
+                        value={form.bank_code}
+                        onChange={(val) =>
+                          setForm((prev) => ({ ...prev, bank_code: val }))
+                        }
+                      />
+
+                      <div>
+                        <label className="mb-2 block text-sm font-black text-slate-700">
+                          No Rekening
+                        </label>
+                        <div className="app-field-smooth relative rounded-2xl">
+                          <CreditCard
+                            size={18}
+                            className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                          />
+                          <input
+                            value={form.bank_account_number}
+                            onChange={(event) =>
+                              handleNumericFormChange(
+                                "bank_account_number",
+                                event.target.value,
+                              )
+                            }
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            maxLength={16}
+                            placeholder="Masukkan no rekening"
+                            className="w-full rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -2443,8 +2678,12 @@ export default function AdminEmployeesPage() {
                   {isSaving
                     ? "Saving..."
                     : editingEmployee
-                      ? "Perbarui Karyawan"
-                      : "Tambah Karyawan"}
+                      ? isInternForm
+                        ? "Perbarui Magang"
+                        : "Perbarui Karyawan"
+                      : isInternForm
+                        ? "Tambah Magang"
+                        : "Tambah Karyawan"}
                 </button>
               </div>
             </form>

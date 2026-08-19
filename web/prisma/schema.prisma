@@ -120,7 +120,7 @@ model Department {
   status String @default("active") @db.VarChar(20)
 
   users    User[]
-  jabatans Jabatan[]
+  jabatan Jabatan[]
 
   created_at DateTime @default(now())
   updated_at DateTime @default(now()) @updatedAt
@@ -149,7 +149,7 @@ model Jabatan {
 
   @@unique([department_id, name])
   @@index([department_id])
-  @@map("jabatans")
+  @@map("jabatan")
 }
 
 model Position {

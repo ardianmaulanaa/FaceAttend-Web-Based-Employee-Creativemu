@@ -168,10 +168,7 @@ function formatWorkDuration(minutes: number) {
   return `${remainingMinutes}m`;
 }
 
-function getDisplayErrorMessage(
-  message: string | undefined,
-  fallback: string,
-) {
+function getDisplayErrorMessage(message: string | undefined, fallback: string) {
   const text = String(message || "").trim();
 
   if (!text) return fallback;
@@ -205,7 +202,11 @@ function getSafeEmployeeName(employeeName: string) {
   return safeName || "karyawan";
 }
 
-function getExcelFileName(employeeName: string, startDate: string, endDate: string) {
+function getExcelFileName(
+  employeeName: string,
+  startDate: string,
+  endDate: string,
+) {
   const safeName = getSafeEmployeeName(employeeName);
 
   return `rekap-kehadiran-${safeName || "karyawan"}-${startDate}-${endDate}.xls`;
@@ -248,9 +249,18 @@ function getDateKey(date: Date) {
 }
 
 function addMonths(date: Date, amount: number) {
-  const current = date instanceof Date && !Number.isNaN(date.getTime()) ? date : new Date();
+  const current =
+    date instanceof Date && !Number.isNaN(date.getTime()) ? date : new Date();
 
-  return new Date(current.getFullYear(), current.getMonth() + amount, 1, 0, 0, 0, 0);
+  return new Date(
+    current.getFullYear(),
+    current.getMonth() + amount,
+    1,
+    0,
+    0,
+    0,
+    0,
+  );
 }
 
 function formatCalendarMonth(date: Date) {
@@ -275,7 +285,8 @@ function formatExcelDate(value?: string | null) {
 function formatExcelTime(value?: string | null) {
   if (!value) return "-";
 
-  if (/^\d{2}:\d{2}/.test(value)) return value.length === 5 ? `${value}:00` : value;
+  if (/^\d{2}:\d{2}/.test(value))
+    return value.length === 5 ? `${value}:00` : value;
 
   const date = new Date(value);
 
@@ -600,7 +611,10 @@ export default function AdminEmployeeAttendanceRecapDetailPage() {
       if (!response.ok || !data.success) {
         setEmployee(null);
         setErrorMessage(
-          getDisplayErrorMessage(data.message, "Gagal mengambil rekap karyawan."),
+          getDisplayErrorMessage(
+            data.message,
+            "Gagal mengambil rekap karyawan.",
+          ),
         );
         return;
       }
@@ -666,7 +680,9 @@ export default function AdminEmployeeAttendanceRecapDetailPage() {
     : cameFromRank
       ? `/admin/rank-kehadiran-karyawan?startDate=${startDate}&endDate=${endDate}`
       : `/admin/rekap-kehadiran-karyawan?startDate=${startDate}&endDate=${endDate}`;
-  const backLabel = cameFromDashboard ? "Kembali ke Dasbor" : "Kembali ke daftar";
+  const backLabel = cameFromDashboard
+    ? "Kembali ke Dasbor"
+    : "Kembali ke daftar";
 
   const downloadSummaryExcel = () => {
     if (!employee) return;
@@ -704,7 +720,10 @@ export default function AdminEmployeeAttendanceRecapDetailPage() {
       </table>
     `);
 
-    downloadExcelFile(html, getExcelFileName(employee.name, startDate, endDate));
+    downloadExcelFile(
+      html,
+      getExcelFileName(employee.name, startDate, endDate),
+    );
   };
 
   const downloadAttendanceListExcel = () => {
@@ -814,48 +833,6 @@ export default function AdminEmployeeAttendanceRecapDetailPage() {
     setIsExportModeOpen(false);
   };
 
-  const attendanceItems = [
-    {
-      label: "Hadir",
-      value: summary.hadir,
-      className: "border-emerald-100 bg-emerald-50 text-emerald-700",
-    },
-    {
-      label: "Terlambat (Menit)",
-      value: summary.terlambat,
-      className: "border-amber-100 bg-amber-50 text-amber-700",
-    },
-    {
-      label: "WFH",
-      value: summary.wfh || 0,
-      className: "border-sky-100 bg-sky-50 text-sky-700",
-    },
-    {
-      label: "Kunjungan",
-      value: summary.kunjungan || 0,
-      className: "border-teal-100 bg-teal-50 text-teal-700",
-    },
-    {
-      label: "Total Kerja",
-      value: formatWorkDuration(summary.totalWorkMinutes),
-      className: "border-blue-100 bg-blue-50 text-[#123c8c]",
-    },
-    {
-      label: "Sakit",
-      value: summary.sakit,
-      className: "border-rose-100 bg-rose-50 text-rose-700",
-    },
-    {
-      label: "Cuti Periode Ini",
-      value: `${summary.cuti} Hari`,
-      className: "border-sky-100 bg-sky-50 text-sky-700",
-    },
-    {
-      label: "Sisa Kuota Cuti",
-      value: `${employee?.remainingLeaveQuota ?? Math.max(0, 12 - (employee?.approvedLeaveDays || summary.cuti))} Hari`,
-      className: "border-purple-100 bg-purple-50 text-purple-800",
-    },
-  ];
   const employeePhoto = getEmployeePhoto(employee);
   const dailyRecordByDate = useMemo(() => {
     return new Map(
@@ -930,9 +907,7 @@ export default function AdminEmployeeAttendanceRecapDetailPage() {
 
               <div className="grid grid-cols-1 gap-5 p-7 sm:grid-cols-2 md:p-10">
                 <div className="min-h-36 rounded-3xl border border-blue-100 bg-[#f8fbff] p-6">
-                  <p className="text-sm font-bold text-slate-500">
-                    Masa Kerja
-                  </p>
+                  <p className="text-sm font-bold text-slate-500">Masa Kerja</p>
                   <h3 className="mt-4 text-xl font-black leading-snug text-[#123c8c]">
                     {formatEmploymentPeriod(employee)}
                   </h3>
@@ -1015,19 +990,86 @@ export default function AdminEmployeeAttendanceRecapDetailPage() {
             </div>
           ) : (
             <>
+              {/* Statistik kehadiran: selalu satu baris horizontal */}
               <div
-                className="recap-detail-enter grid gap-5 sm:grid-cols-2 lg:grid-cols-7"
+                className="recap-detail-enter w-full overflow-x-auto pb-2"
                 style={{ animationDelay: "120ms" }}
               >
-                {attendanceItems.map((item) => (
-                  <div
-                    key={item.label}
-                    className={`min-h-36 rounded-3xl border p-6 ${item.className}`}
-                  >
-                    <p className="text-sm font-black">{item.label}</p>
-                    <p className="mt-5 text-4xl font-black">{item.value}</p>
+                <div className="flex min-w-max flex-nowrap gap-3 lg:w-full lg:min-w-0">
+                  <div className="flex h-[170px] w-[145px] flex-none flex-col rounded-3xl border border-emerald-100 bg-emerald-50 p-5 text-emerald-700 lg:w-auto lg:min-w-0 lg:flex-1">
+                    <p className="text-sm font-black leading-5">Hadir</p>
+                    <p className="mt-6 text-3xl font-black leading-tight">
+                      {summary.hadir}
+                    </p>
                   </div>
-                ))}
+
+                  <div className="flex h-[170px] w-[145px] flex-none flex-col rounded-3xl border border-amber-100 bg-amber-50 p-5 text-amber-700 lg:w-auto lg:min-w-0 lg:flex-1">
+                    <p className="text-sm font-black leading-5">
+                      Terlambat
+                      <br />
+                      (Menit)
+                    </p>
+                    <p className="mt-4 text-3xl font-black leading-tight">
+                      {summary.terlambat}
+                    </p>
+                  </div>
+
+                  <div className="flex h-[170px] w-[145px] flex-none flex-col rounded-3xl border border-sky-100 bg-sky-50 p-5 text-sky-700 lg:w-auto lg:min-w-0 lg:flex-1">
+                    <p className="text-sm font-black leading-5">WFH</p>
+                    <p className="mt-6 text-3xl font-black leading-tight">
+                      {summary.wfh || 0}
+                    </p>
+                  </div>
+
+                  <div className="flex h-[170px] w-[145px] flex-none flex-col rounded-3xl border border-teal-100 bg-teal-50 p-5 text-teal-700 lg:w-auto lg:min-w-0 lg:flex-1">
+                    <p className="text-sm font-black leading-5">Kunjungan</p>
+                    <p className="mt-6 text-3xl font-black leading-tight">
+                      {summary.kunjungan || 0}
+                    </p>
+                  </div>
+
+                  <div className="flex h-[170px] w-[145px] flex-none flex-col rounded-3xl border border-blue-100 bg-blue-50 p-5 text-[#123c8c] lg:w-auto lg:min-w-0 lg:flex-1">
+                    <p className="text-sm font-black leading-5">Total Kerja</p>
+                    <p className="mt-6 text-3xl font-black leading-tight">
+                      {formatWorkDuration(summary.totalWorkMinutes)}
+                    </p>
+                  </div>
+
+                  <div className="flex h-[170px] w-[145px] flex-none flex-col rounded-3xl border border-rose-100 bg-rose-50 p-5 text-rose-700 lg:w-auto lg:min-w-0 lg:flex-1">
+                    <p className="text-sm font-black leading-5">Sakit</p>
+                    <p className="mt-6 text-3xl font-black leading-tight">
+                      {summary.sakit}
+                    </p>
+                  </div>
+
+                  <div className="flex h-[170px] w-[145px] flex-none flex-col rounded-3xl border border-sky-100 bg-sky-50 p-5 text-sky-700 lg:w-auto lg:min-w-0 lg:flex-1">
+                    <p className="text-sm font-black leading-5">
+                      Cuti Periode
+                      <br />
+                      Ini
+                    </p>
+                    <p className="mt-4 text-3xl font-black leading-tight">
+                      {summary.cuti}
+                      <span className="block">Hari</span>
+                    </p>
+                  </div>
+
+                  <div className="flex h-[170px] w-[145px] flex-none flex-col rounded-3xl border border-purple-100 bg-purple-50 p-5 text-purple-800 lg:w-auto lg:min-w-0 lg:flex-1">
+                    <p className="text-sm font-black leading-5">
+                      Sisa Kuota
+                      <br />
+                      Cuti
+                    </p>
+                    <p className="mt-4 text-3xl font-black leading-tight">
+                      {employee?.remainingLeaveQuota ??
+                        Math.max(
+                          0,
+                          12 - (employee?.approvedLeaveDays || summary.cuti),
+                        )}
+                      <span className="block">Hari</span>
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div
@@ -1160,9 +1202,6 @@ export default function AdminEmployeeAttendanceRecapDetailPage() {
                   <h3 className="text-2xl font-black text-slate-950">
                     Pilih Mode Export Excel
                   </h3>
-                  <p className="mt-1 text-sm font-bold text-slate-500">
-                    Unduh format rekap kehadiran karyawan
-                  </p>
                 </div>
               </div>
 
@@ -1199,10 +1238,6 @@ export default function AdminEmployeeAttendanceRecapDetailPage() {
                   <span className="block text-lg font-black text-slate-950">
                     Mode Rekap Total (Summary)
                   </span>
-                  <span className="mt-2 block text-sm font-bold leading-6 text-slate-500">
-                    Format bawaan berisi ringkasan total hari kerja, hadir,
-                    terlambat, WFH, cuti, dan total jam kerja.
-                  </span>
                 </span>
               </button>
 
@@ -1227,10 +1262,6 @@ export default function AdminEmployeeAttendanceRecapDetailPage() {
                 <span>
                   <span className="block text-lg font-black text-slate-950">
                     Mode List Kehadiran (Detail Harian)
-                  </span>
-                  <span className="mt-2 block text-sm font-bold leading-6 text-slate-500">
-                    Format rincian log per tanggal seperti Excel presensi:
-                    tanggal, shift, jam real, telat, durasi, mode, dan status.
                   </span>
                 </span>
               </button>

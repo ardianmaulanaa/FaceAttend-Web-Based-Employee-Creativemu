@@ -6,7 +6,7 @@ const adapter = new PrismaMariaDb({
   port: Number(process.env.DATABASE_PORT || 3306),
   user: process.env.DATABASE_USER || "root",
   password: process.env.DATABASE_PASSWORD || undefined,
-  database: process.env.DATABASE_NAME || "faceattend_db",
+  database: process.env.DATABASE_NAME || "creativemu_db",
   connectionLimit: 5,
 });
 

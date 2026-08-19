@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
     const officeId = searchParams.get("office_id") || "all";
     const departmentId = searchParams.get("department_id") || "all";
 
-    const jabatans = await prisma.jabatan.findMany({
+    const jabatan = await prisma.jabatan.findMany({
       where: {
         AND: [
           search
@@ -222,12 +222,12 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      jabatans,
+      jabatan,
       departments,
       offices,
     });
   } catch (error) {
-    console.error("GET /api/admin/jabatans error:", error);
+    console.error("GET /api/admin/jabatan error:", error);
 
     return NextResponse.json(
       {
@@ -347,7 +347,7 @@ export async function POST(req: NextRequest) {
       jabatan,
     });
   } catch (error) {
-    console.error("POST /api/admin/jabatans error:", error);
+    console.error("POST /api/admin/jabatan error:", error);
 
     if (isPrismaUniqueError(error)) {
       return NextResponse.json(
@@ -513,7 +513,7 @@ export async function PATCH(req: NextRequest) {
       jabatan,
     });
   } catch (error) {
-    console.error("PATCH /api/admin/jabatans error:", error);
+    console.error("PATCH /api/admin/jabatan error:", error);
 
     if (isPrismaUniqueError(error)) {
       return NextResponse.json(
@@ -614,7 +614,7 @@ export async function DELETE(req: NextRequest) {
       message: "Jabatan berhasil dihapus.",
     });
   } catch (error) {
-    console.error("DELETE /api/admin/jabatans error:", error);
+    console.error("DELETE /api/admin/jabatan error:", error);
 
     if (isPrismaForeignKeyError(error)) {
       return NextResponse.json(

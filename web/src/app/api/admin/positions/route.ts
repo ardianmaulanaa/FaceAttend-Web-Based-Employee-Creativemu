@@ -149,7 +149,7 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    const jabatans = await prisma.jabatan.findMany({
+    const jabatan = await prisma.jabatan.findMany({
       select: jabatanSelect,
       orderBy: {
         name: "asc",
@@ -162,7 +162,7 @@ export async function GET(req: NextRequest) {
       data: positions,
       offices,
       departments,
-      jabatans,
+      jabatan,
     });
   } catch (error) {
     console.error("GET /api/admin/positions error:", error);
