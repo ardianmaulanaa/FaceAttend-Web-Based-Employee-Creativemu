@@ -1,4 +1,4 @@
-CREATE TABLE `admin_contact_numbers` (
+CREATE TABLE IF NOT EXISTS `admin_contact_numbers` (
   `id` CHAR(36) NOT NULL,
   `label` VARCHAR(100) NOT NULL,
   `phone_number` VARCHAR(25) NOT NULL,

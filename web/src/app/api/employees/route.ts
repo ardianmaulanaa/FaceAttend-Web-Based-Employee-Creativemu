@@ -84,6 +84,54 @@ const positionSelect = {
   },
 } as const;
 
+// Select khusus GET /api/employees. Hanya ambil field yang dipakai di halaman
+// daftar karyawan dan foreign key mentah. Relasi dirakit manual setelah query
+// agar Prisma tidak membuat query relasi seperti IN (NULL).
+const employeeListSelect = {
+  id: true,
+  employee_code: true,
+  name: true,
+  email: true,
+  role: true,
+  status: true,
+  employment_status: true,
+  employment_start_date: true,
+  employment_end_date: true,
+  birth_place: true,
+  birth_date: true,
+  bank_code: true,
+  bank_account_number: true,
+  nik: true,
+  profile_photo: true,
+  created_at: true,
+  jabatan_id: true,
+  department_id: true,
+  position_id: true,
+  shift_id: true,
+  registered_office_id: true,
+} as const;
+
+const departmentListSelect = {
+  id: true,
+  name: true,
+  office_id: true,
+  status: true,
+} as const;
+
+const jabatanListSelect = {
+  id: true,
+  name: true,
+  department_id: true,
+  status: true,
+} as const;
+
+const positionListSelect = {
+  id: true,
+  name: true,
+  jabatan_id: true,
+  status: true,
+} as const;
+
 const employeeSelect = {
   id: true,
   employee_code: true,
@@ -148,7 +196,7 @@ function jsonError(message: string, status = 400) {
       success: false,
       message,
     },
-    { status }
+    { status },
   );
 }
 
@@ -173,7 +221,9 @@ function normalizeOptionalDate(value: unknown, label = "Tanggal") {
 }
 
 function normalizeAccountRole(value: unknown): AccountRole {
-  const role = String(value || "employee").trim().toLowerCase();
+  const role = String(value || "employee")
+    .trim()
+    .toLowerCase();
 
   if (role === "admin") return "admin";
   if (role === "employee" || role === "user") return "employee";
@@ -200,7 +250,9 @@ function ensureValidEmploymentPeriod(
   endDate: Date | null,
 ) {
   if (startDate && endDate && startDate.getTime() > endDate.getTime()) {
-    throw new Error("Tanggal mulai masa kerja tidak boleh melewati tanggal akhir.");
+    throw new Error(
+      "Tanggal mulai masa kerja tidak boleh melewati tanggal akhir.",
+    );
   }
 }
 
@@ -364,14 +416,17 @@ async function getWfhQuotaByUserId(userIds: string[]) {
       Array<{ id: string; wfh_quota_monthly: number | null }>
     >(
       `SELECT id, COALESCE(wfh_quota_monthly, 0) AS wfh_quota_monthly FROM users WHERE id IN (${placeholders})`,
-      ...userIds
+      ...userIds,
     );
   } catch (error) {
     if (!isMissingWfhQuotaColumnError(error)) throw error;
   }
 
   return new Map(
-    rows.map((row) => [row.id, Math.max(0, Number(row.wfh_quota_monthly || 0))])
+    rows.map((row) => [
+      row.id,
+      Math.max(0, Number(row.wfh_quota_monthly || 0)),
+    ]),
   );
 }
 
@@ -387,14 +442,17 @@ async function getAnnualLeaveQuotaByUserId(userIds: string[]) {
       Array<{ id: string; annual_leave_quota: number | null }>
     >(
       `SELECT id, COALESCE(annual_leave_quota, 12) AS annual_leave_quota FROM users WHERE id IN (${placeholders})`,
-      ...userIds
+      ...userIds,
     );
   } catch (error) {
     if (!isMissingAnnualLeaveQuotaColumnError(error)) throw error;
   }
 
   return new Map(
-    rows.map((row) => [row.id, Math.max(0, Number(row.annual_leave_quota ?? 12))])
+    rows.map((row) => [
+      row.id,
+      Math.max(0, Number(row.annual_leave_quota ?? 12)),
+    ]),
   );
 }
 
@@ -402,12 +460,15 @@ async function attachWfhQuotaToEmployees<
   T extends { id: string; [key: string]: unknown },
 >(employees: T[]) {
   const userIds = employees.map((employee) => employee.id);
-  const wfhQuotaByUserId = await getWfhQuotaByUserId(userIds);
-  const annualLeaveQuotaByUserId = await getAnnualLeaveQuotaByUserId(userIds);
+  const [wfhQuotaByUserId, annualLeaveQuotaByUserId] = await Promise.all([
+    getWfhQuotaByUserId(userIds),
+    getAnnualLeaveQuotaByUserId(userIds),
+  ]);
 
   return employees.map((employee) => ({
     ...employee,
-    bank_code: typeof employee.bank_code === "string" ? employee.bank_code : null,
+    bank_code:
+      typeof employee.bank_code === "string" ? employee.bank_code : null,
     wfh_quota_monthly: wfhQuotaByUserId.get(employee.id) || 0,
     annual_leave_quota: annualLeaveQuotaByUserId.get(employee.id) ?? 12,
   }));
@@ -420,7 +481,7 @@ async function updateEmployeeWfhQuota(userId: string, quota: number) {
     await prisma.$executeRawUnsafe(
       "UPDATE users SET wfh_quota_monthly = ? WHERE id = ?",
       quota,
-      userId
+      userId,
     );
   } catch (error) {
     if (!isMissingWfhQuotaColumnError(error)) throw error;
@@ -434,7 +495,7 @@ async function updateEmployeeAnnualLeaveQuota(userId: string, quota: number) {
     await prisma.$executeRawUnsafe(
       "UPDATE users SET annual_leave_quota = ? WHERE id = ?",
       quota,
-      userId
+      userId,
     );
   } catch (error) {
     if (!isMissingAnnualLeaveQuotaColumnError(error)) throw error;
@@ -452,92 +513,137 @@ export async function GET(req: NextRequest) {
       return jsonError("Akses ditolak.", 403);
     }
 
-    await ensureDefaultShifts();
-
-    const employees = await prisma.user.findMany({
-      where: {
-        role: "employee",
-      },
-      select: employeeSelect,
-      orderBy: {
-        created_at: "desc",
-      },
-    });
-
-    const offices = await prisma.officeLocation.findMany({
-      select: officeSelect,
-      orderBy: {
-        name: "asc",
-      },
-    });
-
-    const departments = await prisma.department.findMany({
-      select: departmentSelect,
-      orderBy: {
-        name: "asc",
-      },
-    });
-
-    const jabatans = await prisma.jabatan.findMany({
-      select: jabatanSelect,
-      orderBy: {
-        name: "asc",
-      },
-    });
-
-    const positions = await prisma.position.findMany({
-      select: positionSelect,
-      orderBy: {
-        name: "asc",
-      },
-    });
-
-    const shifts = await prisma.shift.findMany({
-      select: {
-        id: true,
-        name: true,
-        tolerance_minutes: true,
-        status: true,
-      },
-      orderBy: {
-        name: "asc",
-      },
-    });
-
-    const totalStatuses = await prisma.employmentStatus.count();
-    if (totalStatuses === 0) {
-      const defaultStatuses = ["Tetap", "Kontrak", "Magang", "Freelance"];
-      await Promise.all(
-        defaultStatuses.map((name) =>
-          prisma.employmentStatus.upsert({
-            where: { name },
-            update: {},
-            create: { name, code: createStatusCode(name), status: "active" },
-          })
-        )
-      );
-    }
-
-    const employmentStatuses = await prisma.employmentStatus.findMany({
-      where: {
-        NOT: {
-          name: "Utama",
+    // Jangan menjalankan ensureDefaultShifts() di setiap GET.
+    // Data default sebaiknya dibuat lewat seed/migration.
+    // Semua query master yang tidak saling bergantung dijalankan paralel.
+    const [
+      employees,
+      officesRaw,
+      departmentsRaw,
+      jabatanRaw,
+      positionsRaw,
+      shifts,
+      employmentStatuses,
+    ] = await Promise.all([
+      prisma.user.findMany({
+        where: {
+          role: "employee",
         },
-      },
-      orderBy: {
-        name: "asc",
-      },
-    });
+        select: employeeListSelect,
+        orderBy: {
+          created_at: "desc",
+        },
+      }),
+      prisma.officeLocation.findMany({
+        select: officeSelect,
+        orderBy: {
+          name: "asc",
+        },
+      }),
+      prisma.department.findMany({
+        select: departmentListSelect,
+        orderBy: {
+          name: "asc",
+        },
+      }),
+      prisma.jabatan.findMany({
+        select: jabatanListSelect,
+        orderBy: {
+          name: "asc",
+        },
+      }),
+      prisma.position.findMany({
+        select: positionListSelect,
+        orderBy: {
+          name: "asc",
+        },
+      }),
+      prisma.shift.findMany({
+        select: {
+          id: true,
+          name: true,
+          tolerance_minutes: true,
+          status: true,
+        },
+        orderBy: {
+          name: "asc",
+        },
+      }),
+      prisma.employmentStatus.findMany({
+        where: {
+          NOT: {
+            name: "Utama",
+          },
+        },
+        orderBy: {
+          name: "asc",
+        },
+      }),
+    ]);
 
-    const employeesWithWfhQuota = await attachWfhQuotaToEmployees(employees);
+    // Rakitan relasi dilakukan di memory. ID null tidak pernah dikirim ke
+    // Prisma sebagai `in: [null]`, sehingga query IN (NULL) dari endpoint ini hilang.
+    const officeById = new Map(officesRaw.map((office) => [office.id, office]));
+
+    const departments = departmentsRaw.map((department) => ({
+      ...department,
+      office: department.office_id
+        ? officeById.get(department.office_id) || null
+        : null,
+    }));
+    const departmentById = new Map(
+      departments.map((department) => [department.id, department]),
+    );
+
+    const jabatan = jabatanRaw.map((item) => ({
+      ...item,
+      department: item.department_id
+        ? departmentById.get(item.department_id) || null
+        : null,
+    }));
+    const jabatanById = new Map(jabatan.map((item) => [item.id, item]));
+
+    const positions = positionsRaw.map((position) => ({
+      ...position,
+      jabatan: position.jabatan_id
+        ? jabatanById.get(position.jabatan_id) || null
+        : null,
+    }));
+    const positionById = new Map(
+      positions.map((position) => [position.id, position]),
+    );
+    const shiftById = new Map(shifts.map((shift) => [shift.id, shift]));
+
+    const employeesWithRelations = employees.map((employee) => ({
+      ...employee,
+      jabatan: employee.jabatan_id
+        ? jabatanById.get(employee.jabatan_id) || null
+        : null,
+      department: employee.department_id
+        ? departmentById.get(employee.department_id) || null
+        : null,
+      position: employee.position_id
+        ? positionById.get(employee.position_id) || null
+        : null,
+      shift: employee.shift_id
+        ? shiftById.get(employee.shift_id) || null
+        : null,
+      registered_office: employee.registered_office_id
+        ? officeById.get(employee.registered_office_id) || null
+        : null,
+    }));
+
+    const employeesWithWfhQuota = await attachWfhQuotaToEmployees(
+      employeesWithRelations,
+    );
 
     return NextResponse.json({
       success: true,
       employees: employeesWithWfhQuota,
-      offices,
-      officeLocations: offices,
+      offices: officesRaw,
+      officeLocations: officesRaw,
       departments,
-      jabatans,
+      jabatan,
       positions,
       shifts,
       employmentStatuses,
@@ -550,7 +656,7 @@ export async function GET(req: NextRequest) {
         success: false,
         message: getApiErrorMessage(error, "Gagal mengambil data karyawan."),
       },
-      { status: getApiErrorStatus(error) }
+      { status: getApiErrorStatus(error) },
     );
   }
 }
@@ -565,7 +671,7 @@ export async function POST(req: NextRequest) {
     ) {
       return jsonError(
         "Akses ditolak. Hanya admin yang dapat menambah akun.",
-        403
+        403,
       );
     }
 
@@ -573,13 +679,15 @@ export async function POST(req: NextRequest) {
 
     const name = String(body.name || "").trim();
     const employeeCode = normalizeOptionalText(
-      body.employee_code || body.employeeCode || body.no_induk_karyawan
+      body.employee_code || body.employeeCode || body.no_induk_karyawan,
     );
-    const email = String(body.email || "").trim().toLowerCase();
+    const email = String(body.email || "")
+      .trim()
+      .toLowerCase();
     const role = normalizeAccountRole(body.role || body.account_role);
     const phone = String(body.phone || "").trim();
     const password = String(
-      body.password || body.temporaryPassword || body.temp_password || ""
+      body.password || body.temporaryPassword || body.temp_password || "",
     ).trim();
 
     const employeeType = String(body.employee_type || "utama").trim();
@@ -587,22 +695,22 @@ export async function POST(req: NextRequest) {
     const employmentStatus = normalizeOptionalText(body.employment_status);
     const employmentStartDate = normalizeOptionalDate(
       body.employment_start_date,
-      "Tanggal mulai masa kerja"
+      "Tanggal mulai masa kerja",
     );
     const employmentEndDate = normalizeOptionalDate(
       body.employment_end_date,
-      "Tanggal akhir masa kerja"
+      "Tanggal akhir masa kerja",
     );
     const birthPlace = normalizeOptionalText(body.birth_place);
     const birthDate = normalizeOptionalDate(body.birth_date, "Tanggal lahir");
     const bankCode = normalizeBankCode(body.bank_code || body.bankCode);
     const bankAccountNumber = normalizeOptionalText(
-      body.bank_account_number || body.no_rekening
+      body.bank_account_number || body.no_rekening,
     );
     const nik = normalizeOptionalText(body.nik);
 
     const registeredOfficeId = String(
-      body.registered_office_id || body.office_id || ""
+      body.registered_office_id || body.office_id || "",
     ).trim();
     const departmentId = String(body.department_id || "").trim();
     const jabatanId = String(body.jabatan_id || "").trim();
@@ -623,11 +731,14 @@ export async function POST(req: NextRequest) {
         : null;
     const wfhQuotaMonthly = normalizeNonNegativeInteger(
       body.wfh_quota_monthly ?? body.wfhQuotaMonthly ?? body.wfh_quota,
-      "Kuota WFH"
+      "Kuota WFH",
     );
     const annualLeaveQuota = normalizeNonNegativeInteger(
-      body.annual_leave_quota ?? body.annualLeaveQuota ?? body.leave_quota ?? 12,
-      "Kuota Cuti Tahunan"
+      body.annual_leave_quota ??
+        body.annualLeaveQuota ??
+        body.leave_quota ??
+        12,
+      "Kuota Cuti Tahunan",
     );
 
     if (!name) return jsonError("Nama karyawan wajib diisi.");
@@ -635,13 +746,13 @@ export async function POST(req: NextRequest) {
     if (!password) return jsonError("Password karyawan wajib diisi.");
     if (!isValidEmailFormat(email)) {
       return jsonError(
-        `Format email tidak valid. Contoh: ${CREATIVEMU_EMAIL_EXAMPLE}.`
+        `Format email tidak valid. Contoh: ${CREATIVEMU_EMAIL_EXAMPLE}.`,
       );
     }
     if (!isCreativemuEmail(email)) {
       return jsonError(
         "Email akun wajib menggunakan domain resmi @creativemu.id.",
-        403
+        403,
       );
     }
 
@@ -653,7 +764,7 @@ export async function POST(req: NextRequest) {
       !shiftId
     ) {
       return jsonError(
-        "Kantor, divisi, jabatan, posisi, dan shift wajib dipilih."
+        "Kantor, divisi, jabatan, posisi, dan shift wajib dipilih.",
       );
     }
 
@@ -685,7 +796,10 @@ export async function POST(req: NextRequest) {
     assertDigitRange(phone || null, IDENTITY_VALIDATION.phone);
     assertDigitRange(bankAccountNumber, IDENTITY_VALIDATION.bankAccount);
     assertDigitRange(nik, IDENTITY_VALIDATION.nik);
-    ensureValidEmploymentPeriod(employmentStartDate, normalizedEmploymentEndDate);
+    ensureValidEmploymentPeriod(
+      employmentStartDate,
+      normalizedEmploymentEndDate,
+    );
 
     const existingEmail = await prisma.user.findUnique({
       where: {
@@ -737,7 +851,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: role === "admin" ? "Admin berhasil ditambahkan." : "Karyawan berhasil ditambahkan.",
+      message:
+        role === "admin"
+          ? "Admin berhasil ditambahkan."
+          : "Karyawan berhasil ditambahkan.",
       employee: employeeWithWfhQuota,
     });
   } catch (error) {
@@ -747,7 +864,8 @@ export async function POST(req: NextRequest) {
       return jsonError(getUniqueEmployeeMessage(error), 409);
     }
 
-    const message = error instanceof Error ? error.message : "Gagal menambahkan karyawan.";
+    const message =
+      error instanceof Error ? error.message : "Gagal menambahkan karyawan.";
     return jsonError(message, 400);
   }
 }
@@ -762,7 +880,7 @@ export async function PATCH(req: NextRequest) {
     ) {
       return jsonError(
         "Akses ditolak. Hanya admin yang dapat mengubah akun.",
-        403
+        403,
       );
     }
 
@@ -771,13 +889,15 @@ export async function PATCH(req: NextRequest) {
     const id = String(body.id || "").trim();
     const name = String(body.name || "").trim();
     const employeeCode = normalizeOptionalText(
-      body.employee_code || body.employeeCode || body.no_induk_karyawan
+      body.employee_code || body.employeeCode || body.no_induk_karyawan,
     );
-    const email = String(body.email || "").trim().toLowerCase();
+    const email = String(body.email || "")
+      .trim()
+      .toLowerCase();
     const role = normalizeAccountRole(body.role || body.account_role);
     const phone = String(body.phone || "").trim();
     const password = String(
-      body.password || body.temporaryPassword || body.temp_password || ""
+      body.password || body.temporaryPassword || body.temp_password || "",
     ).trim();
 
     const employeeType = String(body.employee_type || "utama").trim();
@@ -785,22 +905,22 @@ export async function PATCH(req: NextRequest) {
     const employmentStatus = normalizeOptionalText(body.employment_status);
     const employmentStartDate = normalizeOptionalDate(
       body.employment_start_date,
-      "Tanggal mulai masa kerja"
+      "Tanggal mulai masa kerja",
     );
     const employmentEndDate = normalizeOptionalDate(
       body.employment_end_date,
-      "Tanggal akhir masa kerja"
+      "Tanggal akhir masa kerja",
     );
     const birthPlace = normalizeOptionalText(body.birth_place);
     const birthDate = normalizeOptionalDate(body.birth_date, "Tanggal lahir");
     const bankCode = normalizeBankCode(body.bank_code || body.bankCode);
     const bankAccountNumber = normalizeOptionalText(
-      body.bank_account_number || body.no_rekening
+      body.bank_account_number || body.no_rekening,
     );
     const nik = normalizeOptionalText(body.nik);
 
     const registeredOfficeId = String(
-      body.registered_office_id || body.office_id || ""
+      body.registered_office_id || body.office_id || "",
     ).trim();
     const departmentId = String(body.department_id || "").trim();
     const jabatanId = String(body.jabatan_id || "").trim();
@@ -821,11 +941,14 @@ export async function PATCH(req: NextRequest) {
         : null;
     const wfhQuotaMonthly = normalizeNonNegativeInteger(
       body.wfh_quota_monthly ?? body.wfhQuotaMonthly ?? body.wfh_quota,
-      "Kuota WFH"
+      "Kuota WFH",
     );
     const annualLeaveQuota = normalizeNonNegativeInteger(
-      body.annual_leave_quota ?? body.annualLeaveQuota ?? body.leave_quota ?? 12,
-      "Kuota Cuti Tahunan"
+      body.annual_leave_quota ??
+        body.annualLeaveQuota ??
+        body.leave_quota ??
+        12,
+      "Kuota Cuti Tahunan",
     );
 
     if (!id) return jsonError("ID karyawan wajib dikirim.");
@@ -833,13 +956,13 @@ export async function PATCH(req: NextRequest) {
     if (!email) return jsonError("Email karyawan wajib diisi.");
     if (!isValidEmailFormat(email)) {
       return jsonError(
-        `Format email tidak valid. Contoh: ${CREATIVEMU_EMAIL_EXAMPLE}.`
+        `Format email tidak valid. Contoh: ${CREATIVEMU_EMAIL_EXAMPLE}.`,
       );
     }
     if (!isCreativemuEmail(email)) {
       return jsonError(
         "Email akun wajib menggunakan domain resmi @creativemu.id.",
-        403
+        403,
       );
     }
 
@@ -851,7 +974,7 @@ export async function PATCH(req: NextRequest) {
       !shiftId
     ) {
       return jsonError(
-        "Kantor, divisi, jabatan, posisi, dan shift wajib dipilih."
+        "Kantor, divisi, jabatan, posisi, dan shift wajib dipilih.",
       );
     }
 
@@ -906,7 +1029,10 @@ export async function PATCH(req: NextRequest) {
     assertDigitRange(phone || null, IDENTITY_VALIDATION.phone);
     assertDigitRange(bankAccountNumber, IDENTITY_VALIDATION.bankAccount);
     assertDigitRange(nik, IDENTITY_VALIDATION.nik);
-    ensureValidEmploymentPeriod(employmentStartDate, normalizedEmploymentEndDate);
+    ensureValidEmploymentPeriod(
+      employmentStartDate,
+      normalizedEmploymentEndDate,
+    );
 
     const existingEmail = await prisma.user.findFirst({
       where: {
@@ -1002,7 +1128,8 @@ export async function PATCH(req: NextRequest) {
       return jsonError(getUniqueEmployeeMessage(error), 409);
     }
 
-    const message = error instanceof Error ? error.message : "Gagal memperbarui karyawan.";
+    const message =
+      error instanceof Error ? error.message : "Gagal memperbarui karyawan.";
     return jsonError(message, 400);
   }
 }
@@ -1017,7 +1144,7 @@ export async function DELETE(req: NextRequest) {
     ) {
       return jsonError(
         "Akses ditolak. Hanya admin yang dapat menghapus akun.",
-        403
+        403,
       );
     }
 
@@ -1028,7 +1155,10 @@ export async function DELETE(req: NextRequest) {
     }
 
     if (currentUser.id === id) {
-      return jsonError("Akun yang sedang login tidak bisa menghapus dirinya sendiri.", 400);
+      return jsonError(
+        "Akun yang sedang login tidak bisa menghapus dirinya sendiri.",
+        400,
+      );
     }
 
     const employee = await prisma.user.findUnique({
@@ -1163,7 +1293,7 @@ export async function DELETE(req: NextRequest) {
     if (isPrismaForeignKeyError(error)) {
       return jsonError(
         "Karyawan tidak bisa dihapus karena masih memiliki relasi data lain. Pastikan migration production sudah dijalankan.",
-        400
+        400,
       );
     }
 
@@ -1172,7 +1302,7 @@ export async function DELETE(req: NextRequest) {
         success: false,
         message: getApiErrorMessage(error, "Gagal menghapus karyawan."),
       },
-      { status: getApiErrorStatus(error) }
+      { status: getApiErrorStatus(error) },
     );
   }
 }

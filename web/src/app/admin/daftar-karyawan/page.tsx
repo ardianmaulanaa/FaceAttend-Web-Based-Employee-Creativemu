@@ -266,7 +266,7 @@ const initialForm: EmployeeForm = {
   annual_leave_quota: "12",
 };
 
-const EMPLOYEE_REQUEST_TIMEOUT_MS = 15_000;
+const EMPLOYEE_REQUEST_TIMEOUT_MS = 30_000;
 function getInitialName(name: string) {
   return name
     .split(" ")
@@ -650,21 +650,26 @@ export default function AdminEmployeesPage() {
 
       setEmployees(employeeList);
       setDepartments(result.departments || []);
-      setJabatans(result.jabatans || []);
+      setJabatans(result.jabatan || []);
       setPositions(result.positions || []);
       setShifts(result.shifts || []);
       setEmploymentStatuses(result.employmentStatuses || []);
       setOffices(result.offices || result.officeLocations || []);
     } catch (error) {
-      console.error("LOAD_EMPLOYEES_ERROR:", error);
+      if (error instanceof DOMException && error.name === "AbortError") {
+        console.warn("LOAD_EMPLOYEES_TIMEOUT: request melebihi 30 detik");
+        showEmployeeAlert(
+          "Koneksi terlalu lama",
+          "Server terlalu lama merespons data karyawan. Coba refresh halaman.",
+          "error",
+        );
+        return;
+      }
 
+      console.error("LOAD_EMPLOYEES_ERROR:", error);
       showEmployeeAlert(
-        error instanceof DOMException && error.name === "AbortError"
-          ? "Koneksi terlalu lama"
-          : "Terjadi kesalahan",
-        error instanceof DOMException && error.name === "AbortError"
-          ? "Server terlalu lama merespons data karyawan. Coba refresh halaman."
-          : "Terjadi kesalahan saat mengambil data karyawan.",
+        "Terjadi kesalahan",
+        "Terjadi kesalahan saat mengambil data karyawan.",
         "error",
       );
     } finally {
@@ -849,10 +854,15 @@ export default function AdminEmployeesPage() {
   }
 
   function handleNumericFormChange(
-    field: "bank_account_number" | "nik" | "wfh_quota_monthly" | "annual_leave_quota",
+    field:
+      | "bank_account_number"
+      | "nik"
+      | "wfh_quota_monthly"
+      | "annual_leave_quota",
     value: string,
   ) {
-    const maxLength = field === "wfh_quota_monthly" || field === "annual_leave_quota" ? 3 : 16;
+    const maxLength =
+      field === "wfh_quota_monthly" || field === "annual_leave_quota" ? 3 : 16;
     const normalizedValue = normalizeNumericInput(value).slice(0, maxLength);
 
     setForm((prev) => ({
@@ -1285,15 +1295,27 @@ export default function AdminEmployeesPage() {
               <div className="relative">
                 <select
                   value={sortOrder}
-                  onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
+                  onChange={(e) =>
+                    setSortOrder(e.target.value as "asc" | "desc")
+                  }
                   className="employee-field w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] py-3 pl-4 pr-10 text-xs font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
                 >
                   <option value="asc">Nama: A - Z</option>
                   <option value="desc">Nama: Z - A</option>
                 </select>
                 <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2.5"
+                      d="M19 9l-7 7-7-7"
+                    />
                   </svg>
                 </div>
               </div>
@@ -1343,19 +1365,25 @@ export default function AdminEmployeesPage() {
 
                   <div className="mt-3 grid grid-cols-3 gap-2 rounded-2xl bg-[#f6f8ff] p-3 text-center">
                     <div>
-                      <p className="text-[10px] font-black uppercase text-slate-400">Kantor</p>
+                      <p className="text-[10px] font-black uppercase text-slate-400">
+                        Kantor
+                      </p>
                       <p className="mt-0.5 truncate text-xs font-black text-slate-700">
                         {getRelationName(employee.registered_office)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[10px] font-black uppercase text-slate-400">Shift</p>
+                      <p className="text-[10px] font-black uppercase text-slate-400">
+                        Shift
+                      </p>
                       <p className="mt-0.5 truncate text-xs font-black text-slate-700">
                         {getRelationName(employee.shift)}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[10px] font-black uppercase text-[#123c8c]">WFH</p>
+                      <p className="text-[10px] font-black uppercase text-[#123c8c]">
+                        WFH
+                      </p>
                       <p className="mt-0.5 text-xs font-black text-[#123c8c]">
                         {formatWfhQuota(employee.wfh_quota_monthly)} Hari
                       </p>
@@ -1408,7 +1436,10 @@ export default function AdminEmployeesPage() {
               <tbody className="divide-y divide-blue-50">
                 {isLoading && (
                   <tr>
-                    <td colSpan={7} className="px-6 py-10 text-center font-black text-slate-700">
+                    <td
+                      colSpan={7}
+                      className="px-6 py-10 text-center font-black text-slate-700"
+                    >
                       Loading employee data...
                     </td>
                   </tr>
@@ -1435,7 +1466,9 @@ export default function AdminEmployeesPage() {
                               {employee.name}
                             </p>
                             <p className="mt-0.5 truncate text-[11px] font-black uppercase tracking-[0.12em] text-[#123c8c]">
-                              {employee.employee_code ? `${employee.employee_code} • ` : ""}
+                              {employee.employee_code
+                                ? `${employee.employee_code} • `
+                                : ""}
                               {getRelationName(employee.department) !== "-"
                                 ? getRelationName(employee.department)
                                 : getRelationName(employee.jabatan)}
@@ -1461,11 +1494,15 @@ export default function AdminEmployeesPage() {
                       </td>
 
                       <td className="px-3 py-4 text-sm font-semibold text-slate-600">
-                        <p className="truncate">{getRelationName(employee.registered_office)}</p>
+                        <p className="truncate">
+                          {getRelationName(employee.registered_office)}
+                        </p>
                       </td>
 
                       <td className="px-3 py-4 text-sm font-semibold text-slate-600">
-                        <p className="truncate">{getRelationName(employee.shift)}</p>
+                        <p className="truncate">
+                          {getRelationName(employee.shift)}
+                        </p>
                       </td>
 
                       <td className="px-2 py-4 text-center text-sm font-black text-[#123c8c]">
@@ -1518,16 +1555,14 @@ export default function AdminEmployeesPage() {
             </table>
           </div>
 
-            {!isLoading && filteredEmployees.length === 0 && (
-              <div className="employee-row-enter px-5 py-10 text-center">
-                <p className="font-black text-slate-700">
-                  Data tidak ditemukan
-                </p>
-                <p className="mt-1 text-sm text-slate-400">
-                  Coba gunakan keyword pencarian lain.
-                </p>
-              </div>
-            )}
+          {!isLoading && filteredEmployees.length === 0 && (
+            <div className="employee-row-enter px-5 py-10 text-center">
+              <p className="font-black text-slate-700">Data tidak ditemukan</p>
+              <p className="mt-1 text-sm text-slate-400">
+                Coba gunakan keyword pencarian lain.
+              </p>
+            </div>
+          )}
         </section>
       </main>
 
@@ -1734,7 +1769,19 @@ export default function AdminEmployeesPage() {
                           <option value="admin">Admin</option>
                         </select>
                         <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2.5"
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
                         </div>
                       </div>
                     </div>
@@ -1743,7 +1790,9 @@ export default function AdminEmployeesPage() {
                   <div className="grid gap-4 md:grid-cols-2">
                     <div>
                       <label className="mb-2 block text-sm font-black text-slate-700">
-                        {editingEmployee ? "Password Baru (Opsional)" : "Password"}
+                        {editingEmployee
+                          ? "Password Baru (Opsional)"
+                          : "Password"}
                       </label>
                       <div className="app-field-smooth relative rounded-2xl">
                         <KeyRound
@@ -1873,7 +1922,19 @@ export default function AdminEmployeesPage() {
                           ))}
                         </select>
                         <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2.5"
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
                         </div>
                       </div>
                     </div>
@@ -1905,7 +1966,19 @@ export default function AdminEmployeesPage() {
                           ))}
                         </select>
                         <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2.5"
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
                         </div>
                       </div>
                     </div>
@@ -1939,7 +2012,19 @@ export default function AdminEmployeesPage() {
                           ))}
                         </select>
                         <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2.5"
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
                         </div>
                       </div>
                     </div>
@@ -1971,7 +2056,19 @@ export default function AdminEmployeesPage() {
                           ))}
                         </select>
                         <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2.5"
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
                         </div>
                       </div>
                     </div>
@@ -2013,7 +2110,19 @@ export default function AdminEmployeesPage() {
                           ))}
                         </select>
                         <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2.5"
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
                         </div>
                       </div>
                     </div>
@@ -2046,7 +2155,19 @@ export default function AdminEmployeesPage() {
                           <option value="inactive">Nonaktif</option>
                         </select>
                         <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2.5"
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
                         </div>
                       </div>
                     </div>

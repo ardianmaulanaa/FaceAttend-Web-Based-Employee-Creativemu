@@ -147,7 +147,7 @@ export default function TukarShiftPage() {
   const [currentShiftName, setCurrentShiftName] = useState("Shift Utama");
   const [colleagues, setColleagues] = useState<Colleague[]>([]);
   const [availableShifts, setAvailableShifts] = useState<AvailableShift[]>([]);
-  const [canSelfShift, setCanSelfShift] = useState(true);
+  const [canSelfShift, setCanSelfShift] = useState(false);
   const [isRulesOpen, setIsRulesOpen] = useState(false);
 
   const [sentRequests, setSentRequests] = useState<SwapRequest[]>([]);
@@ -166,12 +166,6 @@ export default function TukarShiftPage() {
   const [alertState, setAlertState] = useState<{
     type: "success" | "error" | "warning";
     message: string;
-  } | null>(null);
-
-  // Custom cancel modal state (replaces window.prompt)
-  const [cancelModal, setCancelModal] = useState<{
-    swapId: string;
-    reason: string;
   } | null>(null);
 
   async function loadData() {
@@ -325,52 +319,6 @@ export default function TukarShiftPage() {
     }
   }
 
-  function handleCancel(swapId: string) {
-    setCancelModal({ swapId, reason: "" });
-  }
-
-  async function executeCancelConfirmed() {
-    if (!cancelModal) return;
-    const { swapId, reason: cancelReason } = cancelModal;
-    const finalReason = cancelReason.trim() || "Dibatalkan oleh karyawan";
-    setCancelModal(null);
-    try {
-      setProcessingId(swapId);
-      setAlertState(null);
-
-      const res = await fetch(`/api/shift-swaps/${swapId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "cancel", cancelReason: finalReason }),
-      });
-
-      const json = await res.json();
-
-      if (!res.ok || !json.success) {
-        setAlertState({
-          type: "error",
-          message: json.error || "Gagal membatalkan pengajuan.",
-        });
-        return;
-      }
-
-      setAlertState({
-        type: "success",
-        message: json.message || "Pengajuan berhasil dibatalkan.",
-      });
-
-      await loadData();
-    } catch (err) {
-      console.error("SWAP_CANCEL_ERROR:", err);
-      setAlertState({
-        type: "error",
-        message: "Terjadi kesalahan saat membatalkan pengajuan.",
-      });
-    } finally {
-      setProcessingId(null);
-    }
-  }
-
   const pendingIncoming = incomingRequests.filter(
     (r) => r.status === "pending",
   );
@@ -388,61 +336,6 @@ export default function TukarShiftPage() {
         rightLabel="Tukar Shift"
         hideMobileMenuButton
       />
-
-      {/* CUSTOM CANCEL MODAL */}
-      {cancelModal ? (
-        <div className="fixed inset-0 z-[110] flex items-end justify-center bg-slate-950/45 px-4 pb-4 md:items-center md:pb-0">
-          <button
-            type="button"
-            aria-label="Tutup modal batal"
-            className="absolute inset-0 cursor-default"
-            onClick={() => setCancelModal(null)}
-          />
-          <div className="relative w-full max-w-sm overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-2xl shadow-slate-900/25">
-            <div className="flex items-center gap-3 border-b border-slate-100 bg-gradient-to-r from-red-50 to-white p-5">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-600">
-                <XCircle size={24} strokeWidth={2.5} />
-              </div>
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-red-500">Konfirmasi</p>
-                <h3 className="mt-0.5 text-lg font-black text-slate-950">Batalkan Pengajuan?</h3>
-              </div>
-            </div>
-            <div className="space-y-4 p-5">
-              <p className="text-sm font-bold leading-6 text-slate-500">
-                Pengajuan yang dibatalkan tidak dapat dikembalikan. Masukkan alasan jika perlu.
-              </p>
-              <div>
-                <label className="text-sm font-black text-slate-700">Alasan Pembatalan <span className="text-xs font-bold text-slate-400">(opsional)</span></label>
-                <textarea
-                  value={cancelModal.reason}
-                  onChange={(e) => setCancelModal((prev) => prev ? { ...prev, reason: e.target.value } : prev)}
-                  placeholder="Tidak jadi / alasan lain..."
-                  rows={3}
-                  className="mt-2 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-5 py-3.5 text-sm font-bold text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100/60"
-                />
-              </div>
-            </div>
-            <div className="flex gap-3 border-t border-slate-100 bg-slate-50/60 p-4">
-              <button
-                type="button"
-                onClick={() => setCancelModal(null)}
-                className="flex flex-1 items-center justify-center rounded-2xl border border-blue-100 bg-white px-4 py-3 text-sm font-black text-slate-600 transition hover:bg-slate-50 active:scale-[0.98]"
-              >
-                Kembali
-              </button>
-              <button
-                type="button"
-                onClick={executeCancelConfirmed}
-                className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-red-600 px-4 py-3 text-sm font-black text-white shadow-md shadow-red-900/20 transition hover:bg-red-700 active:scale-[0.98]"
-              >
-                <XCircle size={16} />
-                Ya, Batalkan
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
 
       {alertState && alertTheme ? (
         <div className="pointer-events-none fixed right-4 top-4 z-[120] w-[calc(100vw-2rem)] max-w-md sm:right-7 sm:top-7">
@@ -533,10 +426,12 @@ export default function TukarShiftPage() {
                   Tukar shift antar rekan kerja
                 </p>
                 <ul className="mt-3 space-y-2 text-xs font-bold leading-5 text-slate-600">
-                  <li>- Shift pagi bisa tukar dengan shift siang.</li>
-                  <li>- Shift utama tidak bisa tukar dengan shift pagi (gunakan Geser Shift).</li>
+                  <li>Shift utama bisa tukar dengan shift siang.</li>
+                  <li>Shift pagi bisa tukar dengan shift siang.</li>
+                  <li>Shift utama tidak bisa tukar dengan shift pagi.</li>
                   <li>
-                    - Pengajuan dan approval berbasis tanggal (berlaku untuk hari ini & besok) tanpa batasan jam/menit.
+                    Pengajuan dan approval harus sebelum batas 30 menit dari jam
+                    masuk shift yang terkait.
                   </li>
                 </ul>
               </div>
@@ -546,10 +441,12 @@ export default function TukarShiftPage() {
                   Geser shift tanpa rekan
                 </p>
                 <ul className="mt-3 space-y-2 text-xs font-bold leading-5 text-amber-900">
-                  <li>- Hanya berlaku untuk karyawan utama.</li>
-                  <li>- Karyawan utama bisa geser ke shift siang.</li>
+                  <li>Hanya berlaku untuk karyawan utama.</li>
                   <li>
-                    - Pengajuan berbasis tanggal (berlaku untuk hari ini & besok) secara fleksibel.
+                    Karyawan utama bisa geser ke shift pagi atau shift siang.
+                  </li>
+                  <li>
+                    Batas pengajuan 30 menit sebelum jam masuk shift tujuan.
                   </li>
                 </ul>
               </div>
@@ -666,10 +563,11 @@ export default function TukarShiftPage() {
                     setRequestMode("swap");
                     setTargetShiftName("");
                   }}
-                  className={`rounded-2xl px-4 py-3 text-left transition active:scale-[0.98] ${requestMode === "swap"
+                  className={`rounded-2xl px-4 py-3 text-left transition active:scale-[0.98] ${
+                    requestMode === "swap"
                       ? "bg-[#123c8c] text-white shadow-lg shadow-blue-900/20"
                       : "bg-white text-slate-600 ring-1 ring-blue-100"
-                    }`}
+                  }`}
                 >
                   <span className="block text-xs font-black uppercase">
                     Tukar Shift
@@ -685,10 +583,11 @@ export default function TukarShiftPage() {
                     setRequestMode("self");
                     setTargetUserId("");
                   }}
-                  className={`rounded-2xl px-4 py-3 text-left transition active:scale-[0.98] ${requestMode === "self"
+                  className={`rounded-2xl px-4 py-3 text-left transition active:scale-[0.98] ${
+                    requestMode === "self"
                       ? "bg-[#123c8c] text-white shadow-lg shadow-blue-900/20"
                       : "bg-white text-slate-600 ring-1 ring-blue-100"
-                    }`}
+                  }`}
                 >
                   <span className="block text-xs font-black uppercase">
                     Geser Shift
@@ -713,58 +612,44 @@ export default function TukarShiftPage() {
                   <label className="text-sm font-black text-slate-700">
                     Pilih Rekan Kerja
                   </label>
-                  <div className="relative mt-2">
-                    <select
-                      value={targetUserId}
-                      onChange={(e) => setTargetUserId(e.target.value)}
-                      className="min-h-[54px] w-full appearance-none rounded-2xl border border-blue-100 bg-[#f8fbff] pl-6 pr-12 py-3.5 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100/60 shadow-sm cursor-pointer"
-                    >
-                      <option value="">-- Pilih Rekan Kerja --</option>
-                      {colleagues.map((col) => (
-                        <option key={col.id} value={col.id}>
-                          {col.name} ({col.shiftName})
-                        </option>
-                      ))}
-                    </select>
-                    <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                  </div>
+                  <select
+                    value={targetUserId}
+                    onChange={(e) => setTargetUserId(e.target.value)}
+                    className="mt-2 min-h-[52px] w-full rounded-3xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                  >
+                    <option value="">-- Pilih Rekan Kerja --</option>
+                    {colleagues.map((col) => (
+                      <option key={col.id} value={col.id}>
+                        {col.name} ({col.shiftName})
+                      </option>
+                    ))}
+                  </select>
                 </div>
               ) : (
                 <div>
                   <label className="text-sm font-black text-slate-700">
                     Pilih Shift Tujuan
                   </label>
-                  <div className="relative mt-2">
-                    <select
-                      value={targetShiftName}
-                      onChange={(e) => setTargetShiftName(e.target.value)}
-                      disabled={!canSelfShift}
-                      className="min-h-[54px] w-full appearance-none rounded-2xl border border-blue-100 bg-[#f8fbff] pl-6 pr-12 py-3.5 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100/60 disabled:cursor-not-allowed disabled:opacity-60 shadow-sm cursor-pointer"
-                    >
-                      <option value="">
-                        {canSelfShift
-                          ? "-- Pilih Shift Tujuan --"
-                          : "Hanya untuk karyawan utama"}
+                  <select
+                    value={targetShiftName}
+                    onChange={(e) => setTargetShiftName(e.target.value)}
+                    disabled={!canSelfShift}
+                    className="mt-2 min-h-[52px] w-full rounded-3xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <option value="">
+                      {canSelfShift
+                        ? "-- Pilih Shift Tujuan --"
+                        : "Hanya untuk karyawan utama"}
+                    </option>
+                    {availableShifts.map((shift) => (
+                      <option key={shift.id} value={shift.name}>
+                        {shift.name}
+                        {shift.startTime && shift.endTime
+                          ? ` (${shift.startTime}-${shift.endTime})`
+                          : ""}
                       </option>
-                      {availableShifts.map((shift) => (
-                        <option key={shift.id} value={shift.name}>
-                          {shift.name}
-                          {shift.startTime && shift.endTime
-                            ? ` (${shift.startTime}-${shift.endTime})`
-                            : ""}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                  </div>
+                    ))}
+                  </select>
                 </div>
               )}
 
@@ -779,10 +664,11 @@ export default function TukarShiftPage() {
                   value={swapDate}
                   min={getTodayString()}
                   onChange={(e) => setSwapDate(e.target.value)}
-                  className="mt-2 min-h-[54px] w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-6 py-3.5 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100/60 shadow-sm"
+                  className="mt-2 min-h-[52px] w-full rounded-3xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
                 />
                 <p className="mt-2 text-[11px] font-bold leading-4 text-slate-400">
-                  Pengajuan berbasis tanggal (berlaku fleksibel untuk hari ini & besok).
+                  Pengajuan hanya bisa dibuat sebelum batas 30 menit dari jam
+                  masuk shift pada tanggal tersebut.
                 </p>
               </div>
 
@@ -798,7 +684,7 @@ export default function TukarShiftPage() {
                       ? "Alasan singkat tukar shift..."
                       : "Alasan singkat geser shift..."
                   }
-                  className="mt-2 min-h-[100px] w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-6 py-4 text-sm font-bold text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100/60 shadow-sm"
+                  className="mt-2 min-h-28 w-full resize-none rounded-3xl border border-blue-100 bg-[#f8fbff] px-4 py-4 text-sm font-bold leading-6 text-slate-700 outline-none focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
                 />
               </div>
 
@@ -849,137 +735,82 @@ export default function TukarShiftPage() {
                 Belum ada riwayat tukar shift.
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {sentRequests.map((req, index) => (
                   <div
                     key={req.id}
-                    className="tukar-shift-enter flex flex-col gap-3 rounded-3xl border border-blue-100 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+                    className="tukar-shift-enter flex items-center justify-between rounded-3xl border border-blue-100 bg-white p-3.5 shadow-sm"
                     style={{ animationDelay: `${index * 45}ms` }}
                   >
-                    <div className="min-w-0 flex-1">
+                    <div>
                       <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
                         {req.isSelfShift ? "Geser Shift" : "Tukar Keluar"}
                       </p>
-                      <p className="mt-0.5 text-sm font-black text-slate-900 leading-snug break-words">
+                      <p className="text-xs font-black text-slate-900">
                         {req.isSelfShift
                           ? `${req.requesterShiftName} ke ${req.targetShiftName}`
                           : `Ke: ${req.targetUser?.name} (${req.targetShiftName})`}
                       </p>
-                      <p className="mt-1 text-xs font-bold text-slate-500">
+                      <p className="text-[11px] font-bold text-slate-500">
                         Tanggal:{" "}
-                        <span className="font-black text-[#123c8c]">{req.swapDate}</span>
+                        <span className="text-[#123c8c]">{req.swapDate}</span>
                       </p>
                     </div>
 
-                    <div className="flex w-full items-center justify-between gap-2.5 pt-2 border-t border-slate-100 sm:w-auto sm:justify-start sm:border-t-0 sm:pt-0">
-                      <span
-                        style={{
-                          fontSize: "12px",
-                          fontWeight: 900,
-                          lineHeight: "1.2",
-                          padding: "6px 12px",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                        className={`rounded-full ring-1 ${
-                          req.status === "approved"
-                            ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
-                            : req.status === "rejected"
-                              ? "bg-red-50 text-red-700 ring-red-200"
-                              : req.status === "cancelled"
-                                ? "bg-slate-100 text-slate-500 ring-slate-200"
-                                : "bg-amber-50 text-amber-700 ring-amber-200"
-                        }`}
-                      >
-                        {req.status === "approved"
-                          ? "Disetujui"
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-[10px] font-black ${
+                        req.status === "approved"
+                          ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
                           : req.status === "rejected"
-                            ? "Ditolak"
-                            : req.status === "cancelled"
-                              ? "Dibatalkan"
-                              : "Menunggu"}
-                      </span>
-
-                      {req.status === "pending" || req.status === "approved" ? (
-                        <button
-                          type="button"
-                          disabled={processingId === req.id}
-                          onClick={() => handleCancel(req.id)}
-                          style={{
-                            fontSize: "12px",
-                            fontWeight: 900,
-                            lineHeight: "1.2",
-                            padding: "6px 12px",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: "4px",
-                            fontFamily: "inherit",
-                          }}
-                          className="ml-auto rounded-full bg-rose-50 text-rose-600 ring-1 ring-rose-200 transition hover:bg-rose-100 active:scale-95 disabled:opacity-50"
-                        >
-                          {processingId === req.id ? (
-                            <Loader2 size={13} className="animate-spin" />
-                          ) : (
-                            <>
-                              <X size={13} strokeWidth={3} />
-                              Batalkan
-                            </>
-                          )}
-                        </button>
-                      ) : null}
-                    </div>
+                            ? "bg-red-50 text-red-700 ring-1 ring-red-200"
+                            : "bg-amber-50 text-amber-700 ring-1 ring-amber-200"
+                      }`}
+                    >
+                      {req.status === "approved"
+                        ? "Disetujui"
+                        : req.status === "rejected"
+                          ? "Ditolak"
+                          : "Menunggu"}
+                    </span>
                   </div>
                 ))}
 
                 {incomingRequests.map((req, index) => (
                   <div
                     key={req.id}
-                    className="tukar-shift-enter flex flex-col gap-3 rounded-3xl border border-blue-100 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+                    className="tukar-shift-enter flex items-center justify-between rounded-3xl border border-blue-100 bg-white p-3.5 shadow-sm"
                     style={{
                       animationDelay: `${(sentRequests.length + index) * 45}ms`,
                     }}
                   >
-                    <div className="min-w-0 flex-1">
+                    <div>
                       <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
                         Tukar Masuk
                       </p>
-                      <p className="mt-0.5 text-sm font-black text-slate-900 leading-snug break-words">
+                      <p className="text-xs font-black text-slate-900">
                         Dari: {req.requester?.name} ({req.requesterShiftName})
                       </p>
-                      <p className="mt-1 text-xs font-bold text-slate-500">
+                      <p className="text-[11px] font-bold text-slate-500">
                         Tanggal:{" "}
-                        <span className="font-black text-[#123c8c]">{req.swapDate}</span>
+                        <span className="text-[#123c8c]">{req.swapDate}</span>
                       </p>
                     </div>
 
-                    <div className="flex items-center pt-1 sm:pt-0">
-                      <span
-                        style={{
-                          fontSize: "12px",
-                          fontWeight: 900,
-                          lineHeight: "1.2",
-                          padding: "6px 12px",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                        className={`rounded-full ring-1 ${
-                          req.status === "approved"
-                            ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
-                            : req.status === "rejected"
-                              ? "bg-red-50 text-red-700 ring-red-200"
-                              : "bg-amber-50 text-amber-700 ring-amber-200"
-                        }`}
-                      >
-                        {req.status === "approved"
-                          ? "Disetujui"
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-[10px] font-black ${
+                        req.status === "approved"
+                          ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
                           : req.status === "rejected"
-                            ? "Ditolak"
-                            : "Menunggu"}
-                      </span>
-                    </div>
+                            ? "bg-red-50 text-red-700 ring-1 ring-red-200"
+                            : "bg-amber-50 text-amber-700 ring-1 ring-amber-200"
+                      }`}
+                    >
+                      {req.status === "approved"
+                        ? "Disetujui"
+                        : req.status === "rejected"
+                          ? "Ditolak"
+                          : "Menunggu"}
+                    </span>
                   </div>
                 ))}
               </div>
