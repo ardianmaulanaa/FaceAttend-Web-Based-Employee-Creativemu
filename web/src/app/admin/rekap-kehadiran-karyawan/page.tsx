@@ -24,6 +24,7 @@ type Employee = {
   status?: string | null;
   employment_status?: string | null;
   remainingLeaveQuota?: number;
+  approvedLeaveDays?: number;
   department?: {
     name?: string | null;
   } | null;
@@ -715,7 +716,21 @@ export default function AdminEmployeeAttendanceRecapPage() {
                     pendingLeaveCountByEmployeeId.get(employee.id) || 0;
                   const hasPendingLeave = pendingLeaveCount > 0;
                   const employeePhoto = getEmployeePhoto(employee);
-                  const summary = recapByEmployeeId.get(employee.id)?.summary;
+                  const recap = recapByEmployeeId.get(employee.id);
+                  const summary = recap?.summary;
+                  const annualLeaveQuota = Number(
+                    recap?.annualLeaveQuota ?? 12,
+                  );
+                  const approvedLeaveDays = Number(
+                    recap?.approvedLeaveDays ??
+                      employee.approvedLeaveDays ??
+                      summary?.cuti ??
+                      0,
+                  );
+                  const remainingLeaveQuota = Math.max(
+                    0,
+                    annualLeaveQuota - approvedLeaveDays,
+                  );
                   const netWorkMinutes = getNetWorkMinutes(summary);
                   const detailParams = new URLSearchParams({
                     startDate,
@@ -792,11 +807,10 @@ export default function AdminEmployeeAttendanceRecapPage() {
                           </p>
                         ) : null}
                       </div>
-
                       <div className="flex w-full items-center justify-between gap-2 pt-1 sm:ml-auto sm:w-auto sm:shrink-0 sm:justify-end sm:pt-0">
                         <div className="flex min-w-0 flex-wrap items-center gap-1.5 sm:justify-end">
                           <span className="rounded-full bg-purple-50 px-2.5 py-1 text-[10px] font-black text-purple-700 ring-1 ring-purple-200/80 sm:text-[11px]">
-                            Sisa Cuti: {employee.remainingLeaveQuota ?? 12} Hari
+                            Sisa Cuti: {remainingLeaveQuota} Hari
                           </span>
 
                           {hasPendingLeave ? (
@@ -815,7 +829,11 @@ export default function AdminEmployeeAttendanceRecapPage() {
                         </div>
 
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c] ring-1 ring-blue-100 transition group-hover:bg-[#123c8c] group-hover:text-white sm:h-10 sm:w-10">
-                          <ChevronRight size={18} strokeWidth={2.8} className="transition-transform group-hover:translate-x-0.5" />
+                          <ChevronRight
+                            size={18}
+                            strokeWidth={2.8}
+                            className="transition-transform group-hover:translate-x-0.5"
+                          />
                         </div>
                       </div>
                     </Link>

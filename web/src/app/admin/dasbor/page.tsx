@@ -48,7 +48,15 @@ type RecentAttendance = {
   status: string;
   lateMinutes: number;
   workMinutes: number;
-  workMode?: string;
+  workMode?: string | null;
+  work_mode?: string | null;
+  checkInWorkMode?: string | null;
+  check_in_work_mode?: string | null;
+  checkOutWorkMode?: string | null;
+  check_out_work_mode?: string | null;
+  attendanceMode?: string | null;
+  attendance_mode?: string | null;
+  mode?: string | null;
   hasPhoto?: boolean;
   hasLocation?: boolean;
 };
@@ -84,11 +92,11 @@ function normalizeProfilePhotoUrl(value: string | null | undefined) {
 function getDashboardProfilePhoto(item: RecentAttendance) {
   return normalizeProfilePhotoUrl(
     item.profilePhoto ||
-    item.profile_photo ||
-    item.profile_photo_url ||
-    item.photo_url ||
-    item.avatar_url ||
-    "",
+      item.profile_photo ||
+      item.profile_photo_url ||
+      item.photo_url ||
+      item.avatar_url ||
+      "",
   );
 }
 
@@ -174,6 +182,90 @@ function getEmployeeMeta(item: RecentAttendance) {
   return [item.employeeCode, item.department, item.position]
     .filter(Boolean)
     .join(" - ");
+}
+
+function normalizeWorkMode(value?: string | null) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, "");
+}
+
+function resolveWorkMode(item: RecentAttendance) {
+  // Hook ke beberapa kemungkinan nama field dari API / database.
+  // Ini penting karena sebagian endpoint bisa mengirim camelCase,
+  // sebagian lain snake_case.
+  const candidates = [
+    item.workMode,
+    item.work_mode,
+    item.checkInWorkMode,
+    item.check_in_work_mode,
+    item.checkOutWorkMode,
+    item.check_out_work_mode,
+    item.attendanceMode,
+    item.attendance_mode,
+    item.mode,
+  ];
+
+  for (const candidate of candidates) {
+    const normalized = normalizeWorkMode(candidate);
+
+    if (!normalized) continue;
+
+    if (
+      normalized === "wfh" ||
+      normalized === "workfromhome" ||
+      normalized === "home" ||
+      normalized === "remote"
+    ) {
+      return "WFH";
+    }
+
+    if (normalized === "wfa" || normalized === "workfromanywhere") {
+      return "WFA";
+    }
+
+    if (
+      normalized === "visit" ||
+      normalized === "kunjungan" ||
+      normalized === "field" ||
+      normalized === "lapangan"
+    ) {
+      return "Kunjungan";
+    }
+
+    if (
+      normalized === "office" ||
+      normalized === "wfo" ||
+      normalized === "kantor" ||
+      normalized === "workfromoffice"
+    ) {
+      return "Kantor";
+    }
+
+    // Kalau backend mengirim nilai lain, tampilkan apa adanya,
+    // jangan salah paksa menjadi "Kantor".
+    return String(candidate).trim();
+  }
+
+  // Belum ada presensi / API tidak mengirim mode kerja.
+  return "";
+}
+
+function getWorkModeClass(label: string) {
+  if (label === "WFH") {
+    return "bg-sky-50 text-sky-700 ring-1 ring-sky-200";
+  }
+
+  if (label === "WFA") {
+    return "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200";
+  }
+
+  if (label === "Kunjungan") {
+    return "bg-teal-50 text-teal-700 ring-1 ring-teal-200";
+  }
+
+  return "bg-blue-50 text-[#123c8c] ring-1 ring-blue-100";
 }
 
 function getAttendanceDetailHref(item: RecentAttendance) {
@@ -264,8 +356,9 @@ function MobileAttendanceCard({
             <ChevronDown
               size={22}
               strokeWidth={3}
-              className={`text-[#123c8c] transition duration-200 ${isOpen ? "rotate-180" : ""
-                }`}
+              className={`text-[#123c8c] transition duration-200 ${
+                isOpen ? "rotate-180" : ""
+              }`}
             />
           </button>
         </div>
@@ -527,7 +620,9 @@ export default function AdminDashboardPage() {
                     {isLoading ? (
                       <div className="mt-2.5 h-6 w-12 animate-pulse rounded-lg bg-blue-100" />
                     ) : (
-                      <h3 className={`mt-2 text-xl md:text-2xl font-black ${item.color || "text-[#123c8c]"}`}>
+                      <h3
+                        className={`mt-2 text-xl md:text-2xl font-black ${item.color || "text-[#123c8c]"}`}
+                      >
                         {item.value}
                       </h3>
                     )}
@@ -649,11 +744,15 @@ export default function AdminDashboardPage() {
                           </span>
                         ) : null}
 
-                        <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-[#123c8c]">
-                          {item.workMode === "WFA" || item.workMode === "wfa"
-                            ? "WFA"
-                            : "Kantor"}
-                        </span>
+                        {resolveWorkMode(item) ? (
+                          <span
+                            className={`rounded-full px-3 py-1 text-xs font-black ${getWorkModeClass(
+                              resolveWorkMode(item),
+                            )}`}
+                          >
+                            {resolveWorkMode(item)}
+                          </span>
+                        ) : null}
 
                         {item.hasPhoto ? (
                           <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">

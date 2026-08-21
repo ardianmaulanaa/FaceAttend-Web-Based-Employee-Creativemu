@@ -673,6 +673,36 @@ export default function AdminEmployeeAttendanceRecapDetailPage() {
     );
   }, [employee]);
 
+  // =========================
+  // PERHITUNGAN KUOTA CUTI
+  // =========================
+  // Prioritas data:
+  // 1. approvedLeaveDays dari backend
+  // 2. jika tidak ada, hitung dari annualLeaveQuota - remainingLeaveQuota
+  // 3. jika keduanya tidak ada, fallback ke summary.cuti
+  //
+  // Dengan ini:
+  // - cuti 21-22 = 2 hari
+  // - cuti hanya 21 = 1 hari
+  // selama backend remainingLeaveQuota / approvedLeaveDays sudah benar.
+  const annualLeaveQuota = Number(employee?.annualLeaveQuota ?? 12);
+
+  const approvedLeaveDays =
+    employee?.approvedLeaveDays != null
+      ? Number(employee.approvedLeaveDays)
+      : employee?.remainingLeaveQuota != null
+        ? Math.max(0, annualLeaveQuota - Number(employee.remainingLeaveQuota))
+        : Number(summary.cuti || 0);
+
+  const remainingLeaveQuota =
+    employee?.remainingLeaveQuota != null
+      ? Math.max(0, Number(employee.remainingLeaveQuota))
+      : Math.max(0, annualLeaveQuota - approvedLeaveDays);
+
+  // Sesuai kebutuhan tampilan:
+  // "Cuti Periode Ini" menampilkan total hari cuti yang sudah approved/terpakai.
+  const cutiPeriodeIni = approvedLeaveDays;
+
   const cameFromDashboard = searchParams.get("from") === "dashboard";
   const cameFromRank = searchParams.get("from") === "rank";
   const backHref = cameFromDashboard
@@ -704,7 +734,7 @@ export default function AdminEmployeeAttendanceRecapDetailPage() {
       ["Menunggu", summary.menunggu],
       ["Izin", summary.izin],
       ["Sakit", summary.sakit],
-      ["Cuti", summary.cuti],
+      ["Cuti", cutiPeriodeIni],
       ["Lainnya", summary.lainnya],
     ];
     const tableRows = rows
@@ -1049,7 +1079,7 @@ export default function AdminEmployeeAttendanceRecapDetailPage() {
                       Ini
                     </p>
                     <p className="mt-4 text-3xl font-black leading-tight">
-                      {summary.cuti}
+                      {cutiPeriodeIni}
                       <span className="block">Hari</span>
                     </p>
                   </div>
@@ -1061,11 +1091,7 @@ export default function AdminEmployeeAttendanceRecapDetailPage() {
                       Cuti
                     </p>
                     <p className="mt-4 text-3xl font-black leading-tight">
-                      {employee?.remainingLeaveQuota ??
-                        Math.max(
-                          0,
-                          12 - (employee?.approvedLeaveDays || summary.cuti),
-                        )}
+                      {remainingLeaveQuota}
                       <span className="block">Hari</span>
                     </p>
                   </div>
