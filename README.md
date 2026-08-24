@@ -1,932 +1,841 @@
-# Creativemu FaceAttend
+# Dokumentasi Analisis Absensi
 
-**Creativemu FaceAttend** adalah aplikasi absensi karyawan berbasis web untuk Creativemu. Aplikasi ini dibuat untuk membantu proses check-in, check-out, pencatatan riwayat kehadiran, pengelolaan data karyawan, monitoring absensi, pengumuman internal, pengajuan cuti/izin/sakit, serta pelaporan kehadiran karyawan.
+Folder ini berisi dua project aplikasi absensi berbasis web:
 
-Pada versi terbaru, sistem absensi **tidak lagi menggunakan face recognition berbasis AI**. Mekanisme absensi dilakukan dengan cara karyawan mengambil foto melalui kamera browser sebagai bukti kehadiran, lalu sistem menyimpan lokasi GPS saat check-in dan check-out.
+- `absensi-creativemu`
+- `absensi-alfabank`
 
----
+Keduanya menggunakan fondasi teknologi yang sama dan dikembangkan sebagai aplikasi absensi karyawan berbasis foto, GPS, role access, dashboard admin, laporan kehadiran, cuti/pengajuan, pengumuman, dan notifikasi.
 
-## Status Project
+## Ringkasan Umum
 
-**Status:** Development
-
-Project ini masih berada pada tahap pengembangan aktif. Beberapa bagian utama seperti autentikasi, role access, absensi berbasis foto dan GPS, manajemen karyawan, master data, pengumuman, riwayat presensi, pengajuan cuti/izin/sakit, notifikasi karyawan, notifikasi admin, dan dashboard admin sudah dikembangkan dan terus disempurnakan.
-
----
-
-## Tujuan Aplikasi
-
-Creativemu FaceAttend dikembangkan untuk:
-
-- Membantu perusahaan mencatat kehadiran karyawan secara digital.
-- Mengurangi pencatatan absensi manual.
-- Menyimpan bukti foto saat karyawan melakukan check-in dan check-out.
-- Menyimpan data lokasi GPS saat absensi dilakukan.
-- Membantu admin memantau status kehadiran karyawan.
-- Memudahkan karyawan melihat riwayat presensi.
-- Memudahkan karyawan mengajukan cuti, izin, atau sakit.
-- Membantu admin mengelola laporan cuti dan keputusan approval.
-- Menyediakan pengumuman internal dari admin ke karyawan.
-- Menyediakan pusat notifikasi untuk karyawan dan admin.
-- Menyediakan dasar pengembangan sistem monitoring dan laporan kehadiran.
-
----
-
-## Konsep Utama Sistem
-
-Sistem absensi pada Creativemu FaceAttend menggunakan kombinasi:
-
-1. **Foto dari kamera browser**
-2. **Lokasi GPS dari browser**
-3. **Data waktu check-in dan check-out**
-4. **Validasi radius kantor**
-5. **Kategori lokasi kerja**
-6. **Riwayat kehadiran per bulan dan tahun**
-7. **Role-based access antara admin dan karyawan**
-8. **Notifikasi berbasis status dan pengumuman**
-
-Dengan konsep ini, setiap absensi memiliki bukti visual dan lokasi yang dapat digunakan sebagai dasar validasi kehadiran.
-
----
-
-## Fitur Utama
-
-### 1. Authentication
-
-Aplikasi menggunakan sistem autentikasi custom berbasis cookie dan JWT.
-
-Fitur autentikasi:
-
-- Login karyawan dan admin.
-- Password disimpan dalam bentuk hash.
-- Session menggunakan cookie.
-- Role-based access.
-- Proteksi halaman berdasarkan role.
-- Logout melalui sidebar menu.
-
-Role utama:
-
-- Admin
-- Employee
-
-Role tambahan dapat dikembangkan sesuai kebutuhan sistem.
-
----
-
-### 2. Dashboard Karyawan
-
-Dashboard karyawan digunakan sebagai halaman utama setelah login.
-
-Fitur dashboard karyawan:
-
-- Menampilkan sapaan pengguna.
-- Menampilkan informasi shift, jabatan, unit, divisi, dan kantor terdaftar.
-- Menampilkan waktu saat ini.
-- Menampilkan status absensi hari ini.
-- Tombol masuk ke halaman presensi.
-- Akses cepat ke presensi, riwayat presensi, profil, cuti/izin/sakit, dan pengumuman.
-- Badge notifikasi untuk status cuti/izin/sakit dan pengumuman baru.
-
----
-
-### 3. Attendance / Presensi
-
-Halaman Attendance digunakan oleh karyawan untuk melakukan check-in dan check-out.
-
-Fitur presensi:
-
-- Kamera browser untuk mengambil foto.
-- GPS browser untuk mengambil lokasi.
-- Check-in berbasis foto dan lokasi.
-- Check-out berbasis foto dan lokasi.
-- Data latitude dan longitude disimpan.
-- Data akurasi GPS disimpan.
-- Sistem dapat memvalidasi jarak karyawan dari kantor.
-- Status kamera ditampilkan pada UI.
-- Foto terakhir dapat ditampilkan sebagai preview.
-- Data absensi dikirim ke API internal aplikasi.
-
-Kategori lokasi kerja yang didukung:
-
-- Presensi dari kantor.
-- Work From Home.
-- Work From Cafe.
-- Kunjungan.
-
-Catatan kategori lokasi:
-
-- Presensi kantor menggunakan validasi radius kantor.
-- WFH dan WFC dapat dilakukan dari lokasi karyawan saat itu.
-- Kunjungan membutuhkan pengisian data kunjungan tambahan.
-- WFH, WFC, dan kunjungan dapat masuk ke notifikasi admin untuk kebutuhan monitoring.
-- WFH, WFC, dan kunjungan tidak masuk ke notifikasi karyawan.
-
-Alur check-in:
+### Struktur Folder
 
 ```txt
-Karyawan membuka halaman Attendance
-→ Kamera aktif
-→ Karyawan memilih kategori presensi
-→ Sistem mengambil foto dari kamera
-→ Sistem mengambil lokasi GPS
-→ Sistem mengirim data ke API
-→ Data check-in disimpan ke database
+absensi
+├── absensi-creativemu
+│   ├── package.json
+│   ├── README.md
+│   ├── server.js
+│   └── web
+│       ├── src
+│       │   ├── app
+│       │   ├── components
+│       │   ├── context
+│       │   ├── hooks
+│       │   └── lib
+│       ├── prisma
+│       ├── scripts
+│       ├── e2e
+│       ├── public
+│       └── package.json
+└── absensi-alfabank
+    ├── package.json
+    ├── README.md
+    ├── server.js
+    └── web
+        ├── src
+        │   ├── app
+        │   ├── components
+        │   ├── context
+        │   ├── hooks
+        │   └── lib
+        ├── prisma
+        ├── scripts
+        ├── e2e
+        ├── public
+        └── package.json
 ```
 
-Alur check-out:
+### Teknologi Utama
 
-```txt
-Karyawan membuka halaman Attendance
-→ Kamera aktif
-→ Karyawan melakukan check-out
-→ Sistem mengambil foto dari kamera
-→ Sistem mengambil lokasi GPS
-→ Sistem mengirim data ke API
-→ Data check-out disimpan ke database
-```
+- Next.js 16 App Router
+- React 19
+- TypeScript
+- Tailwind CSS
+- Prisma ORM
+- MySQL/MariaDB
+- bcryptjs
+- jose JWT
+- Leaflet/react-leaflet
+- Lucide React
+- Vitest
+- Playwright
+- ESLint
 
----
+### Perbandingan Singkat
 
-### 4. Riwayat Presensi
-
-Karyawan dapat melihat riwayat presensi berdasarkan bulan, tahun, dan urutan data.
-
-Fitur riwayat presensi:
-
-- Filter berdasarkan bulan.
-- Filter berdasarkan tahun.
-- Urutan terbaru atau terlama.
-- Menampilkan status kehadiran.
-- Menampilkan jam check-in dan check-out.
-- Menampilkan durasi kerja.
-- Menampilkan keterlambatan.
-- Menampilkan pulang cepat.
-- Detail presensi dapat dibuka per data.
-
----
-
-### 5. Detail Presensi
-
-Halaman detail presensi menampilkan bukti absensi secara lebih lengkap.
-
-Informasi yang ditampilkan:
-
-- Tanggal absensi.
-- Status kehadiran.
-- Kategori presensi.
-- Jam check-in.
-- Jam check-out.
-- Durasi kerja.
-- Jumlah menit terlambat.
-- Jumlah menit pulang cepat.
-- Foto check-in.
-- Foto check-out.
-- Lokasi check-in.
-- Lokasi check-out.
-- Akurasi GPS.
-- Jarak dari kantor.
-- Status berada di dalam atau di luar radius kantor.
-- Link untuk membuka lokasi di Google Maps.
+| Area | absensi-creativemu | absensi-alfabank |
+| --- | --- | --- |
+| Basis aplikasi | FaceAttend untuk Creativemu | FaceAttend versi rebrand Alfabank |
+| Stack | Next.js, Prisma, MySQL/MariaDB | Sama |
+| Struktur database | Sama secara garis besar | Sama secara garis besar |
+| Branding | Logo/tema Creativemu biru | Logo/tema Alfabank merah |
+| Modul cuti | Ada | Ada |
+| Modul pengajuan tambahan | Tidak ada route khusus `/pengajuan` | Ada route khusus `/pengajuan` dan admin laporan pengajuan |
+| Attachment pengajuan/cuti | Terbatas | Lebih lengkap, termasuk endpoint attachment |
+| Dokumen pengumuman | Tidak ada endpoint khusus dokumen | Ada endpoint dokumen pengumuman |
+| Site logo image endpoint | Tidak ada endpoint khusus image | Ada `/api/site-logo/image` |
+| README internal | Sesuai Creativemu | Masih banyak menyebut Creativemu, perlu direbrand |
 
 ---
 
-### 6. Profil Karyawan
+# 1. SRS / Software Requirement Specification
 
-Halaman profil digunakan untuk melihat informasi akun karyawan.
+## 1.1 Nama Sistem
 
-Informasi profil:
+### absensi-creativemu
 
-- Foto profil.
-- Nama karyawan.
-- Email.
-- Nomor telepon.
-- Status akun.
-- Role akun.
-- Kantor terdaftar.
-- Divisi.
-- Unit kerja.
-- Jabatan.
-- Shift.
-- Toleransi keterlambatan.
-- Jam kerja.
+Creativemu FaceAttend.
 
-Fitur profil:
+### absensi-alfabank
 
-- Upload foto profil.
-- Ubah password.
-- Menampilkan ringkasan data karyawan.
-- Menampilkan informasi akun secara detail.
+Alfabank FaceAttend atau Sistem Absensi Alfabank. Secara kode sudah banyak direbrand ke Alfabank, tetapi README bawaan masih memakai nama Creativemu sehingga perlu penyesuaian dokumentasi.
 
----
+## 1.2 Tujuan Sistem
 
-### 7. Admin Dashboard
+Sistem dibuat untuk membantu perusahaan mengelola absensi karyawan secara digital dengan bukti foto dan lokasi GPS.
 
-Admin memiliki dashboard untuk mengelola data dan memantau sistem.
+Tujuan utama:
 
-Fitur admin yang dikembangkan:
+- Mencatat check-in dan check-out karyawan.
+- Menyimpan foto presensi sebagai bukti kehadiran.
+- Menyimpan lokasi GPS saat presensi.
+- Memvalidasi radius lokasi kantor.
+- Mengurangi proses absensi manual.
+- Menyediakan riwayat presensi karyawan.
+- Menyediakan dashboard dan laporan untuk admin.
+- Mengelola data karyawan dan master data organisasi.
+- Mengelola cuti, izin, sakit, dan pengajuan lain.
+- Mengelola pengumuman internal perusahaan.
+- Mengirim notifikasi kepada karyawan dan admin.
 
-- Dashboard admin.
-- Monitoring perusahaan.
-- Manajemen data karyawan.
-- Register employee.
-- Pengumuman internal.
-- Laporan cuti.
-- Laporan kehadiran.
-- Master data.
-- Notifikasi admin.
-- Monitoring awal absensi.
+## 1.3 Aktor Sistem
 
----
+### Employee / Karyawan
 
-### 8. Master Data
+Karyawan dapat:
 
-Master data digunakan admin untuk mengelola data dasar perusahaan.
+- Login ke aplikasi.
+- Melihat beranda/dashboard pribadi.
+- Melakukan check-in.
+- Melakukan check-out.
+- Mengambil foto presensi dari kamera browser.
+- Mengirim lokasi GPS.
+- Memilih mode kerja seperti kantor, WFH, atau kunjungan.
+- Melihat riwayat presensi.
+- Melihat detail presensi.
+- Mengubah profil dan password.
+- Mengajukan cuti, izin, sakit, atau pengajuan lain.
+- Melihat status pengajuan.
+- Membaca pengumuman.
+- Melihat notifikasi.
+- Mengajukan tukar shift.
 
-Master data yang tersedia atau sedang dikembangkan:
+### Admin / Owner
+
+Admin atau owner dapat:
+
+- Login ke aplikasi.
+- Mengakses dashboard admin.
+- Melihat monitor perusahaan.
+- Mengelola data karyawan.
+- Mengelola kantor.
+- Mengelola divisi.
+- Mengelola jabatan.
+- Mengelola posisi.
+- Mengelola shift.
+- Mengelola jam kerja.
+- Mengelola status kepegawaian.
+- Mengelola nomor kontak admin.
+- Mengelola pengumuman.
+- Mengelola laporan kehadiran.
+- Mengelola rekap kehadiran karyawan.
+- Mengelola laporan cuti.
+- Menyetujui atau menolak pengajuan.
+- Melihat notifikasi admin.
+- Mengubah logo dan warna aplikasi.
+
+## 1.4 Fitur Fungsional
+
+### Authentication
+
+- Sistem menyediakan login karyawan dan admin.
+- Password disimpan dalam bentuk hash menggunakan bcrypt.
+- Session menggunakan JWT dan cookie.
+- Cookie utama bernama `presensi_token`.
+- Sistem memvalidasi status akun aktif.
+- Sistem mendukung role `employee`, `admin`, dan `owner`.
+- Sistem menolak akses jika role tidak sesuai.
+- Sistem menyediakan logout.
+
+### Presensi
+
+- Karyawan dapat check-in satu kali per hari.
+- Karyawan dapat check-out setelah check-in.
+- Sistem mengambil foto dari kamera browser.
+- Sistem mengambil latitude, longitude, dan akurasi GPS.
+- Sistem menghitung jarak karyawan ke kantor.
+- Sistem menentukan apakah karyawan berada dalam radius kantor.
+- Sistem mendukung mode kerja kantor, WFH, dan kunjungan.
+- Sistem menghitung keterlambatan berdasarkan jadwal kerja.
+- Sistem menghitung pulang cepat berdasarkan jadwal pulang.
+- Sistem menyimpan alasan telat jika melewati toleransi.
+- Sistem menyimpan alasan pulang cepat jika dibutuhkan.
+- Sistem menyimpan catatan aktivitas.
+
+### Riwayat Presensi
+
+- Karyawan dapat melihat daftar presensi.
+- Riwayat dapat difilter berdasarkan bulan dan tahun.
+- Karyawan dapat membuka detail presensi.
+- Detail berisi foto check-in, foto check-out, lokasi, jarak, akurasi, status, jam kerja, keterlambatan, dan pulang cepat.
+
+### Master Data
+
+Admin dapat mengelola:
 
 - Kantor
 - Divisi
-- Unit
 - Jabatan
+- Posisi
 - Shift
-- Jam Kerja
+- Jam kerja
+- Status kepegawaian
+- Nomor kontak admin
 - Data karyawan
 
-Relasi utama:
+Relasi data utama:
 
 ```txt
 Kantor
 → Divisi
-→ Unit
 → Jabatan
+→ Posisi
 → Karyawan
 → Shift
 → Jam Kerja
 ```
 
-Penjelasan singkat:
+### Cuti, Izin, Sakit, dan Pengajuan
 
-- Kantor digunakan sebagai lokasi kerja dan dasar validasi radius.
-- Divisi berada di bawah kantor.
-- Unit berada di bawah divisi.
-- Jabatan berada di bawah unit.
-- Karyawan memiliki kantor, divisi, unit, jabatan, dan shift.
-- Shift terhubung dengan jadwal kerja.
+Fitur yang tersedia:
 
----
+- Karyawan dapat membuat pengajuan.
+- Pengajuan memiliki tanggal mulai dan tanggal selesai.
+- Sistem menghitung total hari.
+- Karyawan mengisi alasan.
+- Status awal adalah `pending`.
+- Admin dapat menyetujui atau menolak.
+- Admin dapat memberi catatan.
+- Sistem mengirim notifikasi status ke karyawan.
 
-### 9. Register Employee
+Jenis umum:
 
-Admin dapat mendaftarkan karyawan baru melalui halaman Register Employee.
+- Cuti tahunan
+- Izin
+- Sakit
+- Lembur
+- Lainnya
 
-Data yang dapat diatur:
+Khusus `absensi-alfabank`, tersedia modul tambahan bernama `pengajuan` dengan halaman dan API tersendiri.
 
-- Nama karyawan.
-- Email.
-- Password awal.
-- Nomor telepon.
-- Kantor terdaftar.
-- Divisi.
-- Unit.
-- Jabatan.
-- Shift.
-- Status akun.
+### Pengumuman
 
-Password disimpan dalam bentuk hash, bukan plain text.
+- Admin dapat membuat pengumuman.
+- Pengumuman dapat berstatus published, draft, atau archived.
+- Karyawan dapat membaca pengumuman.
+- Sistem dapat menampilkan pengumuman baru sebagai notifikasi.
+- Pada Alfabank tersedia endpoint dokumen pengumuman.
 
----
+### Notifikasi
 
-### 10. Pengumuman Internal
+Notifikasi karyawan:
 
-Admin dapat membuat pengumuman yang akan ditampilkan kepada karyawan.
-
-Fitur pengumuman:
-
-- Admin membuat pengumuman.
-- Admin mengatur status pengumuman.
-- Karyawan dapat melihat pengumuman yang sudah dipublikasikan.
-- Pengumuman baru dapat masuk ke notifikasi karyawan.
-- Notifikasi pengumuman akan berubah menjadi terbaca setelah karyawan membuka notifikasi tersebut.
-
-Status pengumuman:
-
-- Published
-- Draft
-- Archived
-
----
-
-### 11. Cuti / Izin / Sakit
-
-Fitur cuti, izin, dan sakit digunakan untuk pengajuan ketidakhadiran karyawan.
-
-Fitur karyawan:
-
-- Mengajukan cuti.
-- Mengajukan izin.
-- Mengajukan sakit.
-- Mengisi tanggal mulai.
-- Mengisi tanggal selesai.
-- Mengisi alasan pengajuan.
-- Melihat riwayat pengajuan.
-- Melihat status pengajuan.
-
-Fitur admin:
-
-- Melihat semua pengajuan cuti, izin, dan sakit.
-- Melihat detail karyawan yang mengajukan.
-- Menyetujui pengajuan.
-- Menolak pengajuan.
-- Memberikan catatan admin.
-- Mengubah status pengajuan.
-- Mengirim notifikasi status ke karyawan.
-
-Status pengajuan:
-
-- Pending
-- Approved
-- Rejected
-
-Alur pengajuan:
-
-```txt
-Karyawan mengajukan cuti / izin / sakit
-→ Data masuk sebagai pending
-→ Admin membuka laporan cuti
-→ Admin menyetujui atau menolak
-→ Status pengajuan berubah
-→ Notifikasi dikirim ke karyawan
-→ Karyawan membuka notifikasi
-→ Notifikasi ditandai sebagai dibaca
-```
-
----
-
-### 12. Notifikasi Karyawan
-
-Notifikasi karyawan dibuat sebagai pusat informasi untuk employee.
-
-Notifikasi karyawan hanya berisi:
-
-- Cuti disetujui atau ditolak.
-- Izin disetujui atau ditolak.
-- Sakit disetujui atau ditolak.
+- Status cuti/pengajuan disetujui.
+- Status cuti/pengajuan ditolak.
 - Pengumuman baru.
 
-Notifikasi karyawan tidak digunakan untuk:
+Notifikasi admin:
 
-- WFH.
-- WFC.
-- Kunjungan.
-
-Fitur notifikasi karyawan:
-
-- Badge notifikasi pada AppHeader.
-- Badge hanya muncul jika ada notifikasi yang belum dibaca.
-- Halaman notifikasi khusus karyawan.
-- Daftar notifikasi ditampilkan untuk bulan berjalan.
-- Klik notifikasi akan menandai notifikasi sebagai sudah dibaca.
-- Klik notifikasi cuti/izin/sakit mengarah ke halaman Cuti.
-- Klik notifikasi pengumuman mengarah ke halaman Pengumuman.
-- Setelah notifikasi dibaca, badge akan berkurang atau hilang.
-
-Alur notifikasi karyawan:
-
-```txt
-Admin approve / reject cuti, izin, atau sakit
-→ Sistem membuat notifikasi karyawan
-→ Badge notifikasi karyawan menyala
-→ Karyawan membuka halaman notifikasi
-→ Karyawan klik notifikasi
-→ Notifikasi berubah menjadi read
-→ Karyawan diarahkan ke halaman terkait
-```
-
----
-
-### 13. Notifikasi Admin
-
-Notifikasi admin digunakan untuk membantu admin memantau aktivitas penting.
-
-Notifikasi admin dapat digunakan untuk:
-
-- Pengajuan cuti/izin/sakit yang masih pending.
+- Pengajuan pending.
 - Aktivitas WFH.
-- Aktivitas WFC.
 - Aktivitas kunjungan.
+- Aktivitas presensi yang perlu dipantau.
 
-Fitur notifikasi admin:
+### Branding Aplikasi
 
-- Badge notifikasi pada AppHeader admin.
-- Badge menghitung data yang belum dibaca atau masih pending.
-- Halaman notifikasi admin.
-- Notifikasi admin dapat diarahkan ke laporan cuti atau laporan kehadiran.
+- Admin dapat mengatur tema warna aplikasi.
+- Admin dapat mengatur logo aplikasi.
+- Masing-masing project memiliki aset brand berbeda.
+- Creativemu memakai aset logo Creativemu.
+- Alfabank memakai aset logo dan ikon Alfabank.
 
-Catatan:
+## 1.5 Kebutuhan Non-Fungsional
 
-- Notifikasi admin dan notifikasi karyawan memiliki alur yang berbeda.
-- Status approval cuti/izin/sakit untuk karyawan masuk ke notifikasi karyawan.
-- Aktivitas WFH/WFC/kunjungan hanya digunakan untuk kebutuhan monitoring admin.
+### Keamanan
 
----
+- Password harus di-hash.
+- JWT harus memakai secret dari environment variable.
+- API harus memvalidasi session.
+- API admin harus dilindungi role admin/owner.
+- File rahasia seperti `.env` tidak boleh ikut commit.
+- Sistem memiliki script pemeriksaan secret.
 
-### 14. AppHeader dan Navigasi
+### Performa
 
-AppHeader digunakan sebagai komponen navigasi utama untuk admin dan karyawan.
+- API memakai Prisma query langsung ke database.
+- Index database tersedia untuk field penting seperti role, status, tanggal, work mode, dan relasi.
+- Build standalone tersedia untuk deployment.
 
-Fitur AppHeader:
+### Kompatibilitas
 
-- Sidebar menu.
-- Navigasi role-based.
-- Top notification button.
-- Badge notifikasi.
-- Responsive untuk mobile dan desktop.
-- Sidebar tertutup otomatis ketika berpindah halaman.
-- Notifikasi admin diarahkan ke halaman notifikasi admin.
-- Notifikasi karyawan diarahkan ke halaman notifikasi karyawan.
+- Sistem dirancang untuk browser modern.
+- Presensi membutuhkan akses kamera dan geolocation.
+- Validasi device phone tersedia untuk request presensi.
 
-Menu karyawan:
+### Maintainability
 
-- Home
-- Attendance
-- History
-- Cuti
-- Info
-- Profile
-
-Menu admin:
-
-- Dashboard
-- Monitor Perusahaan
-- Pengumuman
-- Register Employee
-- Laporan Kehadiran
-- Laporan Cuti
-- Master Data
+- Logic reusable ditempatkan di `src/lib`.
+- Komponen UI reusable ditempatkan di `src/components`.
+- API dipisah berdasarkan domain di `src/app/api`.
+- Database dikelola melalui Prisma schema dan migrations.
 
 ---
 
-## Tech Stack
+# 2. SDD / Software Design Document
 
-### Frontend
+## 2.1 Arsitektur Sistem
 
-- Next.js
-- TypeScript
-- Tailwind CSS
-- App Router
-- Lucide React
-
-### Backend
-
-- Next.js API Route
-- Server-side route handler
-- Custom authentication
-- JWT verification
-- Cookie-based session
-
-### Database & ORM
-
-- MySQL
-- Prisma ORM
-- Prisma Client
-- Prisma Schema
-- Prisma Studio
-
-### Authentication & Security
-
-- bcryptjs untuk hash password
-- jose untuk JWT
-- Cookie-based authentication
-- Role-based access control
-- Server-side validation
-- Protected API route
-
-### Browser API
-
-- Camera API
-- Geolocation API
-- FormData upload
-
----
-
-## Struktur Project
-
-Struktur umum project:
+Sistem menggunakan arsitektur monolith berbasis Next.js:
 
 ```txt
-src
-├── app
-│   ├── api
-│   │   ├── auth
-│   │   ├── attendance
-│   │   ├── employees
-│   │   ├── profile
-│   │   ├── announcements
-│   │   ├── notifications
-│   │   ├── leave-requests
-│   │   └── admin
-│   │       ├── notifications
-│   │       └── leave-requests
-│   ├── home
-│   ├── attendance
-│   ├── history
-│   ├── profile
-│   ├── pengumuman
-│   ├── cuti
-│   ├── notifikasi
-│   └── admin
-│       ├── dashboard
-│       ├── employees
-│       ├── monitor_perusahaan
-│       ├── pengumuman
-│       ├── shifts
-│       ├── work-schedules
-│       ├── kantor
-│       ├── departments
-│       ├── units
-│       ├── positions
-│       ├── laporan-kehadiran
-│       ├── notifikasi
-│       └── cuti
-├── components
-│   └── AppHeader.tsx
-├── lib
-│   ├── prisma.ts
-│   └── auth.ts
-└── generated
-    └── prisma
+Browser
+↓
+Next.js App Router Pages
+↓
+Next.js API Route Handlers
+↓
+Prisma Client
+↓
+MySQL/MariaDB Database
 ```
+
+Frontend dan backend berada dalam satu aplikasi Next.js. Halaman UI berada pada `src/app`, sedangkan endpoint backend berada pada `src/app/api`.
+
+## 2.2 Struktur Aplikasi
+
+### Root Project
+
+File `package.json` di root hanya meneruskan script ke folder `web`.
+
+Script root:
+
+- `npm run dev`
+- `npm run build`
+- `npm run start`
+- `npm run lint`
+
+### Folder `web`
+
+Folder `web` adalah aplikasi utama.
+
+Struktur penting:
+
+```txt
+web
+├── src
+│   ├── app
+│   │   ├── api
+│   │   ├── admin
+│   │   ├── beranda
+│   │   ├── presensi
+│   │   ├── history
+│   │   ├── cuti
+│   │   ├── pengumuman
+│   │   ├── notifikasi
+│   │   ├── profil
+│   │   └── tukar-shift
+│   ├── components
+│   ├── context
+│   ├── hooks
+│   └── lib
+├── prisma
+│   ├── schema.prisma
+│   ├── migrations
+│   ├── seed-admin.ts
+│   └── seed-office.ts
+├── scripts
+├── e2e
+├── public
+└── package.json
+```
+
+Pada `absensi-alfabank`, terdapat tambahan:
+
+```txt
+src/app/pengajuan
+src/app/admin/laporan-pengajuan
+src/app/api/pengajuan
+src/app/api/admin/pengajuan
+src/app/api/pengajuan/[id]/attachment
+src/app/api/announcements/[id]/document
+src/app/api/site-logo/image
+```
+
+## 2.3 Desain Modul
+
+### Modul Auth
+
+File utama:
+
+- `src/lib/auth.ts`
+- `src/lib/api-auth.ts`
+- `src/app/api/auth/login/route.ts`
+- `src/app/api/auth/logout/route.ts`
+- `src/app/api/auth/me/route.ts`
+
+Tanggung jawab:
+
+- Hash password.
+- Verifikasi password.
+- Membuat JWT.
+- Memverifikasi JWT.
+- Mengambil token dari cookie.
+- Memvalidasi user aktif.
+- Memvalidasi role.
+- Menolak akses jika akun tidak aktif atau masa kerja berakhir.
+
+### Modul Presensi
+
+File utama:
+
+- `src/app/presensi/page.tsx`
+- `src/app/api/attendance/check-in/route.ts`
+- `src/app/api/attendance/check-out/route.ts`
+- `src/app/api/attendance/today/route.ts`
+- `src/app/api/attendance/history/route.ts`
+- `src/app/api/attendance/[id]/route.ts`
+- `src/app/api/attendance/[id]/photo/route.ts`
+- `src/lib/geo.ts`
+- `src/lib/attendance-device.ts`
+- `src/lib/location-label.ts`
+- `src/lib/leave-attendance-guard.ts`
+
+Tanggung jawab:
+
+- Menerima foto presensi.
+- Menerima data GPS.
+- Validasi MIME foto.
+- Validasi ukuran foto.
+- Validasi koordinat GPS.
+- Menghitung jarak ke kantor.
+- Menentukan kantor valid terdekat.
+- Menghitung telat.
+- Menghitung pulang cepat.
+- Menolak presensi saat karyawan sedang cuti aktif.
+- Menyimpan data presensi.
+
+### Modul Geofence
+
+File utama:
+
+- `src/lib/geo.ts`
+
+Fungsi utama:
+
+- Menghitung jarak dengan formula Haversine.
+- Memvalidasi latitude dan longitude.
+- Memvalidasi radius kantor.
+- Menentukan kantor terdekat yang masih dalam radius.
+- Menambahkan buffer berdasarkan akurasi GPS.
+- Membatasi akurasi GPS maksimal.
+
+### Modul Karyawan
+
+File utama:
+
+- `src/app/admin/daftar-karyawan/page.tsx`
+- `src/app/admin/daftar-karyawan/[id]/page.tsx`
+- `src/app/api/employees/route.ts`
+
+Tanggung jawab:
+
+- Menampilkan daftar karyawan.
+- Membuat karyawan baru.
+- Mengubah data karyawan.
+- Menghapus data karyawan.
+- Mengelola data pribadi, bank, status, jabatan, posisi, shift, dan kantor.
+
+### Modul Master Data
+
+Endpoint utama:
+
+- `/api/admin/offices`
+- `/api/admin/departments`
+- `/api/admin/jabatan`
+- `/api/admin/positions`
+- `/api/admin/shifts`
+- `/api/admin/work-schedules`
+- `/api/admin/employment-statuses`
+- `/api/admin/contact-numbers`
+
+Tanggung jawab:
+
+- CRUD data referensi perusahaan.
+- Menyediakan data untuk form karyawan, presensi, dan laporan.
+
+### Modul Cuti dan Pengajuan
+
+Creativemu:
+
+- `src/app/cuti/page.tsx`
+- `src/app/admin/laporan-cuti/page.tsx`
+- `src/app/api/leave-requests/route.ts`
+- `src/app/api/admin/leave-requests/route.ts`
+
+Alfabank tambahan:
+
+- `src/app/pengajuan/page.tsx`
+- `src/app/admin/laporan-pengajuan/page.tsx`
+- `src/app/api/pengajuan/route.ts`
+- `src/app/api/admin/pengajuan/route.ts`
+- `src/app/api/pengajuan/[id]/attachment/route.ts`
+
+Tanggung jawab:
+
+- Membuat pengajuan.
+- Menampilkan riwayat pengajuan.
+- Memvalidasi tanggal.
+- Menghitung total hari.
+- Menyimpan attachment jika tersedia.
+- Approval atau rejection oleh admin.
+- Membuat notifikasi ke karyawan.
+
+### Modul Pengumuman
+
+File utama:
+
+- `src/app/pengumuman/page.tsx`
+- `src/app/pengumuman/[id]/page.tsx`
+- `src/app/admin/pengumuman/page.tsx`
+- `src/app/admin/pengumuman/[id]/page.tsx`
+- `src/app/api/announcements/route.ts`
+
+Tambahan Alfabank:
+
+- `src/app/api/announcements/[id]/document/route.ts`
+
+Tanggung jawab:
+
+- CRUD pengumuman.
+- Menampilkan pengumuman published.
+- Mengelola target pengumuman.
+- Mengelola status pengumuman.
+- Mengelola dokumen pengumuman pada Alfabank.
+
+### Modul Notifikasi
+
+File utama:
+
+- `src/app/notifikasi/page.tsx`
+- `src/app/admin/notifikasi/page.tsx`
+- `src/app/api/notifications/route.ts`
+- `src/app/api/admin/notifications/route.ts`
+
+Tanggung jawab:
+
+- Menampilkan notifikasi karyawan.
+- Menampilkan notifikasi admin.
+- Menandai notifikasi sebagai dibaca.
+- Menghitung badge unread.
+
+### Modul Branding
+
+File utama:
+
+- `src/app/admin/warna-aplikasi/page.tsx`
+- `src/app/admin/logo-aplikasi/page.tsx`
+- `src/app/api/app-theme/route.ts`
+- `src/app/api/admin/app-theme/route.ts`
+- `src/app/api/site-logo/route.ts`
+- `src/app/api/admin/site-logo/route.ts`
+- `src/lib/app-theme.ts`
+- `src/lib/site-logo.ts`
+
+Tambahan Alfabank:
+
+- `src/app/api/site-logo/image/route.ts`
+
+Tanggung jawab:
+
+- Mengambil tema default.
+- Mengubah warna aplikasi.
+- Mengubah logo aplikasi.
+- Menyediakan aset logo untuk UI dan PWA.
+
+## 2.4 Desain Database
+
+Model utama Prisma:
+
+- `User`
+- `LoginRateLimit`
+- `Department`
+- `Jabatan`
+- `Position`
+- `Shift`
+- `WorkSchedule`
+- `OfficeLocation`
+- `Attendance`
+- `AttendanceMonthlySummary`
+- `EmployeeVisit`
+- `WfhRequest`
+- `LeaveRequest`
+- `Announcement`
+- `AdminNotification`
+- `AdminContactNumber`
+- `Payroll`
+- `PayrollItem`
+- `Permission`
+- `RolePermission`
+- `EmploymentStatus`
+- `ShiftSwapRequest`
+- `AppSetting`
+
+Enum utama:
+
+- `DayOfWeek`
+- `AttendanceStatus`
+- `CheckInStatus`
+- `CheckOutStatus`
+
+Relasi penting:
+
+- User memiliki banyak Attendance.
+- User memiliki Department, Jabatan, Position, Shift, dan OfficeLocation.
+- OfficeLocation menjadi dasar geofence presensi.
+- Shift memiliki WorkSchedule.
+- LeaveRequest dimiliki oleh User.
+- Announcement dibuat oleh User admin.
+- AdminNotification dapat terhubung ke Attendance dan User.
+- ShiftSwapRequest menghubungkan requester dan target user.
+
+## 2.5 Desain Deployment
+
+Script utama:
+
+- `npm run build`
+- `npm run build:standalone`
+- `npm run start:standalone`
+- `npm run deploy:standalone`
+
+Build standalone menggunakan:
+
+- Prisma generate
+- Next build dengan `NEXT_DIST_DIR=.next-build`
+- Persiapan asset standalone
+- Pemeriksaan artifact
 
 ---
 
-## Struktur Role
+# 3. QA / Quality Automation
 
-### Admin
+## 3.1 Script QA
 
-Admin dapat mengakses:
+Script tersedia di `web/package.json`:
 
-- Dashboard admin.
-- Monitoring perusahaan.
-- Register employee.
-- Master data.
-- Pengumuman.
-- Laporan cuti.
-- Laporan kehadiran.
-- Notifikasi admin.
-- Manajemen data karyawan.
+```txt
+npm run lint
+npm run typecheck
+npm run test
+npm run test:watch
+npm run test:e2e
+npm run check:lockfile
+npm run audit:deps
+npm run check:secrets
+npm run check:artifacts
+npm run quality
+```
 
-### Employee
+Pipeline lengkap:
 
-Karyawan dapat mengakses:
+```txt
+npm run quality
+```
 
-- Home.
-- Attendance.
-- History.
-- Detail History.
-- Profile.
-- Pengumuman.
-- Cuti / Izin / Sakit.
-- Notifikasi karyawan.
+Pipeline tersebut menjalankan:
+
+1. Validasi lockfile.
+2. ESLint.
+3. TypeScript check.
+4. Unit test dengan coverage.
+5. Dependency audit.
+6. Secret check.
+7. Artifact check.
+8. Standalone build.
+9. Prepare standalone assets.
+10. Artifact check ulang.
+11. Playwright E2E test.
+
+## 3.2 Unit Test
+
+Framework:
+
+- Vitest
+- Coverage provider V8
+
+File test yang ditemukan:
+
+- `src/lib/api-errors.test.ts`
+- `src/lib/api-response.test.ts`
+- `src/lib/auth.test.ts`
+- `src/lib/geo.test.ts`
+- `scripts/check-artifacts.test.ts`
+
+Coverage difokuskan pada:
+
+- `src/lib/auth.ts`
+- `src/lib/api-errors.ts`
+- `src/lib/api-response.ts`
+- `src/lib/geo.ts`
+
+Threshold coverage:
+
+- Lines: 80%
+- Functions: 80%
+- Branches: 75%
+- Statements: 80%
+
+## 3.3 E2E Test
+
+Framework:
+
+- Playwright
+
+File E2E:
+
+- `e2e/login.spec.ts`
+
+Skenario yang sudah ada:
+
+- Halaman login tampil.
+- Form login memiliki input email dan password.
+- Tombol masuk tampil.
+- Validasi field kosong muncul tanpa memanggil API.
+
+Konfigurasi:
+
+- Browser: Chromium Desktop.
+- Base URL default: `http://127.0.0.1:3100`.
+- Server E2E menggunakan standalone server dari `.next-build`.
+
+## 3.4 Security dan Artifact Check
+
+### Secret Check
+
+Script:
+
+```txt
+scripts/check-secrets.sh
+```
+
+Pemeriksaan:
+
+- `.env` tidak boleh tracked.
+- AWS key pattern.
+- GitHub token pattern.
+- Slack token pattern.
+- OpenAI API key pattern.
+- Private key pattern.
+- Database URL dengan password.
+
+### Artifact Check
+
+Script:
+
+```txt
+scripts/check-artifacts.sh
+```
+
+Pemeriksaan:
+
+- `.env` tidak boleh masuk artifact.
+- `public/uploads` tidak boleh ikut tracked.
+- ZIP tidak boleh mengandung `.env`.
+- ZIP tidak boleh mengandung `public/uploads`.
+- Output standalone tidak boleh membawa upload user.
+- Asset brand wajib tersedia di output deployment.
+
+Catatan: script artifact Creativemu mengecek asset logo Creativemu. Pada Alfabank script serupa perlu dipastikan sudah sesuai asset Alfabank.
+
+## 3.5 QA Gap dan Rekomendasi
+
+### E2E yang Perlu Ditambah
+
+- Login employee berhasil.
+- Login admin berhasil.
+- Logout berhasil.
+- Check-in dengan foto dan GPS.
+- Check-out dengan foto dan GPS.
+- Presensi ditolak jika GPS invalid.
+- Presensi ditolak jika foto tidak valid.
+- Presensi ditolak jika user sedang cuti aktif.
+- Riwayat presensi tampil setelah check-in.
+- Admin melihat laporan kehadiran.
+- Admin approve/reject cuti.
+- Karyawan menerima notifikasi approval/rejection.
+- Admin CRUD karyawan.
+- Admin CRUD kantor.
+- Admin CRUD shift dan jam kerja.
+- Admin membuat pengumuman.
+- Karyawan membaca pengumuman.
+- Khusus Alfabank: pengajuan dengan attachment.
+- Khusus Alfabank: admin laporan pengajuan.
+
+### Unit Test yang Perlu Ditambah
+
+- Perhitungan telat.
+- Perhitungan pulang cepat.
+- Validasi radius kantor.
+- Validasi akurasi GPS.
+- Validasi mode kerja.
+- Validasi attachment type dan size.
+- Validasi total hari cuti.
+- Validasi role guard.
+- Validasi masa kerja berakhir.
+- Validasi kuota WFH.
+- Validasi shift swap.
+
+### API Test yang Perlu Ditambah
+
+- `/api/auth/login`
+- `/api/attendance/check-in`
+- `/api/attendance/check-out`
+- `/api/attendance/today`
+- `/api/employees`
+- `/api/leave-requests`
+- `/api/admin/leave-requests`
+- `/api/announcements`
+- `/api/notifications`
+- Khusus Alfabank: `/api/pengajuan`
+- Khusus Alfabank: `/api/admin/pengajuan`
+
+## 3.6 Risiko yang Perlu Diperhatikan
+
+- README Alfabank belum sinkron dengan branding Alfabank.
+- Kedua project banyak memiliki kode mirip, sehingga perbaikan di satu folder perlu dicek ulang di folder lainnya.
+- Attachment lokal di `public/uploads` perlu disiplin agar tidak ikut commit/deploy.
+- Beberapa fitur penting belum memiliki E2E test.
+- Presensi sangat bergantung pada permission kamera dan GPS browser.
+- Akurasi GPS bisa bervariasi, sehingga buffer radius perlu diuji dengan data nyata.
+- Role `owner`, `admin`, dan `employee` harus terus diuji agar tidak terjadi akses silang.
 
 ---
 
-## Konsep Database
+# Kesimpulan
 
-Beberapa entity utama pada sistem:
+`absensi-creativemu` dan `absensi-alfabank` adalah dua varian dari sistem FaceAttend yang sama. Keduanya memiliki fondasi teknis, struktur folder, database model, dan pipeline QA yang hampir identik.
 
-### User
+Perbedaan utama berada pada branding, migrasi data, aset visual, dan fitur tambahan Alfabank seperti modul `pengajuan`, attachment pengajuan, dokumen pengumuman, serta endpoint gambar logo.
 
-Menyimpan data akun dan karyawan.
-
-Relasi utama:
-
-- Registered Office
-- Department
-- Unit
-- Position
-- Shift
-- Attendance
-- Leave Request
-- Notification
-
-### Attendance
-
-Menyimpan data absensi harian.
-
-Data yang disimpan:
-
-- Tanggal absensi.
-- Check-in time.
-- Check-out time.
-- Foto check-in.
-- Foto check-out.
-- Latitude check-in.
-- Longitude check-in.
-- Latitude check-out.
-- Longitude check-out.
-- Akurasi GPS.
-- Jarak dari kantor.
-- Status presensi.
-- Kategori lokasi kerja.
-- Late minutes.
-- Early leave minutes.
-- Work minutes.
-
-### Office Location
-
-Menyimpan data kantor dan radius lokasi.
-
-### Department
-
-Menyimpan data divisi yang berada di bawah kantor.
-
-### Unit
-
-Menyimpan unit kerja yang berada di bawah divisi.
-
-### Position
-
-Menyimpan jabatan yang berada di bawah unit.
-
-### Shift
-
-Menyimpan data shift karyawan.
-
-### Work Schedule
-
-Menyimpan jadwal kerja berdasarkan shift.
-
-### Announcement
-
-Menyimpan pengumuman dari admin.
-
-### Leave Request
-
-Menyimpan pengajuan cuti, izin, sakit, atau lainnya.
-
-### Notification
-
-Menyimpan notifikasi yang digunakan untuk admin atau karyawan.
-
-Jenis notifikasi karyawan:
-
-- leave_status
-- announcement
-
-Jenis notifikasi admin:
-
-- pending leave request
-- wfh
-- wfc
-- visit
-
----
-
-## API Overview
-
-Beberapa API utama:
-
-### Authentication
-
-```txt
-POST /api/auth/login
-GET  /api/auth/me
-```
-
-### Attendance
-
-```txt
-POST /api/attendance/check-in
-POST /api/attendance/check-out
-GET  /api/attendance/today
-GET  /api/attendance/history
-GET  /api/attendance/[id]
-GET  /api/attendance/[id]/photo
-```
-
-### Leave Request
-
-```txt
-GET   /api/leave-requests
-POST  /api/leave-requests
-GET   /api/admin/leave-requests
-PATCH /api/admin/leave-requests
-```
-
-### Notification
-
-```txt
-GET   /api/notifications
-PATCH /api/notifications
-GET   /api/admin/notifications
-PATCH /api/admin/notifications
-```
-
-### Profile
-
-```txt
-POST  /api/profile/photo
-PATCH /api/profile/change-password
-```
-
-### Employee
-
-```txt
-GET    /api/employees
-POST   /api/employees
-PATCH  /api/employees
-DELETE /api/employees
-```
-
-### Announcement
-
-```txt
-GET    /api/announcements
-POST   /api/announcements
-PATCH  /api/announcements
-DELETE /api/announcements
-```
-
-### Admin
-
-```txt
-GET    /api/admin/...
-POST   /api/admin/...
-PATCH  /api/admin/...
-DELETE /api/admin/...
-```
-
----
-
-## Halaman Utama
-
-### Karyawan
-
-```txt
-/home
-/attendance
-/history
-/history/[id]
-/profile
-/pengumuman
-/cuti
-/notifikasi
-```
-
-### Admin
-
-```txt
-/admin/dashboard
-/admin/monitor_perusahaan
-/admin/employees
-/admin/pengumuman
-/admin/shifts
-/admin/work-schedules
-/admin/kantor
-/admin/departments
-/admin/units
-/admin/positions
-/admin/laporan-kehadiran
-/admin/cuti
-/admin/notifikasi
-```
-
----
-
-## Cara Menjalankan Project
-
-Install dependencies:
-
-```bash
-npm install
-```
-
-Generate Prisma Client:
-
-```bash
-npx prisma generate
-```
-
-Sinkronisasi database saat development:
-
-```bash
-npx prisma db push
-```
-
-Menjalankan development server:
-
-```bash
-npm run dev
-```
-
-Akses aplikasi:
-
-```txt
-http://localhost:3000
-```
-
-Membuka Prisma Studio:
-
-```bash
-npx prisma studio
-```
-
----
-
-## Keamanan
-
-Beberapa prinsip keamanan yang digunakan:
-
-- Password tidak disimpan dalam plain text.
-- Password disimpan menggunakan hashing.
-- Session menggunakan cookie.
-- API tertentu harus melalui validasi token.
-- Route admin hanya dapat diakses role tertentu.
-- Data absensi dikirim menggunakan FormData.
-- Data lokasi diambil langsung dari browser.
-- Server-side validation digunakan pada API penting.
-- Data sensitif dan konfigurasi lokal tidak dicantumkan dalam dokumentasi.
-
----
-
-## Batasan Saat Ini
-
-Karena project masih tahap development, beberapa batasan yang masih ada:
-
-- Sistem belum sepenuhnya production-ready.
-- Face recognition AI sudah tidak digunakan.
-- Absensi menggunakan foto sebagai bukti, bukan identifikasi wajah otomatis.
-- Validasi GPS bergantung pada akurasi perangkat dan izin lokasi browser.
-- Beberapa fitur admin dan monitoring masih dalam tahap pengembangan.
-- Belum ada deployment production final.
-- Belum ada sistem audit log lengkap.
-- Belum ada sistem notifikasi realtime berbasis websocket.
-- Notifikasi saat ini masih menggunakan polling dari client.
-
----
-
-## Roadmap Pengembangan
-
-Rencana pengembangan berikutnya:
-
-- Penyempurnaan dashboard admin.
-- Penyempurnaan monitoring absensi.
-- Penyempurnaan laporan kehadiran.
-- Export laporan ke Excel atau PDF.
-- Pengembangan laporan bulanan.
-- Validasi lokasi kantor yang lebih detail.
-- Pengelolaan office radius dari admin.
-- Penyempurnaan fitur cuti, izin, dan sakit.
-- Penyempurnaan pusat notifikasi karyawan.
-- Penyempurnaan pusat notifikasi admin.
-- Integrasi notifikasi pengumuman ke seluruh karyawan.
-- Role access yang lebih detail.
-- Audit log aktivitas admin.
-- Deployment ke hosting production.
-- Optimasi tampilan mobile.
-- Optimasi performa API.
-- Peningkatan keamanan session.
-- Dokumentasi API lebih lengkap.
-
----
-
-## Catatan Penting untuk Repository
-
-README ini tidak mencantumkan:
-
-- Konfigurasi sensitif.
-- Credential.
-- Token.
-- Secret.
-- Data asli karyawan.
-- Data private perusahaan.
-- Data pribadi developer.
-- Detail konfigurasi production.
-
-Jika project ingin dipublikasikan, pastikan data yang digunakan untuk demo bukan data asli.
-
----
-
-## Disclaimer
-
-Creativemu FaceAttend adalah project aplikasi absensi berbasis web yang masih dalam tahap development. Sistem ini dibuat untuk kebutuhan pembelajaran, pengembangan internal, dan persiapan sistem absensi digital berbasis foto serta lokasi.
-
-Sebelum digunakan untuk production, aplikasi perlu melalui tahap:
-
-- Testing keamanan.
-- Testing akurasi GPS.
-- Testing beban server.
-- Review validasi role.
-- Review database schema.
-- Backup database.
-- Deployment configuration review.
-- Privacy policy.
-- SOP penggunaan karyawan.
-
----
-
-## License
-
-Project ini dikembangkan untuk kebutuhan Creativemu FaceAttend.
-
-Lisensi dapat disesuaikan kembali sesuai kebutuhan pemilik project.
+Secara kesiapan, sistem sudah memiliki struktur aplikasi yang cukup lengkap dan pipeline quality yang baik. Area yang paling perlu ditingkatkan adalah dokumentasi Alfabank, test E2E untuk alur bisnis utama, serta automated test untuk presensi, approval, attachment, dan role access.
