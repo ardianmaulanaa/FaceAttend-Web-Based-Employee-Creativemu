@@ -727,10 +727,12 @@ export default function AdminEmployeeAttendanceRecapPage() {
                       summary?.cuti ??
                       0,
                   );
-                  const remainingLeaveQuota = Math.max(
-                    0,
-                    annualLeaveQuota - approvedLeaveDays,
-                  );
+                  const remainingLeaveQuota =
+                    recap?.remainingLeaveQuota != null
+                      ? Math.max(0, Number(recap.remainingLeaveQuota))
+                      : employee.remainingLeaveQuota != null
+                        ? Math.max(0, Number(employee.remainingLeaveQuota))
+                        : Math.max(0, annualLeaveQuota - approvedLeaveDays);
                   const netWorkMinutes = getNetWorkMinutes(summary);
                   const detailParams = new URLSearchParams({
                     startDate,
