@@ -11,13 +11,27 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const MAX_PDF_SIZE = 10 * 1024 * 1024;
-const PDF_MIME_TYPES = new Set([
+const ALLOWED_MIME_TYPES = new Set([
   "application/pdf",
   "application/x-pdf",
   "application/acrobat",
   "applications/vnd.pdf",
   "text/pdf",
   "text/x-pdf",
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+]);
+
+const ALLOWED_EXTENSIONS = new Set([
+  ".pdf",
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".webp",
+  ".gif",
 ]);
 
 async function getAdminUser(req: NextRequest) {
@@ -159,18 +173,20 @@ async function parseAnnouncementBody(
   };
 }
 
-function validatePdfDocument(file: File) {
-  const mime = (file.type || "application/pdf").toLowerCase();
-  const fileName = file.name || "dokumen-pengumuman.pdf";
-  const isPdfMime = PDF_MIME_TYPES.has(mime);
-  const isPdfName = fileName.toLowerCase().endsWith(".pdf");
+function validateAnnouncementDocument(file: File) {
+  const mime = (file.type || "").toLowerCase();
+  const fileName = file.name || "lampiran";
+  const ext = path.extname(fileName).toLowerCase();
 
-  if (!isPdfMime && !isPdfName) {
-    throw new Error("Dokumen pengumuman harus berformat PDF.");
+  const isValidMime = mime ? ALLOWED_MIME_TYPES.has(mime) : false;
+  const isValidExt = ext ? ALLOWED_EXTENSIONS.has(ext) : false;
+
+  if (!isValidMime && !isValidExt) {
+    throw new Error("Lampiran pengumuman harus berformat PDF atau Gambar (JPG, JPEG, PNG, WEBP).");
   }
 
   if (file.size > MAX_PDF_SIZE) {
-    throw new Error("Ukuran dokumen PDF maksimal 10MB.");
+    throw new Error("Ukuran lampiran maksimal 10MB.");
   }
 }
 
@@ -201,7 +217,7 @@ async function uploadAnnouncementDocument(
   file: File,
   announcementId: string,
 ): Promise<{ secure_url: string; public_id: string | null }> {
-  validatePdfDocument(file);
+  validateAnnouncementDocument(file);
 
   const buffer = Buffer.from(await file.arrayBuffer());
   const localResult = saveLocalAnnouncementDocument(file, buffer, announcementId);
@@ -370,7 +386,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (document) {
-      validatePdfDocument(document);
+      validateAnnouncementDocument(document);
     }
 
     const announcement = await prisma.announcement.create({
@@ -489,7 +505,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (document) {
-      validatePdfDocument(document);
+      validateAnnouncementDocument(document);
     }
 
     const existingAnnouncement = await prisma.announcement.findUnique({

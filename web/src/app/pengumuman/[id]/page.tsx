@@ -5,14 +5,32 @@ import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
   CalendarDays,
+  Download,
+  ExternalLink,
+  Eye,
   FileText,
+  Image as ImageIcon,
   Loader2,
   Megaphone,
+  X,
 } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import MobileShell from "@/components/MobileShell";
 import { markAnnouncementAsRead } from "@/lib/announcement-read";
+
+function isImageAttachment(urlOrName?: string | null) {
+  if (!urlOrName) return false;
+  const lower = urlOrName.toLowerCase();
+  return (
+    lower.includes(".jpg") ||
+    lower.includes(".jpeg") ||
+    lower.includes(".png") ||
+    lower.includes(".webp") ||
+    lower.includes(".gif") ||
+    lower.startsWith("data:image/")
+  );
+}
 
 type Announcement = {
   id: string;
@@ -112,6 +130,8 @@ export default function EmployeeAnnouncementDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+
   const loadAnnouncement = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -162,11 +182,12 @@ export default function EmployeeAnnouncementDetailPage() {
   const documentName =
     announcement?.document_name ||
     announcement?.documentName ||
-    "Dokumen Pengumuman.pdf";
+    "Lampiran Pengumuman";
   const documentSize = formatFileSize(
     announcement?.document_size || announcement?.documentSize,
   );
   const createdAt = announcement?.created_at || announcement?.createdAt;
+  const isImage = isImageAttachment(documentUrl) || isImageAttachment(documentName);
 
   return (
     <MobileShell variant="employee" withBottomPadding={false}>
@@ -228,7 +249,7 @@ export default function EmployeeAnnouncementDetailPage() {
                 </div>
               </div>
 
-              <div className="space-y-5 p-6 md:p-8">
+              <div className="space-y-6 p-6 md:p-8">
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">
                     Isi Pengumuman
@@ -240,29 +261,85 @@ export default function EmployeeAnnouncementDetailPage() {
 
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-400">
-                    Dokumen
+                    {isImage ? "Lampiran Foto" : "Dokumen Lampiran"}
                   </p>
 
                   {documentUrl ? (
-                    <a
-                      href={documentUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-3 inline-flex max-w-full items-center gap-3 rounded-2xl bg-blue-50 px-4 py-3 text-sm font-black text-[#123c8c] transition hover:bg-blue-100"
-                    >
-                      <FileText size={18} className="shrink-0" />
-                      <span className="min-w-0">
-                        <span className="block truncate">{documentName}</span>
-                        {documentSize ? (
-                          <span className="block text-xs font-bold text-blue-500">
-                            {documentSize}
+                    isImage ? (
+                      <div className="mt-3 space-y-3">
+                        <div className="group relative max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 shadow-sm">
+                          <img
+                            src={documentUrl}
+                            alt={documentName}
+                            className="max-h-80 w-full object-contain cursor-pointer transition hover:scale-[1.02]"
+                            onClick={() => setPreviewImage(documentUrl)}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setPreviewImage(documentUrl)}
+                            className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-xl bg-slate-900/80 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-sm transition hover:bg-slate-900"
+                          >
+                            <Eye size={14} />
+                            Perbesar Foto
+                          </button>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                          <a
+                            href={documentUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 rounded-xl bg-blue-50 px-4 py-2 text-xs font-black text-[#123c8c] transition hover:bg-blue-100"
+                          >
+                            <ExternalLink size={14} />
+                            Buka di Tab Baru
+                          </a>
+                          <a
+                            href={documentUrl}
+                            download={documentName}
+                            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-black text-slate-700 transition hover:bg-slate-50"
+                          >
+                            <Download size={14} />
+                            Unduh Foto ({documentSize || "Gambar"})
+                          </a>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-3 flex flex-wrap gap-3">
+                        <a
+                          href={documentUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex max-w-full items-center gap-3 rounded-2xl bg-blue-50 px-4 py-3 text-sm font-black text-[#123c8c] transition hover:bg-blue-100"
+                        >
+                          <FileText size={18} className="shrink-0" />
+                          <span className="min-w-0">
+                            <span className="block truncate">{documentName}</span>
+                            {documentSize ? (
+                              <span className="block text-xs font-bold text-blue-500">
+                                PDF • {documentSize}
+                              </span>
+                            ) : (
+                              <span className="block text-xs font-bold text-blue-500">
+                                Dokumen PDF
+                              </span>
+                            )}
                           </span>
-                        ) : null}
-                      </span>
-                    </a>
+                        </a>
+
+                        <a
+                          href={documentUrl}
+                          download={documentName}
+                          className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-50"
+                        >
+                          <Download size={16} />
+                          Unduh PDF
+                        </a>
+                      </div>
+                    )
                   ) : (
                     <p className="mt-3 text-sm font-bold text-slate-400">
-                      Tidak ada dokumen.
+                      Tidak ada lampiran dokumen atau gambar.
                     </p>
                   )}
                 </div>
@@ -270,6 +347,31 @@ export default function EmployeeAnnouncementDetailPage() {
             </section>
           )}
         </div>
+
+        {previewImage && (
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
+            onClick={() => setPreviewImage(null)}
+          >
+            <div
+              className="relative max-h-[90vh] max-w-3xl overflow-hidden rounded-2xl bg-white p-2 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => setPreviewImage(null)}
+                className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-slate-900/80 text-white transition hover:bg-slate-900"
+              >
+                <X size={18} />
+              </button>
+              <img
+                src={previewImage}
+                alt="Preview"
+                className="max-h-[82vh] w-auto max-w-full rounded-xl object-contain"
+              />
+            </div>
+          </div>
+        )}
 
         <BottomNav />
       </main>

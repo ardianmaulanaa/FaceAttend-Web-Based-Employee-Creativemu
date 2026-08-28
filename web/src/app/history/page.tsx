@@ -240,20 +240,20 @@ function DesktopHero({
   sort: "desc" | "asc";
 }) {
   return (
-    <section className="mx-auto hidden max-w-7xl px-10 pt-8 md:block lg:px-16">
-      <div className="history-enter relative overflow-hidden rounded-[2.2rem] bg-[#123c8c] p-8 text-white shadow-2xl shadow-blue-900/25">
-        <div className="relative z-10 flex items-center justify-between gap-8">
-          <div className="flex items-center gap-5">
-            <div className="history-icon-pop flex h-20 w-20 shrink-0 items-center justify-center rounded-[1.6rem] bg-white/15 text-white ring-1 ring-white/20">
-              <History size={38} strokeWidth={2.5} />
+    <section className="mx-auto hidden max-w-7xl px-6 pt-4 md:block lg:px-8">
+      <div className="history-enter relative overflow-hidden rounded-2xl bg-[#123c8c] p-4 text-white shadow-lg shadow-blue-900/20">
+        <div className="relative z-10 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="history-icon-pop flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 text-white ring-1 ring-white/20">
+              <History size={22} strokeWidth={2.5} />
             </div>
 
             <div>
-              <h1 className="text-4xl font-black tracking-tight">
+              <h1 className="text-xl sm:text-2xl font-black tracking-tight">
                 Riwayat Presensi
               </h1>
 
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-2 flex flex-wrap gap-1.5">
                 <HeroBadge delay="80ms">
                   {monthLabel} {year}
                 </HeroBadge>
@@ -265,8 +265,8 @@ function DesktopHero({
             </div>
           </div>
 
-          <div className="history-icon-pop flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-white/80 ring-1 ring-white/20">
-            <CalendarDays size={28} strokeWidth={2.4} />
+          <div className="history-icon-pop flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white/80 ring-1 ring-white/20">
+            <CalendarDays size={20} strokeWidth={2.4} />
           </div>
         </div>
       </div>
@@ -582,7 +582,7 @@ export default function HistoryPage() {
         />
       </div>
 
-      <main className="min-h-dvh bg-gradient-to-br from-[#f6f8ff] via-white to-[#eef4ff] pb-28 text-slate-950">
+      <main className="min-h-dvh bg-gradient-to-br from-[#f6f8ff] via-white to-[#eef4ff] pb-16 text-slate-950">
         <MobileHeader />
 
         <DesktopHero
@@ -592,7 +592,7 @@ export default function HistoryPage() {
           sort={sort}
         />
 
-        <section className="history-enter mx-auto max-w-7xl rounded-t-[2.5rem] bg-white px-5 pb-10 pt-8 md:mt-8 md:rounded-[2.5rem] md:px-8 lg:px-10">
+        <section className="history-enter mx-auto max-w-7xl rounded-t-2xl bg-white px-4 pb-6 pt-4 md:mt-4 md:rounded-2xl md:px-6 lg:px-8">
           <FilterCard
             month={month}
             year={year}
@@ -605,7 +605,7 @@ export default function HistoryPage() {
             onApply={getHistory}
           />
 
-          <div className="mt-6 grid grid-cols-3 gap-3">
+          <div className="mt-4 grid grid-cols-3 gap-2">
             <StatCard label="Total" value={records.length} delay="60ms" />
             <StatCard
               label="Bulan"
@@ -616,7 +616,7 @@ export default function HistoryPage() {
             <StatCard label="Tahun" value={year} delay="140ms" />
           </div>
 
-          <div className="mt-6 space-y-4">
+          <div className="mt-4 space-y-2.5">
             <HistoryContent
               isLoading={isLoading}
               records={records}

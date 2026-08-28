@@ -7,7 +7,11 @@ import {
   CheckCircle2,
   ChevronDown,
   Clock3,
+  Download,
+  ExternalLink,
+  Eye,
   FileText,
+  Image as ImageIcon,
   Loader2,
   Send,
   Upload,
@@ -18,6 +22,19 @@ import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import MobileShell from "@/components/MobileShell";
 import { AppLoadingState } from "@/components/ui/AppUI";
+
+function isImageAttachment(urlOrName?: string | null) {
+  if (!urlOrName) return false;
+  const lower = urlOrName.toLowerCase();
+  return (
+    lower.includes(".jpg") ||
+    lower.includes(".jpeg") ||
+    lower.includes(".png") ||
+    lower.includes(".webp") ||
+    lower.includes(".gif") ||
+    lower.startsWith("data:image/")
+  );
+}
 
 type LeaveRequest = {
   id: string;
@@ -168,6 +185,8 @@ function getAlertIcon(type: "success" | "error" | "warning") {
 
 export default function LeaveRequestPage() {
   const [leaveType, setLeaveType] = useState("annual");
+  const [historyTab, setHistoryTab] = useState<"semua" | "pending" | "approved" | "rejected">("semua");
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [startTimeOvertime, setStartTimeOvertime] = useState("17:00");
@@ -385,38 +404,38 @@ export default function LeaveRequestPage() {
         <AppHeader title="Pengajuan Cuti & Lembur" rightLabel="Cuti" />
       </div>
 
-      <section className="mx-auto max-w-7xl px-5 pt-7 md:hidden">
-        <div className="flex items-center justify-between gap-4">
+      <section className="mx-auto max-w-7xl px-4 pt-3 md:hidden">
+        <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.28em] text-[#123c8c]">
+            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#123c8c]">
               Presensi
             </p>
 
-            <h1 className="mt-1 text-3xl font-black tracking-tight text-[#073456]">
+            <h1 className="mt-0.5 text-xl font-black tracking-tight text-[#073456]">
               Pengajuan Cuti
             </h1>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl items-start gap-6 px-5 py-6 pb-28 md:px-10 lg:grid-cols-[0.85fr_1.15fr] lg:px-16">
+      <section className="mx-auto grid max-w-7xl items-start gap-4 px-4 py-3.5 pb-16 md:px-8 lg:grid-cols-[0.85fr_1.15fr] lg:px-12">
         <form
           suppressHydrationWarning
           onSubmit={handleSubmit}
           noValidate
-          className="h-fit self-start rounded-[2rem] border border-blue-100 bg-white p-5 shadow-xl shadow-slate-200/60"
+          className="h-fit self-start rounded-2xl border border-blue-100 bg-white p-4 shadow-md shadow-slate-200/50"
         >
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c]">
-              <CalendarDays size={24} strokeWidth={2.6} />
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#eaf1ff] text-[#123c8c]">
+              <CalendarDays size={20} strokeWidth={2.6} />
             </div>
 
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-[#123c8c]">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#123c8c]">
                 Form Cuti & Lembur
               </p>
 
-              <h2 className="mt-1 text-2xl font-black text-slate-950">
+              <h2 className="mt-0.5 text-lg font-black text-slate-950">
                 Buat Pengajuan
               </h2>
             </div>
@@ -800,16 +819,72 @@ export default function LeaveRequestPage() {
                     </p>
 
                     {item.attachmentUrl ? (
-                      <div className="mt-3">
-                        <a
-                          href={item.attachmentUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-black text-[#123c8c] hover:bg-blue-100 transition"
-                        >
-                          <FileText size={15} />
-                          Lihat Surat Dokter / Lampiran
-                        </a>
+                      <div className="mt-3 rounded-2xl border border-blue-100 bg-[#f8fbff] p-3.5">
+                        <p className="text-[11px] font-black uppercase tracking-wider text-[#123c8c]">
+                          Lampiran Surat Dokter / Bukti Izin
+                        </p>
+
+                        {isImageAttachment(item.attachmentUrl) ||
+                        isImageAttachment(item.attachmentName) ? (
+                          <div className="mt-2.5 space-y-2.5">
+                            <div className="group relative max-w-xs overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                              <img
+                                src={item.attachmentUrl}
+                                alt={item.attachmentName || "Lampiran"}
+                                className="max-h-48 w-full object-contain cursor-pointer transition hover:scale-[1.02]"
+                                onClick={() => setPreviewImage(item.attachmentUrl!)}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setPreviewImage(item.attachmentUrl!)}
+                                className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-lg bg-slate-900/80 px-2 py-1 text-[11px] font-bold text-white backdrop-blur-sm transition hover:bg-slate-900"
+                              >
+                                <Eye size={12} />
+                                Perbesar
+                              </button>
+                            </div>
+
+                            <div className="flex flex-wrap gap-2">
+                              <a
+                                href={item.attachmentUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 rounded-xl bg-blue-50 px-3 py-1.5 text-xs font-black text-[#123c8c] transition hover:bg-blue-100"
+                              >
+                                <ExternalLink size={13} />
+                                Buka Tab Baru
+                              </a>
+                              <a
+                                href={item.attachmentUrl}
+                                download={item.attachmentName || "lampiran"}
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-black text-slate-700 transition hover:bg-slate-50"
+                              >
+                                <Download size={13} />
+                                Unduh
+                              </a>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <a
+                              href={item.attachmentUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 rounded-xl bg-blue-50 px-3.5 py-2 text-xs font-black text-[#123c8c] hover:bg-blue-100 transition"
+                            >
+                              <FileText size={15} />
+                              {item.attachmentName || "Lihat Dokumen PDF"}
+                            </a>
+                            <a
+                              href={item.attachmentUrl}
+                              download={item.attachmentName || "dokumen.pdf"}
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-black text-slate-700 hover:bg-slate-50 transition"
+                            >
+                              <Download size={14} />
+                              Unduh
+                            </a>
+                          </div>
+                        )}
                       </div>
                     ) : null}
 
@@ -825,6 +900,31 @@ export default function LeaveRequestPage() {
           )}
         </div>
       </section>
+
+      {previewImage && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div
+            className="relative max-h-[90vh] max-w-3xl overflow-hidden rounded-2xl bg-white p-2 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setPreviewImage(null)}
+              className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-slate-900/80 text-white transition hover:bg-slate-900"
+            >
+              <X size={18} />
+            </button>
+            <img
+              src={previewImage}
+              alt="Preview Lampiran"
+              className="max-h-[82vh] w-auto max-w-full rounded-xl object-contain"
+            />
+          </div>
+        </div>
+      )}
 
       <BottomNav />
     </MobileShell>

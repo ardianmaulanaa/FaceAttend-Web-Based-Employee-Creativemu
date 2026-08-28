@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   Edit,
   FileText,
+  Image as ImageIcon,
   Loader2,
   Megaphone,
   Paperclip,
@@ -13,6 +14,19 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+
+function isImageAttachment(urlOrName?: string | null) {
+  if (!urlOrName) return false;
+  const lower = urlOrName.toLowerCase();
+  return (
+    lower.includes(".jpg") ||
+    lower.includes(".jpeg") ||
+    lower.includes(".png") ||
+    lower.includes(".webp") ||
+    lower.includes(".gif") ||
+    lower.startsWith("data:image/")
+  );
+}
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import MobileShell from "@/components/MobileShell";
@@ -560,36 +574,53 @@ export default function AdminAnnouncementsPage() {
                     </Link>
 
                     {announcement.document_url || announcement.documentUrl ? (
-                      <a
-                        href={
-                          announcement.document_url ||
-                          announcement.documentUrl ||
-                          "#"
-                        }
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex min-w-0 items-center gap-2 rounded-xl bg-blue-50 px-3 py-2 text-xs font-black text-[#123c8c] transition hover:bg-blue-100 md:mt-1"
-                      >
-                        <FileText size={15} className="shrink-0" />
-                        <span className="min-w-0">
-                          <span className="block truncate">
-                            {announcement.document_name ||
-                              announcement.documentName ||
-                              "Dokumen PDF"}
-                          </span>
-                          {formatFileSize(
-                            announcement.document_size ||
-                              announcement.documentSize,
-                          ) ? (
-                            <span className="block text-[10px] font-bold text-blue-500">
+                      (() => {
+                        const docUrl = announcement.document_url || announcement.documentUrl || "#";
+                        const docName = announcement.document_name || announcement.documentName || "Lampiran";
+                        const isImg = isImageAttachment(docUrl) || isImageAttachment(docName);
+
+                        return (
+                          <a
+                            href={docUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex min-w-0 items-center gap-2.5 rounded-xl bg-blue-50 px-3 py-2 text-xs font-black text-[#123c8c] transition hover:bg-blue-100 md:mt-1"
+                          >
+                            {isImg ? (
+                              <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-lg border border-blue-200 bg-white">
+                                <img
+                                  src={docUrl}
+                                  alt={docName}
+                                  className="h-full w-full object-cover"
+                                />
+                              </div>
+                            ) : (
+                              <FileText size={16} className="shrink-0 text-[#123c8c]" />
+                            )}
+                            <span className="min-w-0">
+                              <span className="block truncate">
+                                {docName}
+                              </span>
                               {formatFileSize(
                                 announcement.document_size ||
                                   announcement.documentSize,
+                              ) ? (
+                                <span className="block text-[10px] font-bold text-blue-500">
+                                  {isImg ? "Gambar" : "PDF"} •{" "}
+                                  {formatFileSize(
+                                    announcement.document_size ||
+                                      announcement.documentSize,
+                                  )}
+                                </span>
+                              ) : (
+                                <span className="block text-[10px] font-bold text-blue-500">
+                                  {isImg ? "Gambar" : "PDF"}
+                                </span>
                               )}
                             </span>
-                          ) : null}
-                        </span>
-                      </a>
+                          </a>
+                        );
+                      })()
                     ) : (
                       <span className="inline-flex w-fit rounded-xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-300">
                         Tidak ada
@@ -732,7 +763,7 @@ export default function AdminAnnouncementsPage() {
                 style={{ animationDelay: "120ms" }}
               >
                 <label className="mb-2 block text-sm font-black text-slate-700">
-                  Dokumen PDF
+                  Dokumen / Foto Lampiran
                 </label>
 
                 <label className="admin-announcement-field flex cursor-pointer flex-col gap-3 rounded-xl border border-dashed border-slate-300 bg-white px-4 py-4 text-sm font-bold text-slate-600 outline-none transition hover:border-[#123c8c] hover:ring-2 hover:ring-blue-100 md:flex-row md:items-center md:justify-between">
@@ -746,10 +777,10 @@ export default function AdminAnnouncementsPage() {
                           ? form.document.name
                           : form.existingDocumentName
                             ? form.existingDocumentName
-                            : "Pilih dokumen PDF"}
+                            : "Pilih dokumen PDF atau Foto"}
                       </span>
                       <span className="mt-0.5 block text-xs font-semibold text-slate-400">
-                        Maksimal 10MB, hanya PDF.
+                        Maksimal 10MB (PDF, JPG, PNG, WEBP).
                       </span>
                     </span>
                   </span>
@@ -760,7 +791,7 @@ export default function AdminAnnouncementsPage() {
 
                   <input
                     type="file"
-                    accept="application/pdf,.pdf"
+                    accept="application/pdf,.pdf,image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
                     className="sr-only"
                     onChange={(event) => {
                       const file = event.target.files?.[0] || null;
@@ -773,17 +804,18 @@ export default function AdminAnnouncementsPage() {
                         return;
                       }
 
-                      if (
-                        file.type !== "application/pdf" &&
-                        !file.name.toLowerCase().endsWith(".pdf")
-                      ) {
-                        alert("Dokumen pengumuman harus berformat PDF.");
+                      const allowedExtensions = [".pdf", ".jpg", ".jpeg", ".png", ".webp"];
+                      const fileName = file.name.toLowerCase();
+                      const hasValidExt = allowedExtensions.some((ext) => fileName.endsWith(ext));
+
+                      if (!file.type.startsWith("image/") && file.type !== "application/pdf" && !hasValidExt) {
+                        alert("Lampiran pengumuman harus berformat PDF atau Gambar (JPG, PNG, WEBP).");
                         event.target.value = "";
                         return;
                       }
 
                       if (file.size > 10 * 1024 * 1024) {
-                        alert("Ukuran dokumen PDF maksimal 10MB.");
+                        alert("Ukuran file maksimal 10MB.");
                         event.target.value = "";
                         return;
                       }
@@ -805,9 +837,13 @@ export default function AdminAnnouncementsPage() {
                       rel="noopener noreferrer"
                       className="inline-flex min-w-0 items-center gap-2 text-[#123c8c] hover:text-[#0f3274]"
                     >
-                      <FileText size={15} />
+                      {isImageAttachment(form.existingDocumentUrl) || isImageAttachment(form.existingDocumentName) ? (
+                        <ImageIcon size={15} />
+                      ) : (
+                        <FileText size={15} />
+                      )}
                       <span className="truncate">
-                        {form.existingDocumentName || "Dokumen PDF"}
+                        {form.existingDocumentName || "Lampiran Pengumuman"}
                       </span>
                     </a>
 

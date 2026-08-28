@@ -7,7 +7,11 @@ import {
   CalendarDays,
   CheckCircle2,
   Clock3,
+  Download,
+  ExternalLink,
+  Eye,
   FileText,
+  Image as ImageIcon,
   Loader2,
   UserRound,
   X,
@@ -15,6 +19,19 @@ import {
 } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import MobileShell from "@/components/MobileShell";
+
+function isImageAttachment(urlOrName?: string | null) {
+  if (!urlOrName) return false;
+  const lower = urlOrName.toLowerCase();
+  return (
+    lower.includes(".jpg") ||
+    lower.includes(".jpeg") ||
+    lower.includes(".png") ||
+    lower.includes(".webp") ||
+    lower.includes(".gif") ||
+    lower.startsWith("data:image/")
+  );
+}
 
 type AdminLeaveRequest = {
   id: string;
@@ -217,6 +234,7 @@ export default function AdminLeaveRequestDetailPage() {
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [selectedAnswer, setSelectedAnswer] = useState("");
   const [adminNote, setAdminNote] = useState("");
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   const getLeaveRequest = useCallback(async () => {
     try {
@@ -473,17 +491,68 @@ export default function AdminLeaveRequestDetailPage() {
                         <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
                           Surat Dokter / Lampiran
                         </p>
-                        <div className="mt-2">
-                          <a
-                            href={request.attachmentUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-xs font-black text-[#123c8c] shadow-sm transition hover:bg-blue-100 active:scale-[0.98]"
-                          >
-                            <FileText size={16} />
-                            Buka / Unduh Lampiran Surat Dokter
-                          </a>
-                        </div>
+
+                        {isImageAttachment(request.attachmentUrl) ||
+                        isImageAttachment(request.attachmentName) ? (
+                          <div className="mt-3 space-y-3">
+                            <div className="group relative max-w-sm overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 shadow-sm">
+                              <img
+                                src={request.attachmentUrl}
+                                alt={request.attachmentName || "Lampiran"}
+                                className="max-h-64 w-full object-contain cursor-pointer transition hover:scale-[1.02]"
+                                onClick={() => setPreviewImage(request.attachmentUrl!)}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setPreviewImage(request.attachmentUrl!)}
+                                className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1.5 rounded-lg bg-slate-900/80 px-2.5 py-1 text-xs font-bold text-white backdrop-blur-sm transition hover:bg-slate-900"
+                              >
+                                <Eye size={13} />
+                                Perbesar
+                              </button>
+                            </div>
+
+                            <div className="flex flex-wrap gap-2">
+                              <a
+                                href={request.attachmentUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 rounded-xl bg-blue-50 px-3.5 py-2 text-xs font-black text-[#123c8c] transition hover:bg-blue-100"
+                              >
+                                <ExternalLink size={13} />
+                                Buka Tab Baru
+                              </a>
+                              <a
+                                href={request.attachmentUrl}
+                                download={request.attachmentName || "lampiran"}
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-black text-slate-700 transition hover:bg-slate-50"
+                              >
+                                <Download size={13} />
+                                Unduh Foto
+                              </a>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="mt-2.5 flex flex-wrap gap-2">
+                            <a
+                              href={request.attachmentUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-xs font-black text-[#123c8c] shadow-sm transition hover:bg-blue-100 active:scale-[0.98]"
+                            >
+                              <FileText size={16} />
+                              {request.attachmentName || "Buka / Unduh Lampiran Surat Dokter"}
+                            </a>
+                            <a
+                              href={request.attachmentUrl}
+                              download={request.attachmentName || "lampiran.pdf"}
+                              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-black text-slate-700 shadow-sm transition hover:bg-slate-50 active:scale-[0.98]"
+                            >
+                              <Download size={16} />
+                              Unduh File
+                            </a>
+                          </div>
+                        )}
                       </div>
                     ) : null}
 
@@ -631,6 +700,30 @@ export default function AdminLeaveRequestDetailPage() {
           </div>
         </div>
       ) : null}
+      {previewImage && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div
+            className="relative max-h-[90vh] max-w-3xl overflow-hidden rounded-2xl bg-white p-2 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setPreviewImage(null)}
+              className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-slate-900/80 text-white transition hover:bg-slate-900"
+            >
+              <X size={18} />
+            </button>
+            <img
+              src={previewImage}
+              alt="Preview Surat Dokter / Lampiran"
+              className="max-h-[82vh] w-auto max-w-full rounded-xl object-contain"
+            />
+          </div>
+        </div>
+      )}
     </MobileShell>
   );
 }

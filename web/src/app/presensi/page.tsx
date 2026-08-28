@@ -1852,7 +1852,7 @@ function LateReasonModal({
                     Memproses
                   </>
                 ) : (
-                  "Simpan Alasan"
+                  "Konfirmasi & Check-in"
                 )}
               </AppButton>
             </div>
@@ -2822,8 +2822,9 @@ export default function AttendancePage() {
     await handleAttendance("check-out", reason);
   }
 
-  function handleSaveLateReason() {
-    if (!lateReason.trim()) {
+  async function handleSaveLateReason() {
+    const trimmedReason = lateReason.trim();
+    if (!trimmedReason) {
       showCustomAlert(
         "Alasan belum diisi",
         "Isi alasan keterlambatan terlebih dahulu.",
@@ -2833,17 +2834,7 @@ export default function AttendancePage() {
     }
 
     setIsLateReasonOpen(false);
-
-    safeSetStatus(
-      "Alasan Siap Dikirim",
-      "Alasan keterlambatan sudah tersimpan sementara. Silakan tekan tombol Check-in untuk mengirim presensi.",
-    );
-
-    showCustomAlert(
-      "Alasan siap dikirim",
-      "Alasan keterlambatan sudah tersimpan. Silakan tekan tombol Check-in untuk melanjutkan presensi.",
-      "success",
-    );
+    await handleAttendance("check-in", trimmedReason);
   }
 
   async function handleAttendance(action: AttendanceAction, reason = "") {
@@ -3119,10 +3110,10 @@ export default function AttendancePage() {
           </div>
         </section>
 
-        <section className="relative z-10 mx-auto grid w-full max-w-7xl gap-3 px-5 pt-3 md:px-10 md:py-8 lg:grid-cols-[1.05fr_0.95fr] lg:px-16">
+        <section className="relative z-10 mx-auto grid w-full max-w-7xl gap-3 px-3.5 pt-2 pb-16 md:px-6 md:py-4 lg:grid-cols-[1.05fr_0.95fr] lg:px-8">
           <AppCard
-            padding="md"
-            className="attendance-card-enter flex flex-col rounded-[2rem] border-white/80 bg-white/95 p-3 shadow-2xl shadow-slate-300/30 backdrop-blur-xl md:p-6"
+            padding="sm"
+            className="attendance-card-enter flex flex-col rounded-2xl border-white/80 bg-white/95 p-3 shadow-md shadow-slate-300/20 backdrop-blur-xl md:p-5"
           >
             <div className="attendance-row-enter mb-4 hidden items-start justify-between gap-4 md:flex">
               <div>
@@ -3221,9 +3212,9 @@ export default function AttendancePage() {
               </div>
             ) : null}
 
-            <div className="attendance-camera-enter mt-2 overflow-hidden rounded-2xl bg-slate-950 shadow-[0_12px_30px_rgba(15,23,42,0.15)]">
+            <div className="attendance-camera-enter mt-1.5 overflow-hidden rounded-2xl bg-slate-950 shadow-[0_8px_20px_rgba(15,23,42,0.12)]">
               <div className="relative overflow-hidden bg-slate-950 shadow-inner">
-                <div className="relative h-[42dvh] min-h-[250px] max-h-[380px] sm:h-[45dvh] sm:min-h-[280px] sm:max-h-[440px] md:h-auto md:aspect-[16/10] md:min-h-0 md:max-h-none lg:aspect-[16/10]">
+                <div className="relative h-[32dvh] min-h-[190px] max-h-[290px] sm:h-[35dvh] sm:min-h-[220px] sm:max-h-[340px] md:h-auto md:aspect-[16/10] md:min-h-0 md:max-h-none lg:aspect-[16/10]">
                   <video
                     ref={videoRef}
                     autoPlay

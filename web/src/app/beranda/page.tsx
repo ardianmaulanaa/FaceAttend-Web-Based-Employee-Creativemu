@@ -406,23 +406,23 @@ function RoleBadges({ items }: { items: Array<string | undefined | null> }) {
 
 function QuickMenuGrid() {
   return (
-    <div className="grid grid-cols-3 gap-3 md:grid-cols-6 md:gap-4">
+    <div className="grid grid-cols-3 gap-2 sm:grid-cols-6 sm:gap-3">
       {quickMenus.map(({ href, label, icon: Icon }, index) => (
         <Link
           key={href}
           href={href}
-          className="home-card-enter group flex flex-col items-center rounded-3xl p-2 text-center transition hover:-translate-y-0.5 active:scale-[0.98] md:border md:border-blue-100 md:bg-[#f8fbff] md:p-6 md:hover:-translate-y-1 md:hover:bg-white md:hover:shadow-xl md:hover:shadow-slate-200/60"
+          className="home-card-enter group flex flex-col items-center rounded-2xl p-1.5 text-center transition hover:-translate-y-0.5 active:scale-[0.98] md:border md:border-blue-100 md:bg-[#f8fbff] md:p-3 md:hover:bg-white md:hover:shadow-md md:hover:shadow-slate-200/60"
           style={{
-            animationDelay: `${index * 55}ms`,
+            animationDelay: `${index * 40}ms`,
           }}
         >
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#eaf1ff] transition group-hover:scale-105 md:h-20 md:w-20">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#123c8c] text-white shadow-lg shadow-blue-900/20 transition group-hover:rotate-[-2deg] md:h-14 md:w-14">
-              <Icon size={22} strokeWidth={2.6} />
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#eaf1ff] transition group-hover:scale-105 md:h-13 md:w-13">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#123c8c] text-white shadow-sm transition group-hover:rotate-[-2deg] md:h-9.5 md:w-9.5">
+              <Icon size={17} strokeWidth={2.6} />
             </div>
           </div>
 
-          <p className="mt-2 text-[12px] font-black leading-tight text-slate-800 md:mt-3 md:text-base">
+          <p className="mt-1.5 text-[11px] font-black leading-tight text-slate-800 md:text-xs">
             {label}
           </p>
         </Link>
@@ -448,12 +448,12 @@ function AttendanceButton({
       onClick={(event) => {
         if (disabled) event.preventDefault();
       }}
-      className={`flex min-h-[48px] w-full flex-1 items-center justify-center rounded-2xl px-3 py-2.5 text-sm font-black transition md:h-20 md:min-h-0 md:px-6 md:py-0 md:text-lg ${
+      className={`flex min-h-[38px] w-full flex-1 items-center justify-center rounded-xl px-3 py-1.5 text-xs font-black transition md:h-11 md:min-h-0 md:px-5 md:py-0 md:text-sm ${
         disabled
           ? "cursor-not-allowed border-slate-100 bg-slate-100 text-slate-300"
           : variant === "primary"
-            ? "bg-[#123c8c] text-white shadow-md shadow-blue-900/20 hover:-translate-y-0.5 hover:bg-[#0f3274] active:scale-[0.98]"
-            : "border border-blue-100 bg-white text-[#123c8c] hover:-translate-y-0.5 hover:bg-[#eaf1ff] active:scale-[0.98]"
+            ? "bg-[#123c8c] text-white shadow-sm shadow-blue-900/20 hover:bg-[#0f3274] active:scale-[0.98]"
+            : "border border-blue-100 bg-white text-[#123c8c] hover:bg-[#eaf1ff] active:scale-[0.98]"
       }`}
     >
       {label}
@@ -661,22 +661,22 @@ export default function HomePage() {
           />
         </div>
 
-        <main className="creativemu-blue-home min-h-dvh overflow-x-hidden bg-white text-slate-950 md:bg-gradient-to-br md:from-[#f6f8ff] md:via-white md:to-[#eef4ff] md:pb-28">
+        <main className="creativemu-blue-home min-h-dvh overflow-x-hidden bg-white text-slate-950 md:bg-gradient-to-br md:from-[#f6f8ff] md:via-white md:to-[#eef4ff] md:pb-16">
           <section
             className="home-enter bg-white md:hidden"
             style={{
               paddingTop: "env(safe-area-inset-top, 0px)",
             }}
           >
-            <div className="mx-auto w-full max-w-7xl px-5 pt-6">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="home-icon-pop flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white p-2 ring-1 ring-blue-100">
+            <div className="mx-auto w-full max-w-7xl px-4 pt-3.5 pb-2">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <div className="home-icon-pop flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white p-1.5 ring-1 ring-blue-100">
                     <Image
                       src={logoSrc}
                       alt="Creativemu Logo"
-                      width={64}
-                      height={59}
+                      width={40}
+                      height={36}
                       unoptimized
                       className="h-full w-full object-contain"
                       priority
@@ -686,12 +686,12 @@ export default function HomePage() {
                   <ProfileAvatar user={user} />
 
                   <div className="min-w-0">
-                    <p className="home-text-reveal text-[10px] font-black uppercase tracking-[0.24em] text-[#123c8c]">
-                      Presensi
+                    <p className="home-text-reveal text-[9px] font-black uppercase tracking-[0.22em] text-[#123c8c]">
+                      {firstName ? `Halo, ${firstName}` : "Presensi"}
                     </p>
 
                     <h1
-                      className="home-text-reveal mt-1 truncate text-base font-black text-[#073456]"
+                      className="home-text-reveal truncate text-sm font-black text-[#073456]"
                       style={{
                         animationDelay: "60ms",
                       }}
@@ -701,7 +701,7 @@ export default function HomePage() {
 
                     {mainRoleLabel ? (
                       <p
-                        className="home-text-reveal truncate text-xs font-bold text-slate-500"
+                        className="home-text-reveal truncate text-[11px] font-bold text-slate-500"
                         style={{
                           animationDelay: "100ms",
                         }}
@@ -712,7 +712,7 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                <div className="flex shrink-0 items-center gap-3">
+                <div className="flex shrink-0 items-center gap-2">
                   <WhatsAppButton />
 
                   <NotificationHeaderButton
@@ -723,46 +723,17 @@ export default function HomePage() {
                   />
                 </div>
               </div>
-
-              <div className="py-7 text-center">
-                <p
-                  className="home-text-reveal text-xs font-black uppercase tracking-[0.24em] text-[#123c8c]"
-                  style={{
-                    animationDelay: "120ms",
-                  }}
-                >
-                  Selamat Datang
-                </p>
-
-                <h2
-                  className="home-text-reveal mt-3 text-4xl font-black tracking-tight text-[#073456]"
-                  style={{
-                    animationDelay: "170ms",
-                  }}
-                >
-                  {firstName ? `Halo, ${firstName}` : "Memuat profil..."}
-                </h2>
-
-                <p
-                  className="home-text-reveal mt-3 text-lg font-bold text-slate-500"
-                  style={{
-                    animationDelay: "220ms",
-                  }}
-                >
-                  Semoga harimu produktif.
-                </p>
-              </div>
             </div>
           </section>
 
-          <section className="mx-auto hidden max-w-7xl px-10 pt-8 md:block lg:px-16">
-            <div className="home-enter relative overflow-hidden rounded-[2.2rem] bg-[#123c8c] p-8 text-white shadow-2xl shadow-blue-900/25">
-              <div className="relative z-10 flex items-center justify-between gap-8">
-                <div className="flex items-center gap-5">
+          <section className="mx-auto hidden max-w-7xl px-6 pt-4 md:block lg:px-8">
+            <div className="home-enter relative overflow-hidden rounded-2xl bg-[#123c8c] p-4 text-white shadow-lg shadow-blue-900/20">
+              <div className="relative z-10 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
                   <ProfileAvatar user={user} size="desktop" variant="blue" />
 
                   <div>
-                    <h1 className="home-text-reveal text-4xl font-black tracking-tight">
+                    <h1 className="home-text-reveal text-xl sm:text-2xl font-black tracking-tight">
                       {firstName ? `Halo, ${firstName}` : "Memuat profil..."}
                     </h1>
 
@@ -787,35 +758,35 @@ export default function HomePage() {
             </div>
           </section>
 
-          <section className="mx-auto w-full max-w-7xl bg-white px-5 pb-[8.5rem] pt-2 md:mt-8 md:rounded-[2.5rem] md:px-8 md:pb-10 md:pt-8 lg:px-10">
-            <div className="mb-6 md:mb-8">
+          <section className="mx-auto w-full max-w-7xl bg-white px-4 pb-20 pt-1 md:mt-4 md:rounded-2xl md:px-6 md:pb-6 md:pt-4 lg:px-8">
+            <div className="mb-3.5 md:mb-5">
               <QuickMenuGrid />
             </div>
 
             <AppCard
-              padding="md"
-              className="home-card-enter rounded-[1.8rem] border-blue-100 bg-white p-5 shadow-sm transition hover:shadow-xl hover:shadow-slate-200/60 md:p-8"
+              padding="sm"
+              className="home-card-enter rounded-2xl border-blue-100 bg-white p-3.5 shadow-sm transition hover:shadow-md hover:shadow-slate-200/60 md:p-5"
               style={{
                 animationDelay: "140ms",
               }}
             >
               <div className="flex flex-row items-center justify-between gap-3 md:flex-row md:items-center md:justify-between">
                 <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2 md:gap-3">
-                    <p className="text-2xl font-black tracking-tight text-slate-950 sm:text-4xl md:text-6xl">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-xl font-black tracking-tight text-slate-950 sm:text-2xl md:text-3xl">
                       {currentTime || "--:-- WIB"}
                     </p>
 
-                    <div className="rounded-xl bg-gradient-to-r from-[#123c8c] to-[#1e56b8] px-2 py-1 text-[10px] font-black text-white shadow-md shadow-blue-900/15 sm:rounded-2xl sm:px-4 sm:py-2 md:text-sm">
+                    <div className="rounded-lg bg-gradient-to-r from-[#123c8c] to-[#1e56b8] px-2 py-0.5 text-[9px] font-black text-white shadow-sm sm:rounded-xl sm:px-3 sm:py-1 md:text-xs">
                       {currentDate || "Memuat tanggal..."}
                     </div>
                   </div>
 
-                  <p className="mt-1.5 text-[11px] font-semibold text-slate-500 sm:text-sm md:mt-5 md:text-lg">
+                  <p className="mt-1 text-[10px] font-semibold text-slate-500 sm:text-xs md:mt-2 md:text-sm">
                     {workScheduleText}
                   </p>
 
-                  <p className="mt-0.5 text-[11px] font-semibold text-slate-500 sm:text-sm md:mt-3 md:text-lg">
+                  <p className="mt-0.5 text-[10px] font-semibold text-slate-500 sm:text-xs md:text-sm">
                     Status hari ini:{" "}
                     <span className="font-black text-[#123c8c]">
                       {attendanceToday.status}
@@ -823,7 +794,7 @@ export default function HomePage() {
                   </p>
                 </div>
 
-                <div className="flex w-[140px] shrink-0 flex-col gap-2.5 sm:w-[160px] md:w-[380px] md:flex-row md:gap-4 lg:w-[440px]">
+                <div className="flex w-[125px] shrink-0 flex-col gap-1.5 sm:w-[150px] md:w-[260px] md:flex-row md:gap-3">
                   <AttendanceButton
                     label="Masuk"
                     href="/presensi"
@@ -842,13 +813,13 @@ export default function HomePage() {
             </AppCard>
 
             <div
-              className="home-card-enter mt-7 flex items-center justify-between md:mt-14"
+              className="home-card-enter mt-4 flex items-center justify-between md:mt-6"
               style={{
                 animationDelay: "180ms",
               }}
             >
               <div>
-                <h2 className="text-2xl font-black text-slate-950 md:text-2xl">
+                <h2 className="text-base font-black text-slate-950 md:text-lg">
                   Pengumuman
                 </h2>
               </div>
@@ -856,13 +827,13 @@ export default function HomePage() {
               <Link
                 href="/pengumuman"
                 onClick={markAnnouncementsAsRead}
-                className="text-lg font-black text-[#123c8c] transition hover:text-[#0f3274] active:scale-[0.98] md:text-base"
+                className="text-xs font-black text-[#123c8c] transition hover:text-[#0f3274] active:scale-[0.98]"
               >
-                Lihat Lainnya
+                Lihat Semua
               </Link>
             </div>
 
-            <div className="mt-4 md:mt-6">
+            <div className="mt-2 md:mt-3">
               <AnnouncementList
                 announcements={announcements}
                 hasAnnouncement={hasAnnouncement}

@@ -432,75 +432,75 @@ export default function AdminAttendanceReportPage() {
 
       <AppHeader title="Laporan Kehadiran" variant="admin" />
 
-      <main className="min-h-dvh bg-gradient-to-br from-[#f6f8ff] via-white to-[#eef4ff]">
-        <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 md:px-10 lg:px-16">
-          <div className="attendance-report-enter overflow-hidden rounded-[2rem] border border-blue-100 bg-white shadow-xl shadow-slate-300/30">
-            <div className="grid gap-0 lg:grid-cols-[0.95fr_1.05fr]">
-              <div className="bg-[#123c8c] p-6 text-white md:p-8">
-                <div className="flex flex-col items-center text-center gap-3 md:flex-row md:items-center md:text-left">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/15">
-                    <Camera size={25} strokeWidth={2.6} />
+      <main className="min-h-dvh bg-gradient-to-br from-[#f6f8ff] via-white to-[#eef4ff] pb-16">
+        <section className="mx-auto max-w-7xl space-y-4 px-4 py-4 md:px-8 lg:px-12">
+          <div className="attendance-report-enter overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-md shadow-slate-300/20">
+            <div className="grid gap-0 lg:grid-cols-[0.9fr_1.1fr]">
+              <div className="bg-[#123c8c] p-4 text-white md:p-5">
+                <div className="flex flex-col items-center text-center gap-2.5 md:flex-row md:items-center md:text-left">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15">
+                    <Camera size={20} strokeWidth={2.6} />
                   </div>
 
                   <div>
-                    <h2 className="mt-1 text-3xl font-black tracking-tight md:text-4xl">
+                    <h2 className="mt-0 text-xl font-black tracking-tight md:text-2xl">
                       Rekap Kehadiran Karyawan
                     </h2>
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 p-5 md:grid-cols-4 md:p-6">
+              <div className="grid grid-cols-2 gap-2 p-3 md:grid-cols-4 md:p-4">
                 <div
-                  className="attendance-report-row-enter rounded-2xl border border-blue-100 bg-[#f8fbff] p-4"
+                  className="attendance-report-row-enter rounded-xl border border-blue-100 bg-[#f8fbff] p-2.5"
                   style={{ animationDelay: "60ms" }}
                 >
-                  <p className="text-xs font-bold text-slate-500">
+                  <p className="text-[11px] font-bold text-slate-500">
                     Total Rekap
                   </p>
-                  <h3 className="mt-3 text-3xl font-black text-[#123c8c]">
+                  <h3 className="mt-1 text-xl font-black text-[#123c8c]">
                     {stats.total}
                   </h3>
-                  <p className="mt-1 text-xs font-semibold text-slate-500">
+                  <p className="mt-0.5 text-[9px] font-semibold text-slate-500">
                     Data presensi
                   </p>
                 </div>
 
                 <div
-                  className="attendance-report-row-enter rounded-2xl border border-amber-200 bg-amber-50 p-4"
+                  className="attendance-report-row-enter rounded-xl border border-amber-200 bg-amber-50 p-2.5"
                   style={{ animationDelay: "100ms" }}
                 >
-                  <p className="text-xs font-bold text-amber-800">Belum Checkout</p>
-                  <h3 className="mt-3 text-3xl font-black text-amber-800">
+                  <p className="text-[11px] font-bold text-amber-800">Belum Checkout</p>
+                  <h3 className="mt-1 text-xl font-black text-amber-800">
                     {stats.uncheckout}
                   </h3>
-                  <p className="mt-1 text-xs font-semibold text-amber-700/80">
+                  <p className="mt-0.5 text-[9px] font-semibold text-amber-700/80">
                     Belum jam keluar
                   </p>
                 </div>
 
                 <div
-                  className="attendance-report-row-enter rounded-2xl border border-emerald-100 bg-emerald-50 p-4"
+                  className="attendance-report-row-enter rounded-xl border border-emerald-100 bg-emerald-50 p-2.5"
                   style={{ animationDelay: "140ms" }}
                 >
-                  <p className="text-xs font-bold text-emerald-700">Ada Foto</p>
-                  <h3 className="mt-3 text-3xl font-black text-emerald-700">
+                  <p className="text-[11px] font-bold text-emerald-700">Ada Foto</p>
+                  <h3 className="mt-1 text-xl font-black text-emerald-700">
                     {stats.withPhoto}
                   </h3>
-                  <p className="mt-1 text-xs font-semibold text-emerald-700/70">
+                  <p className="mt-0.5 text-[9px] font-semibold text-emerald-700/70">
                     Bukti absen
                   </p>
                 </div>
 
                 <div
-                  className="attendance-report-row-enter rounded-2xl border border-blue-100 bg-blue-50 p-4"
+                  className="attendance-report-row-enter rounded-xl border border-blue-100 bg-blue-50 p-2.5"
                   style={{ animationDelay: "180ms" }}
                 >
-                  <p className="text-xs font-bold text-[#123c8c]">Ada Lokasi</p>
-                  <h3 className="mt-3 text-3xl font-black text-[#123c8c]">
+                  <p className="text-[11px] font-bold text-[#123c8c]">Ada Lokasi</p>
+                  <h3 className="mt-1 text-xl font-black text-[#123c8c]">
                     {stats.withLocation}
                   </h3>
-                  <p className="mt-1 text-xs font-semibold text-[#123c8c]/70">
+                  <p className="mt-0.5 text-[9px] font-semibold text-[#123c8c]/70">
                     Titik GPS
                   </p>
                 </div>
@@ -509,16 +509,16 @@ export default function AdminAttendanceReportPage() {
           </div>
 
           <div
-            className="attendance-report-enter rounded-[2rem] border border-white/70 bg-white/95 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-6"
+            className="attendance-report-enter rounded-2xl border border-white/70 bg-white/95 p-4 shadow-md shadow-slate-300/20 backdrop-blur-xl md:p-5"
             style={{ animationDelay: "100ms" }}
           >
-            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div className="flex flex-col gap-1.5 md:flex-row md:items-end md:justify-between">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.22em] text-[#123c8c]">
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#123c8c]">
                   Filter Data
                 </p>
 
-                <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">
+                <h2 className="mt-1 text-lg font-black tracking-tight text-slate-950 md:text-xl">
                   Cari Rekap Kehadiran
                 </h2>
               </div>
@@ -526,16 +526,16 @@ export default function AdminAttendanceReportPage() {
 
             <form
               onSubmit={handleSearchSubmit}
-              className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:items-end"
+              className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:items-end"
             >
               <div className="w-full">
-                <label className="mb-2 block text-xs font-black uppercase tracking-wider text-slate-500">
+                <label className="mb-1.5 block text-[11px] font-black uppercase tracking-wider text-slate-500">
                   Cari Karyawan
                 </label>
                 <div className="relative">
                   <Search
-                    size={18}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                    size={16}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
                   />
 
                   <input
@@ -545,26 +545,26 @@ export default function AdminAttendanceReportPage() {
                       setSelectedEmployeeId("");
                     }}
                     placeholder="Nama / kode karyawan..."
-                    className="attendance-report-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100"
+                    className="attendance-report-field h-10 w-full rounded-xl border border-blue-100 bg-[#f8fbff] py-2 pl-10 pr-3.5 text-xs font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-2 focus:ring-blue-100"
                   />
                 </div>
               </div>
 
               <div className="w-full">
-                <label className="mb-2 block text-xs font-black uppercase tracking-wider text-slate-500">
+                <label className="mb-1.5 block text-[11px] font-black uppercase tracking-wider text-slate-500">
                   Tanggal Presensi
                 </label>
                 <div className="relative flex items-center">
                   <CalendarDays
-                    size={18}
-                    className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                    size={16}
+                    className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
                   />
                   <input
                     type="date"
                     value={selectedDate}
                     onChange={(event) => setSelectedDate(event.target.value)}
                     title="Kosongkan untuk menampilkan tanggal presensi terbaru"
-                    className="attendance-report-field h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] py-3 pl-11 pr-4 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-4 focus:ring-blue-100 cursor-pointer"
+                    className="attendance-report-field h-10 w-full rounded-xl border border-blue-100 bg-[#f8fbff] py-2 pl-10 pr-3.5 text-xs font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:bg-white focus:ring-2 focus:ring-blue-100 cursor-pointer"
                   />
                 </div>
               </div>

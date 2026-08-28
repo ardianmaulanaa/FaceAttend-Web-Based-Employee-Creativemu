@@ -23,9 +23,9 @@ const buttonVariantClass: Record<Variant, string> = {
 };
 
 const buttonSizeClass: Record<Size, string> = {
-  sm: "min-h-10 rounded-xl px-4 py-2 text-xs",
-  md: "min-h-12 rounded-2xl px-5 py-3 text-sm",
-  lg: "min-h-14 rounded-2xl px-6 py-4 text-base",
+  sm: "min-h-8.5 rounded-xl px-3 py-1.5 text-xs",
+  md: "min-h-10 rounded-xl px-4 py-2 text-xs sm:text-sm",
+  lg: "min-h-11 rounded-xl px-5 py-2.5 text-sm sm:text-base",
 };
 
 type PressAnimationOptions = {
@@ -519,7 +519,7 @@ export function AppAnimatedActionButton({
         disabled={isDisabled}
         onClick={handleClick}
         className={cn(
-          "group relative inline-flex items-center justify-center gap-4 overflow-hidden rounded-[1.8rem] bg-white px-6 py-5 text-[#123c8c] shadow-2xl shadow-blue-950/20 ring-1 ring-white/70 transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-50 hover:shadow-blue-950/25 active:scale-[0.98] disabled:cursor-wait disabled:opacity-80",
+          "group relative inline-flex items-center justify-center gap-3 overflow-hidden rounded-2xl bg-white px-4 py-3 text-[#123c8c] shadow-lg shadow-blue-950/15 ring-1 ring-white/70 transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-50 hover:shadow-blue-950/20 active:scale-[0.98] disabled:cursor-wait disabled:opacity-80",
           full && "w-full",
           fullOnMobile && "w-full md:w-auto",
           !full && !fullOnMobile && "w-auto",
@@ -537,12 +537,12 @@ export function AppAnimatedActionButton({
 
         <span
           className={cn(
-            "relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[1.4rem] bg-[#eaf1ff] transition-all duration-200 group-hover:bg-[#123c8c] group-hover:text-white",
+            "relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#eaf1ff] transition-all duration-200 group-hover:bg-[#123c8c] group-hover:text-white",
             isAnimating && "app-icon-press-active bg-[#123c8c] text-white",
           )}
         >
           {loading ? (
-            <span className="relative z-10 h-6 w-6 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            <span className="relative z-10 h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
           ) : (
             <span className="relative z-10 inline-flex items-center justify-center">
               {icon}
@@ -551,12 +551,12 @@ export function AppAnimatedActionButton({
         </span>
 
         <span className="relative z-10 text-left">
-          <span className="block text-xl font-black leading-none tracking-tight">
+          <span className="block text-base sm:text-lg font-black leading-tight tracking-tight">
             {loading || isAnimating ? loadingTitle : title}
           </span>
 
           {subtitle ? (
-            <span className="mt-1 block text-xs font-bold text-[#123c8c]/70">
+            <span className="mt-0.5 block text-[11px] font-bold text-[#123c8c]/70">
               {subtitle}
             </span>
           ) : null}
@@ -575,13 +575,13 @@ export function AppInput({ label, error, className, ...props }: AppInputProps) {
   return (
     <label className="block">
       {label ? (
-        <span className="text-sm font-black text-slate-700">{label}</span>
+        <span className="text-xs sm:text-sm font-black text-slate-700">{label}</span>
       ) : null}
 
       <input
         suppressHydrationWarning
         className={cn(
-          "mt-2 min-h-12 w-full rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-3 text-sm font-bold text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-60",
+          "mt-1.5 min-h-10 w-full rounded-xl border border-blue-100 bg-[#f8fbff] px-3.5 py-2 text-xs sm:text-sm font-bold text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#123c8c] focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-60",
           error &&
             "border-red-200 bg-red-50 focus:border-red-400 focus:ring-red-100",
           className,
@@ -590,7 +590,7 @@ export function AppInput({ label, error, className, ...props }: AppInputProps) {
       />
 
       {error ? (
-        <span className="mt-2 block text-xs font-bold text-red-600">
+        <span className="mt-1.5 block text-xs font-bold text-red-600">
           {error}
         </span>
       ) : null}
@@ -612,13 +612,13 @@ export function AppTextarea({
   return (
     <label className="block">
       {label ? (
-        <span className="text-sm font-black text-slate-700">{label}</span>
+        <span className="text-xs sm:text-sm font-black text-slate-700">{label}</span>
       ) : null}
 
       <textarea
         suppressHydrationWarning
         className={cn(
-          "mt-2 min-h-28 w-full resize-none rounded-2xl border border-blue-100 bg-[#f8fbff] px-4 py-4 text-sm font-bold leading-6 text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-60",
+          "mt-1.5 min-h-20 w-full resize-none rounded-xl border border-blue-100 bg-[#f8fbff] px-3.5 py-2.5 text-xs sm:text-sm font-bold leading-5 text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#123c8c] focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-60",
           error &&
             "border-red-200 bg-red-50 focus:border-red-400 focus:ring-red-100",
           className,
@@ -627,7 +627,7 @@ export function AppTextarea({
       />
 
       {error ? (
-        <span className="mt-2 block text-xs font-bold text-red-600">
+        <span className="mt-1.5 block text-xs font-bold text-red-600">
           {error}
         </span>
       ) : null}
@@ -651,15 +651,15 @@ export function AppSelect({
   return (
     <label className="block">
       {label ? (
-        <span className="text-sm font-black text-slate-700">{label}</span>
+        <span className="text-xs sm:text-sm font-black text-slate-700">{label}</span>
       ) : null}
 
-      <div className="relative mt-2">
+      <div className="relative mt-1.5">
         <select
           suppressHydrationWarning
           value={value ?? ""}
           className={cn(
-            "min-h-12 w-full appearance-none rounded-2xl border border-blue-100 bg-[#f8fbff] pl-4 pr-10 py-3 text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer",
+            "min-h-10 w-full appearance-none rounded-xl border border-blue-100 bg-[#f8fbff] pl-3.5 pr-9 py-2 text-xs sm:text-sm font-bold text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer",
             error &&
               "border-red-200 bg-red-50 focus:border-red-400 focus:ring-red-100",
             className,
@@ -677,7 +677,7 @@ export function AppSelect({
       </div>
 
       {error ? (
-        <span className="mt-2 block text-xs font-bold text-red-600">
+        <span className="mt-1.5 block text-xs font-bold text-red-600">
           {error}
         </span>
       ) : null}
@@ -698,10 +698,10 @@ export function AppCard({
   return (
     <div
       className={cn(
-        "rounded-[2rem] border border-blue-100 bg-white shadow-xl shadow-slate-200/60",
-        padding === "sm" && "p-4",
-        padding === "md" && "p-5",
-        padding === "lg" && "p-6 md:p-8",
+        "rounded-2xl border border-blue-100 bg-white shadow-md shadow-slate-200/50",
+        padding === "sm" && "p-3 sm:p-3.5",
+        padding === "md" && "p-3.5 sm:p-4.5",
+        padding === "lg" && "p-4.5 sm:p-6",
         className,
       )}
       {...props}
@@ -744,10 +744,10 @@ export function AppClickableCard({
         disabled={disabled}
         onClick={handleClick}
         className={cn(
-          "relative w-full overflow-hidden rounded-[2rem] border border-blue-100 bg-white text-left shadow-lg shadow-slate-200/60 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-slate-300/40 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60",
-          padding === "sm" && "p-4",
-          padding === "md" && "p-5",
-          padding === "lg" && "p-6 md:p-8",
+          "relative w-full overflow-hidden rounded-2xl border border-blue-100 bg-white text-left shadow-md shadow-slate-200/50 transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-300/30 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60",
+          padding === "sm" && "p-3 sm:p-3.5",
+          padding === "md" && "p-3.5 sm:p-4.5",
+          padding === "lg" && "p-4.5 sm:p-6",
           pressAnimation && isAnimating && "app-button-press-active",
           className,
         )}

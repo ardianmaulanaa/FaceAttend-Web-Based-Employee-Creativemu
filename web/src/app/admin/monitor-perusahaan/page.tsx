@@ -490,16 +490,19 @@ function AttendancePieChart({
   const wfh = toSafeNumber(summary.monthWfh ?? summary.wfh);
   const visit = toSafeNumber(summary.monthVisit ?? summary.visit);
   const cuti = toSafeNumber(summary.monthCuti ?? summary.cuti);
-  const office = Math.max(
+  const late = toSafeNumber(summary.monthLate ?? summary.late);
+  const totalOffice = Math.max(
     toSafeNumber(summary.monthOffice ?? summary.office) ||
       toSafeNumber(summary.monthPresent ?? summary.present),
     0,
   );
+  const onTimeOffice = Math.max(totalOffice - late, 0);
   const pending = toSafeNumber(summary.monthPending ?? summary.pending);
-  const base = Math.max(office + wfh + visit + cuti + pending, 1);
+  const base = Math.max(onTimeOffice + late + wfh + visit + cuti + pending, 1);
 
   const items = [
-    { label: "Hadir", value: office, color: "#8b5cf6" },
+    { label: "Hadir", value: onTimeOffice, color: "#8b5cf6" },
+    { label: "Terlambat", value: late, color: "#f97316" },
     { label: "WFH", value: wfh, color: "#f59e0b" },
     { label: "Kunjungan", value: visit, color: "#ef4444" },
     { label: "Cuti", value: cuti, color: "#14b8a6" },
@@ -510,7 +513,7 @@ function AttendancePieChart({
   ];
   const selectedMonthOption = monthOptions.find((opt) => opt.value === month);
   const monthLabel = selectedMonthOption ? selectedMonthOption.label : `Bulan ${month}`;
-  const hasAttendanceData = office + wfh + visit + cuti > 0;
+  const hasAttendanceData = totalOffice + wfh + visit + cuti > 0;
   const chartSlices = chartItems.reduce<
     Array<
       (typeof chartItems)[number] & {
@@ -540,9 +543,9 @@ function AttendancePieChart({
     activePieIndex !== null ? chartSlices[activePieIndex] : null;
 
   return (
-    <div className="monitor-row-enter mt-6 grid gap-5 rounded-[1.65rem] border border-slate-200 bg-white p-4 shadow-xl shadow-slate-200/70 sm:grid-cols-[220px_1fr] sm:items-center md:rounded-[2rem] md:p-6">
-      <div className="mx-auto flex h-48 w-48 items-center justify-center rounded-full border border-slate-100 bg-slate-50 sm:h-52 sm:w-52 md:h-56 md:w-56">
-        <div className="relative h-44 w-44 rounded-full sm:h-48 sm:w-48 md:h-52 md:w-52">
+    <div className="monitor-row-enter mt-4 grid gap-4 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-md shadow-slate-200/50 sm:grid-cols-[180px_1fr] sm:items-center md:p-4.5">
+      <div className="mx-auto flex h-38 w-38 items-center justify-center rounded-full border border-slate-100 bg-slate-50 sm:h-42 sm:w-42 md:h-44 md:w-44">
+        <div className="relative h-36 w-36 rounded-full sm:h-40 sm:w-40 md:h-42 md:w-42">
           <svg
             viewBox="0 0 100 100"
             className="h-full w-full overflow-visible rounded-full outline-none"
@@ -597,14 +600,14 @@ function AttendancePieChart({
           </svg>
 
           {activePieItem ? (
-            <div className="pointer-events-none absolute left-1/2 top-1/2 z-20 w-28 -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-slate-200 bg-white/95 px-3 py-2 text-center shadow-lg shadow-slate-300/50">
-              <p className="text-lg font-black leading-none text-slate-950">
+            <div className="pointer-events-none absolute left-1/2 top-1/2 z-20 w-24 -translate-x-1/2 -translate-y-1/2 rounded-xl border border-slate-200 bg-white/95 px-2 py-1.5 text-center shadow-md shadow-slate-300/40">
+              <p className="text-base font-black leading-none text-slate-950">
                 {activePieItem.value}
               </p>
-              <p className="mt-1 text-[10px] font-black text-slate-500">
+              <p className="mt-0.5 text-[9px] font-black text-slate-500">
                 {activePieItem.percentage.toFixed(1)}%
               </p>
-              <p className="mt-1 truncate text-[10px] font-black uppercase tracking-[0.08em] text-slate-600">
+              <p className="mt-0.5 truncate text-[9px] font-black uppercase tracking-[0.08em] text-slate-600">
                 {activePieItem.label}
               </p>
             </div>
@@ -613,22 +616,22 @@ function AttendancePieChart({
       </div>
 
       <div>
-        <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">
+        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
           Komposisi Kehadiran
         </p>
-        <h4 className="mt-2 text-2xl font-black text-slate-950">
+        <h4 className="mt-1 text-lg font-black text-slate-950 md:text-xl">
           Persentase dari {totalEmployees} karyawan
         </h4>
-        <p className="mt-1 text-xs font-black text-[#123c8c]">
+        <p className="mt-0.5 text-[11px] font-black text-[#123c8c]">
           Data rekap {monthLabel} {year}
         </p>
         {!hasAttendanceData ? (
-          <p className="mt-2 text-sm font-semibold text-slate-500">
+          <p className="mt-1 text-xs font-semibold text-slate-500">
             Belum ada presensi kantor, WFH, kunjungan, atau cuti hari ini.
           </p>
         ) : null}
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+        <div className="mt-3.5 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {chartItems.map((item) => {
             const percentage =
               base > 0 ? Number(((item.value / base) * 100).toFixed(1)) : 0;
@@ -643,18 +646,18 @@ function AttendancePieChart({
                   setActivePieIndex(sliceIndex >= 0 ? sliceIndex : null)
                 }
                 onMouseLeave={() => setActivePieIndex(null)}
-                className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-4 py-3 ring-1 ring-slate-200"
+                className="flex items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-slate-200/80"
               >
-                <div className="flex min-w-0 items-center gap-2">
+                <div className="flex min-w-0 items-center gap-1.5">
                   <span
-                    className="h-3 w-3 shrink-0 rounded-full"
+                    className="h-2.5 w-2.5 shrink-0 rounded-full"
                     style={{ backgroundColor: item.color }}
                   />
-                  <p className="truncate text-sm font-black text-slate-800">
+                  <p className="truncate text-xs font-black text-slate-800">
                     {item.label}
                   </p>
                 </div>
-                <p className="shrink-0 text-sm font-black text-slate-950">
+                <p className="shrink-0 text-xs font-black text-slate-950">
                   {percentage}% ({item.value})
                 </p>
               </div>
@@ -792,8 +795,8 @@ export default function AdminCompanyMonitorPage() {
     return [
       {
         label: "Hadir",
-        value: data.summary.present,
-        note: `${data.summary.presentPercentage}% rekap hari ini`,
+        value: Math.max(data.summary.present - data.summary.late, 0),
+        note: `tepat waktu hari ini`,
       },
       {
         label: "Terlambat",
@@ -815,6 +818,11 @@ export default function AdminCompanyMonitorPage() {
         value: data.summary.cuti,
         note: "karyawan cuti hari ini",
       },
+      {
+        label: "Belum Hadir",
+        value: data.summary.pending,
+        note: `${data.summary.pendingPercentage}% belum hadir hari ini`,
+      },
     ];
   }, [data]);
 
@@ -824,34 +832,34 @@ export default function AdminCompanyMonitorPage() {
 
       <AppHeader title="Monitor Perusahaan" variant="admin" />
 
-      <main className="min-h-dvh bg-gradient-to-br from-[#f6f8ff] via-white to-[#eef4ff]">
-        <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 md:px-10 lg:px-16">
-          <div className="monitor-enter overflow-hidden rounded-[2rem] border border-blue-100 bg-white shadow-xl shadow-slate-300/30">
-            <div className="grid gap-0 xl:grid-cols-[0.95fr_1.05fr]">
-              <div className="bg-[#123c8c] p-6 text-white text-center md:text-left md:p-8">
-                <div className="flex flex-col items-center gap-3 md:flex-row md:items-center">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/15">
-                    <BarChart3 size={25} strokeWidth={2.6} />
+      <main className="min-h-dvh bg-gradient-to-br from-[#f6f8ff] via-white to-[#eef4ff] pb-16">
+        <section className="mx-auto max-w-7xl space-y-4 px-4 py-4 md:px-8 lg:px-12">
+          <div className="monitor-enter overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-md shadow-slate-300/20">
+            <div className="grid gap-0 xl:grid-cols-[0.9fr_1.1fr]">
+              <div className="bg-[#123c8c] p-4 text-white text-center md:text-left md:p-5">
+                <div className="flex flex-col items-center gap-2.5 md:flex-row md:items-center">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15">
+                    <BarChart3 size={20} strokeWidth={2.6} />
                   </div>
 
                   <div>
-                    <h2 className="mt-1 text-3xl font-black tracking-tight md:text-4xl">
+                    <h2 className="mt-0 text-xl font-black tracking-tight md:text-2xl">
                       Snapshot Perusahaan
                     </h2>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-5 p-5 md:p-6">
+              <div className="space-y-3.5 p-3.5 md:p-4.5">
                 <div
                   className="monitor-row-enter"
                   style={{ animationDelay: "60ms" }}
                 >
-                  <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
                     Mode Tampilan
                   </p>
 
-                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
                     {displayModeOptions.map((option) => {
                       const active = displayMode === option.value;
 
@@ -860,7 +868,7 @@ export default function AdminCompanyMonitorPage() {
                           key={option.value}
                           type="button"
                           onClick={() => setDisplayMode(option.value)}
-                          className={`monitor-field flex h-12 items-center justify-center rounded-2xl border px-4 text-sm font-black outline-none transition active:scale-[0.98] ${
+                          className={`monitor-field flex h-10 items-center justify-center rounded-xl border px-3 text-xs font-black outline-none transition active:scale-[0.98] ${
                             active
                               ? "border-[#123c8c] bg-[#123c8c] text-white shadow-sm"
                               : "border-blue-100 bg-[#f6f8ff] text-slate-700 hover:border-slate-300"
@@ -874,19 +882,19 @@ export default function AdminCompanyMonitorPage() {
                 </div>
 
                 <div
-                  className="monitor-row-enter grid gap-3 md:grid-cols-2"
+                  className="monitor-row-enter grid gap-2.5 md:grid-cols-2"
                   style={{ animationDelay: "100ms" }}
                 >
                   <div>
-                    <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">
+                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
                       Bulan
                     </p>
 
-                    <div className="relative mt-2">
+                    <div className="relative mt-1.5">
                       <select
                         value={month}
                         onChange={(event) => setMonth(Number(event.target.value))}
-                        className="monitor-field h-12 w-full appearance-none rounded-2xl border border-blue-100 bg-[#f6f8ff] pl-4 pr-10 text-sm font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-4 focus:ring-blue-100 cursor-pointer"
+                        className="monitor-field h-10 w-full appearance-none rounded-xl border border-blue-100 bg-[#f8fbff] pl-3 pr-8 text-xs font-black text-slate-700 outline-none transition focus:border-[#123c8c] focus:ring-2 focus:ring-blue-100 cursor-pointer"
                       >
                         {monthOptions.map((option) => (
                           <option key={option.value} value={option.value}>
@@ -1038,13 +1046,14 @@ export default function AdminCompanyMonitorPage() {
                   </p>
                 ) : (
                   <div className="mt-4 overflow-x-auto">
-                    <table className="w-full min-w-[620px] text-left text-sm">
+                    <table className="w-full min-w-[720px] text-left text-sm">
                       <thead>
                         <tr className="border-b border-slate-100 text-xs uppercase tracking-[0.14em] text-slate-500">
                           <th className="py-3 pr-4">Tanggal</th>
                           <th className="py-3 pr-4">Karyawan</th>
                           <th className="py-3 pr-4">Check-in</th>
                           <th className="py-3 pr-4">Durasi Telat</th>
+                          <th className="py-3 pr-4">Alasan Keterlambatan</th>
                         </tr>
                       </thead>
 
@@ -1071,6 +1080,12 @@ export default function AdminCompanyMonitorPage() {
 
                             <td className="py-3 pr-4 font-black text-amber-700">
                               {formatMinutes(item.lateMinutes)}
+                            </td>
+
+                            <td className="py-3 pr-4 text-xs font-semibold text-slate-600">
+                              <span className="inline-block max-w-xs break-words rounded-xl bg-amber-50 px-3 py-1.5 font-medium text-amber-900 ring-1 ring-amber-200/60">
+                                {item.reason || "Belum ada alasan"}
+                              </span>
                             </td>
                           </tr>
                         ))}

@@ -576,58 +576,58 @@ export default function AdminDashboardPage() {
 
       <AppHeader title="Admin Dasbor" variant="admin" />
 
-      <section className="mx-auto max-w-7xl space-y-6 px-5 py-6 pb-28 md:px-10 lg:px-16">
-        <div className="dashboard-enter overflow-hidden rounded-3xl border border-blue-100 bg-white shadow-xl shadow-slate-300/30">
-          <div className="grid gap-0 lg:grid-cols-[260px_1fr]">
-            <div className="bg-[#123c8c] p-6 text-white md:p-8 flex flex-col justify-center">
-              <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
-                  <LayoutDashboard size={25} strokeWidth={2.6} />
+      <section className="mx-auto max-w-7xl space-y-4 px-4 py-4 pb-16 md:px-8 lg:px-12">
+        <div className="dashboard-enter overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-md shadow-slate-300/20">
+          <div className="grid gap-0 lg:grid-cols-[220px_1fr]">
+            <div className="bg-[#123c8c] p-4 text-white md:p-5 flex flex-col justify-center">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15">
+                  <LayoutDashboard size={20} strokeWidth={2.6} />
                 </div>
 
                 <div>
-                  <h2 className="text-2xl font-black tracking-tight md:text-3xl">
+                  <h2 className="text-lg font-black tracking-tight md:text-xl">
                     Ringkasan Presensi
                   </h2>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 p-3.5 md:p-5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 p-3 md:p-4">
               {stats.map((item, index) => {
                 const Icon = item.icon;
 
                 return (
                   <div
                     key={`${item.label}-${index}`}
-                    className="dashboard-row-enter rounded-2xl border border-blue-100/80 bg-[#f6f8ff] p-3 transition duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-md hover:shadow-slate-200/60"
+                    className="dashboard-row-enter rounded-xl border border-blue-100/80 bg-[#f6f8ff] p-2.5 transition duration-200 hover:-translate-y-0.5 hover:bg-white hover:shadow-sm"
                     style={{
                       animationDelay: `${index * 40}ms`,
                     }}
                   >
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center justify-between gap-1.5">
                       <p className="text-[11px] font-bold text-slate-500 truncate">
                         {item.label}
                       </p>
 
                       <Icon
-                        size={15}
+                        size={14}
                         strokeWidth={2.5}
                         className={item.color || "text-[#123c8c]"}
                       />
                     </div>
 
                     {isLoading ? (
-                      <div className="mt-2.5 h-6 w-12 animate-pulse rounded-lg bg-blue-100" />
+                      <div className="mt-1.5 h-5 w-10 animate-pulse rounded-lg bg-blue-100" />
                     ) : (
                       <h3
-                        className={`mt-2 text-xl md:text-2xl font-black ${item.color || "text-[#123c8c]"}`}
+                        className={`mt-1 text-lg md:text-xl font-black ${item.color || "text-[#123c8c]"}`}
                       >
                         {item.value}
                       </h3>
                     )}
 
-                    <p className="mt-0.5 text-[10px] font-semibold text-slate-400 truncate">
+                    <p className="mt-0.5 text-[9px] font-semibold text-slate-400 truncate">
                       {item.description}
                     </p>
                   </div>
@@ -638,30 +638,30 @@ export default function AdminDashboardPage() {
         </div>
 
         {errorMessage ? (
-          <div className="dashboard-row-enter rounded-3xl border border-red-100 bg-red-50 p-5 text-sm font-bold text-red-700">
+          <div className="dashboard-row-enter rounded-2xl border border-red-100 bg-red-50 p-4 text-xs font-bold text-red-700">
             {errorMessage}
           </div>
         ) : null}
 
         <div
-          className="dashboard-enter rounded-3xl border border-white/70 bg-white/90 p-5 shadow-xl shadow-slate-300/30 backdrop-blur-xl md:p-6"
+          className="dashboard-enter rounded-2xl border border-white/70 bg-white/90 p-4 shadow-md shadow-slate-300/20 backdrop-blur-xl md:p-5"
           style={{
             animationDelay: "100ms",
           }}
         >
-          <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+          <div className="flex flex-col gap-1.5 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-[#123c8c]">
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#123c8c]">
                 Laporan Hari Ini
               </p>
 
-              <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">
+              <h2 className="mt-1 text-lg font-black tracking-tight text-slate-950 md:text-xl">
                 Presensi Terbaru
               </h2>
             </div>
           </div>
 
-          <div className="mt-6 space-y-3">
+          <div className="mt-4 space-y-2.5">
             {isLoading ? (
               <div className="dashboard-row-enter flex items-center justify-center gap-2 rounded-3xl border border-blue-100 bg-white px-5 py-10 text-sm font-bold text-slate-500">
                 <Loader2 size={18} className="animate-spin text-[#123c8c]" />

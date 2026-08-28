@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CalendarDays, FileText, Loader2, Megaphone, Sparkles } from "lucide-react";
+import { CalendarDays, FileText, Image as ImageIcon, Loader2, Megaphone, Sparkles } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import MobileShell from "@/components/MobileShell";
@@ -11,6 +11,19 @@ import {
   isAnnouncementToday,
   markAnnouncementAsRead,
 } from "@/lib/announcement-read";
+
+function isImageAttachment(urlOrName?: string | null) {
+  if (!urlOrName) return false;
+  const lower = urlOrName.toLowerCase();
+  return (
+    lower.includes(".jpg") ||
+    lower.includes(".jpeg") ||
+    lower.includes(".png") ||
+    lower.includes(".webp") ||
+    lower.includes(".gif") ||
+    lower.startsWith("data:image/")
+  );
+}
 
 type Announcement = {
   id: string;
@@ -324,44 +337,50 @@ export default function AnnouncementPage() {
                     </Link>
 
                     {announcement.document_url || announcement.documentUrl ? (
-                      <a
-                        href={
-                          announcement.document_url ||
-                          announcement.documentUrl ||
-                          "#"
-                        }
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-4 inline-flex max-w-full items-center gap-3 rounded-2xl border border-blue-100 bg-[#eaf1ff] px-4 py-3 text-sm font-black text-[#123c8c] transition hover:-translate-y-0.5 hover:bg-blue-100 active:scale-[0.98]"
-                      >
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white">
-                          <FileText size={20} strokeWidth={2.6} />
-                        </span>
-                        <span className="min-w-0 text-left">
-                          <span className="block truncate">
-                            {announcement.document_name ||
-                              announcement.documentName ||
-                              "Dokumen Pengumuman.pdf"}
-                          </span>
-                          {formatFileSize(
-                            announcement.document_size ||
-                              announcement.documentSize,
-                          ) ? (
-                            <span className="mt-0.5 block text-xs font-bold text-blue-500">
-                              PDF
-                              {" | "}
+                      (() => {
+                        const docUrl = announcement.document_url || announcement.documentUrl || "#";
+                        const docName = announcement.document_name || announcement.documentName || "Lampiran Pengumuman";
+                        const isImg = isImageAttachment(docUrl) || isImageAttachment(docName);
+
+                        return (
+                          <a
+                            href={docUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-4 inline-flex max-w-full items-center gap-3 rounded-2xl border border-blue-100 bg-[#eaf1ff] px-4 py-3 text-sm font-black text-[#123c8c] transition hover:-translate-y-0.5 hover:bg-blue-100 active:scale-[0.98]"
+                          >
+                            <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white">
+                              {isImg ? (
+                                <img src={docUrl} alt={docName} className="h-full w-full object-cover" />
+                              ) : (
+                                <FileText size={20} strokeWidth={2.6} />
+                              )}
+                            </span>
+                            <span className="min-w-0 text-left">
+                              <span className="block truncate">
+                                {docName}
+                              </span>
                               {formatFileSize(
                                 announcement.document_size ||
                                   announcement.documentSize,
+                              ) ? (
+                                <span className="mt-0.5 block text-xs font-bold text-blue-500">
+                                  {isImg ? "Gambar" : "PDF"}
+                                  {" | "}
+                                  {formatFileSize(
+                                    announcement.document_size ||
+                                      announcement.documentSize,
+                                  )}
+                                </span>
+                              ) : (
+                                <span className="mt-0.5 block text-xs font-bold text-blue-500">
+                                  {isImg ? "Gambar" : "PDF"}
+                                </span>
                               )}
                             </span>
-                          ) : (
-                            <span className="mt-0.5 block text-xs font-bold text-blue-500">
-                              PDF
-                            </span>
-                          )}
-                        </span>
-                      </a>
+                          </a>
+                        );
+                      })()
                     ) : null}
                   </article>
                 );

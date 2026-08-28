@@ -439,66 +439,66 @@ export default function AppHeader({
   return (
     <>
       <header
-        className={`fixed inset-x-0 top-0 z-40 overflow-hidden border-b px-5 py-4 backdrop-blur-2xl transition-all duration-300 md:px-10 lg:px-16 ${
+        className={`fixed inset-x-0 top-0 z-40 overflow-hidden border-b px-4 py-2.5 backdrop-blur-2xl transition-all duration-300 md:px-8 lg:px-12 ${
           hasScrolled
-            ? "border-blue-100/80 bg-white/95 shadow-lg shadow-slate-300/30"
-            : "border-white/60 bg-white/90 shadow-sm shadow-slate-200/40"
+            ? "border-blue-100/80 bg-white/95 shadow-md shadow-slate-300/25"
+            : "border-white/60 bg-white/90 shadow-sm shadow-slate-200/30"
         }`}
       >
-        <div className="relative z-10 mx-auto flex max-w-7xl items-center justify-between gap-4">
-          <div className="flex min-w-0 items-center gap-4">
+        <div className="relative z-10 mx-auto flex max-w-7xl items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
               onClick={() => setIsSidebarOpen(true)}
-              className={`${hideMobileMenuButton ? "hidden md:flex" : "flex"} h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eaf1ff] text-[#123c8c] shadow-lg shadow-slate-200/70 ring-1 ring-blue-100 transition hover:bg-blue-50 active:scale-[0.96]`}
+              className={`${hideMobileMenuButton ? "hidden md:flex" : "flex"} h-9.5 w-9.5 shrink-0 items-center justify-center rounded-xl bg-[#eaf1ff] text-[#123c8c] shadow-sm ring-1 ring-blue-100 transition hover:bg-blue-50 active:scale-[0.96]`}
               aria-label="Buka menu"
             >
-              <Menu size={25} strokeWidth={3} />
+              <Menu size={20} strokeWidth={2.8} />
             </button>
 
             <div className="min-w-0 flex-1">
               {eyebrow ? (
-                <p className="text-xs font-black uppercase tracking-[0.28em] text-[#123c8c]">
+                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-[#123c8c]">
                   {eyebrow}
                 </p>
               ) : null}
 
-              <h1 className="mt-0.5 text-lg font-black leading-tight tracking-tight text-slate-950 sm:text-xl md:text-2xl lg:text-3xl">
+              <h1 className="mt-0 text-base font-black leading-tight tracking-tight text-slate-950 sm:text-lg md:text-xl">
                 {title}
               </h1>
 
               {subtitle ? (
-                <p className="mt-1 line-clamp-1 max-w-xl text-xs font-semibold leading-relaxed text-slate-500 sm:text-sm">
+                <p className="mt-0.5 line-clamp-1 max-w-xl text-[11px] font-semibold leading-normal text-slate-500 sm:text-xs">
                   {subtitle}
                 </p>
               ) : null}
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center justify-end gap-3">
+          <div className="flex shrink-0 items-center justify-end gap-2 sm:gap-2.5">
             <a
               href={whatsappLink}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Hubungi via WhatsApp"
-              className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-[#ecfff5] text-[#00a884] shadow-sm ring-1 ring-[#baf7dc] transition hover:bg-[#dcfce7] active:scale-[0.96]"
+              className="relative flex h-9.5 w-9.5 items-center justify-center rounded-xl bg-[#ecfff5] text-[#00a884] shadow-sm ring-1 ring-[#baf7dc] transition hover:bg-[#dcfce7] active:scale-[0.96]"
             >
-              <PhoneCall className="h-5 w-5" strokeWidth={2.7} />
+              <PhoneCall className="h-4.5 w-4.5" strokeWidth={2.6} />
             </a>
 
             <Link
               href={notificationHref}
-              className={`relative hidden h-12 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-black shadow-sm ring-1 transition active:scale-[0.96] sm:inline-flex ${
+              className={`relative hidden h-9.5 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-black shadow-sm ring-1 transition active:scale-[0.96] sm:inline-flex ${
                 isNotificationPage
-                  ? "bg-[#123c8c] text-white ring-[#123c8c] shadow-lg shadow-blue-900/20"
+                  ? "bg-[#123c8c] text-white ring-[#123c8c] shadow-md shadow-blue-900/20"
                   : "bg-white text-[#123c8c] ring-blue-100 hover:bg-[#eaf1ff]"
               }`}
             >
               <span className="relative">
-                <Bell size={20} strokeWidth={2.7} />
+                <Bell size={17} strokeWidth={2.6} />
 
                 {hasNewNotification ? (
-                  <span className="absolute -right-2 -top-2 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-orange-500 px-1 text-[10px] font-black leading-none text-white ring-2 ring-white">
+                  <span className="absolute -right-2 -top-2 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-orange-500 px-1 text-[9px] font-black leading-none text-white ring-2 ring-white">
                     {formatNotificationCount(notificationCount)}
                   </span>
                 ) : null}
@@ -508,35 +508,35 @@ export default function AppHeader({
             <Link
               href={notificationHref}
               aria-label="Buka notifikasi"
-              className={`relative flex h-12 w-12 items-center justify-center rounded-2xl shadow-sm ring-1 transition active:scale-[0.96] sm:hidden ${
+              className={`relative flex h-9.5 w-9.5 items-center justify-center rounded-xl shadow-sm ring-1 transition active:scale-[0.96] sm:hidden ${
                 isNotificationPage
                   ? "bg-[#123c8c] text-white ring-[#123c8c]"
                   : "bg-white text-[#123c8c] ring-blue-100 hover:bg-[#eaf1ff]"
               }`}
             >
-              <Bell size={21} strokeWidth={2.7} />
+              <Bell size={18} strokeWidth={2.6} />
 
               {hasNewNotification ? (
-                <span className="absolute right-1.5 top-1.5 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-orange-500 px-1 text-[10px] font-black leading-none text-white ring-2 ring-white">
+                <span className="absolute right-1 top-1 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-orange-500 px-1 text-[9px] font-black leading-none text-white ring-2 ring-white">
                   {formatNotificationCount(notificationCount)}
                 </span>
               ) : null}
             </Link>
 
             {/* Full Creativemu Logo Badge Box on the far right next to Bell */}
-            <div className="relative hidden h-12 shrink-0 items-center justify-center rounded-2xl bg-white px-4 py-2.5 shadow-sm ring-1 ring-blue-100/90 transition hover:bg-[#eaf1ff] active:scale-[0.96] sm:flex">
+            <div className="relative hidden h-9.5 shrink-0 items-center justify-center rounded-xl bg-white px-3 py-1.5 shadow-sm ring-1 ring-blue-100/90 transition hover:bg-[#eaf1ff] active:scale-[0.96] sm:flex">
               <Image
                 src={logoSrc}
                 alt="Logo Creativemu"
-                width={140}
-                height={35}
+                width={110}
+                height={28}
                 unoptimized
-                className="h-full w-auto object-contain object-center"
+                className="h-6 w-auto object-contain object-center"
               />
             </div>
 
             {rightLabel ? (
-              <span className="hidden rounded-2xl bg-white px-4 py-2 text-xs font-black text-slate-600 shadow-sm ring-1 ring-blue-100 md:inline-flex">
+              <span className="hidden rounded-xl bg-white px-3 py-1.5 text-[11px] font-black text-slate-600 shadow-sm ring-1 ring-blue-100 md:inline-flex">
                 {rightLabel}
               </span>
             ) : null}
@@ -544,7 +544,7 @@ export default function AppHeader({
         </div>
       </header>
 
-      <div className={eyebrow || subtitle ? "h-[106px]" : "h-[88px]"} />
+      <div className={eyebrow || subtitle ? "h-[72px]" : "h-[58px]"} />
 
       {isSidebarOpen ? (
         <button
